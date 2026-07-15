@@ -35,8 +35,8 @@ COPY . .
 RUN python3 -m venv /opt/google-news-venv \
     && /opt/google-news-venv/bin/pip install --no-cache-dir -r /var/web/scripts/google-news/requirements.txt
 
-# Run composer installation
-RUN composer install --no-interaction --optimize-autoloader
+# Run composer installation without triggering app scripts during image build
+RUN composer install --no-interaction --optimize-autoloader --no-scripts
 
 # Expose Laravel development port
 EXPOSE 8000

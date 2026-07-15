@@ -4,6 +4,7 @@
 .env.testing
 .env.backup
 .env.production
+.env.backup_before_*
 .phpactor.json
 .phpunit.result.cache
 /.codex
@@ -23,6 +24,9 @@
 /storage/*.key
 /storage/pail
 /backups
+/storage/backups
+/storage/project_articles_backup_*.json
+/database/*.sqlite*
 /scratch
 /storage/logs/*.log
 /storage/framework/cache/**
