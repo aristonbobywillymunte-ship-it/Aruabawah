@@ -27,6 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Console\Commands\ReconcileDispatchStates::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append([
+            \App\Http\Middleware\BlockSuspiciousProbeRequests::class,
+        ]);
+
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminOnly::class,
         ]);

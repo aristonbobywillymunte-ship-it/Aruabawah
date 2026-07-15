@@ -688,13 +688,12 @@
                     </div>
                 </div>
 
-                <!-- Remember me + Forgot -->
+                <!-- Remember me -->
                 <div class="form-row">
                     <label class="checkbox-label">
                         <input type="checkbox" name="remember" id="remember" />
                         Ingat saya
                     </label>
-                    <a href="#" class="forgot-link">Lupa password?</a>
                 </div>
 
                 <!-- Submit -->
