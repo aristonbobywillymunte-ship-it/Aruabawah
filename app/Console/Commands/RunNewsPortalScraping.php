@@ -1646,7 +1646,7 @@ class RunNewsPortalScraping extends Command
             $nodes = $xpath->query($query);
             if ($nodes && $nodes->length > 0) {
                 $raw = trim((string) $nodes->item(0)->textContent);
-                if ($raw !== '') {
+                if ($raw !== '' && strlen($raw) < 50 && !str_contains($raw, ':') && !str_contains($raw, ' - ')) {
                     return $raw;
                 }
             }
