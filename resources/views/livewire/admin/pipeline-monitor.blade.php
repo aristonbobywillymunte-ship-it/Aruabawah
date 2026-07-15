@@ -39,21 +39,20 @@
     </div>
 
     {{-- Filter Bar --}}
-    <div class="flex flex-wrap items-center gap-3 w-full">
+    <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 w-full">
         <!-- Search Input -->
-        <div style="width: 320px; max-width: 100%; display: inline-block;">
+        <div class="w-full sm:w-80">
             <input
                 wire:model.live.debounce.400ms="search"
                 type="text"
                 placeholder="{{ match($activeTab) { 'scraping' => 'Cari Artikel...', 'social' => 'Cari Sosial Media...', 'ai' => 'Cari Hasil Analisis...', 'notifications' => 'Cari Notifikasi...', 'queue-pending' => 'Cari Antrian...', 'queue-failed' => 'Cari Job Gagal...', default => 'Cari...' } }}"
-                class="rounded-xl border border-slate-200 bg-white px-4 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/20 transition-all text-xs font-semibold text-slate-850"
-                style="width: 100%; box-sizing: border-box; height: 42px;"
+                class="w-full h-[42px] rounded-xl border border-slate-200 bg-white px-4 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/20 transition-all text-xs font-semibold text-slate-850"
             />
         </div>
 
         {{-- Filter Proyek (tersedia di semua tab kecuali queue) --}}
         @if (!in_array($activeTab, ['queue-pending','queue-failed']))
-        <select wire:model.live="filterProject" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
+        <select wire:model.live="filterProject" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
             <option value="">Semua Proyek</option>
             @foreach ($projects as $proj)
             <option value="{{ $proj->id }}">{{ $proj->name }}</option>
@@ -63,13 +62,13 @@
 
         {{-- Tab Scraping Filters --}}
         @if ($activeTab === 'scraping')
-        <select wire:model.live="filterPlatform" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
+        <select wire:model.live="filterPlatform" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
             <option value="">Semua Sumber</option>
             @foreach ($sources as $src)
             <option value="{{ $src }}">{{ $src }}</option>
             @endforeach
         </select>
-        <select wire:model.live="filterAiState" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
+        <select wire:model.live="filterAiState" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
             <option value="">Semua Status AI</option>
             <option value="success">Selesai</option>
             <option value="failed">Gagal</option>
@@ -79,7 +78,7 @@
 
         {{-- Tab Social Filters --}}
         @if ($activeTab === 'social')
-        <select wire:model.live="filterPlatform" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
+        <select wire:model.live="filterPlatform" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
             <option value="">Semua Platform</option>
             @foreach ($platforms as $p)
             <option value="{{ $p }}">{{ $p }}</option>
@@ -89,12 +88,12 @@
 
         {{-- Tab AI Filters --}}
         @if ($activeTab === 'ai')
-        <select wire:model.live="filterStatus" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
+        <select wire:model.live="filterStatus" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
             <option value="">Semua Status</option>
             <option value="success">Sukses</option>
             <option value="failed">Gagal</option>
         </select>
-        <select wire:model.live="filterRisk" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
+        <select wire:model.live="filterRisk" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
             <option value="">Semua Risiko</option>
             <option value="high">Tinggi</option>
             <option value="medium">Sedang</option>
@@ -104,7 +103,7 @@
 
         {{-- Tab Notifications Filters --}}
         @if ($activeTab === 'notifications')
-        <select wire:model.live="filterStatus" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
+        <select wire:model.live="filterStatus" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
             <option value="">Semua Status</option>
             <option value="sent">Terkirim</option>
             <option value="failed">Gagal</option>
@@ -114,7 +113,7 @@
 
         {{-- Tab Queue Failed Filters --}}
         @if ($activeTab === 'queue-failed')
-        <select wire:model.live="filterStatus" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
+        <select wire:model.live="filterStatus" class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1fa387] transition-all">
             <option value="">Semua Queue</option>
             <option value="default">default</option>
             <option value="ai-analysis">ai-analysis</option>
@@ -123,7 +122,7 @@
         @endif
     </div>
     {{-- Table --}}
-    <div class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+    <div class="overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm">
 
         {{-- ===== TAB: ARTIKEL PROYEK (Portal Berita) ===== --}}
         @if ($activeTab === 'scraping')
