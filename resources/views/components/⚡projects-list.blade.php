@@ -51,7 +51,7 @@ new class extends Component
     public $toastMessage = '';
     protected ?array $portalScanTimes = null;
     protected ?array $portalRunningProjectIds = null;
-    protected ?array $socialActiveProjectIds = null;
+    protected ?array $socialActiveProjects = null;
 
     protected function hydratePortalScanState(): void
     {
@@ -142,19 +142,42 @@ new class extends Component
 
     protected function hydrateSocialActiveState(): void
     {
-        if ($this->socialActiveProjectIds !== null) {
+        if ($this->socialActiveProjects !== null) {
             return;
         }
 
-        $this->socialActiveProjectIds = DB::table('apify_dispatch_states')
+        $states = DB::table('apify_dispatch_states')
             ->whereIn('status', ['queued', 'processing', 'retry_wait'])
             ->whereIn(DB::raw('lower(platform)'), ['facebook', 'instagram', 'tiktok'])
-            ->distinct()
-            ->pluck('project_id')
-            ->filter()
-            ->map(fn ($projectId) => (int) $projectId)
-            ->values()
-            ->all();
+            ->orderByDesc('updated_at')
+            ->get(['project_id', 'platform', 'status', 'updated_at']);
+
+        $projects = [];
+
+        foreach ($states as $state) {
+            $projectId = (int) $state->project_id;
+
+            if ($projectId <= 0) {
+                continue;
+            }
+
+            $platform = strtolower((string) $state->platform);
+
+            $projects[$projectId] ??= [
+                'platforms' => [],
+                'statuses' => [],
+            ];
+
+            if (! in_array($platform, $projects[$projectId]['platforms'], true)) {
+                $projects[$projectId]['platforms'][] = $platform;
+            }
+
+            if (! in_array((string) $state->status, $projects[$projectId]['statuses'], true)) {
+                $projects[$projectId]['statuses'][] = (string) $state->status;
+            }
+        }
+
+        $this->socialActiveProjects = $projects;
     }
 
     protected function latestSocialRunForProject(int $projectId): ?string
@@ -192,7 +215,30 @@ new class extends Component
     {
         $this->hydrateSocialActiveState();
 
-        return in_array($projectId, $this->socialActiveProjectIds ?? [], true);
+        return isset($this->socialActiveProjects[$projectId]);
+    }
+
+    protected function activeSocialPlatformsForProject(int $projectId): array
+    {
+        $this->hydrateSocialActiveState();
+
+        return $this->socialActiveProjects[$projectId]['platforms'] ?? [];
+    }
+
+    protected function socialRunningLabelForProject(int $projectId): string
+    {
+        $platforms = $this->activeSocialPlatformsForProject($projectId);
+        $count = count($platforms);
+
+        if ($count <= 0) {
+            return 'Data Medsos Terakhir';
+        }
+
+        if ($count === 1) {
+            return strtoupper($platforms[0]).' sedang berjalan';
+        }
+
+        return $count.' kanal medsos berjalan';
     }
 
     public function getProjects()
@@ -327,6 +373,7 @@ new class extends Component
                 'portal_is_running' => $this->isPortalScanRunningForProject($project->id),
                 'last_medsos_update' => $lastMedsosUpdate,
                 'medsos_is_running' => $this->isSocialScanRunningForProject($project->id),
+                'medsos_running_label' => $this->socialRunningLabelForProject($project->id),
             ];
         });
     }
@@ -1167,10 +1214,10 @@ new class extends Component
                                                 <span class="absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.85)]"></span>
                                             @endif
                                             <span class="material-symbols-outlined relative text-[14px]">group</span>
-                                        </span>
+                                            </span>
                                         <div>
                                             <p class="text-[8px] uppercase tracking-wider font-bold leading-none mb-1 {{ $project['medsos_is_running'] ? 'text-emerald-500' : 'text-slate-400' }}">
-                                                {{ $project['medsos_is_running'] ? 'Update Medsos Berjalan' : 'Data Medsos Terakhir' }}
+                                                {{ $project['medsos_running_label'] }}
                                             </p>
                                             <p class="font-bold leading-none {{ $project['medsos_is_running'] ? 'text-emerald-700' : 'text-slate-700' }}">{{ $project['last_medsos_update'] }}</p>
                                         </div>
