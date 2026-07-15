@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Jobs\AiAnalysisJob;
+use App\Models\AiAnalysisDispatchState;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Queue;
+
+class RequeueOverdueAiAnalysisRetries extends Command
+{
+    protected $signature = 'ai:requeue-overdue-retries {--limit=1 : Maximum retry_wait states to requeue per run}';
+
+    protected $description = 'Requeue overdue AI retry_wait states selectively.';
+
+    public function handle(): int
+    {
+        $limit = max(1, (int) $this->option('limit'));
+        $now = now();
+        $count = 0;
+
+        $states = AiAnalysisDispatchState::query()
+            ->where('status', 'retry_wait')
+            ->whereNotNull('next_retry_at')
+            ->where('next_retry_at', '<=', $now)
+            ->orderBy('next_retry_at')
+            ->orderBy('id')
+            ->limit($limit)
+            ->get();
+
+        foreach ($states as $state) {
+            $payload = [
+                'type' => $state->analyzable_type === 'social' ? 'social' : 'article',
+                'id' => $state->analyzable_id,
+                'project_id' => $state->project_id,
+            ];
+
+            AiAnalysisJob::dispatch($payload)->onQueue('ai-analysis');
+            $count++;
+        }
+
+        $this->info("Requeued {$count} overdue retry_wait state(s).");
+
+        return self::SUCCESS;
+    }
+}

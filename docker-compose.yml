@@ -1,0 +1,203 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine
+    container_name: media_intelligent_redis_container
+    ports:
+      - "6379:6379"
+    restart: always
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: media_intelligent_postgres_container
+    environment:
+      POSTGRES_DB: media_intelligent
+      POSTGRES_USER: media_intelligent
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  media-intelligent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: media_intelligent_container
+    ports:
+      - "81:8000"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - .:/var/web
+    environment:
+      - APP_ENV=production
+      - APP_KEY=base64:OYCBnDTSTqBiEKC9L6TXKB3Qwm199hcPmxQO5fytHHY=
+      - APP_DEBUG=true
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_SQLITE_DATABASE=${DB_SQLITE_DATABASE}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION}
+      - REDIS_CLIENT=predis
+      - REDIS_HOST=redis
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - postgres
+
+  media-intelligent-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: media_intelligent_worker_container
+    command: ["php", "artisan", "queue:work", "redis", "--queue=news", "--sleep=3", "--tries=3", "--timeout=300"]
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - .:/var/web
+    environment:
+      - APP_ENV=production
+      - APP_KEY=base64:OYCBnDTSTqBiEKC9L6TXKB3Qwm199hcPmxQO5fytHHY=
+      - APP_DEBUG=true
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_SQLITE_DATABASE=${DB_SQLITE_DATABASE}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION}
+      - REDIS_CLIENT=predis
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  media-intelligent-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: media_intelligent_scheduler_container
+    command: ["php", "artisan", "schedule:work"]
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - .:/var/web
+    environment:
+      - APP_ENV=production
+      - APP_KEY=base64:OYCBnDTSTqBiEKC9L6TXKB3Qwm199hcPmxQO5fytHHY=
+      - APP_DEBUG=true
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_SQLITE_DATABASE=${DB_SQLITE_DATABASE}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION}
+      - REDIS_CLIENT=predis
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  media-intelligent-apify-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: media_intelligent_apify_worker_container
+    command: ["php", "artisan", "queue:work", "redis", "--queue=apify", "--sleep=5", "--tries=2", "--timeout=1000"]
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - .:/var/web
+    environment:
+      - APP_ENV=production
+      - APP_KEY=base64:OYCBnDTSTqBiEKC9L6TXKB3Qwm199hcPmxQO5fytHHY=
+      - APP_DEBUG=true
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_SQLITE_DATABASE=${DB_SQLITE_DATABASE}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION}
+      - REDIS_CLIENT=predis
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  media-intelligent-ai-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: media_intelligent_ai_worker_container
+    command: ["php", "artisan", "queue:work", "redis-ai", "--queue=ai-analysis,ai-backfill", "--sleep=3", "--tries=25", "--timeout=600"]
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - .:/var/web
+    environment:
+      - APP_ENV=production
+      - APP_KEY=base64:OYCBnDTSTqBiEKC9L6TXKB3Qwm199hcPmxQO5fytHHY=
+      - APP_DEBUG=true
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_SQLITE_DATABASE=${DB_SQLITE_DATABASE}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION}
+      - REDIS_CLIENT=predis
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  media-intelligent-notification-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: media_intelligent_notification_worker_container
+    command: ["php", "artisan", "queue:work", "redis", "--queue=notification", "--sleep=5", "--tries=2", "--timeout=120"]
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - .:/var/web
+    environment:
+      - APP_ENV=production
+      - APP_KEY=base64:OYCBnDTSTqBiEKC9L6TXKB3Qwm199hcPmxQO5fytHHY=
+      - APP_DEBUG=true
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_SQLITE_DATABASE=${DB_SQLITE_DATABASE}
+      - REDIS_CLIENT=predis
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
