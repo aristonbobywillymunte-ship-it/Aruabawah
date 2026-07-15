@@ -3,5 +3,5 @@
 @section('title', 'Database Management')
 
 @section('content')
-    <livewire:admin.database />
+    <livewire:admin.database-management />
 @endsection

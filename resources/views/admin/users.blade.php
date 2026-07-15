@@ -3,5 +3,5 @@
 @section('title', 'User Management')
 
 @section('content')
-    <livewire:admin.users />
+    <livewire:admin.users-manager />
 @endsection

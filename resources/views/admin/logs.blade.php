@@ -3,5 +3,5 @@
 @section('title', 'System Logs')
 
 @section('content')
-    <livewire:admin.logs />
+    <livewire:admin.system-logs />
 @endsection

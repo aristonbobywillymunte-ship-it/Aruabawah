@@ -3,5 +3,5 @@
 @section('title', 'Apify Integration')
 
 @section('content')
-    <livewire:admin.apify />
+    <livewire:admin.apify-configuration />
 @endsection

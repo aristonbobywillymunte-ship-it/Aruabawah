@@ -3,5 +3,5 @@
 @section('title', 'Maintenance')
 
 @section('content')
-    <livewire:admin.maintenance />
+    <livewire:admin.system-maintenance />
 @endsection
