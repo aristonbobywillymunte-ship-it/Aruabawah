@@ -165,11 +165,27 @@ new class extends Component
             ->max(DB::raw('coalesce(completed_at, started_at, queued_at)'));
     }
 
+    protected function latestSuccessfulSocialRunForProject(int $projectId): ?string
+    {
+        return DB::table('apify_dispatch_states')
+            ->where('project_id', $projectId)
+            ->whereIn(DB::raw('lower(platform)'), ['facebook', 'instagram', 'tiktok'])
+            ->where('status', 'success')
+            ->max('completed_at');
+    }
+
     protected function latestSocialDataForProject(int $projectId): ?string
     {
         return DB::table('project_social_media_items')
             ->where('project_id', $projectId)
             ->max('created_at');
+    }
+
+    protected function latestSocialUpdateForProject(int $projectId): ?string
+    {
+        return $this->latestSocialDataForProject($projectId)
+            ?? $this->latestSuccessfulSocialRunForProject($projectId)
+            ?? $this->latestSocialRunForProject($projectId);
     }
 
     protected function isSocialScanRunningForProject(int $projectId): bool
@@ -280,7 +296,7 @@ new class extends Component
                 ->where('project_id', $project->id)
                 ->max('created_at');
                 
-            $lastMedsosTime = $this->latestSocialRunForProject($project->id);
+            $lastMedsosTime = $this->latestSocialUpdateForProject($project->id);
 
             $lastPortalScanTime = $this->latestPortalScanForProject($project->id);
             $lastPortalUpdate = $lastPortalScanTime
@@ -1139,7 +1155,7 @@ new class extends Component
                                         </span>
                                         <div>
                                             <p class="text-[8px] uppercase tracking-wider font-bold leading-none mb-1 {{ $project['portal_is_running'] ? 'text-emerald-500' : 'text-slate-400' }}">
-                                                {{ $project['portal_is_running'] ? 'Scan Portal Berjalan' : 'Scan Portal' }}
+                                                {{ $project['portal_is_running'] ? 'Scan Portal Berjalan' : 'Data Portal Terakhir' }}
                                             </p>
                                             <p class="font-bold leading-none {{ $project['portal_is_running'] ? 'text-emerald-700' : 'text-slate-700' }}">{{ $project['last_portal_update'] }}</p>
                                         </div>
@@ -1154,7 +1170,7 @@ new class extends Component
                                         </span>
                                         <div>
                                             <p class="text-[8px] uppercase tracking-wider font-bold leading-none mb-1 {{ $project['medsos_is_running'] ? 'text-emerald-500' : 'text-slate-400' }}">
-                                                {{ $project['medsos_is_running'] ? 'Update Medsos Berjalan' : 'Update Medsos' }}
+                                                {{ $project['medsos_is_running'] ? 'Update Medsos Berjalan' : 'Data Medsos Terakhir' }}
                                             </p>
                                             <p class="font-bold leading-none {{ $project['medsos_is_running'] ? 'text-emerald-700' : 'text-slate-700' }}">{{ $project['last_medsos_update'] }}</p>
                                         </div>
@@ -1208,7 +1224,7 @@ new class extends Component
                                 <!-- AI & Risk Stats -->
                                 <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 mb-6">
                                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">STATUS AI & RISIKO</p>
-                                    <div class="grid grid-cols-4 gap-2 text-center">
+                                    <div class="grid grid-cols-3 gap-2 text-center">
                                         <div>
                                             <p class="text-sm font-bold text-slate-700">{{ $project['ai_valid'] }}</p>
                                             <p class="text-[9px] text-slate-400">Siap Ditampilkan</p>
@@ -1216,10 +1232,6 @@ new class extends Component
                                         <div>
                                             <p class="text-sm font-bold text-amber-500">{{ $project['ai_pending'] }}</p>
                                             <p class="text-[9px] text-slate-400 cursor-help" title="Artikel yang sedang menunggu pemrosesan atau validasi AI.">Analisis AI ⓘ</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-bold text-rose-400">{{ $project['ai_failed'] }}</p>
-                                            <p class="text-[9px] text-slate-400">Failed</p>
                                         </div>
                                         <div class="border-l border-slate-200 pl-2">
                                             <p class="text-sm font-bold {{ $project['high_risk'] > 0 ? 'text-rose-600' : 'text-slate-400' }}">{{ $project['high_risk'] }}</p>

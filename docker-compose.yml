@@ -2,6 +2,8 @@ x-app-env: &app-env
   APP_ENV: ${APP_ENV:-production}
   APP_KEY: ${APP_KEY}
   APP_DEBUG: ${APP_DEBUG:-false}
+  APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Makassar}
+  TZ: ${TZ:-Asia/Makassar}
   DB_CONNECTION: ${DB_CONNECTION}
   DB_HOST: ${DB_HOST}
   DB_PORT: ${DB_PORT}
@@ -25,6 +27,8 @@ services:
     image: postgres:16-alpine
     container_name: media_intelligent_postgres_container
     environment:
+      TZ: ${TZ:-Asia/Makassar}
+      PGTZ: ${TZ:-Asia/Makassar}
       POSTGRES_DB: media_intelligent
       POSTGRES_USER: media_intelligent
       POSTGRES_PASSWORD: ${DB_PASSWORD}

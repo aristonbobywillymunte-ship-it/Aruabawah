@@ -1,6 +1,7 @@
 FROM php:8.4-cli-alpine
 
 RUN apk add --no-cache \
+    tzdata \
     sqlite-dev \
     postgresql-dev \
     postgresql-client \
@@ -31,6 +32,8 @@ WORKDIR /var/web
 # Copy codebase
 COPY . .
 
+RUN chmod +x /var/web/scripts/docker-entrypoint.sh
+
 # Install Python dependencies for Google News URL decoding in an isolated venv
 RUN python3 -m venv /opt/google-news-venv \
     && /opt/google-news-venv/bin/pip install --no-cache-dir -r /var/web/scripts/google-news/requirements.txt
@@ -40,6 +43,8 @@ RUN composer install --no-interaction --optimize-autoloader --no-scripts
 
 # Expose Laravel development port
 EXPOSE 8000
+
+ENTRYPOINT ["/var/web/scripts/docker-entrypoint.sh"]
 
 # Start Laravel built-in web server
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
