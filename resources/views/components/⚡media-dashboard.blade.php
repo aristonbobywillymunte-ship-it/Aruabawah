@@ -1829,7 +1829,7 @@ new class extends Component
                     @endphp
 
                     <!-- Mentions Cards Feed -->
-                    <div class="h-[calc(100vh-250px)] overflow-y-auto pr-4 space-y-4">
+                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-4">
                         @if($articlesList->isEmpty())
                         <div class="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-4 shadow-sm">
                             <svg class="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4834,7 +4834,7 @@ new class extends Component
                 <span class="material-symbols-outlined text-2xl" x-text="mobileFilterOpen ? 'close' : 'tune'">tune</span>
             </button>
 
-            <aside class="hidden lg:block lg:w-80 lg:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] lg:border lg:border-slate-200 lg:rounded-2xl lg:p-6 lg:bg-white lg:space-y-6 lg:h-[calc(100vh-190px)] lg:overflow-y-auto flex-shrink-0">
+            <aside style="height: calc(100vh - 190px);" class="hidden lg:block lg:w-80 lg:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] lg:border lg:border-slate-200 lg:rounded-2xl lg:p-6 lg:bg-white lg:space-y-6 lg:overflow-y-auto flex-shrink-0">
                 <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3">Filter Panel</h4>
                 @include('components.⚡filter-items')
             </aside>
