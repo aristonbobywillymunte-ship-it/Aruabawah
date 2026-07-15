@@ -1303,6 +1303,12 @@ new class extends Component
 @endphp
 
 <div>
+<style>
+    html, body {
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+</style>
 <div class="h-screen bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-hidden"
      x-data="{
          detailModalOpen: false,
