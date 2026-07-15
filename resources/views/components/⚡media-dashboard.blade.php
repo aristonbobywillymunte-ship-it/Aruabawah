@@ -1314,6 +1314,13 @@ new class extends Component
         flex-direction: column !important;
         min-height: 0 !important;
     }
+    @media (min-width: 1024px) {
+        .desktop-filter-scroll {
+            height: calc(100vh - 420px) !important;
+            overflow-y: auto !important;
+            padding-right: 4px !important;
+        }
+    }
 </style>
 <div class="h-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-hidden"
      x-data="{
@@ -4834,8 +4841,8 @@ new class extends Component
                 <span class="material-symbols-outlined text-2xl" x-text="mobileFilterOpen ? 'close' : 'tune'">tune</span>
             </button>
 
-            <aside style="height: calc(100vh - 190px);" class="hidden lg:block lg:w-80 lg:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] lg:border lg:border-slate-200 lg:rounded-2xl lg:p-6 lg:bg-white lg:space-y-6 lg:overflow-y-auto flex-shrink-0">
-                <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3">Filter Panel</h4>
+            <aside style="height: calc(100vh - 190px);" class="hidden lg:flex lg:flex-col lg:w-80 lg:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] lg:border lg:border-slate-200 lg:rounded-2xl lg:p-6 lg:bg-white lg:gap-5 flex-shrink-0">
+                <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3 flex-shrink-0">Filter Panel</h4>
                 @include('components.⚡filter-items')
             </aside>
 

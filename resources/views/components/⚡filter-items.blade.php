@@ -47,8 +47,9 @@
         </div>
     </div>
 
-    <!-- Sumber Checklist -->
-    <div class="space-y-3">
+    <div class="desktop-filter-scroll space-y-6">
+        <!-- Sumber Checklist -->
+        <div class="space-y-3">
         <div class="flex justify-between items-center">
             <label class="text-sm font-bold text-slate-700">Sumber Data</label>
             <button wire:click="$set('selectedSources', ['Instagram', 'Tiktok', 'Facebook', 'News'])" class="text-xs text-[#1fa387] hover:underline font-bold">Pilih Semua</button>
@@ -177,5 +178,6 @@
                 <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">{{ $counts['risks']['critical'] ?? 0 }}</span>
             </label>
         </div>
+    </div>
     </div>
 @endif
