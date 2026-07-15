@@ -4829,7 +4829,7 @@ new class extends Component
                 x-transition:leave="transition ease-in duration-200"
                 x-transition:leave-start="transform translate-x-0"
                 x-transition:leave-end="transform translate-x-full"
-                class="fixed inset-y-0 right-0 z-50 w-80 bg-white p-6 shadow-2xl border-l border-slate-200 overflow-y-auto space-y-6 lg:static lg:w-80 lg:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] lg:border lg:rounded-2xl lg:translate-x-0 lg:z-30 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+                class="fixed inset-y-0 right-0 z-50 w-80 bg-white p-6 shadow-2xl border-l border-slate-200 overflow-y-auto space-y-6 lg:sticky lg:top-24 lg:w-80 lg:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] lg:border lg:rounded-2xl lg:translate-x-0 lg:z-30 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
                 :class="mobileFilterOpen ? 'block' : 'hidden lg:block'"
             >
                 <!-- Filter Panel Header with Close Button -->
