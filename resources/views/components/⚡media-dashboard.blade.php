@@ -1311,6 +1311,7 @@ new class extends Component
          showAiSummaryModal: false,
          scrolledDown: false,
          mobileFilterOpen: false,
+         isMobile: window.innerWidth < 1024,
          detailTitle: '',
          detailSource: '',
          detailDate: '',
@@ -1350,7 +1351,7 @@ new class extends Component
          }
      }"
      x-effect="document.body.style.overflow = (detailModalOpen || showViralModal) ? 'hidden' : ''"
-     x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true })"
+     x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 1024; }); isMobile = window.innerWidth < 1024;"
 >
     
     <!-- Top Header -->
@@ -2044,7 +2045,7 @@ new class extends Component
                                     </div>
 
                                     <!-- Card Actions -->
-                                    <div class="flex items-center justify-between border-t border-slate-100 pt-4 mt-auto">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-100 pt-4 mt-auto w-full">
                                         <div class="flex items-center gap-3">
                                             @if($this->isAdmin())
                                                 <button 
@@ -2074,7 +2075,7 @@ new class extends Component
                                             @endif
                                         </div>
 
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                                             <!-- Topic Category Badge (Enlarged & Redesigned) -->
                                             <span class="inline-flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 text-[9px] sm:text-[11px] font-bold bg-slate-50 border border-slate-200/80 text-slate-600 rounded-xl" title="{{ $article->category }}">
                                                 <span class="material-symbols-outlined text-[11px] sm:text-[13px] text-slate-400">local_offer</span>
@@ -4821,7 +4822,7 @@ new class extends Component
 
             <!-- Right Side Filter Panel -->
             <aside 
-                x-show="mobileFilterOpen"
+                x-show="!isMobile || mobileFilterOpen"
                 x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="transform translate-x-full"
                 x-transition:enter-end="transform translate-x-0"
