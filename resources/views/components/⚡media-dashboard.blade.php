@@ -4091,12 +4091,12 @@ new class extends Component
                                 <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ringkasan & Statistik</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     <!-- Rangkuman & Wawasan -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">📄</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Rangkuman & Wawasan</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Ringkasan otomatis dari insight dan temuan kunci</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Ringkasan otomatis dari insight dan temuan kunci</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.wawasan = !pdfToggles.wawasan" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.wawasan ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -4104,12 +4104,12 @@ new class extends Component
                                         </button>
                                     </div>
                                     <!-- Statistik Umum -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">📊</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Statistik Umum</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Metrik performa media dan statistik penting</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Metrik performa media dan statistik penting</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.statistik = !pdfToggles.statistik" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.statistik ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -4117,12 +4117,12 @@ new class extends Component
                                         </button>
                                     </div>
                                     <!-- Grafik Penyebutan -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">📈</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Grafik Penyebutan</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Visualisasi tren penyebutan sepanjang waktu</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Visualisasi tren penyebutan sepanjang waktu</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.grafikPenyebutan = !pdfToggles.grafikPenyebutan" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.grafikPenyebutan ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -4130,12 +4130,12 @@ new class extends Component
                                         </button>
                                     </div>
                                     <!-- Grafik Sentimen -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center font-bold">😊</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Grafik Sentimen</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Analisis sentimen dari percakapan media</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Analisis sentimen dari percakapan media</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.grafikSentimen = !pdfToggles.grafikSentimen" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.grafikSentimen ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -4143,12 +4143,12 @@ new class extends Component
                                         </button>
                                     </div>
                                     <!-- Konteks Percakapan -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">💬</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Konteks Percakapan</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Topik dan konteks percakapan yang paling banyak</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Topik dan konteks percakapan yang paling banyak</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.konteks = !pdfToggles.konteks" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.konteks ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -4156,12 +4156,12 @@ new class extends Component
                                         </button>
                                     </div>
                                     <!-- Per Kata Kunci -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">🏷️</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Per Kata Kunci</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Analisis berdasarkan kata kunci yang dipantau</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Analisis berdasarkan kata kunci yang dipantau</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.perKataKunci = !pdfToggles.perKataKunci" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.perKataKunci ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -4176,12 +4176,12 @@ new class extends Component
                                 <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Media & Konten</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     <!-- Berita Terpopuler -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold">🔥</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Berita Terpopuler</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Artikel berita dengan engagement tertinggi</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Artikel berita dengan engagement tertinggi</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.beritaPopuler = !pdfToggles.beritaPopuler" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.beritaPopuler ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -4189,12 +4189,12 @@ new class extends Component
                                         </button>
                                     </div>
                                     <!-- Berita Terbaru -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold">📅</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Berita Terbaru</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Artikel berita terbaru dari sumber terpercaya</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Artikel berita terbaru dari sumber terpercaya</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.beritaTerbaru = !pdfToggles.beritaTerbaru" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.beritaTerbaru ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -4202,12 +4202,12 @@ new class extends Component
                                         </button>
                                     </div>
                                     <!-- Sumber Berita -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">📰</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Sumber Berita</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Sumber berita dengan kontribusi paling banyak</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Sumber berita dengan kontribusi paling banyak</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.sumberBerita = !pdfToggles.sumberBerita" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.sumberBerita ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -4215,12 +4215,12 @@ new class extends Component
                                         </button>
                                     </div>
                                     <!-- Sumber Medsos -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">📸</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Sumber Medsos</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Influencer dan akun paling aktif</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Influencer dan akun paling aktif</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.sumberMedsos = !pdfToggles.sumberMedsos" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.sumberMedsos ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -4228,12 +4228,12 @@ new class extends Component
                                         </button>
                                     </div>
                                     <!-- Rekomendasi -->
-                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
+                                    <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
+                                        <div class="flex items-start gap-3 min-w-0 flex-1">
                                             <div class="w-8 h-8 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center font-bold">💡</div>
-                                            <div>
+                                            <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Rekomendasi</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Saran konten berdasarkan analisis data</p>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Saran konten berdasarkan analisis data</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.rekomendasi = !pdfToggles.rekomendasi" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.rekomendasi ? 'bg-[#1fa387]' : 'bg-slate-200'">
