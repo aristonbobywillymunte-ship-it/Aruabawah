@@ -1532,7 +1532,7 @@ new class extends Component
     </div>
 
     <!-- Main Workspace Layout with Real Full-Height Left Sidebar -->
-    <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 overflow-hidden">
+    <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 min-h-0 overflow-hidden">
         
         <!-- Left Sidebar -->
         <aside class="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-6 gap-5 flex-shrink-0 h-full">
@@ -1753,7 +1753,7 @@ new class extends Component
         @endphp
 
         <!-- Main Workspace (Center feed & Right Filter) -->
-        <div class="flex-grow flex flex-col lg:flex-row gap-6 px-4 sm:px-8 py-6 items-stretch w-full h-full overflow-hidden">
+        <div class="flex-grow flex flex-col lg:flex-row gap-6 px-4 sm:px-8 py-6 items-stretch w-full h-full min-h-0 overflow-hidden">
             
             @if($this->isTab('penyebutan'))
                 <!-- TAB 1: Penyebutan (Mentions Feed View) -->
