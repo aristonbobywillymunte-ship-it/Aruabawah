@@ -1992,11 +1992,11 @@ new class extends Component
                                     </div>
 
                                     <!-- Content Body (Sleek teaser layout) -->
-                                    <div class="space-y-2.5 mb-5 text-left flex-grow">
-                                        <h3 class="text-base md:text-[17px] font-extrabold text-slate-900 leading-snug tracking-tight hover:text-[#1fa387] transition-colors duration-150">
+                                    <div class="space-y-2 mb-4 text-left flex-grow">
+                                        <h3 class="text-xs sm:text-sm md:text-[17px] font-extrabold text-slate-900 leading-snug tracking-tight hover:text-[#1fa387] transition-colors duration-150">
                                             {{ $this->displayArticleTitle($article) }}
                                         </h3>
-                                        <p class="text-sm text-slate-600 leading-relaxed line-clamp-3">
+                                        <p class="text-[11px] sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
                                             {{ $this->formatArticleExcerpt($article, 200) }}
                                         </p>
 
@@ -2076,8 +2076,8 @@ new class extends Component
 
                                         <div class="flex items-center gap-2">
                                             <!-- Topic Category Badge (Enlarged & Redesigned) -->
-                                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-slate-50 border border-slate-200/80 text-slate-600 rounded-xl" title="{{ $article->category }}">
-                                                <span class="material-symbols-outlined text-[13px] text-slate-400">local_offer</span>
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 text-[9px] sm:text-[11px] font-bold bg-slate-50 border border-slate-200/80 text-slate-600 rounded-xl" title="{{ $article->category }}">
+                                                <span class="material-symbols-outlined text-[11px] sm:text-[13px] text-slate-400">local_offer</span>
                                                 {{ Str::limit($article->category, 30) }}
                                             </span>
 
@@ -2101,7 +2101,7 @@ new class extends Component
                                                         {{ Js::from($likesCount) }},
                                                         {{ Js::from($commentsCount) }}
                                                     )" 
-                                                    class="px-4 py-2 border border-slate-200/80 text-slate-700 hover:bg-slate-50 font-bold text-xs rounded-xl transition flex items-center gap-1 bg-white cursor-pointer hover:border-slate-300"
+                                                    class="px-2.5 py-1.5 sm:px-4 sm:py-2 border border-slate-200/80 text-slate-700 hover:bg-slate-50 font-bold text-[10px] sm:text-xs rounded-xl transition flex items-center gap-1 bg-white cursor-pointer hover:border-slate-300"
                                                 >
                                                     <span>Lihat Detail</span>
                                                     <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
@@ -5031,7 +5031,7 @@ new class extends Component
                 x-show="scrolledDown"
                 x-transition.opacity
                 @click="scrollToTop()"
-                class="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 rounded-full bg-[#1fa387] px-4 py-3 text-xs font-black text-white shadow-[0_10px_30px_rgba(31,163,135,0.28)] hover:bg-[#178a70] hover:shadow-[0_12px_34px_rgba(31,163,135,0.36)] transition"
+                class="fixed bottom-6 left-6 md:left-auto md:right-6 z-50 inline-flex items-center gap-2 rounded-full bg-[#1fa387] px-4 py-3 text-xs font-black text-white shadow-[0_10px_30px_rgba(31,163,135,0.28)] hover:bg-[#178a70] hover:shadow-[0_12px_34px_rgba(31,163,135,0.36)] transition"
                 style="display: none;"
                 aria-label="Kembali ke atas"
             >
