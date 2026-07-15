@@ -1358,18 +1358,25 @@ new class extends Component
             <!-- Brand -->
             <div class="flex items-center gap-6 h-full justify-self-start">
                 <!-- Brand Logo Arusbawah -->
-                <div class="flex items-center gap-2 font-sans cursor-pointer" onclick="window.location.href='/'">
-                    @if($customLogo = \App\Helpers\AppBrandingHelper::getAppLogoPath())
-                        <img src="{{ asset('storage/' . $customLogo) }}" class="h-8 max-w-[120px] object-contain transition-transform hover:scale-105 duration-300">
-                    @else
-                        <svg width="28" height="28" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" class="transition-transform hover:scale-105 duration-300">
-                            <polygon points="21,4 39,38 3,38" fill="none" stroke="#c0392b" stroke-width="4" stroke-linejoin="round"/>
-                            <line x1="11" y1="28" x2="31" y2="28" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>
-                        </svg>
-                    @endif
-                    <div class="flex flex-col text-left">
-                        <span class="text-sm font-black tracking-wider leading-none text-slate-800 uppercase">{{ \App\Helpers\AppBrandingHelper::getAppName() }}</span>
-                        <span class="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Media Intelligence</span>
+                <div class="flex items-center gap-2.5 font-sans">
+                    <!-- Back Arrow on Mobile -->
+                    <a href="/" class="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-slate-50 border border-slate-200 text-slate-600 mr-1" title="Kembali">
+                        <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                    </a>
+                    
+                    <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='/'">
+                        @if($customLogo = \App\Helpers\AppBrandingHelper::getAppLogoPath())
+                            <img src="{{ asset('storage/' . $customLogo) }}" class="h-8 max-w-[120px] object-contain transition-transform hover:scale-105 duration-300">
+                        @else
+                            <svg width="28" height="28" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" class="transition-transform hover:scale-105 duration-300">
+                                <polygon points="21,4 39,38 3,38" fill="none" stroke="#c0392b" stroke-width="4" stroke-linejoin="round"/>
+                                <line x1="11" y1="28" x2="31" y2="28" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>
+                            </svg>
+                        @endif
+                        <div class="flex flex-col text-left">
+                            <span class="text-sm font-black tracking-wider leading-none text-slate-800 uppercase">{{ \App\Helpers\AppBrandingHelper::getAppName() }}</span>
+                            <span class="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Media Intelligence</span>
+                        </div>
                     </div>
                 </div>
 
@@ -1474,34 +1481,53 @@ new class extends Component
         </div>
     </header>
 
+    <!-- Mobile Tabs (Visible on mobile only) -->
+    <div class="md:hidden sticky top-20 z-40 bg-white border-b border-slate-200 flex flex-row gap-1 px-4 py-2 overflow-x-auto scrollbar-none shrink-0">
+        @foreach([
+            ['key' => 'penyebutan', 'label' => 'Penyebutan'],
+            ['key' => 'analisis', 'label' => 'Analisis'],
+            ['key' => 'katakunci', 'label' => 'Kata Kunci'],
+            ['key' => 'wawasan', 'label' => 'Wawasan'],
+            ['key' => 'konten', 'label' => 'Konten'],
+            ['key' => 'sumber', 'label' => 'Sumber'],
+            ['key' => 'laporan', 'label' => 'Laporan']
+        ] as $tab)
+            <button 
+                type="button"
+                wire:click="setTab('{{ $tab['key'] }}')"
+                class="flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {{ $this->isTab($tab['key']) ? 'bg-[#1fa387]/10 text-[#1fa387]' : 'text-slate-500 hover:text-slate-800' }}"
+            >
+                {{ $tab['label'] }}
+            </button>
+        @endforeach
+    </div>
+
     <!-- Sub-header -->
     <div class="w-full bg-[#f0f3f8] border-b border-slate-200 py-2.5">
-        <div class="max-w-[1400px] mx-auto px-6 flex items-center justify-between text-xs text-slate-500 font-medium">
-            <div class="flex items-center gap-2">
+        <div class="max-w-[1400px] mx-auto px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 font-medium text-left">
+            <div class="flex items-center gap-2 flex-wrap">
                 <span>Filter Aktif:</span>
                 <span class="px-2 py-0.5 bg-white border border-slate-200 rounded text-[#1fa387] font-bold">
                     {{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d/m/Y') . ($endDate && $endDate !== $startDate ? ' - ' . \Carbon\Carbon::parse($endDate)->format('d/m/Y') : '') : 'Semua Waktu' }}
                 </span>
             </div>
-            <div class="text-right">
-                <h1 class="text-2xl font-bold flex items-center gap-2">
-                    <span class="text-slate-500 text-sm font-medium">Proyek:</span> 
-                    <span class="text-[#1fa387] uppercase tracking-wide">{{ $projectName }}</span>
+            <div class="text-left sm:text-right">
+                <h1 class="text-lg sm:text-2xl font-bold flex items-center gap-2 flex-wrap justify-start sm:justify-end">
+                    <span class="text-slate-500 text-xs sm:text-sm font-medium">Proyek:</span> 
+                    <span class="text-[#1fa387] uppercase tracking-wide truncate max-w-[200px] sm:max-w-none">{{ $projectName }}</span>
                 </h1>
-                <p class="mt-1 text-[10px] font-semibold text-slate-500">
+                <p class="mt-1 text-[9px] sm:text-[10px] font-semibold text-slate-500">
                     Total berita: <span class="text-slate-800">{{ number_format($this->getProjectArticleCount(), 0, ',', '.') }}</span>
                 </p>
             </div>
         </div>
     </div>
 
-
-
     <!-- Main Workspace Layout with Real Full-Height Left Sidebar -->
     <div class="w-full flex-grow flex">
         
         <!-- Left Sidebar -->
-        <aside class="w-16 bg-white border-r border-slate-200 flex flex-col items-center py-6 gap-5 flex-shrink-0 h-[calc(100vh-4rem)] sticky top-16">
+        <aside class="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-6 gap-5 flex-shrink-0 h-[calc(100vh-4rem)] sticky top-16">
             <!-- Kembali ke Daftar Proyek (Home) -->
             <a 
                 href="/" 
@@ -1719,7 +1745,7 @@ new class extends Component
         @endphp
 
         <!-- Main Workspace (Center feed & Right Filter) -->
-        <div class="flex-grow flex gap-6 px-8 py-6 items-start">
+        <div class="flex-grow flex flex-col lg:flex-row gap-6 px-4 sm:px-8 py-6 items-start w-full">
             
             @if($this->isTab('penyebutan'))
                 <!-- TAB 1: Penyebutan (Mentions Feed View) -->
@@ -3347,7 +3373,7 @@ new class extends Component
                         </div>
 
                         <!-- Table -->
-                        <div class="overflow-hidden border border-slate-100 rounded-2xl">
+                        <div class="overflow-x-auto border border-slate-100 rounded-2xl">
                             <table class="w-full border-collapse text-left text-xs text-slate-700">
                                 <thead class="bg-slate-50/75 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                     <tr>
@@ -4781,7 +4807,7 @@ new class extends Component
             <!-- Right Side Filter Panel -->
             <aside 
                 x-show="!showViralModal && !detailModalOpen"
-                class="w-80 bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-6 sticky top-24 z-30 self-start max-h-[calc(100vh-7rem)] overflow-y-auto"
+                class="w-full lg:w-80 bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-6 lg:sticky lg:top-24 z-30 self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
             >
                 <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3">Filter Panel</h4>
 
