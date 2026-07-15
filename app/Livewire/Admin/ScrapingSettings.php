@@ -9,7 +9,7 @@ class ScrapingSettings extends Component
 {
     // Form fields
     public int $google_news_interval = 5;
-    public int $portal_crawling_interval = 120;
+    public int $portal_crawling_interval = 720;
     public int $limit_per_run = 50;
     public string $date_range = '7d';
     public int $timeout_seconds = 30;
@@ -66,7 +66,7 @@ class ScrapingSettings extends Component
     {
         $setting = $this->setting();
         $this->google_news_interval = (int) ($setting->google_news_interval ?? 5);
-        $this->portal_crawling_interval = (int) ($setting->portal_crawling_interval ?? 120);
+        $this->portal_crawling_interval = (int) ($setting->portal_crawling_interval ?? 720);
         $this->limit_per_run = (int) ($setting->limit_per_run ?? 50);
         $this->date_range = (string) ($setting->date_range ?? '7d');
         $this->timeout_seconds = (int) ($setting->timeout_seconds ?? 30);

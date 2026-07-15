@@ -2164,11 +2164,12 @@ new class extends Component
                 </section>
             @elseif($this->isTab('analisis'))
                 <!-- TAB 2: Analisis (Redesigned matching screenshots) -->
-                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4">
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
                         <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data untuk proyek <span class="text-[#1fa387] font-bold uppercase">{{ $projectName }}</span></p>
                     </div>
+                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
                     <!-- Gambaran Umum Card Grid -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-6">
