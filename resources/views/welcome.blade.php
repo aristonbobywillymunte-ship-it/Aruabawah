@@ -15,7 +15,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
     </head>
-    <body class="antialiased bg-surface-studio text-on-surface font-sans selection:bg-primary/20 selection:text-primary min-h-screen flex flex-col">
+    <body class="antialiased bg-surface-studio text-on-surface font-sans selection:bg-primary/20 selection:text-primary {{ request()->query('project') ? 'h-screen overflow-hidden' : 'min-h-screen' }} flex flex-col">
         
         <livewire:projects-list />
 

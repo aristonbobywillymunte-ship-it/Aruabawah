@@ -698,6 +698,7 @@ new class extends Component
 ?>
 
 <div
+    class="{{ $projectId ? 'h-full flex flex-col overflow-hidden' : '' }}"
     x-data="{
         showSuccess: @entangle('showSuccessModal'),
         showEdit: @entangle('showEditModal'),
