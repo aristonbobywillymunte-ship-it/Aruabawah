@@ -63,8 +63,8 @@ class ApifyActor extends Model
                 if ($actor->memory_limit < 1024) {
                     $actor->memory_limit = 1024;
                 }
-                if ($actor->default_limit < 50) {
-                    $actor->default_limit = 50;
+                if ($actor->default_limit < 1) {
+                    $actor->default_limit = 1;
                 }
                 if ($actor->default_limit > self::MAX_SOCIAL_ITEMS_PER_RUN) {
                     $actor->default_limit = self::MAX_SOCIAL_ITEMS_PER_RUN;

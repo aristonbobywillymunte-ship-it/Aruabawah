@@ -337,9 +337,9 @@
                                     @endif
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Aktif</label>
-                                        <input wire:model="defaultLimit" type="number" readonly class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-500 outline-none bg-slate-50 shadow-sm">
+                                        <input wire:model.live="defaultLimit" type="number" min="1" max="50" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                         <p class="mt-1 text-[10px] font-semibold text-slate-400">
-                                            Nilai ini mengikuti pengaturan batas hasil khusus {{ $platform }} di bagian payload actor.
+                                            Nilai ini akan langsung menyinkronkan batas hasil {{ $platform }} di payload actor.
                                         </p>
                                         @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>

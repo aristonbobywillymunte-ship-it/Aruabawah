@@ -461,7 +461,7 @@ class SocialMediaPipelineTest extends TestCase
         ]);
 
         $this->assertEquals(1024, $actor->fresh()->memory_limit); // auto-normalized to 1024
-        $this->assertEquals(50, $actor->fresh()->default_limit); // auto-normalized to 50 (since it was 20)
+        $this->assertEquals(20, $actor->fresh()->default_limit); // social actor limit now preserves saved value within 1..50
 
         // 2. RAM is not inside input payload
         $payload = $actor->buildInputPayload('samarinda', 50);
@@ -471,7 +471,7 @@ class SocialMediaPipelineTest extends TestCase
 
         // 2b. Fallback and dynamic DB limits
         $payloadNoLimit = $actor->buildInputPayload('samarinda', null);
-        $this->assertEquals(50, $payloadNoLimit['maxPosts']); // Fallback to DB min 50
+        $this->assertEquals(20, $payloadNoLimit['maxPosts']); // Fallback to saved actor limit
 
         // 2c. Custom DB limit (e.g. 100)
         $actor->default_limit = 100;
@@ -487,12 +487,12 @@ class SocialMediaPipelineTest extends TestCase
             ->set('actorSlug', 'scrapeflow/facebook-posts-search-scraper')
             ->set('functionType', 'Search Post')
             ->set('defaultKeyword', 'samarinda')
-            ->set('defaultLimit', '20') // accepted by UI, normalized by model for social actors
+            ->set('defaultLimit', '20')
             ->set('memory_limit', 1024)
             ->call('saveActor');
 
         $component->assertHasNoErrors();
         $savedActor = ApifyActor::where('actor_slug', 'scrapeflow/facebook-posts-search-scraper')->latest('id')->first();
-        $this->assertEquals(50, $savedActor->default_limit);
+        $this->assertEquals(20, $savedActor->default_limit);
     }
 }

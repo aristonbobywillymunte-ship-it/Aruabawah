@@ -280,10 +280,17 @@ class ApifyConfiguration extends Component
 
     public function updatedDefaultLimit($value): void
     {
+        $resolved = min(50, max(1, (int) $value));
+
         if ($this->platform === 'Facebook') {
-            $this->facebook_max_posts = min(50, max(1, (int) $value));
-            $this->syncDefaultLimitForPlatform();
+            $this->facebook_max_posts = $resolved;
+        } elseif ($this->platform === 'Instagram') {
+            $this->instagram_search_limit = $resolved;
+        } elseif ($this->platform === 'TikTok') {
+            $this->tiktok_max_items = $resolved;
         }
+
+        $this->syncDefaultLimitForPlatform();
     }
 
     public function updated($propertyName): void
