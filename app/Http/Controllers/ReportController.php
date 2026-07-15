@@ -142,17 +142,13 @@ class ReportController extends Controller
 
         $toggles = json_decode($request->query('toggles', '{}'), true);
 
-        $pdf = Pdf::loadView('reports.pdf', compact(
+        return view('reports.pdf', compact(
             'projectName', 'articles',
             'total', 'positive', 'neutral', 'negative',
             'sourceCounts', 'startDate', 'endDate', 'toggles',
             'wawasanSummary', 'wawasanRecs',
             'topWords', 'keywordsTable', 'topReachArticles', 'socialCounts', 'socialMediaItems'
-        ))->setPaper('a4', 'landscape');
-
-        $filename = 'laporan-' . \Str::slug($projectName) . '-' . now()->format('Ymd_His') . '.pdf';
-
-        return $pdf->download($filename);
+        ));
     }
 
     // ─────────────────────────────────────────────────────────────────────

@@ -4245,7 +4245,7 @@ new class extends Component
 
                             <div class="flex justify-end pt-6 border-t border-slate-100">
                                 <a
-                                    :href="`{{ route('report.pdf', ['project_id' => $this->getDecodedProjectId()]) }}&toggles=` + encodeURIComponent(JSON.stringify(pdfToggles))"
+                                    :href="`{{ route('report.pdf', ['project_id' => $this->getDecodedProjectId()]) }}&start_date={{ $startDate }}&end_date={{ $endDate }}&toggles=` + encodeURIComponent(JSON.stringify(pdfToggles))"
                                     target="_blank"
                                     class="bg-[#c0392b] hover:bg-[#a93226] text-white font-bold text-xs px-6 py-3 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                                 >
@@ -4391,7 +4391,7 @@ new class extends Component
 
                             <div class="flex justify-end pt-6 border-t border-slate-100">
                                 <a
-                                    :href="`{{ route('report.excel', ['project_id' => $this->getDecodedProjectId()]) }}&toggles=` + encodeURIComponent(JSON.stringify(excelToggles))"
+                                    :href="`{{ route('report.excel', ['project_id' => $this->getDecodedProjectId()]) }}&start_date={{ $startDate }}&end_date={{ $endDate }}&toggles=` + encodeURIComponent(JSON.stringify(excelToggles))"
                                     class="bg-[#1fa387] hover:bg-[#178a70] text-white font-bold text-xs px-6 py-3 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>

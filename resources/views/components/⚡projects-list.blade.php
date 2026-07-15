@@ -1392,25 +1392,27 @@ new class extends Component
                             @else
                                 <div class="divide-y divide-slate-100">
                                     @foreach($trashed as $tp)
-                                        <div class="py-4 flex items-center justify-between first:pt-0 last:pb-0">
-                                            <div class="text-left">
+                                        <div class="py-4 flex items-center justify-between first:pt-0 last:pb-0 gap-4">
+                                            <div class="text-left flex-1 min-w-0">
                                                 <h4 class="text-sm font-bold text-slate-800">{{ $tp->name }}</h4>
                                                 <p class="text-xs text-slate-400 mt-1">Kata kunci: {{ implode(', ', $tp->topics ?? []) }}</p>
                                                 <p class="text-[10px] text-slate-400 mt-0.5">Dinonaktifkan pada: {{ $tp->deleted_at->format('Y-m-d H:i:s') }}</p>
                                             </div>
-                                            <button
-                                                wire:click="confirmRestoreProject({{ $tp->id }})"
-                                                style="background-color: #1fa387;"
-                                                class="px-4 py-2 text-white text-xs font-bold rounded-xl hover:opacity-90 transition cursor-pointer"
-                                            >
-                                                Aktifkan
-                                            </button>
-                                            <button
-                                                wire:click="confirmForceDeleteProject({{ $tp->id }})"
-                                                class="ml-2 px-4 py-2 bg-rose-50 text-rose-600 text-xs font-bold rounded-xl hover:bg-rose-100 transition cursor-pointer"
-                                            >
-                                                Hapus
-                                            </button>
+                                            <div class="flex items-center gap-2 flex-shrink-0">
+                                                <button
+                                                    wire:click="confirmRestoreProject({{ $tp->id }})"
+                                                    style="background-color: #1fa387;"
+                                                    class="px-4 py-2 text-white text-xs font-bold rounded-xl hover:opacity-90 transition cursor-pointer"
+                                                >
+                                                    Aktifkan
+                                                </button>
+                                                <button
+                                                    wire:click="confirmForceDeleteProject({{ $tp->id }})"
+                                                    class="px-4 py-2 bg-rose-50 text-rose-600 text-xs font-bold rounded-xl hover:bg-rose-100 transition cursor-pointer"
+                                                >
+                                                    Hapus
+                                                </button>
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
@@ -1473,12 +1475,12 @@ new class extends Component
                         </div>
                         
                         <!-- Actions Footer -->
-                        <div class="px-6 py-4.5 bg-slate-50/30 border-t border-slate-100/60 flex justify-end gap-2.5">
+                        <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-100/60 flex gap-3">
                             <button
                                 type="button"
                                 wire:click="closeModals"
                                 wire:loading.attr="disabled"
-                                class="px-4.5 py-2 bg-white border border-slate-200/80 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-extrabold rounded-xl text-[11px] transition duration-150 cursor-pointer disabled:opacity-50"
+                                class="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer disabled:opacity-50 text-center"
                             >
                                 Batal
                             </button>
@@ -1486,7 +1488,7 @@ new class extends Component
                                 type="button"
                                 wire:click="runConfirmedProjectAction"
                                 wire:loading.attr="disabled"
-                                class="px-5 py-2 {{ in_array($confirmAction, ['delete', 'force_delete'], true) ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-100' : 'bg-[#1fa387] hover:bg-[#1a8b73] shadow-emerald-100' }} text-white font-extrabold rounded-xl text-[11px] transition duration-150 active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                                class="flex-1 py-2.5 {{ in_array($confirmAction, ['delete', 'force_delete'], true) ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-100' : 'bg-[#1fa387] hover:bg-[#1a8b73] shadow-emerald-100' }} text-white font-bold rounded-xl text-xs transition duration-150 active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                             >
                                 <svg wire:loading wire:target="runConfirmedProjectAction" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                 <span>{{ $confirmAction === 'delete' ? 'Nonaktifkan' : ($confirmAction === 'force_delete' ? 'Hapus Permanen' : 'Aktifkan') }}</span>
