@@ -1763,7 +1763,7 @@ new class extends Component
             
             @if($this->isTab('penyebutan'))
                 <!-- TAB 1: Penyebutan (Mentions Feed View) -->
-                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                <section class="flex-1 min-w-0 min-h-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <!-- Section Title & Sort Selector -->
                     <div class="flex items-center justify-between">
                         <div>
@@ -1829,7 +1829,7 @@ new class extends Component
                     @endphp
 
                     <!-- Mentions Cards Feed -->
-                    <div class="flex-1 overflow-y-auto pr-4 space-y-4">
+                    <div class="flex-1 min-h-0 overflow-y-auto pr-4 space-y-4">
                         @if($articlesList->isEmpty())
                         <div class="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-4 shadow-sm">
                             <svg class="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
