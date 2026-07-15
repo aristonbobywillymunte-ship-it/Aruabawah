@@ -148,7 +148,7 @@ class ReportController extends Controller
             'sourceCounts', 'startDate', 'endDate', 'toggles',
             'wawasanSummary', 'wawasanRecs',
             'topWords', 'keywordsTable', 'topReachArticles', 'socialCounts', 'socialMediaItems'
-        ))->setPaper('a4', 'portrait');
+        ))->setPaper('a4', 'landscape');
 
         $filename = 'laporan-' . \Str::slug($projectName) . '-' . now()->format('Ymd_His') . '.pdf';
 
