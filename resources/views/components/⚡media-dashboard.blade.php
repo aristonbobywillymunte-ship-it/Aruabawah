@@ -1315,7 +1315,7 @@ new class extends Component
         min-height: 0 !important;
     }
 </style>
-<div class="h-screen bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-hidden"
+<div class="h-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-hidden"
      x-data="{
          detailModalOpen: false,
          showViralModal: false,
