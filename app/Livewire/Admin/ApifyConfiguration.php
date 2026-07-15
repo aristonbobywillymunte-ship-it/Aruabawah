@@ -828,7 +828,7 @@ class ApifyConfiguration extends Component
         return match ($this->platform) {
             'Facebook' => min(50, max(1, (int) $this->facebook_max_posts)),
             'Instagram' => min(50, max(1, (int) $this->instagram_search_limit)),
-            'TikTok' => min(50, max(1, (int) $this->defaultLimit)),
+            'TikTok' => min(50, max(1, (int) $this->tiktok_max_items)),
             default => min(50, max(1, (int) $this->defaultLimit)),
         };
     }

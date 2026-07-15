@@ -336,8 +336,11 @@
                                     </div>
                                     @endif
                                     <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil (Default Limit)</label>
-                                        <input wire:model="defaultLimit" type="number" min="1" max="50" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Aktif</label>
+                                        <input wire:model="defaultLimit" type="number" readonly class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-500 outline-none bg-slate-50 shadow-sm">
+                                        <p class="mt-1 text-[10px] font-semibold text-slate-400">
+                                            Nilai ini mengikuti pengaturan batas hasil khusus {{ $platform }} di bagian payload actor.
+                                        </p>
                                         @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
@@ -430,6 +433,11 @@
                                     </div>
                                     <div class="grid gap-4 sm:grid-cols-2">
                                         <div>
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Facebook</label>
+                                            <input wire:model="facebook_max_posts" type="number" min="1" max="50" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                            @error('facebook_max_posts') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
                                             <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Rentang Waktu Post</label>
                                             <select wire:model="facebook_post_time_range" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                                 <option value="24h">24h</option>
@@ -438,18 +446,18 @@
                                                 <option value="90d">90d</option>
                                             </select>
                                         </div>
-                                        <div class="pt-6">
-                                            <label class="flex items-center gap-2.5 cursor-pointer group">
-                                                <input wire:model="facebook_use_apify_proxy" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                                                <span class="text-[11px] font-bold text-slate-700">Use Apify Proxy</span>
-                                            </label>
-                                        </div>
+                                    </div>
+                                    <div class="pt-1">
+                                        <label class="flex items-center gap-2.5 cursor-pointer group">
+                                            <input wire:model="facebook_use_apify_proxy" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
+                                            <span class="text-[11px] font-bold text-slate-700">Use Apify Proxy</span>
+                                        </label>
                                     </div>
                                     <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-[11px] text-slate-600 space-y-1">
                                         <p class="font-bold text-blue-700">Aturan isi Facebook:</p>
                                         <p><span class="font-mono">searchQueries</span> adalah keyword pencarian.</p>
                                         <p><span class="font-mono">postTimeRange</span> adalah rentang waktu posting.</p>
-                                        <p><span class="font-mono">maxPosts</span> mengikuti <span class="font-mono">Batas Hasil (Default Limit)</span>.</p>
+                                        <p><span class="font-mono">maxPosts</span> mengikuti <span class="font-mono">Batas Hasil Facebook</span>.</p>
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700 flex justify-between items-center">
@@ -483,6 +491,13 @@
                                         <input wire:model="defaultKeyword" placeholder="{{ $tiktokDefaultKeywordPlaceholder }}" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                         <p class="mt-1 text-[10px] text-slate-400">Dipakai sebagai cadangan kalau keyword proyek kosong.</p>
                                         @error('defaultKeyword') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                    </div>
+                                </div>
+                                <div class="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil TikTok</label>
+                                        <input wire:model="tiktok_max_items" type="number" min="1" max="50" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                        @error('tiktok_max_items') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
                                 <div>
