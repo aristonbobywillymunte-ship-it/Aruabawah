@@ -19,6 +19,8 @@ use Carbon\Carbon;
 
 class RunApifyScraping extends Command
 {
+    private const ACTOR_RECOVERY_CACHE_PREFIX = 'apify_actor_retry_at:';
+
     /**
      * The name and signature of the console command.
      * You can pass optional --platform and --project-id to scrape a specific target.
@@ -191,7 +193,7 @@ class RunApifyScraping extends Command
                     }
                 }
 
-                $actorRetryAtKey = "apify_actor_retry_at:{$actor->id}";
+                $actorRetryAtKey = self::ACTOR_RECOVERY_CACHE_PREFIX . $actor->id;
                 $actorRetryAt = Cache::get($actorRetryAtKey);
                 if (filled($actorRetryAt) && ! $filterPlatform) {
                     $retryAt = Carbon::parse($actorRetryAt);
@@ -209,25 +211,35 @@ class RunApifyScraping extends Command
                     }
                 }
 
-                if (filled($actorRetryAt) && ! $filterPlatform) {
-                    Cache::forget($actorRetryAtKey);
-                }
+                if (! $filterPlatform && $actor->last_run_status === 'failed') {
+                    $recoveryAt = $this->actorRecoveryAt($actor);
 
-                if (! $filterPlatform && $actor->last_run_status === 'failed' && blank($actorRetryAt)) {
-                    $cooldownMinutes = $this->actorCooldownMinutes($actor->last_run_message, (int) ($actor->interval_minutes ?? 20));
-                    $retryAt = now()->addMinutes($cooldownMinutes);
-                    Cache::put($actorRetryAtKey, $retryAt->toDateTimeString(), $retryAt);
-                    $this->line("Skipping {$actor->platform} — last run gagal, coba lagi setelah {$retryAt->format('H:i')}.");
-                    $socialLog->warning('[Social] Actor skipped: last run failed, cooldown applied.', [
+                    if ($recoveryAt && now()->lessThan($recoveryAt)) {
+                        Cache::put($actorRetryAtKey, $recoveryAt->toDateTimeString(), $recoveryAt);
+                        $this->line("Skipping {$actor->platform} — last run gagal, coba lagi setelah {$recoveryAt->format('H:i')}.");
+                        $socialLog->warning('[Social] Actor skipped: last run failed, cooldown applied.', [
+                            'project_id' => $project->id,
+                            'project_name' => $project->name,
+                            'platform' => $actor->platform,
+                            'actor_id' => $actor->id,
+                            'retry_at' => $recoveryAt->toDateTimeString(),
+                            'last_run_message' => $actor->last_run_message,
+                        ]);
+                        $skipStats['cooldown_failed']++;
+                        continue;
+                    }
+
+                    Cache::forget($actorRetryAtKey);
+
+                    $socialLog->info('[Social] Actor cooldown expired; retrying actor automatically.', [
                         'project_id' => $project->id,
                         'project_name' => $project->name,
                         'platform' => $actor->platform,
                         'actor_id' => $actor->id,
-                        'retry_at' => $retryAt->toDateTimeString(),
-                        'last_run_message' => $actor->last_run_message,
+                        'last_run_at' => optional($actor->last_run_at)?->toDateTimeString(),
                     ]);
-                    $skipStats['cooldown_failed']++;
-                    continue;
+                } elseif (filled($actorRetryAt) && ! $filterPlatform) {
+                    Cache::forget($actorRetryAtKey);
                 }
 
                 if (in_array($actor->platform, ['TikTok', 'Facebook', 'Instagram'], true)) {
@@ -355,6 +367,17 @@ class RunApifyScraping extends Command
         }
 
         return max(10, $baseMinutes);
+    }
+
+    protected function actorRecoveryAt(ApifyActor $actor): ?Carbon
+    {
+        if (! $actor->last_run_at) {
+            return null;
+        }
+
+        $cooldownMinutes = $this->actorCooldownMinutes($actor->last_run_message, (int) ($actor->interval_minutes ?? 20));
+
+        return $actor->last_run_at->copy()->addMinutes($cooldownMinutes);
     }
 
     /**

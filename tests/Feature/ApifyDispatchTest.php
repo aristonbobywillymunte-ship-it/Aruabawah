@@ -13,7 +13,10 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use App\Models\SocialMediaItem;
+use App\Services\SchedulerQueueGuard;
 
 class ApifyDispatchTest extends TestCase
 {
@@ -73,6 +76,66 @@ class ApifyDispatchTest extends TestCase
         
         $states = ApifyDispatchState::all();
         $this->assertCount(1, $states);
+    }
+
+    public function test_failed_actor_is_retried_automatically_after_cooldown_expires(): void
+    {
+        Queue::fake();
+
+        ApifySetting::create([
+            'api_token' => 'test-token',
+            'connection_status' => 'connected',
+        ]);
+
+        $actor = ApifyActor::create([
+            'platform' => 'Facebook',
+            'actor_name' => 'Facebook Posts Search Scraper',
+            'actor_slug' => 'scrapeflow/facebook-posts-search-scraper',
+            'function_type' => 'Search Post',
+            'status' => 'active',
+            'default_limit' => 50,
+            'interval_minutes' => 20,
+            'memory_limit' => 2048,
+            'range_mode' => '7d',
+            'priority' => 1,
+            'last_run_status' => 'failed',
+            'last_run_message' => 'Connection timeout',
+            'last_run_at' => now()->subMinutes(25),
+        ]);
+
+        Project::create([
+            'name' => 'Gubernur Kaltim',
+            'topics' => ['gubernur kaltim'],
+            'is_active' => true,
+        ]);
+
+        Artisan::call('scraping:run-apify');
+
+        Queue::assertPushed(ApifyScrapingJob::class, 1);
+        $this->assertNull(Cache::get("apify_actor_retry_at:{$actor->id}"));
+    }
+
+    public function test_scheduler_guard_ignores_stale_processing_state(): void
+    {
+        ApifyDispatchState::create([
+            'dispatch_key' => 'stale-processing-key',
+            'project_id' => 9,
+            'actor_id' => 1,
+            'platform' => 'Facebook',
+            'keyword' => 'stale',
+            'normalized_keyword' => 'stale',
+            'window_start' => now()->subHours(2),
+            'window_end' => now()->subHours(2)->addMinutes(20),
+            'status' => 'processing',
+            'queued_at' => now()->subHours(2),
+            'started_at' => now()->subHours(2),
+            'updated_at' => now()->subHours(2),
+            'created_at' => now()->subHours(2),
+        ]);
+
+        $guard = app(SchedulerQueueGuard::class);
+
+        $this->assertNull($guard->apifyBusyReason());
     }
 
     public function test_maximum_cost_per_run_is_sent_to_apify_run_request()

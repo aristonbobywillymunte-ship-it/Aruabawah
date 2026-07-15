@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Queue;
 
 class SchedulerQueueGuard
 {
+    private const STALE_APIFY_STATE_MINUTES = 45;
+
     public function apifyIsIdle(): bool
     {
         return $this->apifyBusyReason() === null;
@@ -29,8 +31,22 @@ class SchedulerQueueGuard
             return 'Masih ada job Apify menunggu di antrean redis-ai.';
         }
 
+        $activeThreshold = now()->subMinutes(self::STALE_APIFY_STATE_MINUTES);
+
         $activeState = ApifyDispatchState::query()
             ->whereIn('status', ['queued', 'processing'])
+            ->where(function ($query) use ($activeThreshold) {
+                $query->where(function ($queued) use ($activeThreshold) {
+                    $queued->where('status', 'queued')
+                        ->where('queued_at', '>=', $activeThreshold);
+                })->orWhere(function ($processing) use ($activeThreshold) {
+                    $processing->where('status', 'processing')
+                        ->where('started_at', '>=', $activeThreshold);
+                })->orWhere(function ($fallback) use ($activeThreshold) {
+                    $fallback->whereIn('status', ['queued', 'processing'])
+                        ->where('updated_at', '>=', $activeThreshold);
+                });
+            })
             ->orderByDesc('updated_at')
             ->first();
 
