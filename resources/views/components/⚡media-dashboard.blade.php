@@ -1443,14 +1443,14 @@ new class extends Component
                         <button
                             type="button"
                             @click="openProfile = !openProfile"
-                            class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-full pl-1 pr-3 py-1 cursor-pointer hover:bg-slate-100 transition-colors active:scale-95"
+                            class="flex items-center gap-1.5 sm:gap-3 bg-slate-50 border border-slate-200 rounded-full p-1 sm:pr-3 cursor-pointer hover:bg-slate-100 transition-colors active:scale-95"
                         >
                             <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">
                                 <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
                                 </svg>
                             </div>
-                            <span class="text-xs font-medium text-slate-600">{{ auth()->user()?->email ?? 'Guest' }}</span>
+                            <span class="hidden sm:inline text-xs font-medium text-slate-600">{{ auth()->user()?->email ?? 'Guest' }}</span>
                             <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
                             </svg>
@@ -1524,7 +1524,7 @@ new class extends Component
     </div>
 
     <!-- Main Workspace Layout with Real Full-Height Left Sidebar -->
-    <div class="w-full flex-grow flex">
+    <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 overflow-hidden">
         
         <!-- Left Sidebar -->
         <aside class="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-6 gap-5 flex-shrink-0 h-[calc(100vh-4rem)] sticky top-16">
