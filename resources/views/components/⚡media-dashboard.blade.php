@@ -1310,6 +1310,7 @@ new class extends Component
          openedFromViral: false,
          showAiSummaryModal: false,
          scrolledDown: false,
+         mobileFilterOpen: false,
          detailTitle: '',
          detailSource: '',
          detailDate: '',
@@ -4800,12 +4801,47 @@ new class extends Component
                 </section>
             @endif
 
+            <!-- Mobile Filter Backdrop -->
+            <div 
+                x-show="mobileFilterOpen"
+                @click="mobileFilterOpen = false"
+                x-transition:opacity
+                class="lg:hidden fixed inset-0 z-45 bg-slate-900/40 backdrop-blur-sm"
+                style="display: none;"
+            ></div>
+
+            <!-- Floating Filter Button (Mobile Only) -->
+            <button 
+                type="button"
+                @click="mobileFilterOpen = !mobileFilterOpen"
+                class="lg:hidden fixed bottom-6 right-6 z-[60] w-12 h-12 rounded-full bg-[#1fa387] text-white shadow-lg flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+            >
+                <span class="material-symbols-outlined text-2xl" x-text="mobileFilterOpen ? 'close' : 'tune'">tune</span>
+            </button>
+
             <!-- Right Side Filter Panel -->
             <aside 
-                x-show="!showViralModal && !detailModalOpen"
-                class="w-full lg:w-80 bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] space-y-6 lg:sticky lg:top-24 z-30 self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+                x-show="mobileFilterOpen"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="transform translate-x-full"
+                x-transition:enter-end="transform translate-x-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="transform translate-x-0"
+                x-transition:leave-end="transform translate-x-full"
+                class="fixed inset-y-0 right-0 z-50 w-80 bg-white p-6 shadow-2xl border-l border-slate-200 overflow-y-auto space-y-6 lg:static lg:w-80 lg:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] lg:border lg:rounded-2xl lg:translate-x-0 lg:z-30 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+                :class="mobileFilterOpen ? 'block' : 'hidden lg:block'"
             >
-                <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3">Filter Panel</h4>
+                <!-- Filter Panel Header with Close Button -->
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 lg:mb-0">
+                    <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider">Filter Panel</h4>
+                    <button 
+                        type="button"
+                        @click="mobileFilterOpen = false"
+                        class="lg:hidden text-slate-400 hover:text-slate-600 p-1 flex items-center justify-center rounded-lg bg-slate-50 border border-slate-200"
+                    >
+                        <span class="material-symbols-outlined text-xl">close</span>
+                    </button>
+                </div>
 
                 @if($this->isTab('laporan'))
                     <!-- Laporan Filter Panel (matching screenshot) -->
