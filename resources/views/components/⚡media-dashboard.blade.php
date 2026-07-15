@@ -1847,7 +1847,7 @@ new class extends Component
                                     }
                                 @endphp
                                 <article 
-                                    class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 border-l-4"
+                                    class="bg-white rounded-3xl border border-slate-200/80 p-4 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 border-l-4"
                                     style="border-left-color: {{ $sentimentColor }}"
                                 >
                                     @php
@@ -1855,7 +1855,7 @@ new class extends Component
                                         $projectReachDisplay = $this->getProjectReachDisplayData($article);
                                     @endphp
                                     <!-- Platform & Category Header Row -->
-                                    <div class="flex items-center justify-between mb-4">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                                         <div class="flex items-center gap-2.5">
                                             @php
                                                 $srcLowerMain = strtolower($article->source_name);
@@ -1921,13 +1921,9 @@ new class extends Component
                                         }
                                     @endphp
                                     <!-- Header Badges -->
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="px-2.5 py-1 text-[9px] font-bold rounded-xl border {{ $sentimentBg }}">{{ $sentimentLabel }}</span>
-                                        
                                     </div>
-                                </div>
                                     <!-- Metrics Grid (Cleaned & Modernized) -->
-                                    <div class="grid gap-2 bg-slate-50/60 rounded-2xl p-3 border border-slate-100 mb-4 text-left {{ $isSocial ? 'grid-cols-5' : 'grid-cols-3' }}">
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 {{ $isSocial ? 'lg:grid-cols-5' : 'lg:grid-cols-3' }} gap-y-3 gap-x-2 bg-slate-50/60 rounded-2xl p-3 border border-slate-100 mb-4 text-left">
                                         <div class="px-1.5 py-0.5">
                                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Jangkauan</span>
                                             <div class="flex items-start gap-1 text-slate-800 text-[11px] md:text-xs font-black">
@@ -1967,24 +1963,24 @@ new class extends Component
                                                 </span>
                                             </div>
                                         </div>
-                                        <div class="px-1.5 py-0.5 border-l border-slate-200">
+                                        <div class="px-1.5 py-0.5 border-t sm:border-t-0 sm:border-l border-slate-200/60 pt-2 sm:pt-0.5">
                                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Tanggal</span>
                                             <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
                                                 <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">calendar_month</span>
-                                                <span class="truncate" title="{{ $article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d M Y, H:i') : 'Baru saja' }}">
+                                                <span class="truncate animate-none" title="{{ $article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d M Y, H:i') : 'Baru saja' }}">
                                                     {{ $article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d/m/y') : 'Baru saja' }}
                                                 </span>
                                             </div>
                                         </div>
                                         @if($isSocial)
-                                        <div class="px-1.5 py-0.5 border-l border-slate-200">
+                                        <div class="px-1.5 py-0.5 border-l border-slate-200/60">
                                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">{{ strtolower($article->source_name) === 'tiktok' ? 'Love' : 'Like' }}</span>
                                             <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
                                                 <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">{{ strtolower($article->source_name) === 'tiktok' ? 'favorite' : 'thumb_up' }}</span>
                                                 <span>{{ number_format($likesCount, 0, ',', '.') }}</span>
                                             </div>
                                         </div>
-                                        <div class="px-1.5 py-0.5 border-l border-slate-200">
+                                        <div class="px-1.5 py-0.5 border-t sm:border-t-0 sm:border-l border-slate-200/60 pt-2 sm:pt-0.5">
                                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Komen</span>
                                             <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
                                                 <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">comment</span>
