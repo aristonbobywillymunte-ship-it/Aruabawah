@@ -38,7 +38,7 @@
                 </div>
 
                 <!-- Navigation links -->
-                <div class="lg:flex flex-col text-left px-5 pb-5 lg:py-5 lg:h-[calc(100vh-80px)] lg:sticky lg:top-20 lg:overflow-y-auto" :class="mobileMenuOpen ? 'flex' : 'hidden'">
+                <div class="flex-col text-left px-5 pb-5 lg:py-5 lg:h-[calc(100vh-80px)] lg:sticky lg:top-20 lg:overflow-y-auto" :class="mobileMenuOpen ? 'flex' : 'hidden lg:flex'">
                     <div class="mt-4 lg:mt-0 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Admin Menu</div>
                     <nav class="mt-3 space-y-1">
                         @php
