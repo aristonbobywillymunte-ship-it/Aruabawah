@@ -146,9 +146,16 @@ new class extends Component
             return;
         }
 
+        $freshThreshold = \Illuminate\Support\Carbon::now()->subMinutes(20);
+
         $states = DB::table('apify_dispatch_states')
             ->whereIn('status', ['queued', 'processing', 'retry_wait'])
             ->whereIn(DB::raw('lower(platform)'), ['facebook', 'instagram', 'tiktok'])
+            ->where(function ($query) use ($freshThreshold) {
+                $query->where('updated_at', '>=', $freshThreshold)
+                    ->orWhere('started_at', '>=', $freshThreshold)
+                    ->orWhere('queued_at', '>=', $freshThreshold);
+            })
             ->orderByDesc('updated_at')
             ->get(['project_id', 'platform', 'status', 'updated_at']);
 
@@ -1150,6 +1157,14 @@ new class extends Component
 
                         <!-- Dynamic Projects List -->
                         @foreach($projects as $idx => $project)
+                            @php
+                                $projectCreatedAt = $project['created_at'] ?? '—';
+                                $portalIsRunning = (bool) ($project['portal_is_running'] ?? false);
+                                $lastPortalUpdate = $project['last_portal_update'] ?? 'Belum ada data';
+                                $medsosIsRunning = (bool) ($project['medsos_is_running'] ?? false);
+                                $medsosRunningLabel = $project['medsos_running_label'] ?? 'Data Medsos Terakhir';
+                                $lastMedsosUpdate = $project['last_medsos_update'] ?? 'Belum ada data';
+                            @endphp
                             <article class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col h-full shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all">
                                 <!-- Card Header -->
                                 <div class="flex items-start justify-between mb-8">
@@ -1161,7 +1176,7 @@ new class extends Component
                                             <div class="flex items-center gap-1.5 mb-0.5">
                                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PROYEK</span>
                                                 <span class="text-[9px] text-slate-300">•</span>
-                                                <span class="text-[9px] text-slate-400 font-bold">Dibuat: {{ $project['created_at'] }}</span>
+                                                <span class="text-[9px] text-slate-400 font-bold">Dibuat: {{ $projectCreatedAt }}</span>
                                             </div>
                                             <h2 class="text-xl font-hanken font-extrabold text-[#1fa387] uppercase leading-tight">{{ $project['name'] }}</h2>
                                         </div>
@@ -1193,33 +1208,33 @@ new class extends Component
                                 <!-- Last Update Info -->
                                 <div class="grid grid-cols-2 gap-3 mb-6 bg-slate-50/60 rounded-xl p-3 border border-slate-100/80 text-[10px] font-semibold text-slate-500">
                                     <div class="flex items-center gap-1.5">
-                                        <span class="relative inline-flex h-5 w-5 items-center justify-center rounded-full {{ $project['portal_is_running'] ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200' : 'text-slate-400' }}">
-                                            @if($project['portal_is_running'])
+                                        <span class="relative inline-flex h-5 w-5 items-center justify-center rounded-full {{ $portalIsRunning ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200' : 'text-slate-400' }}">
+                                            @if($portalIsRunning)
                                                 <span class="absolute inline-flex h-5 w-5 animate-ping rounded-full bg-emerald-400/60"></span>
                                                 <span class="absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.85)]"></span>
                                             @endif
                                             <span class="material-symbols-outlined relative text-[14px]">language</span>
                                         </span>
                                         <div>
-                                            <p class="text-[8px] uppercase tracking-wider font-bold leading-none mb-1 {{ $project['portal_is_running'] ? 'text-emerald-500' : 'text-slate-400' }}">
-                                                {{ $project['portal_is_running'] ? 'Scan Portal Berjalan' : 'Data Portal Terakhir' }}
+                                            <p class="text-[8px] uppercase tracking-wider font-bold leading-none mb-1 {{ $portalIsRunning ? 'text-emerald-500' : 'text-slate-400' }}">
+                                                {{ $portalIsRunning ? 'Scan Portal Berjalan' : 'Data Portal Terakhir' }}
                                             </p>
-                                            <p class="font-bold leading-none {{ $project['portal_is_running'] ? 'text-emerald-700' : 'text-slate-700' }}">{{ $project['last_portal_update'] }}</p>
+                                            <p class="font-bold leading-none {{ $portalIsRunning ? 'text-emerald-700' : 'text-slate-700' }}">{{ $lastPortalUpdate }}</p>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-1.5 border-l border-slate-200/80 pl-3">
-                                        <span class="relative inline-flex h-5 w-5 items-center justify-center rounded-full {{ $project['medsos_is_running'] ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200' : 'text-slate-400' }}">
-                                            @if($project['medsos_is_running'])
+                                        <span class="relative inline-flex h-5 w-5 items-center justify-center rounded-full {{ $medsosIsRunning ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200' : 'text-slate-400' }}">
+                                            @if($medsosIsRunning)
                                                 <span class="absolute inline-flex h-5 w-5 animate-ping rounded-full bg-emerald-400/60"></span>
                                                 <span class="absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_14px_rgba(16,185,129,0.85)]"></span>
                                             @endif
                                             <span class="material-symbols-outlined relative text-[14px]">group</span>
                                             </span>
                                         <div>
-                                            <p class="text-[8px] uppercase tracking-wider font-bold leading-none mb-1 {{ $project['medsos_is_running'] ? 'text-emerald-500' : 'text-slate-400' }}">
-                                                {{ $project['medsos_running_label'] }}
+                                            <p class="text-[8px] uppercase tracking-wider font-bold leading-none mb-1 {{ $medsosIsRunning ? 'text-emerald-500' : 'text-slate-400' }}">
+                                                {{ $medsosIsRunning ? $medsosRunningLabel : 'Data Medsos Terakhir' }}
                                             </p>
-                                            <p class="font-bold leading-none {{ $project['medsos_is_running'] ? 'text-emerald-700' : 'text-slate-700' }}">{{ $project['last_medsos_update'] }}</p>
+                                            <p class="font-bold leading-none {{ $medsosIsRunning ? 'text-emerald-700' : 'text-slate-700' }}">{{ $medsosIsRunning ? 'Sedang berjalan' : $lastMedsosUpdate }}</p>
                                         </div>
                                     </div>
                                 </div>
