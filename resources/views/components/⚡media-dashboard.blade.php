@@ -1751,7 +1751,7 @@ new class extends Component
             
             @if($this->isTab('penyebutan'))
                 <!-- TAB 1: Penyebutan (Mentions Feed View) -->
-                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4">
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <!-- Section Title & Sort Selector -->
                     <div class="flex items-center justify-between">
                         <div>
@@ -1817,7 +1817,8 @@ new class extends Component
                     @endphp
 
                     <!-- Mentions Cards Feed -->
-                    @if($articlesList->isEmpty())
+                    <div class="flex-1 overflow-y-auto pr-4 space-y-4">
+                        @if($articlesList->isEmpty())
                         <div class="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-4 shadow-sm">
                             <svg class="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -2134,6 +2135,7 @@ new class extends Component
                             </div>
                         @endif
                     @endif
+                    </div>
                 </section>
             @elseif($this->isTab('analisis'))
                 <!-- TAB 2: Analisis (Redesigned matching screenshots) -->
