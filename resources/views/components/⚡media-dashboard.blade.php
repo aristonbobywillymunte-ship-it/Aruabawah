@@ -1151,9 +1151,16 @@ new class extends Component
             ->get()
             ->toArray();
 
-        // Top sources
-        $sources = (clone $baseQuery)->select('source_name', \DB::raw('count(*) as total'))
-            ->groupBy('source_name')
+        // Top sources with sentiment breakdown
+        $sources = (clone $baseQuery)->leftJoin('ai_analysis_results as ai', function ($join) {
+                $join->on('articles.id', '=', 'ai.article_id')
+                     ->where('ai.analysis_status', '=', 'success');
+            })
+            ->select('articles.source_name', \DB::raw('count(articles.id) as total'))
+            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive")
+            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral")
+            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
+            ->groupBy('articles.source_name')
             ->orderByDesc('total')
             ->limit(5)
             ->get()
@@ -3933,22 +3940,65 @@ new class extends Component
 
                             <!-- Top Sources -->
                             <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                                <h4 class="text-sm font-bold text-slate-800">Kanal Media Terpopuler</h4>
-                                <div class="space-y-3.5">
-                                    @forelse($w['sources'] as $src)
-                                        @php
-                                            $srcPct = $w['total'] > 0 ? round(($src['total'] / $w['total']) * 100) : 0;
-                                        @endphp
-                                        <div class="flex items-center justify-between text-xs pb-2 border-b border-slate-50 last:border-0 last:pb-0">
-                                            <span class="font-bold text-slate-700 flex items-center gap-1.5">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-[#1fa387]"></span>
-                                                {{ $src['source_name'] }}
-                                            </span>
-                                            <span class="text-slate-500 font-bold whitespace-nowrap bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100 text-[10px]">{{ $src['total'] }} penyebutan ({{ $srcPct }}%)</span>
-                                        </div>
-                                    @empty
-                                        <p class="text-xs text-slate-400 italic">Belum ada data media.</p>
-                                    @endforelse
+                                <h4 class="text-sm font-bold text-slate-800">Kanal Media Terpopuler & Sentimen</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-xs border-collapse">
+                                        <thead>
+                                            <tr class="border-b border-slate-100 text-slate-400 font-semibold">
+                                                <th class="pb-2 font-bold text-[10px] uppercase tracking-wider">Nama Portal</th>
+                                                <th class="pb-2 text-center font-bold text-[10px] uppercase tracking-wider">Total</th>
+                                                <th class="pb-2 text-center font-bold text-[10px] uppercase tracking-wider">Sentimen (+ / ± / -)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-50">
+                                            @forelse($w['sources'] as $src)
+                                                @php
+                                                    $srcPct = $w['total'] > 0 ? round(($src['total'] / $w['total']) * 100) : 0;
+                                                    
+                                                    $sPos = (int) ($src['positive'] ?? 0);
+                                                    $sNeu = (int) ($src['neutral'] ?? 0);
+                                                    $sNeg = (int) ($src['negative'] ?? 0);
+                                                    $sTotal = $sPos + $sNeu + $sNeg;
+                                                    
+                                                    $posPct = $sTotal > 0 ? round(($sPos / $sTotal) * 100) : 0;
+                                                    $neuPct = $sTotal > 0 ? round(($sNeu / $sTotal) * 100) : 0;
+                                                    $negPct = $sTotal > 0 ? round(($sNeg / $sTotal) * 100) : 0;
+                                                @endphp
+                                                <tr class="hover:bg-slate-50/30 transition-colors">
+                                                    <td class="py-3 font-bold text-slate-700">
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-[#1fa387] shrink-0"></span>
+                                                            <span class="truncate max-w-[130px]">{{ $src['source_name'] ?: 'Portal' }}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-3 text-center">
+                                                        <span class="font-extrabold text-slate-800">{{ $src['total'] }}</span>
+                                                        <span class="text-slate-400 text-[10px] block mt-0.5">({{ $srcPct }}%)</span>
+                                                    </td>
+                                                    <td class="py-3">
+                                                        <div class="flex flex-col gap-1.5 items-center justify-center">
+                                                            <!-- Percentage Text Badges -->
+                                                            <div class="flex items-center gap-1 text-[9px] font-bold">
+                                                                <span class="text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">{{ $posPct }}%</span>
+                                                                <span class="text-slate-500 bg-slate-50 px-1 py-0.5 rounded">{{ $neuPct }}%</span>
+                                                                <span class="text-rose-600 bg-rose-50 px-1 py-0.5 rounded">{{ $negPct }}%</span>
+                                                            </div>
+                                                            <!-- Visual Stacked Bar -->
+                                                            <div class="w-24 h-1.5 rounded-full bg-slate-100 overflow-hidden flex">
+                                                                <div class="bg-emerald-500 h-full" style="width: {{ $posPct }}%"></div>
+                                                                <div class="bg-slate-400 h-full" style="width: {{ $neuPct }}%"></div>
+                                                                <div class="bg-rose-500 h-full" style="width: {{ $negPct }}%"></div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="3" class="py-4 text-center text-xs text-slate-400 italic">Belum ada data media.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
 
