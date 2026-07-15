@@ -61,7 +61,7 @@ class ProjectsList extends Component
             return $project->id;
         }
 
-        return (clone $query)->orderByDesc('created_at')->value('id');
+        return null;
     }
 
     public function render()
