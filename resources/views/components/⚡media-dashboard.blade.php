@@ -2075,9 +2075,9 @@ new class extends Component
 
                                         <div class="flex items-center gap-2">
                                             <!-- Topic Category Badge (Enlarged & Redesigned) -->
-                                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-slate-50 border border-slate-200/80 text-slate-600 rounded-xl whitespace-nowrap" title="{{ $article->category }}">
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold bg-slate-50 border border-slate-200/80 text-slate-600 rounded-xl" title="{{ $article->category }}">
                                                 <span class="material-symbols-outlined text-[13px] text-slate-400">local_offer</span>
-                                                {{ $article->category }}
+                                                {{ Str::limit($article->category, 30) }}
                                             </span>
 
                                             @if($article->url)
