@@ -3959,15 +3959,15 @@ new class extends Component
                             <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
                                 <h4 class="text-sm font-bold text-slate-800">Kanal Media Terpopuler & Sentimen</h4>
                                 <div class="overflow-x-auto">
-                                    <table class="w-full text-left text-xs border-collapse">
+                                    <table class="w-full text-left text-xs border-separate border-spacing-y-1">
                                         <thead>
-                                            <tr class="border-b border-slate-100 text-slate-400 font-semibold">
-                                                <th class="pb-2 font-bold text-[10px] uppercase tracking-wider">Nama Portal</th>
-                                                <th class="pb-2 text-center font-bold text-[10px] uppercase tracking-wider">Total</th>
-                                                <th class="pb-2 text-center font-bold text-[10px] uppercase tracking-wider">Sentimen (+ / ± / -)</th>
+                                            <tr class="bg-slate-50/75 rounded-xl text-slate-500 font-semibold text-[11px]">
+                                                <th class="py-2.5 px-3 rounded-l-xl font-bold tracking-wide">Nama Portal</th>
+                                                <th class="py-2.5 px-2 text-center font-bold tracking-wide">Total</th>
+                                                <th class="py-2.5 px-3 text-center rounded-r-xl font-bold tracking-wide">Sentimen</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="divide-y divide-slate-50">
+                                        <tbody>
                                             @forelse($w['sources'] as $src)
                                                 @php
                                                     $srcPct = $w['total'] > 0 ? round(($src['total'] / $w['total']) * 100) : 0;
@@ -3981,27 +3981,27 @@ new class extends Component
                                                     $neuPct = $sTotal > 0 ? round(($sNeu / $sTotal) * 100) : 0;
                                                     $negPct = $sTotal > 0 ? round(($sNeg / $sTotal) * 100) : 0;
                                                 @endphp
-                                                <tr class="hover:bg-slate-50/30 transition-colors">
-                                                    <td class="py-3 font-bold text-slate-700">
+                                                <tr class="hover:bg-slate-50/50 transition-all duration-150 group">
+                                                    <td class="py-2.5 px-3 rounded-l-xl border-y border-l border-slate-100/50 group-hover:border-slate-200/50 font-bold text-slate-700">
                                                         <div class="flex items-center gap-2">
                                                             <span class="w-1.5 h-1.5 rounded-full bg-[#1fa387] shrink-0"></span>
-                                                            <span class="truncate max-w-[130px]">{{ $src['source_name'] ?: 'Portal' }}</span>
+                                                            <span class="truncate max-w-[100px]">{{ $src['source_name'] ?: 'Portal' }}</span>
                                                         </div>
                                                     </td>
-                                                    <td class="py-3 text-center">
+                                                    <td class="py-2.5 px-2 text-center border-y border-slate-100/50 group-hover:border-slate-200/50">
                                                         <span class="font-extrabold text-slate-800">{{ $src['total'] }}</span>
-                                                        <span class="text-slate-400 text-[10px] block mt-0.5">({{ $srcPct }}%)</span>
+                                                        <span class="text-slate-400 text-[9px] block font-medium mt-0.5">({{ $srcPct }}%)</span>
                                                     </td>
-                                                    <td class="py-3">
-                                                        <div class="flex flex-col gap-1.5 items-center justify-center">
+                                                    <td class="py-2.5 px-3 rounded-r-xl border-y border-r border-slate-100/50 group-hover:border-slate-200/50">
+                                                        <div class="flex flex-col gap-1 items-center justify-center">
                                                             <!-- Percentage Text Badges -->
-                                                            <div class="flex items-center gap-1 text-[9px] font-bold">
-                                                                <span class="text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded">{{ $posPct }}%</span>
-                                                                <span class="text-slate-500 bg-slate-50 px-1 py-0.5 rounded">{{ $neuPct }}%</span>
-                                                                <span class="text-rose-600 bg-rose-50 px-1 py-0.5 rounded">{{ $negPct }}%</span>
+                                                            <div class="flex items-center gap-1 text-[8.5px] font-bold">
+                                                                <span class="text-emerald-700 bg-emerald-50 px-1 rounded">{{ $posPct }}%</span>
+                                                                <span class="text-slate-600 bg-slate-50 px-1 rounded">±{{ $neuPct }}%</span>
+                                                                <span class="text-rose-700 bg-rose-50 px-1 rounded">-{{ $negPct }}%</span>
                                                             </div>
                                                             <!-- Visual Stacked Bar -->
-                                                            <div class="w-24 h-1.5 rounded-full bg-slate-100 overflow-hidden flex">
+                                                            <div class="w-20 h-1.5 rounded-full bg-slate-100 overflow-hidden flex">
                                                                 <div class="bg-emerald-500 h-full" style="width: {{ $posPct }}%"></div>
                                                                 <div class="bg-slate-400 h-full" style="width: {{ $neuPct }}%"></div>
                                                                 <div class="bg-rose-500 h-full" style="width: {{ $negPct }}%"></div>
@@ -4641,17 +4641,17 @@ new class extends Component
                         </div>
 
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm border-collapse">
+                            <table class="w-full text-left text-sm border-separate border-spacing-y-1">
                                 <thead>
-                                    <tr class="border-b border-slate-200 text-slate-400 font-bold text-[10.5px] uppercase tracking-wider">
-                                        <th class="pb-3 pl-2">Logo & Nama Sumber</th>
-                                        <th class="pb-3 text-center">Tipe</th>
-                                        <th class="pb-3 text-center">Total Penyebutan</th>
-                                        <th class="pb-3 text-center">Sentimen (+ / ± / -)</th>
-                                        <th class="pb-3 text-center w-[160px]">Grafik Komposisi</th>
+                                    <tr class="bg-slate-50/75 rounded-2xl text-slate-500 text-xs font-semibold">
+                                        <th class="py-3.5 px-4 rounded-l-2xl font-bold tracking-wide">Logo & Nama Portal / Media</th>
+                                        <th class="py-3.5 px-3 text-center font-bold tracking-wide">Kategori</th>
+                                        <th class="py-3.5 px-3 text-center font-bold tracking-wide">Penyebutan</th>
+                                        <th class="py-3.5 px-3 text-center font-bold tracking-wide">Analisis Sentimen</th>
+                                        <th class="py-3.5 px-4 text-center rounded-r-2xl font-bold tracking-wide w-[180px]">Rasio Visual</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-100">
+                                <tbody>
                                     @php
                                         $projectSourcesList = $this->getProjectSources();
                                         $grandTotal = $projectSourcesList->sum('total');
@@ -4671,7 +4671,7 @@ new class extends Component
                                                 || str_contains($srcLower, 'threads');
                                                 
                                             $mediaType = $isSocial ? 'Media Sosial' : 'Portal Berita';
-                                            $typeColor = $isSocial ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-sky-50 text-sky-700 border-sky-100';
+                                            $typeColor = $isSocial ? 'bg-indigo-50 text-indigo-700 border-indigo-100/60' : 'bg-sky-50 text-sky-700 border-sky-100/60';
                                             
                                             // Share of voice percentage
                                             $sovPct = $grandTotal > 0 ? round(($src->total / $grandTotal) * 100) : 0;
@@ -4694,14 +4694,14 @@ new class extends Component
                                             } elseif (str_contains($srcLower, 'facebook') || $srcLower === 'fb') {
                                                 $logoBg = 'bg-gradient-to-br from-blue-600 to-blue-700';
                                             } else {
-                                                $logoBg = 'bg-transparent';
+                                                $logoBg = 'bg-slate-50';
                                             }
                                         @endphp
-                                        <tr class="hover:bg-slate-50/50 transition-colors">
+                                        <tr class="hover:bg-slate-50/60 transition-all duration-200 group">
                                             <!-- Logo & Name -->
-                                            <td class="py-4 pl-2 font-black text-slate-800">
+                                            <td class="py-3 px-4 rounded-l-2xl border-y border-l border-slate-100/60 group-hover:border-slate-200/80">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0 {{ $logoBg }} border border-slate-200">
+                                                    <div class="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex-shrink-0 {{ $logoBg }} border border-slate-200/50">
                                                         @if(str_contains($srcLower, 'facebook') || $srcLower === 'fb')
                                                             <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
                                                         @elseif(str_contains($srcLower, 'instagram') || $srcLower === 'ig')
@@ -4722,43 +4722,43 @@ new class extends Component
                                                         @endif
                                                     </div>
                                                     <div class="flex flex-col text-left">
-                                                        <span class="text-sm font-black text-slate-800 leading-none">{{ $srcName }}</span>
-                                                        <span class="text-[10px] text-slate-400 mt-1 font-medium font-mono">{{ $isSocial ? '@' . $srcLower : $srcLower }}</span>
+                                                        <span class="text-sm font-bold text-slate-800 leading-snug">{{ $srcName }}</span>
+                                                        <span class="text-[10px] text-slate-400 mt-0.5 font-medium">{{ $isSocial ? '@' . $srcLower : $srcLower }}</span>
                                                     </div>
                                                 </div>
                                             </td>
                                             
                                             <!-- Media Type -->
-                                            <td class="py-4 text-center">
-                                                <span class="inline-block px-2.5 py-1 text-[10px] font-black rounded-lg border {{ $typeColor }} uppercase tracking-wider">
+                                            <td class="py-3 px-3 text-center border-y border-slate-100/60 group-hover:border-slate-200/80">
+                                                <span class="inline-block px-2.5 py-1 text-[10px] font-semibold rounded-lg border {{ $typeColor }} uppercase tracking-wider">
                                                     {{ $mediaType }}
                                                 </span>
                                             </td>
                                             
                                             <!-- Total mentions -->
-                                            <td class="py-4 text-center">
-                                                <span class="font-extrabold text-slate-900 text-sm">{{ number_format($src->total, 0, ',', '.') }}</span>
-                                                <span class="text-slate-400 text-[10px] block mt-0.5 font-semibold">SOV: {{ $sovPct }}%</span>
+                                            <td class="py-3 px-3 text-center border-y border-slate-100/60 group-hover:border-slate-200/80">
+                                                <span class="font-extrabold text-slate-800 text-sm">{{ number_format($src->total, 0, ',', '.') }}</span>
+                                                <span class="text-slate-400 text-[10px] block mt-0.5 font-medium">SOV: {{ $sovPct }}%</span>
                                             </td>
                                             
                                             <!-- Sentiment breakdown -->
-                                            <td class="py-4 text-center">
-                                                <div class="flex items-center justify-center gap-1 text-[10px] font-extrabold">
-                                                    <span class="text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100/50">+{{ $posPct }}%</span>
-                                                    <span class="text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100/50">±{{ $neuPct }}%</span>
-                                                    <span class="text-rose-600 bg-rose-50 px-2 py-1 rounded-lg border border-rose-100/50">-{{ $negPct }}%</span>
+                                            <td class="py-3 px-3 text-center border-y border-slate-100/60 group-hover:border-slate-200/80">
+                                                <div class="flex items-center justify-center gap-1.5 text-[10px] font-bold">
+                                                    <span class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100/40">+{{ $posPct }}%</span>
+                                                    <span class="text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-150">±{{ $neuPct }}%</span>
+                                                    <span class="text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-100/40">-{{ $negPct }}%</span>
                                                 </div>
                                             </td>
                                             
                                             <!-- Stacked bar -->
-                                            <td class="py-4 text-center">
-                                                <div class="flex flex-col items-center justify-center pr-2">
-                                                    <div class="w-full max-w-[140px] h-2 rounded-full bg-slate-100 overflow-hidden flex shadow-inner">
+                                            <td class="py-3 px-4 text-center rounded-r-2xl border-y border-r border-slate-100/60 group-hover:border-slate-200/80">
+                                                <div class="flex flex-col items-center justify-center">
+                                                    <div class="w-full max-w-[130px] h-2 rounded-full bg-slate-100 overflow-hidden flex shadow-inner">
                                                         <div class="bg-emerald-500 h-full" style="width: {{ $posPct }}%" title="Positif: {{ $posPct }}%"></div>
                                                         <div class="bg-slate-400 h-full" style="width: {{ $neuPct }}%" title="Netral: {{ $neuPct }}%"></div>
                                                         <div class="bg-rose-500 h-full" style="width: {{ $negPct }}%" title="Negatif: {{ $negPct }}%"></div>
                                                     </div>
-                                                    <div class="flex justify-between w-full max-w-[140px] text-[8px] text-slate-400 font-bold mt-1.5 px-0.5 leading-none">
+                                                    <div class="flex justify-between w-full max-w-[130px] text-[8px] text-slate-400 font-bold mt-1.5 px-0.5 leading-none">
                                                         <span>{{ $sPos }} P</span>
                                                         <span>{{ $sNeu }} N</span>
                                                         <span>{{ $sNeg }} M</span>
@@ -4768,7 +4768,7 @@ new class extends Component
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="py-8 text-center text-slate-400 text-sm font-semibold italic">Belum ada portal berita atau akun media sosial yang melacak proyek ini.</td>
+                                            <td colspan="5" class="py-8 text-center text-slate-450 text-sm font-semibold italic">Belum ada portal berita atau akun media sosial yang melacak proyek ini.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
