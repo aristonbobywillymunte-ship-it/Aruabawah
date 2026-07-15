@@ -1303,7 +1303,7 @@ new class extends Component
 @endphp
 
 <div>
-<div class="min-h-screen bg-[#f7f9ff] text-slate-800 flex flex-col font-sans"
+<div class="h-screen bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-hidden"
      x-data="{
          detailModalOpen: false,
          showViralModal: false,
@@ -1355,7 +1355,7 @@ new class extends Component
 >
     
     <!-- Top Header -->
-    <header class="w-full bg-white border-b border-slate-200 sticky top-0 z-50">
+    <header class="w-full bg-white border-b border-slate-200 sticky top-0 z-50 flex-shrink-0">
         <div class="max-w-[1400px] mx-auto px-6 h-20 flex flex-row flex-nowrap items-center justify-between gap-6">
             <!-- Brand -->
             <div class="flex items-center gap-6 h-full justify-self-start">
@@ -1505,7 +1505,7 @@ new class extends Component
     </div>
 
     <!-- Sub-header -->
-    <div class="w-full bg-[#f0f3f8] border-b border-slate-200 py-2.5">
+    <div class="w-full bg-[#f0f3f8] border-b border-slate-200 py-2.5 flex-shrink-0">
         <div class="max-w-[1400px] mx-auto px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 font-medium text-left">
             <div class="flex items-center gap-2 flex-wrap">
                 <span>Filter Aktif:</span>
@@ -1529,7 +1529,7 @@ new class extends Component
     <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 overflow-hidden">
         
         <!-- Left Sidebar -->
-        <aside class="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-6 gap-5 flex-shrink-0 h-[calc(100vh-4rem)] sticky top-16">
+        <aside class="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-6 gap-5 flex-shrink-0 h-full">
             <!-- Kembali ke Daftar Proyek (Home) -->
             <a 
                 href="/" 
@@ -1747,11 +1747,11 @@ new class extends Component
         @endphp
 
         <!-- Main Workspace (Center feed & Right Filter) -->
-        <div class="flex-grow flex flex-col lg:flex-row gap-6 px-4 sm:px-8 py-6 items-start w-full">
+        <div class="flex-grow flex flex-col lg:flex-row gap-6 px-4 sm:px-8 py-6 items-stretch w-full h-full overflow-hidden">
             
             @if($this->isTab('penyebutan'))
                 <!-- TAB 1: Penyebutan (Mentions Feed View) -->
-                <section class="flex-1 min-w-0 space-y-6">
+                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4">
                     <!-- Section Title & Sort Selector -->
                     <div class="flex items-center justify-between">
                         <div>
@@ -2137,7 +2137,7 @@ new class extends Component
                 </section>
             @elseif($this->isTab('analisis'))
                 <!-- TAB 2: Analisis (Redesigned matching screenshots) -->
-                <section class="flex-1 min-w-0 space-y-6">
+                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
                         <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data untuk proyek <span class="text-[#1fa387] font-bold uppercase">{{ $projectName }}</span></p>
@@ -3324,7 +3324,7 @@ new class extends Component
                 </section>
             @elseif($this->isTab('katakunci'))
                 <!-- TAB 3: Kata Kunci Configuration Page -->
-                <section class="flex-1 min-w-0 space-y-6">
+                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4">
                     <div class="flex items-center justify-between text-left">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">vpn_key</span>Pengaturan dan Analisis Kata Kunci</h2>
@@ -3758,7 +3758,7 @@ new class extends Component
                         $crisisPingClass = 'bg-emerald-400';
                     }
                 @endphp
-                <section class="flex-1 min-w-0 space-y-6 text-left">
+                <section class="flex-1 min-w-0 space-y-6 text-left h-full overflow-y-auto pr-4">
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
@@ -4096,7 +4096,7 @@ new class extends Component
                 </section>
             @elseif($this->isTab('laporan'))
                 <!-- TAB 4: Laporan (Report configuration page matching screenshots) -->
-                <section class="flex-1 min-w-0 space-y-6" x-data="{
+                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4" x-data="{
                     reportType: 'pdf',
                     pdfToggles: {
                         wawasan: true,
@@ -4495,7 +4495,7 @@ new class extends Component
                 </section>
 
             @elseif($this->isTab('konten'))
-                <section class="flex-1 min-w-0 space-y-6">
+                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4">
                     <div class="flex items-center justify-between">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5">Manajemen Konten</h2>
@@ -4648,7 +4648,7 @@ new class extends Component
                 </section>
 
             @elseif($this->isTab('sumber'))
-                <section class="flex-1 min-w-0 space-y-6">
+                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4">
                     <div class="flex items-center justify-between">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5">Sumber Data</h2>
@@ -4821,8 +4821,7 @@ new class extends Component
             </button>
 
             <!-- Right Side Filter Panel -->
-            <!-- DESKTOP FILTER PANEL (Always static/sticky, no Alpine display none conflicts) -->
-            <aside class="hidden lg:block lg:sticky lg:top-24 lg:w-80 lg:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] lg:border lg:border-slate-200 lg:rounded-2xl lg:p-6 lg:bg-white lg:space-y-6 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+            <aside class="hidden lg:block lg:w-80 lg:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] lg:border lg:border-slate-200 lg:rounded-2xl lg:p-6 lg:bg-white lg:space-y-6 lg:h-full lg:overflow-y-auto flex-shrink-0">
                 <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3">Filter Panel</h4>
                 @include('components.⚡filter-items')
             </aside>
