@@ -128,6 +128,7 @@ class ProjectsList extends Component
             return [
                 'id' => $project->id,
                 'name' => $project->name,
+                'created_at' => $project->created_at ? $project->created_at->format('d M Y H:i') : '—',
                 'mentions' => number_format($readyToShow, 0, ',', '.'),
                 'total_articles_found' => $totalArticlesFound,
                 'reach' => $reach,
