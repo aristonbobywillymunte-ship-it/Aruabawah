@@ -1041,6 +1041,23 @@ new class extends Component
         });
     }
 
+    public function getProjectSources()
+    {
+        $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
+        
+        return $baseQuery->leftJoin('ai_analysis_results as ai', function ($join) {
+                $join->on('articles.id', '=', 'ai.article_id')
+                     ->where('ai.analysis_status', '=', 'success');
+            })
+            ->select('articles.source_name', \DB::raw('count(articles.id) as total'))
+            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive")
+            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral")
+            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
+            ->groupBy('articles.source_name')
+            ->orderByDesc('total')
+            ->get();
+    }
+
     public function getWawasan()
     {
         $project = $this->resolveProjectOrFail($this->projectId);
@@ -4611,29 +4628,152 @@ new class extends Component
                     <div class="flex items-center justify-between">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5">Sumber Data</h2>
-                            <p class="text-xs text-slate-500">Statistik sumber portal dan media sosial yang terkumpul.</p>
+                            <p class="text-xs text-slate-500">Statistik dan daftar sumber portal yang menyebut proyek ini.</p>
                         </div>
                     </div>
                     
-                    <div class="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-[0_8px_30px_-5px_rgba(0,0,0,0.03)] flex flex-col items-center justify-center min-h-[400px]">
-                        <div class="w-24 h-24 rounded-full bg-blue-50 border-8 border-white shadow-md flex items-center justify-center mb-6">
-                            <span class="material-symbols-outlined text-4xl text-blue-500">database</span>
-                        </div>
-                        <h3 class="text-lg font-black text-slate-900 mb-2">Manajemen Sumber Global</h3>
-                        <p class="text-sm text-slate-500 font-medium mb-8 max-w-md mx-auto leading-relaxed">
-                            Pantau dan kelola seluruh portal berita serta akun media sosial yang sedang dilacak oleh sistem.
-                        </p>
-                        @if($this->isAdmin())
-                            <a href="{{ route('admin.news-sources') }}" wire:navigate class="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-blue-600 text-white font-extrabold text-sm rounded-xl hover:bg-blue-700 transition shadow-[0_4px_15px_rgba(37,99,235,0.2)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.3)] hover:-translate-y-0.5">
-                                <span class="material-symbols-outlined text-[18px]">settings</span>
-                                Kelola Sumber Sekarang
-                            </a>
-                        @else
-                            <div class="bg-slate-50 border border-slate-200 text-slate-600 px-6 py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-3 w-full max-w-sm shadow-sm">
-                                <span class="material-symbols-outlined text-amber-500 text-xl">lock</span>
-                                Diatur oleh Administrator
+                    <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800">Daftar Portal & Kanal Pembuat Berita</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Situs web berita online dan media sosial yang mempublikasikan konten terkait kata kunci Anda.</p>
                             </div>
-                        @endif
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-slate-400 font-bold text-[10.5px] uppercase tracking-wider">
+                                        <th class="pb-3 pl-2">Logo & Nama Sumber</th>
+                                        <th class="pb-3 text-center">Tipe</th>
+                                        <th class="pb-3 text-center">Total Penyebutan</th>
+                                        <th class="pb-3 text-center">Sentimen (+ / ± / -)</th>
+                                        <th class="pb-3 text-center w-[160px]">Grafik Komposisi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @php
+                                        $projectSourcesList = $this->getProjectSources();
+                                        $grandTotal = $projectSourcesList->sum('total');
+                                    @endphp
+                                    @forelse($projectSourcesList as $src)
+                                        @php
+                                            $srcName = $src->source_name ?: 'Sumber tidak diketahui';
+                                            $srcLower = strtolower($srcName);
+                                            
+                                            // Determine media type
+                                            $isSocial = in_array($srcLower, self::SOCIAL_SOURCE_NAMES, true) 
+                                                || str_contains($srcLower, 'instagram') 
+                                                || str_contains($srcLower, 'tiktok') 
+                                                || str_contains($srcLower, 'facebook') 
+                                                || str_contains($srcLower, 'twitter')
+                                                || str_contains($srcLower, 'youtube')
+                                                || str_contains($srcLower, 'threads');
+                                                
+                                            $mediaType = $isSocial ? 'Media Sosial' : 'Portal Berita';
+                                            $typeColor = $isSocial ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-sky-50 text-sky-700 border-sky-100';
+                                            
+                                            // Share of voice percentage
+                                            $sovPct = $grandTotal > 0 ? round(($src->total / $grandTotal) * 100) : 0;
+                                            
+                                            // Sentiment percentage
+                                            $sPos = (int) ($src->positive ?? 0);
+                                            $sNeu = (int) ($src->neutral ?? 0);
+                                            $sNeg = (int) ($src->negative ?? 0);
+                                            $sTotal = $sPos + $sNeu + $sNeg;
+                                            
+                                            $posPct = $sTotal > 0 ? round(($sPos / $sTotal) * 100) : 0;
+                                            $neuPct = $sTotal > 0 ? round(($sNeu / $sTotal) * 100) : 0;
+                                            $negPct = $sTotal > 0 ? round(($sNeg / $sTotal) * 100) : 0;
+                                            
+                                            // Logo/favicon bg/styling
+                                            if (str_contains($srcLower, 'instagram') || $srcLower === 'ig') {
+                                                $logoBg = 'bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400';
+                                            } elseif (str_contains($srcLower, 'tiktok') || $srcLower === 'tk') {
+                                                $logoBg = 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800';
+                                            } elseif (str_contains($srcLower, 'facebook') || $srcLower === 'fb') {
+                                                $logoBg = 'bg-gradient-to-br from-blue-600 to-blue-700';
+                                            } else {
+                                                $logoBg = 'bg-transparent';
+                                            }
+                                        @endphp
+                                        <tr class="hover:bg-slate-50/50 transition-colors">
+                                            <!-- Logo & Name -->
+                                            <td class="py-4 pl-2 font-black text-slate-800">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0 {{ $logoBg }} border border-slate-200">
+                                                        @if(str_contains($srcLower, 'facebook') || $srcLower === 'fb')
+                                                            <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
+                                                        @elseif(str_contains($srcLower, 'instagram') || $srcLower === 'ig')
+                                                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-linecap="round"></line></svg>
+                                                        @elseif(str_contains($srcLower, 'tiktok') || $srcLower === 'tk')
+                                                            <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24"><path d="M12.525.01c1.306-.022 2.615-.011 3.921-.012.08 1.836 1.011 3.5 2.501 4.485.006 1.341-.004 2.683-.004 4.024-1.57-.107-3.067-.932-3.955-2.247-.008 2.827-.003 5.657-.005 8.486-.098 3.546-3.13 6.643-6.726 6.467-3.526-.067-6.523-3.18-6.241-6.722.215-3.327 3.012-6.104 6.347-5.992v4.06c-1.393-.16-2.775.76-3.085 2.112-.397 1.488.583 3.125 2.1 3.328 1.455.234 2.924-.766 3.14-2.224.048-2.617.02-5.237.03-7.856.002-3.834-.002-7.67.002-11.504z"></path></svg>
+                                                        @else
+                                                            <div class="relative w-full h-full flex items-center justify-center" x-data="{ imgFailed: false }">
+                                                                <img x-show="!imgFailed" 
+                                                                     src="{{ 'https://logo.clearbit.com/' . $srcLower }}?size=64" 
+                                                                     x-on:error="imgFailed = true"
+                                                                     class="w-full h-full object-cover animate-fade-in" 
+                                                                     alt="{{ $srcName }}" />
+                                                                <div x-show="imgFailed" class="absolute inset-0 w-full h-full bg-slate-50 flex items-center justify-center">
+                                                                    <span class="material-symbols-outlined text-[15px] text-slate-400">feed</span>
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                    <div class="flex flex-col text-left">
+                                                        <span class="text-sm font-black text-slate-800 leading-none">{{ $srcName }}</span>
+                                                        <span class="text-[10px] text-slate-400 mt-1 font-medium font-mono">{{ $isSocial ? '@' . $srcLower : $srcLower }}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            
+                                            <!-- Media Type -->
+                                            <td class="py-4 text-center">
+                                                <span class="inline-block px-2.5 py-1 text-[10px] font-black rounded-lg border {{ $typeColor }} uppercase tracking-wider">
+                                                    {{ $mediaType }}
+                                                </span>
+                                            </td>
+                                            
+                                            <!-- Total mentions -->
+                                            <td class="py-4 text-center">
+                                                <span class="font-extrabold text-slate-900 text-sm">{{ number_format($src->total, 0, ',', '.') }}</span>
+                                                <span class="text-slate-400 text-[10px] block mt-0.5 font-semibold">SOV: {{ $sovPct }}%</span>
+                                            </td>
+                                            
+                                            <!-- Sentiment breakdown -->
+                                            <td class="py-4 text-center">
+                                                <div class="flex items-center justify-center gap-1 text-[10px] font-extrabold">
+                                                    <span class="text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100/50">+{{ $posPct }}%</span>
+                                                    <span class="text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100/50">±{{ $neuPct }}%</span>
+                                                    <span class="text-rose-600 bg-rose-50 px-2 py-1 rounded-lg border border-rose-100/50">-{{ $negPct }}%</span>
+                                                </div>
+                                            </td>
+                                            
+                                            <!-- Stacked bar -->
+                                            <td class="py-4 text-center">
+                                                <div class="flex flex-col items-center justify-center pr-2">
+                                                    <div class="w-full max-w-[140px] h-2 rounded-full bg-slate-100 overflow-hidden flex shadow-inner">
+                                                        <div class="bg-emerald-500 h-full" style="width: {{ $posPct }}%" title="Positif: {{ $posPct }}%"></div>
+                                                        <div class="bg-slate-400 h-full" style="width: {{ $neuPct }}%" title="Netral: {{ $neuPct }}%"></div>
+                                                        <div class="bg-rose-500 h-full" style="width: {{ $negPct }}%" title="Negatif: {{ $negPct }}%"></div>
+                                                    </div>
+                                                    <div class="flex justify-between w-full max-w-[140px] text-[8px] text-slate-400 font-bold mt-1.5 px-0.5 leading-none">
+                                                        <span>{{ $sPos }} P</span>
+                                                        <span>{{ $sNeu }} N</span>
+                                                        <span>{{ $sNeg }} M</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="py-8 text-center text-slate-400 text-sm font-semibold italic">Belum ada portal berita atau akun media sosial yang melacak proyek ini.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </section>
             @endif
