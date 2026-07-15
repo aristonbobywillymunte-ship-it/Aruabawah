@@ -389,11 +389,24 @@ class ProjectsList extends Component
 
     public function mount()
     {
-        $this->projectId = $this->resolveProjectOrDefault($this->projectId);
+        $this->projectId = $this->resolveProjectOrDefault($this->getDecodedProjectId());
     }
 
-    protected function resolveProjectOrDefault(?int $projectId = null): ?int
+    public function updatedProjectId($value): void
     {
+        $this->projectId = $this->resolveProjectOrDefault($this->getDecodedProjectId());
+    }
+
+    protected function resolveProjectOrDefault($projectId = null): ?int
+    {
+        if ($projectId !== null && !is_numeric($projectId)) {
+            $decoded = base64_decode($projectId, true);
+            if ($decoded !== false && is_numeric($decoded)) {
+                $projectId = (int) $decoded;
+            }
+        }
+
+        $projectId = $projectId ? (int) $projectId : null;
         $query = Project::accessibleBy(auth()->user())->where('is_active', true);
 
         if ($projectId) {
