@@ -2172,7 +2172,7 @@ new class extends Component
                             <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[120px]">
                                 <div class="space-y-1.5 text-left">
                                     <span class="text-xs font-extrabold tracking-wider text-slate-400 uppercase block">TOTAL ARTIKEL DITEMUKAN</span>
-                                    <h2 class="text-5xl font-black text-slate-900 tracking-tight leading-none">{{ $fmt($totalMentions) }}</h2>
+                                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">{{ $fmt($totalMentions) }}</h2>
                                 </div>
                                 <div class="w-12 h-12 rounded-2xl overflow-hidden bg-emerald-50 flex items-center justify-center flex-shrink-0 text-[#1fa387]">
                                     <span class="material-symbols-outlined text-[24px]">article</span>
@@ -2182,7 +2182,7 @@ new class extends Component
                             <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[120px]">
                                 <div class="space-y-1.5 text-left">
                                     <span class="text-xs font-extrabold tracking-wider text-slate-400 uppercase block">TOTAL JANGKAUAN</span>
-                                    <h2 class="text-5xl font-black text-slate-900 tracking-tight leading-none">{{ $fmt($totalReach) }}</h2>
+                                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">{{ $fmt($totalReach) }}</h2>
                                 </div>
                                 <div class="w-12 h-12 rounded-2xl overflow-hidden bg-indigo-50 flex items-center justify-center flex-shrink-0 text-indigo-600">
                                     <span class="material-symbols-outlined text-[24px]">hub</span>
@@ -2192,7 +2192,7 @@ new class extends Component
                             <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[120px]">
                                 <div class="space-y-1.5 text-left">
                                     <span class="text-xs font-extrabold tracking-wider text-slate-400 uppercase block">INTERAKSI SOSIAL MEDIA</span>
-                                    <h2 class="text-5xl font-black text-slate-900 tracking-tight leading-none">{{ $fmt($interactionCount) }}</h2>
+                                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">{{ $fmt($interactionCount) }}</h2>
                                 </div>
                                 <div class="w-12 h-12 rounded-2xl overflow-hidden bg-purple-50 flex items-center justify-center flex-shrink-0 text-purple-600">
                                     <span class="material-symbols-outlined text-[24px]">forum</span>
@@ -2215,7 +2215,7 @@ new class extends Component
                                             <span class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Penyebutan</span>
                                         </div>
                                     </div>
-                                    <h2 class="text-5xl font-black text-slate-900 tracking-tight leading-none">
+                                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
                                         {{ $fmt($igCount) }}
                                     </h2>
                                 </div>
@@ -2251,7 +2251,7 @@ new class extends Component
                                             <span class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Penyebutan</span>
                                         </div>
                                     </div>
-                                    <h2 class="text-5xl font-black text-slate-900 tracking-tight leading-none">
+                                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
                                         {{ $fmt($ttCount) }}
                                     </h2>
                                 </div>
@@ -2287,7 +2287,7 @@ new class extends Component
                                             <span class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Penyebutan</span>
                                         </div>
                                     </div>
-                                    <h2 class="text-5xl font-black text-slate-900 tracking-tight leading-none">
+                                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
                                         {{ $fmt($fbCount) }}
                                     </h2>
                                 </div>
@@ -2323,7 +2323,7 @@ new class extends Component
                                             <span class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Penyebutan</span>
                                         </div>
                                     </div>
-                                    <h2 class="text-5xl font-black text-slate-900 tracking-tight leading-none">
+                                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">
                                         {{ $fmt($newsCount) }}
                                     </h2>
                                 </div>
@@ -2357,17 +2357,17 @@ new class extends Component
                                     <!-- Positif -->
                                     <div class="bg-emerald-50/40 rounded-2xl p-3 border border-emerald-100/50 text-left">
                                         <span class="text-[10px] font-extrabold text-emerald-600 block uppercase tracking-wider">Positif</span>
-                                        <h3 class="text-3xl font-black text-emerald-700 mt-1">{{ $fmt($socPos) }}</h3>
+                                        <h3 class="text-xl font-extrabold text-emerald-700 mt-1">{{ $fmt($socPos) }}</h3>
                                     </div>
                                     <!-- Netral -->
                                     <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-left">
                                         <span class="text-[10px] font-extrabold text-slate-500 block uppercase tracking-wider">Netral</span>
-                                        <h3 class="text-3xl font-black text-slate-700 mt-1">{{ $fmt($socNeu) }}</h3>
+                                        <h3 class="text-xl font-extrabold text-slate-700 mt-1">{{ $fmt($socNeu) }}</h3>
                                     </div>
                                     <!-- Negatif -->
                                     <div class="bg-rose-50/40 rounded-2xl p-3 border border-rose-100/50 text-left">
                                         <span class="text-[10px] font-extrabold text-rose-600 block uppercase tracking-wider">Negatif</span>
-                                        <h3 class="text-3xl font-black text-rose-700 mt-1">{{ $fmt($socNeg) }}</h3>
+                                        <h3 class="text-xl font-extrabold text-rose-700 mt-1">{{ $fmt($socNeg) }}</h3>
                                     </div>
                                 </div>
                                 
@@ -2407,17 +2407,17 @@ new class extends Component
                                     <!-- Positif -->
                                     <div class="bg-emerald-50/40 rounded-2xl p-3 border border-emerald-100/50 text-left">
                                         <span class="text-[10px] font-extrabold text-emerald-600 block uppercase tracking-wider">Positif</span>
-                                        <h3 class="text-3xl font-black text-emerald-700 mt-1">{{ $fmt($newsPos) }}</h3>
+                                        <h3 class="text-xl font-extrabold text-emerald-700 mt-1">{{ $fmt($newsPos) }}</h3>
                                     </div>
                                     <!-- Netral -->
                                     <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-left">
                                         <span class="text-[10px] font-extrabold text-slate-500 block uppercase tracking-wider">Netral</span>
-                                        <h3 class="text-3xl font-black text-slate-700 mt-1">{{ $fmt($newsNeu) }}</h3>
+                                        <h3 class="text-xl font-extrabold text-slate-700 mt-1">{{ $fmt($newsNeu) }}</h3>
                                     </div>
                                     <!-- Negatif -->
                                     <div class="bg-rose-50/40 rounded-2xl p-3 border border-rose-100/50 text-left">
                                         <span class="text-[10px] font-extrabold text-rose-600 block uppercase tracking-wider">Negatif</span>
-                                        <h3 class="text-3xl font-black text-rose-700 mt-1">{{ $fmt($newsNeg) }}</h3>
+                                        <h3 class="text-xl font-extrabold text-rose-700 mt-1">{{ $fmt($newsNeg) }}</h3>
                                     </div>
                                 </div>
                                 
