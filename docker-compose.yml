@@ -73,6 +73,7 @@ services:
   media-intelligent-scheduler:
     image: media_intelligent_app:latest
     container_name: media_intelligent_scheduler_container
+    init: true
     command: ["php", "artisan", "schedule:work"]
     dns:
       - 1.1.1.1
