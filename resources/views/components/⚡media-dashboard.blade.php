@@ -4600,7 +4600,9 @@ new class extends Component
                 <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <div class="flex items-center justify-between shrink-0">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900 mb-0.5">Manajemen Konten</h2>
+                            <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[#1fa387] text-[22px]">article</span>Manajemen Konten
+                            </h2>
                             <p class="text-xs text-slate-500">Galeri konten artikel dan postingan yang berhasil dikumpulkan.</p>
                         </div>
                     </div>
