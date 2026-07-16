@@ -4231,7 +4231,9 @@ new class extends Component
                     <!-- Header -->
                     <div class="flex justify-between items-start text-left">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900 mb-0.5">Konfigurasi Laporan</h2>
+                            <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[#1fa387] text-[22px]">assignment</span>Konfigurasi Laporan
+                            </h2>
                             <p class="text-xs text-slate-500">Pilih komponen data yang akan disertakan dalam dokumen.</p>
                         </div>
                     </div>
@@ -4239,7 +4241,7 @@ new class extends Component
                     <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
                     <!-- Main Config Card -->
-                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6 text-left">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-6 text-left">
                         <!-- Tab Toggles -->
                         <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div class="flex gap-3">
@@ -4758,18 +4760,23 @@ new class extends Component
                 <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <div class="flex items-center justify-between shrink-0">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900 mb-0.5">Sumber Data</h2>
+                            <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[#1fa387] text-[22px]">public</span>Sumber Data
+                            </h2>
                             <p class="text-xs text-slate-500">Statistik dan daftar sumber portal yang menyebut proyek ini.</p>
                         </div>
                     </div>
                     
                     <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
-                    <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6">
-                        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-                            <div>
-                                <h3 class="text-base font-bold text-slate-800">Daftar Portal & Kanal Pembuat Berita</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Situs web berita online dan media sosial yang mempublikasikan konten terkait kata kunci Anda.</p>
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-6">
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4 w-full">
+                            <div class="space-y-0.5 text-left">
+                                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[18px] text-[#1fa387]">list_alt</span>
+                                    DAFTAR PORTAL & KANAL PEMBUAT BERITA
+                                </h3>
+                                <p class="text-[10px] text-slate-400">Situs web berita online dan media sosial yang mempublikasikan konten terkait kata kunci Anda.</p>
                             </div>
                         </div>
 
