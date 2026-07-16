@@ -1233,9 +1233,9 @@ new class extends Component
                                             </span>
                                         <div>
                                             <p class="text-[8px] uppercase tracking-wider font-bold leading-none mb-1 {{ $medsosIsRunning ? 'text-emerald-500' : 'text-slate-400' }}">
-                                                {{ $medsosIsRunning ? $medsosRunningLabel : 'Data Medsos Terakhir' }}
+                                                {{ $medsosIsRunning ? 'Scan Medsos Berjalan' : 'Data Medsos Terakhir' }}
                                             </p>
-                                            <p class="font-bold leading-none {{ $medsosIsRunning ? 'text-emerald-700' : 'text-slate-700' }}">{{ $medsosIsRunning ? 'Sedang berjalan' : $lastMedsosUpdate }}</p>
+                                            <p class="font-bold leading-none {{ $medsosIsRunning ? 'text-emerald-700' : 'text-slate-700' }}">{{ $medsosIsRunning ? $medsosRunningLabel : $lastMedsosUpdate }}</p>
                                         </div>
                                     </div>
                                 </div>

@@ -244,10 +244,10 @@ class ProjectsList extends Component
         }
 
         if ($count === 1) {
-            return strtoupper($platforms[0]).' sedang berjalan';
+            return 'Mengecek ' . ucfirst($platforms[0]) . '...';
         }
 
-        return $count.' kanal medsos berjalan';
+        return 'Mengecek ' . $count . ' kanal...';
     }
 
     public function getProjects()
