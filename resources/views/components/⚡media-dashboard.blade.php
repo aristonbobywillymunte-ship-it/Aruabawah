@@ -2169,7 +2169,7 @@ new class extends Component
                         <!-- Row 1: KPI metrics cards -->
                         <div class="grid grid-cols-3 gap-4">
                             <!-- Card 1: Total Artikel Ditemukan -->
-                            <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[120px]">
+                            <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[100px]">
                                 <div class="space-y-1.5 text-left">
                                     <span class="text-xs font-extrabold tracking-wider text-slate-400 uppercase block">TOTAL ARTIKEL DITEMUKAN</span>
                                     <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">{{ $fmt($totalMentions) }}</h2>
@@ -2179,7 +2179,7 @@ new class extends Component
                                 </div>
                             </div>
                             <!-- Card 2: Total Jangkauan -->
-                            <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[120px]">
+                            <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[100px]">
                                 <div class="space-y-1.5 text-left">
                                     <span class="text-xs font-extrabold tracking-wider text-slate-400 uppercase block">TOTAL JANGKAUAN</span>
                                     <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">{{ $fmt($totalReach) }}</h2>
@@ -2189,7 +2189,7 @@ new class extends Component
                                 </div>
                             </div>
                             <!-- Card 3: Interaksi Sosial Media -->
-                            <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[120px]">
+                            <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[100px]">
                                 <div class="space-y-1.5 text-left">
                                     <span class="text-xs font-extrabold tracking-wider text-slate-400 uppercase block">INTERAKSI SOSIAL MEDIA</span>
                                     <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">{{ $fmt($interactionCount) }}</h2>
@@ -2203,7 +2203,7 @@ new class extends Component
                         <!-- Row 2: Publication Channels breakdown metrics cards (Instagram, TikTok, Facebook, Portal Berita) -->
                         <div class="grid grid-cols-4 gap-4">
                             <!-- Instagram -->
-                            <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[190px]">
+                            <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[155px]">
                                 <div class="flex items-center justify-between w-full">
                                     <div class="flex items-center gap-3 text-left">
                                         <!-- Icon wrapper -->
@@ -2239,7 +2239,7 @@ new class extends Component
                             </div>
 
                             <!-- TikTok -->
-                            <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[190px]">
+                            <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[155px]">
                                 <div class="flex items-center justify-between w-full">
                                     <div class="flex items-center gap-3 text-left">
                                         <!-- Icon wrapper -->
@@ -2275,7 +2275,7 @@ new class extends Component
                             </div>
 
                             <!-- Facebook -->
-                            <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[190px]">
+                            <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[155px]">
                                 <div class="flex items-center justify-between w-full">
                                     <div class="flex items-center gap-3 text-left">
                                         <!-- Icon wrapper -->
@@ -2311,7 +2311,7 @@ new class extends Component
                             </div>
 
                             <!-- Portal Berita -->
-                            <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[190px]">
+                            <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[155px]">
                                 <div class="flex items-center justify-between w-full">
                                     <div class="flex items-center gap-3 text-left">
                                         <!-- Icon wrapper -->
