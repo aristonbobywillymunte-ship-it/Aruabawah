@@ -2165,8 +2165,15 @@ new class extends Component
 
                     <!-- Gambaran Umum Card Grid -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-6">
-                        <h3 class="text-sm font-bold text-slate-800">Gambaran Umum</h3>                        <!-- Row 1: KPI metrics cards -->
-                        <!-- Row 1: KPI metrics cards -->
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100/85 mb-6">
+                            <div class="space-y-0.5 text-left">
+                                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[18px] text-[#1fa387]">equalizer</span>
+                                    GAMBARAN UMUM
+                                </h3>
+                                <p class="text-[10px] text-slate-400">Kinerja metrik utama dan distribusi penyebutan pada setiap saluran media.</p>
+                            </div>
+                        </div>
                         <div class="grid grid-cols-3 gap-4">
                             <!-- Card 1: Total Artikel Ditemukan -->
                             <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[100px]">
@@ -2344,12 +2351,13 @@ new class extends Component
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <!-- Sentimen Sosmed -->
                             <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 space-y-3">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                            <span class="material-symbols-outlined text-[18px]">sentiment_satisfied</span>
-                                        </div>
-                                        <span class="text-xs font-extrabold tracking-wider text-slate-400 uppercase">SENTIMEN SOSIAL MEDIA</span>
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-100/85">
+                                    <div class="space-y-0.5 text-left">
+                                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[18px] text-[#1fa387]">sentiment_satisfied</span>
+                                            SENTIMEN SOSIAL MEDIA
+                                        </h3>
+                                        <p class="text-[10px] text-slate-400">Analisis respon dan persepsi emosi publik di media sosial.</p>
                                     </div>
                                 </div>
                                 
@@ -2394,12 +2402,13 @@ new class extends Component
 
                             <!-- Sentimen Berita -->
                             <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 space-y-3">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                                            <span class="material-symbols-outlined text-[18px]">newspaper</span>
-                                        </div>
-                                        <span class="text-xs font-extrabold tracking-wider text-slate-400 uppercase">SENTIMEN BERITA</span>
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-100/85">
+                                    <div class="space-y-0.5 text-left">
+                                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[18px] text-[#1fa387]">newspaper</span>
+                                            SENTIMEN BERITA
+                                        </h3>
+                                        <p class="text-[10px] text-slate-400">Distribusi sentimen pemberitaan pada media berita online.</p>
                                     </div>
                                 </div>
                                 
