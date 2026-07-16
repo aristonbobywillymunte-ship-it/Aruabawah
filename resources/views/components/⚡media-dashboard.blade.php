@@ -2343,7 +2343,7 @@ new class extends Component
                         <!-- Row 3: Sentiment breakdown cards (Full width 2 columns) -->
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <!-- Sentimen Sosmed -->
-                            <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 space-y-4">
+                            <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 space-y-3">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-2">
                                         <div class="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
@@ -2355,17 +2355,17 @@ new class extends Component
                                 
                                 <div class="grid grid-cols-3 gap-2">
                                     <!-- Positif -->
-                                    <div class="bg-emerald-50/40 rounded-2xl p-3 border border-emerald-100/50 text-left">
+                                    <div class="bg-emerald-50/40 rounded-xl p-2.5 border border-emerald-100/50 text-left">
                                         <span class="text-[10px] font-extrabold text-emerald-600 block uppercase tracking-wider">Positif</span>
                                         <h3 class="text-xl font-extrabold text-emerald-700 mt-1">{{ $fmt($socPos) }}</h3>
                                     </div>
                                     <!-- Netral -->
-                                    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-left">
+                                    <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-left">
                                         <span class="text-[10px] font-extrabold text-slate-500 block uppercase tracking-wider">Netral</span>
                                         <h3 class="text-xl font-extrabold text-slate-700 mt-1">{{ $fmt($socNeu) }}</h3>
                                     </div>
                                     <!-- Negatif -->
-                                    <div class="bg-rose-50/40 rounded-2xl p-3 border border-rose-100/50 text-left">
+                                    <div class="bg-rose-50/40 rounded-xl p-2.5 border border-rose-100/50 text-left">
                                         <span class="text-[10px] font-extrabold text-rose-600 block uppercase tracking-wider">Negatif</span>
                                         <h3 class="text-xl font-extrabold text-rose-700 mt-1">{{ $fmt($socNeg) }}</h3>
                                     </div>
@@ -2393,7 +2393,7 @@ new class extends Component
                             </div>
 
                             <!-- Sentimen Berita -->
-                            <div class="border border-slate-200 bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 space-y-4">
+                            <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 space-y-3">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-2">
                                         <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
@@ -2405,17 +2405,17 @@ new class extends Component
                                 
                                 <div class="grid grid-cols-3 gap-2">
                                     <!-- Positif -->
-                                    <div class="bg-emerald-50/40 rounded-2xl p-3 border border-emerald-100/50 text-left">
+                                    <div class="bg-emerald-50/40 rounded-xl p-2.5 border border-emerald-100/50 text-left">
                                         <span class="text-[10px] font-extrabold text-emerald-600 block uppercase tracking-wider">Positif</span>
                                         <h3 class="text-xl font-extrabold text-emerald-700 mt-1">{{ $fmt($newsPos) }}</h3>
                                     </div>
                                     <!-- Netral -->
-                                    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-left">
+                                    <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-left">
                                         <span class="text-[10px] font-extrabold text-slate-500 block uppercase tracking-wider">Netral</span>
                                         <h3 class="text-xl font-extrabold text-slate-700 mt-1">{{ $fmt($newsNeu) }}</h3>
                                     </div>
                                     <!-- Negatif -->
-                                    <div class="bg-rose-50/40 rounded-2xl p-3 border border-rose-100/50 text-left">
+                                    <div class="bg-rose-50/40 rounded-xl p-2.5 border border-rose-100/50 text-left">
                                         <span class="text-[10px] font-extrabold text-rose-600 block uppercase tracking-wider">Negatif</span>
                                         <h3 class="text-xl font-extrabold text-rose-700 mt-1">{{ $fmt($newsNeg) }}</h3>
                                     </div>
