@@ -755,6 +755,17 @@ class ApifyScrapingJob implements ShouldQueue
                 'content' => $content,
                 'url' => $postUrl ?? '',
                 'source_name' => $platform,
+                'media_type' => $this->detectSocialMediaType($item, $platform),
+                'media_url' => $this->extractSocialMediaUrl($item),
+                'thumbnail_url' => $this->extractSocialThumbnailUrl($item),
+                'author_name' => $author,
+                'author_url' => $authorUrl,
+                'like_count' => (int) $likes,
+                'comment_count' => (int) $comments,
+                'share_count' => (int) $shares,
+                'view_count' => (int) $views,
+                'follower_count' => (int) $followers,
+                'raw_social_item' => $item,
                     'published_at' => $postedAtCarbon?->toIso8601String(),
                     'no_telegram' => $suppressTelegram,
                 ], $promptTemplateId, $providerContextHash);
@@ -797,6 +808,75 @@ class ApifyScrapingJob implements ShouldQueue
                 'last_error_message' => $costLimitReached ? $costLimitNote : ($pollTimeoutReached ? $pollTimeoutNote : null),
             ]);
         }
+    }
+
+    protected function detectSocialMediaType(array $item, string $platform): string
+    {
+        $haystack = mb_strtolower(implode(' ', array_map(static function ($value) {
+            if (is_scalar($value) || $value === null) {
+                return (string) $value;
+            }
+
+            return json_encode($value, JSON_UNESCAPED_UNICODE) ?: '';
+        }, [
+            $item['type'] ?? '',
+            $item['post_type'] ?? '',
+            $item['media_type'] ?? '',
+            $item['content_type'] ?? '',
+            $item['video_url'] ?? '',
+            $item['videoUrl'] ?? '',
+            $item['image_url'] ?? '',
+            $item['imageUrl'] ?? '',
+            $item['thumbnail_url'] ?? '',
+            $item['thumbnailUrl'] ?? '',
+            $item['attachments'] ?? '',
+            $item['media'] ?? '',
+            $item['images'] ?? '',
+            $item['videos'] ?? '',
+            $item['carousel'] ?? '',
+        ])));
+
+        if (preg_match('/\b(video|reel|clip|short|live)\b/', $haystack)) {
+            return 'video';
+        }
+
+        if (preg_match('/\b(photo|image|img|picture|gambar|foto)\b/', $haystack)) {
+            return 'image';
+        }
+
+        if (preg_match('/\b(carousel|sidecar|gallery|album)\b/', $haystack)) {
+            return 'carousel';
+        }
+
+        if ($platform === 'TikTok') {
+            return 'video';
+        }
+
+        return 'text';
+    }
+
+    protected function extractSocialMediaUrl(array $item): string
+    {
+        foreach (['video_url', 'videoUrl', 'media_url', 'mediaUrl', 'image_url', 'imageUrl', 'url'] as $key) {
+            $value = trim((string) ($item[$key] ?? ''));
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return '';
+    }
+
+    protected function extractSocialThumbnailUrl(array $item): string
+    {
+        foreach (['thumbnail_url', 'thumbnailUrl', 'preview_url', 'previewUrl', 'image_url', 'imageUrl'] as $key) {
+            $value = trim((string) ($item[$key] ?? ''));
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return '';
     }
 
     protected function abortApifyRun(string $token, string $runId, ?string $datasetId = null, string $reason = 'safe abort'): void

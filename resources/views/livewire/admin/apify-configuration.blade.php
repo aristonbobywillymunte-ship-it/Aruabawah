@@ -433,13 +433,13 @@
                                     </div>
                                     <div class="grid gap-4 sm:grid-cols-2">
                                         <div>
-                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Facebook</label>
-                                            <input wire:model="facebook_max_posts" type="number" min="1" max="50" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Facebook <span class="text-rose-600">*</span></label>
+                                            <input wire:model="facebook_max_posts" type="number" min="1" max="50" required class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                             @error('facebook_max_posts') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                         </div>
                                         <div>
-                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Rentang Waktu Post</label>
-                                            <select wire:model="facebook_post_time_range" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Rentang Waktu Post <span class="text-rose-600">*</span></label>
+                                            <select wire:model="facebook_post_time_range" required class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                                 <option value="24h">24h</option>
                                                 <option value="7d">7d</option>
                                                 <option value="30d">30d</option>
@@ -449,8 +449,8 @@
                                     </div>
                                     <div class="pt-1">
                                         <label class="flex items-center gap-2.5 cursor-pointer group">
-                                            <input wire:model="facebook_use_apify_proxy" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                                            <span class="text-[11px] font-bold text-slate-700">Use Apify Proxy</span>
+                                            <input wire:model="facebook_use_apify_proxy" type="checkbox" required class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
+                                            <span class="text-[11px] font-bold text-slate-700">Use Apify Proxy <span class="text-rose-600">*</span></span>
                                         </label>
                                     </div>
                                     <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-[11px] text-slate-600 space-y-1">

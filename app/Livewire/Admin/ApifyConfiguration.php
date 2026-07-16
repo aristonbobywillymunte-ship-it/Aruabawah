@@ -379,6 +379,8 @@ class ApifyConfiguration extends Component
                 'cost_reference' => ['required', 'numeric', 'min:0'],
                 'maximum_cost_per_run_usd' => ['nullable', 'numeric', 'min:0', 'max:100'],
                 'facebook_max_posts' => ['required_if:platform,Facebook', 'nullable', 'integer', 'min:1', 'max:50'],
+                'facebook_post_time_range' => ['required_if:platform,Facebook', 'nullable', 'in:24h,7d,30d,90d'],
+                'facebook_use_apify_proxy' => ['required_if:platform,Facebook', 'accepted'],
                 'instagram_search_limit' => ['required_if:platform,Instagram', 'nullable', 'integer', 'min:1', 'max:50'],
                 'tiktok_max_items' => ['required_if:platform,TikTok', 'nullable', 'integer', 'min:1', 'max:50'],
             ]);

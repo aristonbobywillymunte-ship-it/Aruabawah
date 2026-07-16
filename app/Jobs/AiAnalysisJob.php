@@ -392,8 +392,15 @@ class AiAnalysisJob implements ShouldQueue
             '{content}' => (string) ($payload['content'] ?? ''),
             '{platform}' => (string) ($payload['platform'] ?? ''),
             '{url}' => (string) ($payload['url'] ?? ''),
+            '{media_type}' => (string) ($payload['media_type'] ?? 'text'),
+            '{media_url}' => (string) ($payload['media_url'] ?? ''),
+            '{thumbnail_url}' => (string) ($payload['thumbnail_url'] ?? ''),
             '{source_name}' => (string) ($payload['source_name'] ?? ''),
+            '{author_name}' => (string) ($payload['author_name'] ?? ''),
+            '{author_url}' => (string) ($payload['author_url'] ?? ''),
             '{published_at}' => (string) ($payload['published_at'] ?? ''),
+            '{engagement_context}' => $this->buildEngagementContext($payload),
+            '{media_context}' => $this->buildMediaContext($payload),
             '{project_context}' => $this->buildProjectContext($payload),
             '{reach_context}' => $this->buildReachContext($payload),
         ];
@@ -402,6 +409,10 @@ class AiAnalysisJob implements ShouldQueue
         $instruction = $template->system_prompt . "\n\n";
         $instruction .= strtr($template->user_prompt_template, $replacements) . "\n\n";
         $instruction .= "AI wajib menghasilkan estimasi pembaca dengan field berikut: project_estimated_readers, potential_estimated_readers, potential_reach_score, potential_reach_level, potential_reach_band, local_relevance_score, confidence_score, confidence_level, signals_used, reasoning_summary, limitations, is_exact_reach (false), reach_method (ai_reader_estimate_v1).\n";
+        if (($template->source_type ?? 'article') === 'social') {
+            $instruction .= "Untuk sosial media, prioritaskan penilaian berdasarkan link konten, jenis media, caption, konteks visual, dan engagement bila tersedia. Jika link atau thumbnail mengarah ke video/foto/carousel, gunakan itu sebagai sinyal utama untuk menentukan apakah kontennya video, gambar, carousel, atau teks.\n";
+            $instruction .= "Jangan menebak isi visual secara berlebihan; jika media tidak bisa diakses, sebutkan keterbatasan secara eksplisit di limitations.\n";
+        }
         $instruction .= "Estimasi pembaca harus berupa integer natural yang spesifik dan tidak boleh dipaksa ke angka bulat generik seperti 100, 500, atau 1000 tanpa alasan kuat. Gunakan angka yang terasa realistis dari sinyal konten, misalnya 187, 326, 847, atau 1.173 bila konteksnya mendukung.\n";
         $instruction .= "project_estimated_readers adalah estimasi jumlah pembaca artikel secara umum. Jangan gunakan angka random atau string rentang (misal '10-20'). Nilai ini harus dihitung berdasarkan kekuatan dan skala media, posisi artikel, karakter isu, dan distribusi.\n";
         $instruction .= "Jangan mengurangi atau mengubah nilai project_estimated_readers berdasarkan relevansi artikel terhadap project. Nilai nol tidak diperbolehkan.\n";
@@ -432,7 +443,68 @@ class AiAnalysisJob implements ShouldQueue
     protected function effectiveOutputSchema(AiPromptTemplate $template): string
     {
         if ($template->source_type !== 'article') {
-            return trim((string) ($template->output_schema ?? ''));
+            $schema = trim((string) ($template->output_schema ?? ''));
+            if ($schema === '' && $template->source_type === 'social') {
+                return json_encode([
+                    'type' => 'object',
+                    'properties' => [
+                        'summary' => ['type' => 'string'],
+                        'sentiment' => ['type' => 'string'],
+                        'sentiment_score' => ['type' => 'number'],
+                        'main_issue' => ['type' => 'string'],
+                        'entities' => ['type' => 'array'],
+                        'risk_level' => ['type' => 'string'],
+                        'risk_reason' => ['type' => 'string'],
+                        'reach_estimate' => ['type' => 'integer'],
+                        'reach_score_10' => ['type' => 'integer'],
+                        'reach_level' => ['type' => 'string'],
+                        'reach_trend' => ['type' => 'string'],
+                        'reach_source' => ['type' => 'string'],
+                        'reach_confidence' => ['type' => 'string'],
+                        'reach_reason' => ['type' => 'string'],
+                        'content_type' => ['type' => 'string'],
+                        'media_type' => ['type' => 'string'],
+                        'media_link_used' => ['type' => 'string'],
+                        'media_signal' => ['type' => 'string'],
+                        'local_relevance_score' => ['type' => 'integer'],
+                        'confidence_score' => ['type' => 'integer'],
+                        'confidence_level' => ['type' => 'string'],
+                        'signals_used' => ['type' => 'array'],
+                        'reasoning_summary' => ['type' => 'string'],
+                        'limitations' => ['type' => 'string'],
+                        'recommendation' => ['type' => 'string'],
+                    ],
+                    'required' => [
+                        'summary',
+                        'sentiment',
+                        'sentiment_score',
+                        'main_issue',
+                        'entities',
+                        'risk_level',
+                        'risk_reason',
+                        'reach_estimate',
+                        'reach_score_10',
+                        'reach_level',
+                        'reach_trend',
+                        'reach_source',
+                        'reach_confidence',
+                        'reach_reason',
+                        'content_type',
+                        'media_type',
+                        'media_link_used',
+                        'media_signal',
+                        'local_relevance_score',
+                        'confidence_score',
+                        'confidence_level',
+                        'signals_used',
+                        'reasoning_summary',
+                        'limitations',
+                        'recommendation',
+                    ],
+                ], JSON_UNESCAPED_UNICODE);
+            }
+
+            return $schema;
         }
 
         return json_encode([
@@ -1188,6 +1260,49 @@ class AiAnalysisJob implements ShouldQueue
             }
         }
         return 'Analisis artikel secara umum dan objektif tanpa terikat pada konteks spesifik proyek.';
+    }
+
+    protected function buildMediaContext(array $payload): string
+    {
+        if (($payload['type'] ?? null) !== 'social') {
+            return 'Tidak ada konteks media sosial tambahan.';
+        }
+
+        $mediaType = trim((string) ($payload['media_type'] ?? 'text'));
+        $mediaUrl = trim((string) ($payload['media_url'] ?? ''));
+        $thumbnailUrl = trim((string) ($payload['thumbnail_url'] ?? ''));
+        $author = trim((string) ($payload['author_name'] ?? ''));
+
+        return trim(implode("\n", array_filter([
+            "Jenis media terdeteksi: {$mediaType}.",
+            $mediaUrl !== '' ? "Link media: {$mediaUrl}." : null,
+            $thumbnailUrl !== '' ? "Thumbnail: {$thumbnailUrl}." : null,
+            $author !== '' ? "Penulis/akun: {$author}." : null,
+            'Jika ada link video/foto, gunakan itu untuk menilai apakah kontennya memang visual, bukan hanya teks caption.',
+        ])));
+    }
+
+    protected function buildEngagementContext(array $payload): string
+    {
+        if (($payload['type'] ?? null) !== 'social') {
+            return 'Tidak ada engagement media sosial.';
+        }
+
+        $metrics = [];
+        foreach ([
+            'like_count' => 'likes',
+            'comment_count' => 'comments',
+            'share_count' => 'shares',
+            'view_count' => 'views',
+            'follower_count' => 'followers',
+        ] as $key => $label) {
+            $value = $payload[$key] ?? null;
+            if (is_numeric($value) && (int) $value > 0) {
+                $metrics[] = "{$label}: " . (int) $value;
+            }
+        }
+
+        return $metrics ? 'Engagement tersedia: ' . implode(', ', $metrics) . '.' : 'Engagement tidak tersedia.';
     }
 
     protected function buildReachContext(array $payload): string

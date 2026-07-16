@@ -1,58 +1,202 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ARUSBAWAH Media Intelligence
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+ARUSBAWAH Media Intelligence adalah aplikasi dashboard pemantauan media berbasis proyek yang digunakan untuk mengumpulkan, menampilkan, dan menganalisis informasi dari portal berita dan media sosial.
 
-## About Laravel
+Sistem ini dirancang sebagai pusat kontrol untuk memantau isu, sentimen publik, topik populer, jangkauan, serta risiko dari sebuah proyek secara terpusat.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Ringkasan
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Memantau beberapa proyek dalam satu dashboard.
+- Menampilkan ringkasan data media secara visual dan terstruktur.
+- Mendukung analisis sentimen, jangkauan, dan risiko.
+- Menyediakan pengaturan scraping, sumber berita, AI provider, dan admin tools.
+- Mendukung pelaporan dan pemantauan operasional secara berkelanjutan.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Fitur Utama
 
-## Learning Laravel
+### 1. Daftar Proyek
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Halaman daftar proyek menampilkan seluruh proyek yang tersedia di sistem. Pengguna dapat:
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- melihat kartu ringkasan proyek
+- membuat proyek baru
+- membuka detail proyek
+- mengedit proyek
+- menonaktifkan atau menghapus proyek
+- melihat daftar proyek yang telah dihapus
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+Setiap kartu proyek menampilkan informasi seperti:
 
-## Agentic Development
+- nama proyek
+- waktu pembuatan
+- status pembaruan data portal
+- status pembaruan data media sosial
+- jumlah artikel siap ditampilkan
+- total jangkauan
+- persentase positif
+- persentase negatif
+- status AI dan risiko
+- topik populer
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 2. Pembuatan Proyek Baru
 
-```bash
-composer require laravel/boost --dev
+Sistem menyediakan kartu dan formulir untuk menambahkan proyek baru. Proyek baru digunakan untuk mengatur pemantauan media online, media cetak, dan media sosial.
 
-php artisan boost:install
-```
+Komponen umum yang tersedia:
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+- nama proyek
+- kata kunci utama
+- pengaturan lanjutan
 
-## Contributing
+### 3. Proyek Dihapus
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Sistem memiliki panel khusus untuk menampilkan proyek yang telah dinonaktifkan. Dari panel ini pengguna dapat:
 
-## Code of Conduct
+- mengaktifkan kembali proyek
+- menghapus proyek secara permanen
+- menutup panel
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 4. Menu Analisis
 
-## Security Vulnerabilities
+Menu analisis menampilkan ringkasan data untuk proyek aktif. Informasi yang disajikan meliputi:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- total artikel ditemukan
+- total jangkauan
+- interaksi media sosial
+- sentimen berita
+- sentimen media sosial
+- status AI
+- risiko
 
-## License
+Menu ini juga menyediakan filter aktif dan rentang tanggal.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 5. Menu Penyebutan
+
+Menu penyebutan digunakan untuk menampilkan daftar atau analisis penyebutan yang terkait dengan proyek. Fitur ini membantu pengguna menelusuri isu, nama, atau kata kunci yang sering muncul dalam data media.
+
+### 6. Menu Kata Kunci
+
+Menu ini digunakan untuk mengelola dan memantau kata kunci utama proyek. Kata kunci menjadi dasar pengumpulan data dari sumber media yang dipilih.
+
+### 7. Menu Wawasan
+
+Menu wawasan menyajikan insight yang dihasilkan dari data monitoring. Fitur ini membantu pengguna memahami pola, tren, dan tema dominan dalam hasil pemantauan.
+
+### 8. Menu Konten
+
+Menu konten digunakan untuk meninjau isi artikel, posting, atau konten lain yang berhasil dikumpulkan dari sumber media.
+
+### 9. Menu Sumber
+
+Menu sumber dipakai untuk mengelola dan meninjau sumber data, seperti portal berita dan kanal media sosial.
+
+### 10. Menu Laporan
+
+Menu laporan digunakan untuk menghasilkan rekapitulasi atau ringkasan hasil monitoring dalam bentuk yang lebih formal.
+
+## Fitur Administratif
+
+Aplikasi ini memiliki modul administrasi untuk pengelolaan sistem, antara lain:
+
+- dashboard admin
+- kelola user
+- pengaturan Apify
+- AI Provider
+- Scraping Settings
+- Branding Aplikasi
+- Pipeline Monitor
+- Manajemen Sumber Berita
+- AI Prompt Templates
+- Telegram Settings
+- Log Sistem
+- Database
+- Maintenance
+
+## Pengaturan Scraping
+
+Pengaturan scraping digunakan untuk mengontrol proses pengambilan data dari sumber media. Parameter yang umum tersedia mencakup:
+
+- interval crawling
+- limit crawler
+- rentang waktu pengambilan data
+- HTTP timeout
+- retry limit
+- delay antar proses
+
+Pengaturan ini penting untuk menjaga stabilitas proses crawling dan menghindari beban berlebih pada sumber data.
+
+## Analisis AI dan Risiko
+
+Sistem menampilkan metrik khusus untuk mendukung analisis kualitas data dan risiko, seperti:
+
+- Siap Ditampilkan
+- Analisis AI
+- High Risk
+
+Panel `STATUS AI & RISIKO` dapat ditampilkan atau disembunyikan sesuai kebutuhan pengguna. State tampil/sembunyi dibuat per proyek agar lebih stabil dan tidak saling memengaruhi.
+
+## Topik Populer
+
+Setiap proyek menampilkan topik populer yang dihasilkan dari hasil monitoring. Informasi ini membantu pengguna melihat tema yang paling sering muncul dalam percakapan publik dan pemberitaan.
+
+## Karakter UI
+
+Antarmuka aplikasi dibuat sebagai dashboard operasional yang padat informasi namun tetap mudah dipindai. Perhatian khusus diberikan pada:
+
+- konsistensi ukuran kartu
+- perilaku hover dan kursor
+- jarak antar elemen
+- animasi show/hide yang halus
+- navigasi antarmenu yang konsisten
+
+## Navigasi
+
+Navigasi antarmenu menggunakan route Laravel biasa agar perpindahan halaman lebih konsisten dan mudah dipelihara. Pendekatan ini juga membantu menjaga perilaku navigasi tetap stabil di berbagai halaman proyek.
+
+## Teknologi
+
+Proyek ini dibangun dengan stack berikut:
+
+- Laravel
+- Livewire
+- Alpine.js
+- Tailwind CSS
+- PHP 8.3
+- MySQL/PostgreSQL sesuai konfigurasi environment
+
+Selain itu, proyek juga menggunakan beberapa paket pendukung untuk:
+
+- queue dan background job
+- PDF generation
+- spreadsheet export
+- realtime/event support
+
+## Struktur Umum Aplikasi
+
+Secara umum, alur aplikasi dapat diringkas sebagai berikut:
+
+1. pengguna login ke sistem
+2. pengguna memilih atau membuat proyek
+3. sistem mengumpulkan data dari sumber yang dikonfigurasi
+4. data diproses menjadi ringkasan, sentimen, risiko, dan insight
+5. hasilnya ditampilkan melalui dashboard analitik dan halaman admin
+
+## Status Pengembangan
+
+Repository ini sedang dikembangkan secara aktif. Beberapa bagian UI dan navigasi telah disesuaikan agar:
+
+- lebih konsisten
+- lebih nyaman digunakan
+- lebih stabil saat berpindah halaman
+- lebih mudah dipelihara
+
+## Catatan Penggunaan
+
+- Pastikan environment `.env` sudah terisi sesuai kebutuhan.
+- Jalankan migrasi dan seed jika diperlukan.
+- Gunakan `npm run dev` untuk mode pengembangan frontend.
+- Gunakan queue worker untuk proses background jika fitur scraping atau job aktif.
+
+## Lisensi
+
+Proyek ini digunakan untuk kebutuhan internal ARUSBAWAH Media Intelligence.
