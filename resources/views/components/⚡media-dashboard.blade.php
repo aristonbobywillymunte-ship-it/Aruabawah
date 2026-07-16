@@ -2890,11 +2890,15 @@ new class extends Component
 
                     <!-- Row 4: Network Analysis Diagram section -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider block">Network Analysis</h3>
-                            <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200" x-data="{}" x-init="">
-                                <span class="text-[9px] text-slate-500 font-bold px-2 py-0.5">Analisis Relasi</span>
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-6 w-full">
+                            <div class="space-y-0.5 text-left">
+                                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[18px] text-[#1fa387]">hub</span>
+                                    NETWORK ANALYSIS
+                                </h3>
+                                <p class="text-[10px] text-slate-400">Visualisasi hubungan keterkaitan antar entitas, kata kunci, dan topik berita.</p>
                             </div>
+                            <span class="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded border border-slate-200">Analisis Relasi</span>
                         </div>
                         <div class="grid grid-cols-3 gap-6 items-start" x-data="{ netTab: 'topik' }">
                             <!-- Visual Network SVG Graph (Left 2 cols) -->
