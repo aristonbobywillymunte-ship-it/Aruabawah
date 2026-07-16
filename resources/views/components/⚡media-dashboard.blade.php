@@ -3352,8 +3352,8 @@ new class extends Component
                 </section>
             @elseif($this->isTab('katakunci'))
                 <!-- TAB 3: Kata Kunci Configuration Page -->
-                <section style="height: calc(100vh - 190px);" class="flex-1 min-w-0 space-y-6 overflow-y-auto pr-4">
-                    <div class="flex items-center justify-between text-left">
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                    <div class="flex items-center justify-between text-left shrink-0">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">vpn_key</span>Pengaturan dan Analisis Kata Kunci</h2>
                             <p class="text-xs text-slate-500">Pantau performa tren pencarian untuk proyek <span class="text-[#1fa387] font-bold uppercase">{{ $projectName }}</span></p>
@@ -3366,6 +3366,8 @@ new class extends Component
                             <span>{{ session('message') }}</span>
                         </div>
                     @endif
+
+                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
                     <!-- Manajemen Kata Kunci Card -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left">
@@ -3763,6 +3765,7 @@ new class extends Component
                             </div>
                         </div>
                     @endif
+                    </div>
                 </section>
             @elseif($this->isTab('wawasan'))
                 @php
@@ -3786,8 +3789,8 @@ new class extends Component
                         $crisisPingClass = 'bg-emerald-400';
                     }
                 @endphp
-                <section style="height: calc(100vh - 190px);" class="flex-1 min-w-0 space-y-6 text-left overflow-y-auto pr-4">
-                    <div class="flex items-center justify-between mb-4">
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                    <div class="flex items-center justify-between shrink-0">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
                                 <span class="material-symbols-outlined text-indigo-600 text-[22px]">psychology</span>Wawasan & Ringkasan AI
@@ -3811,6 +3814,8 @@ new class extends Component
                             <span wire:loading wire:target="generateAiInsights">Memproses AI...</span>
                         </button>
                     </div>
+
+                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
                     <!-- Top Analytics KPI Grid -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -3980,9 +3985,25 @@ new class extends Component
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Rekomendasi Respons -->
+                            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[#1fa387] text-[18px]">task_alt</span>
+                                    Rekomendasi Respons
+                                </h4>
+                                <div class="space-y-3">
+                                    @foreach($w['response_actions'] as $action)
+                                        <div class="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5">
+                                            <span class="text-[9px] font-black text-[#1fa387] bg-[#1fa387]/10 border border-[#1fa387]/15 rounded-lg px-2 py-1 whitespace-nowrap">{{ $action['level'] }}</span>
+                                            <p class="text-xs text-slate-600 leading-relaxed">{{ $action['text'] }}</p>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Right Column: Breakdown, Sources, Risk Triggers, Response Actions -->
+                        <!-- Right Column: Breakdown, Sources, Risk Triggers -->
                         <div class="space-y-5">
                             <!-- Top Categories -->
                             <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
@@ -4103,28 +4124,12 @@ new class extends Component
                                     @endforelse
                                 </div>
                             </div>
-
-                            <!-- Rekomendasi Respons -->
-                            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                                <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[#1fa387] text-[18px]">task_alt</span>
-                                    Rekomendasi Respons
-                                </h4>
-                                <div class="space-y-3">
-                                    @foreach($w['response_actions'] as $action)
-                                        <div class="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5">
-                                            <span class="text-[9px] font-black text-[#1fa387] bg-[#1fa387]/10 border border-[#1fa387]/15 rounded-lg px-2 py-1 whitespace-nowrap">{{ $action['level'] }}</span>
-                                            <p class="text-xs text-slate-600 leading-relaxed">{{ $action['text'] }}</p>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </section>
             @elseif($this->isTab('laporan'))
                 <!-- TAB 4: Laporan (Report configuration page matching screenshots) -->
-                <section style="height: calc(100vh - 190px);" class="flex-1 min-w-0 space-y-6 overflow-y-auto pr-4" x-data="{
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" x-data="{
                     reportType: 'pdf',
                     pdfToggles: {
                         wawasan: true,
@@ -4165,6 +4170,8 @@ new class extends Component
                             <p class="text-xs text-slate-500">Pilih komponen data yang akan disertakan dalam dokumen.</p>
                         </div>
                     </div>
+
+                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
                     <!-- Main Config Card -->
                     <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6 text-left">
@@ -4518,19 +4525,23 @@ new class extends Component
                                     <span>⬇ Unduh Laporan Excel</span>
                                 </a>
                             </div>
+                            </div>
                         </div>
+                    </div>
                     </div>
                 </section>
 
             @elseif($this->isTab('konten'))
-                <section style="height: calc(100vh - 190px);" class="flex-1 min-w-0 space-y-6 overflow-y-auto pr-4">
-                    <div class="flex items-center justify-between">
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                    <div class="flex items-center justify-between shrink-0">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5">Manajemen Konten</h2>
                             <p class="text-xs text-slate-500">Galeri konten artikel dan postingan yang berhasil dikumpulkan.</p>
                         </div>
                     </div>
                     
+                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
+
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
                         @php
                             $articlesList = $this->getArticles();
@@ -4673,17 +4684,20 @@ new class extends Component
                         </div>
                         @endif
                     @endif
+                    </div>
                 </section>
 
             @elseif($this->isTab('sumber'))
-                <section style="height: calc(100vh - 190px);" class="flex-1 min-w-0 space-y-6 overflow-y-auto pr-4">
-                    <div class="flex items-center justify-between">
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                    <div class="flex items-center justify-between shrink-0">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5">Sumber Data</h2>
                             <p class="text-xs text-slate-500">Statistik dan daftar sumber portal yang menyebut proyek ini.</p>
                         </div>
                     </div>
                     
+                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
+
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6">
                         <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                             <div>
@@ -4826,6 +4840,8 @@ new class extends Component
                                 </tbody>
                             </table>
                         </div>
+                        </div>
+                    </div>
                     </div>
                 </section>
             @endif
