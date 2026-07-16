@@ -215,9 +215,9 @@ class ProjectsList extends Component
 
     protected function latestSocialUpdateForProject(int $projectId): ?string
     {
-        return $this->latestSocialDataForProject($projectId)
-            ?? $this->latestSuccessfulSocialRunForProject($projectId)
-            ?? $this->latestSocialRunForProject($projectId);
+        return $this->latestSuccessfulSocialRunForProject($projectId)
+            ?? $this->latestSocialRunForProject($projectId)
+            ?? $this->latestSocialDataForProject($projectId);
     }
 
     protected function isSocialScanRunningForProject(int $projectId): bool
