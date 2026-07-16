@@ -1412,43 +1412,43 @@ new class extends Component
             <!-- Navigation Links -->
             <nav class="hidden md:flex items-center justify-center gap-6 h-full justify-self-center">
                     <a 
-                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('penyebutan') }}"
+                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('penyebutan')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('penyebutan') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Penyebutan
                     </a>
                     <a 
-                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('analisis') }}"
+                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('analisis')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('analisis') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Analisis
                     </a>
                     <a 
-                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('katakunci') }}"
+                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('katakunci')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('katakunci') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Kata Kunci
                     </a>
                     <a 
-                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('wawasan') }}"
+                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('wawasan')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('wawasan') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Wawasan
                     </a>
                     <a 
-                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('konten') }}"
+                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('konten')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('konten') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Konten
                     </a>
                     <a 
-                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('sumber') }}"
+                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('sumber')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('sumber') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Sumber
                     </a>
                     <a 
-                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('laporan') }}"
+                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('laporan')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('laporan') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Laporan
@@ -1513,7 +1513,7 @@ new class extends Component
             ['key' => 'laporan', 'label' => 'Laporan']
         ] as $tab)
             <a 
-                href="?project={{ request()->query('project') }}&tab={{ base64_encode($tab['key']) }}"
+                href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode($tab['key'])]) }}"
                 class="flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {{ $this->isTab($tab['key']) ? 'bg-[#1fa387]/10 text-[#1fa387]' : 'text-slate-500 hover:text-slate-800' }}"
             >
                 {{ $tab['label'] }}
