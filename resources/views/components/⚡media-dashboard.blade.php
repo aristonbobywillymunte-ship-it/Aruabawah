@@ -1772,7 +1772,9 @@ new class extends Component
                     <!-- Section Title & Sort Selector -->
                     <div class="flex items-center justify-between">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900 mb-0.5">Penyebutan</h2>
+                            <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[#1fa387] text-[22px]">forum</span>Penyebutan
+                            </h2>
                             <p class="text-xs text-slate-500 flex items-center gap-1">
                                 Pantau percakapan media untuk proyek 
                                 <span class="font-bold text-[#1fa387]">{{ $projectName }}</span>
