@@ -1411,55 +1411,48 @@ new class extends Component
 
             <!-- Navigation Links -->
             <nav class="hidden md:flex items-center justify-center gap-6 h-full justify-self-center">
-                    <button 
-                        type="button"
-                        wire:click="setTab('penyebutan')"
+                    <a 
+                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('penyebutan') }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('penyebutan') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Penyebutan
-                    </button>
-                    <button 
-                        type="button"
-                        wire:click="setTab('analisis')"
+                    </a>
+                    <a 
+                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('analisis') }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('analisis') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Analisis
-                    </button>
-                    <button 
-                        type="button"
-                        wire:click="setTab('katakunci')"
+                    </a>
+                    <a 
+                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('katakunci') }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('katakunci') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Kata Kunci
-                    </button>
-                    <button 
-                        type="button"
-                        wire:click="setTab('wawasan')"
+                    </a>
+                    <a 
+                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('wawasan') }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('wawasan') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Wawasan
-                    </button>
-                    <button 
-                        type="button"
-                        wire:click="setTab('konten')"
+                    </a>
+                    <a 
+                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('konten') }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('konten') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Konten
-                    </button>
-                    <button 
-                        type="button"
-                        wire:click="setTab('sumber')"
+                    </a>
+                    <a 
+                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('sumber') }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('sumber') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Sumber
-                    </button>
-                    <button 
-                        type="button"
-                        wire:click="setTab('laporan')"
+                    </a>
+                    <a 
+                        href="?project={{ request()->query('project') }}&tab={{ base64_encode('laporan') }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('laporan') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Laporan
-                    </button>
+                    </a>
             </nav>
 
             <!-- User Profile & Add Notification -->
@@ -1519,13 +1512,12 @@ new class extends Component
             ['key' => 'sumber', 'label' => 'Sumber'],
             ['key' => 'laporan', 'label' => 'Laporan']
         ] as $tab)
-            <button 
-                type="button"
-                wire:click="setTab('{{ $tab['key'] }}')"
+            <a 
+                href="?project={{ request()->query('project') }}&tab={{ base64_encode($tab['key']) }}"
                 class="flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {{ $this->isTab($tab['key']) ? 'bg-[#1fa387]/10 text-[#1fa387]' : 'text-slate-500 hover:text-slate-800' }}"
             >
                 {{ $tab['label'] }}
-            </button>
+            </a>
         @endforeach
     </div>
 
