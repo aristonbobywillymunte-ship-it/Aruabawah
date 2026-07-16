@@ -3923,13 +3923,16 @@ new class extends Component
                         <!-- Left Column: Summary, Recs, Negative Issues, Sentiment Shift -->
                         <div class="space-y-5">
                             <!-- Executive Summary -->
-                            <div class="bg-gradient-to-br from-slate-50 to-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                        <svg class="w-4 h-4 text-[#1fa387]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                        Ringkasan Eksekutif AI
-                                    </h4>
-                                    <span class="text-[9px] font-bold text-[#1fa387] bg-[#1fa387]/10 px-2 py-0.5 rounded-full uppercase tracking-wider">AI Generated</span>
+                            <div class="bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4 relative z-10 w-full">
+                                    <div class="space-y-0.5 text-left">
+                                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[18px] text-[#1fa387]">psychology</span>
+                                            RINGKASAN EKSEKUTIF AI
+                                        </h3>
+                                        <p class="text-[10px] text-slate-400">Ringkasan wawasan cerdas dari AI berdasarkan data proyek terkini.</p>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-[#1fa387] bg-[#1fa387]/10 px-2 py-0.5 rounded border border-[#1fa387]/20 uppercase tracking-wider">AI Generated</span>
                                 </div>
                                 <div class="text-slate-600 text-xs leading-relaxed space-y-2">
                                     {!! preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', nl2br(e($w['summary']))) !!}
@@ -3937,11 +3940,16 @@ new class extends Component
                             </div>
 
                             <!-- Strategic Recommendations -->
-                            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                                <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                                    Rekomendasi Tindakan Strategis
-                                </h4>
+                            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4 w-full">
+                                    <div class="space-y-0.5 text-left">
+                                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[18px] text-[#1fa387]">lightbulb</span>
+                                            REKOMENDASI TINDAKAN STRATEGIS
+                                        </h3>
+                                        <p class="text-[10px] text-slate-400">Usulan langkah taktis dan keputusan strategis berbasis data.</p>
+                                    </div>
+                                </div>
                                 <ul class="space-y-3">
                                     @foreach($w['recommendations'] as $rec)
                                         <li class="flex items-start gap-2.5 text-xs text-slate-600">
@@ -3953,13 +3961,16 @@ new class extends Component
                             </div>
 
                             <!-- Top Isu Negatif -->
-                            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                        <span class="material-symbols-outlined text-rose-500 text-[18px]">priority_high</span>
-                                        Top Isu Negatif
-                                    </h4>
-                                    <span class="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100 uppercase">Prioritas</span>
+                            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4 relative z-10 w-full">
+                                    <div class="space-y-0.5 text-left">
+                                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[18px] text-[#1fa387]">priority_high</span>
+                                            TOP ISU NEGATIF
+                                        </h3>
+                                        <p class="text-[10px] text-slate-400">Sentimen negatif teratas yang perlu diantisipasi dan ditangani segera.</p>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-100 uppercase">Prioritas</span>
                                 </div>
                                 <div class="space-y-3.5">
                                     @forelse($w['negative_issues'] as $issue)
@@ -3979,7 +3990,7 @@ new class extends Component
                             </div>
 
                             <!-- Perubahan Sentimen -->
-                            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+                            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
                                 @php
                                     $shift = $w['sentiment_shift'];
                                     $shiftBadge = match ($shift['tone']) {
@@ -3988,10 +3999,15 @@ new class extends Component
                                         default => 'bg-slate-50 text-slate-700 border-slate-100',
                                     };
                                 @endphp
-                                <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-indigo-500 text-[18px]">trending_up</span>
-                                    Perubahan Sentimen
-                                </h4>
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4 w-full">
+                                    <div class="space-y-0.5 text-left">
+                                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[18px] text-[#1fa387]">compare_arrows</span>
+                                            PERUBAHAN SENTIMEN
+                                        </h3>
+                                        <p class="text-[10px] text-slate-400">Analisis tren pergeseran nada sentimen dibandingkan periode awal.</p>
+                                    </div>
+                                </div>
                                 <div class="rounded-2xl bg-slate-50/70 border border-slate-100 p-4">
                                     <div class="flex items-start justify-between gap-4">
                                         <div>
@@ -4017,12 +4033,16 @@ new class extends Component
                                 </div>
                             </div>
 
-                            <!-- Rekomendasi Respons -->
-                            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                                <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[#1fa387] text-[18px]">task_alt</span>
-                                    Rekomendasi Respons
-                                </h4>
+                            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4 w-full">
+                                    <div class="space-y-0.5 text-left">
+                                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[18px] text-[#1fa387]">task_alt</span>
+                                            REKOMENDASI RESPONS
+                                        </h3>
+                                        <p class="text-[10px] text-slate-400">Usulan template respon dan cara bersikap di saluran media.</p>
+                                    </div>
+                                </div>
                                 <div class="space-y-3">
                                     @foreach($w['response_actions'] as $action)
                                         <div class="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5">
@@ -4036,9 +4056,16 @@ new class extends Component
 
                         <!-- Right Column: Breakdown, Sources, Risk Triggers -->
                         <div class="space-y-5">
-                            <!-- Top Categories -->
-                            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                                <h4 class="text-sm font-bold text-slate-800">Distribusi Kategori Isu</h4>
+                            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4 w-full">
+                                    <div class="space-y-0.5 text-left">
+                                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[18px] text-[#1fa387]">donut_small</span>
+                                            DISTRIBUSI KATEGORI ISU
+                                        </h3>
+                                        <p class="text-[10px] text-slate-400">Persentase sebaran artikel berdasarkan pengelompokan kategori.</p>
+                                    </div>
+                                </div>
                                 <div class="space-y-4">
                                     @forelse($w['categories'] as $cat)
                                         @php
@@ -4059,9 +4086,16 @@ new class extends Component
                                 </div>
                             </div>
 
-                            <!-- Top Sources -->
-                            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                                <h4 class="text-sm font-bold text-slate-800">Kanal Media Terpopuler & Sentimen</h4>
+                            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4 w-full">
+                                    <div class="space-y-0.5 text-left">
+                                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[18px] text-[#1fa387]">newspaper</span>
+                                            KANAL MEDIA TERPOPULER
+                                        </h3>
+                                        <p class="text-[10px] text-slate-400">Statistik sebaran sentimen pada portal berita online teraktif.</p>
+                                    </div>
+                                </div>
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-left text-xs border-separate border-spacing-y-1">
                                         <thead>
