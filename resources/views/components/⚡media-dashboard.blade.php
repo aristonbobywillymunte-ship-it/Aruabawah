@@ -2631,9 +2631,15 @@ new class extends Component
                     <div class="grid grid-cols-2 gap-6">
                         <!-- Word Cloud -->
                         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col text-left h-[360px] relative overflow-hidden transition-all duration-300 hover:shadow-md">
-                            <div class="flex justify-between items-center mb-3.5 relative z-10">
-                                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Topik Utama</h3>
-                                <span class="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full border border-slate-200">Awan Kata</span>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-3.5 relative z-10 w-full">
+                                <div class="space-y-0.5 text-left">
+                                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[18px] text-[#1fa387]">cloud</span>
+                                        TOPIK UTAMA
+                                    </h3>
+                                    <p class="text-[10px] text-slate-400">Kata kunci yang paling sering muncul dalam pemberitaan.</p>
+                                </div>
+                                <span class="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded border border-slate-200">Awan Kata</span>
                             </div>
                             @php
                                 $stopWords = ['dan', 'di', 'ke', 'dari', 'yang', 'untuk', 'dengan', 'ini', 'itu', 'pada', 'dalam', 'adalah', 'akan', 'juga', 'sudah', 'ada', 'bisa', 'atau', 'tidak', 'lebih', 'saat', 'oleh', 'para', 'telah', 'agar', 'atas', 'jika', 'karena', 'maka', 'namun', 'pun', 'serta', 'tentang', 'setelah', 'antara', 'hingga', 'ia', 'kami', 'kita', 'mereka', 'anda', 'bagi', 'dua', 'tiga', 'lain', 'hal', 'tahun', 'baru', 'terkait', 'pihak', 'sebuah', 'satu', 'tersebut', 'the', 'a', 'an', 'is', 'in', 'of', 'and', 'to', 'for', 'masa', 'jalan', 'jadi', 'pemerintah', 'gubernur'];
@@ -2771,7 +2777,15 @@ new class extends Component
 
                         <!-- Category Grid Boxes -->
                         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm text-left flex flex-col justify-between h-[360px]">
-                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-4">Penyebutan Berdasarkan Kategori</h3>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4">
+                                <div class="space-y-0.5 text-left">
+                                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[18px] text-[#1fa387]">category</span>
+                                        PENYEBUTAN BERDASARKAN KATEGORI
+                                    </h3>
+                                    <p class="text-[10px] text-slate-400">Pengelompokan penyebutan berita berdasarkan klasifikasi topik.</p>
+                                </div>
+                            </div>
                             <div class="grid grid-cols-2 gap-3 flex-grow overflow-y-auto pr-1">
                                 <!-- News -->
                                 <div class="group relative rounded-2xl p-[1px] bg-gradient-to-br from-emerald-400/40 via-emerald-200/20 to-teal-400/30 hover:-translate-y-1 hover:shadow-[0_8px_30px_-6px_rgba(16,185,129,0.25)] transition-all duration-300 cursor-pointer">
@@ -3120,7 +3134,15 @@ new class extends Component
                     <div class="grid grid-cols-2 gap-6">
                         <!-- Left Column: Penyebutan Populer -->
                         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm text-left space-y-4">
-                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Penyebutan Populer</h3>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4">
+                                <div class="space-y-0.5 text-left">
+                                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[18px] text-[#1fa387]">trending_up</span>
+                                        PENYEBUTAN POPULER
+                                    </h3>
+                                    <p class="text-[10px] text-slate-400">Artikel/postingan dengan jangkauan dan interaksi tertinggi.</p>
+                                </div>
+                            </div>
                             <div class="space-y-3">
                                 @php
                                     $popQuery = $this->projectArticlesQuery();
@@ -3236,7 +3258,15 @@ new class extends Component
 
                         <!-- Right Column: Penyebutan Terbaru -->
                         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm text-left space-y-4">
-                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Penyebutan Terbaru</h3>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4">
+                                <div class="space-y-0.5 text-left">
+                                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[18px] text-[#1fa387]">schedule</span>
+                                        PENYEBUTAN TERBARU
+                                    </h3>
+                                    <p class="text-[10px] text-slate-400">Daftar postingan/artikel terbaru yang berhasil masuk sistem.</p>
+                                </div>
+                            </div>
                             <div class="space-y-3">
                                 @php
                                     $newQuery = $this->projectArticlesQuery();
