@@ -1391,7 +1391,7 @@ new class extends Component
                         <span class="material-symbols-outlined text-[18px]">arrow_back</span>
                     </a>
                     
-                    <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='/'">
+                    <a href="{{ route('home') }}" class="flex items-center gap-2 cursor-pointer">
                         @if($customLogo = \App\Helpers\AppBrandingHelper::getAppLogoPath())
                             <img src="{{ asset('storage/' . $customLogo) }}" class="h-8 max-w-[120px] object-contain transition-transform hover:scale-105 duration-300">
                         @else
@@ -1404,7 +1404,7 @@ new class extends Component
                             <span class="text-sm font-black tracking-wider leading-none text-slate-800 uppercase">{{ \App\Helpers\AppBrandingHelper::getAppName() }}</span>
                             <span class="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Media Intelligence</span>
                         </div>
-                    </div>
+                    </a>
                 </div>
 
             </div>
@@ -1639,7 +1639,7 @@ new class extends Component
 
             $totalReach = $socialReach + $newsReach;
 
-            $interactionCount = $socialCount * 1.5;
+            $interactionCount = $fbLikes + $fbComments + $igLikes + $igComments + $ttLikes + $ttComments;
             $prValue = $totalReach * 24.5; // IDR
 
             $canonicalAiFilter = function($q) {
@@ -2220,19 +2220,18 @@ new class extends Component
                                     </h2>
                                 </div>
                                 
-                                <div class="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 mt-auto text-[10px]">
-                                    <div class="inline-flex min-w-0 items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-slate-600 ring-1 ring-slate-100">
-                                        <span class="material-symbols-outlined text-[11px] text-slate-400">insights</span>
-                                        <span class="font-extrabold leading-none">{{ $fmt($igReach) }}</span>
-                                        <span class="hidden xl:inline text-[8px] font-bold uppercase tracking-wide text-slate-400">Jangkauan</span>
+                                <div class="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto text-xs text-slate-500 font-medium">
+                                    <div class="flex items-center gap-1.5" title="Jangkauan">
+                                        <span class="material-symbols-outlined text-[16px] text-slate-400">insights</span>
+                                        <span class="font-bold leading-none">{{ $fmt($igReach) }}</span>
                                     </div>
-                                    <div class="flex shrink-0 items-center gap-1">
-                                        <div class="inline-flex items-center gap-0.5 rounded-full bg-slate-50 px-2 py-1 text-slate-600 ring-1 ring-slate-100">
-                                            <span class="material-symbols-outlined text-[11px] text-slate-400">thumb_up</span>
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex items-center gap-1" title="Suka (Likes)">
+                                            <span class="material-symbols-outlined text-[16px] text-slate-400">thumb_up</span>
                                             <span class="font-bold leading-none">{{ $fmt($igLikes) }}</span>
                                         </div>
-                                        <div class="inline-flex items-center gap-0.5 rounded-full bg-slate-50 px-2 py-1 text-slate-600 ring-1 ring-slate-100">
-                                            <span class="material-symbols-outlined text-[11px] text-slate-400">comment</span>
+                                        <div class="flex items-center gap-1" title="Komentar (Comments)">
+                                            <span class="material-symbols-outlined text-[16px] text-slate-400">comment</span>
                                             <span class="font-bold leading-none">{{ $fmt($igComments) }}</span>
                                         </div>
                                     </div>
@@ -2257,19 +2256,18 @@ new class extends Component
                                     </h2>
                                 </div>
                                 
-                                <div class="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 mt-auto text-[10px]">
-                                    <div class="inline-flex min-w-0 items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-slate-600 ring-1 ring-slate-100">
-                                        <span class="material-symbols-outlined text-[11px] text-slate-400">insights</span>
-                                        <span class="font-extrabold leading-none">{{ $fmt($ttReach) }}</span>
-                                        <span class="hidden xl:inline text-[8px] font-bold uppercase tracking-wide text-slate-400">Jangkauan</span>
+                                <div class="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto text-xs text-slate-500 font-medium">
+                                    <div class="flex items-center gap-1.5" title="Jangkauan">
+                                        <span class="material-symbols-outlined text-[16px] text-slate-400">insights</span>
+                                        <span class="font-bold leading-none">{{ $fmt($ttReach) }}</span>
                                     </div>
-                                    <div class="flex shrink-0 items-center gap-1">
-                                        <div class="inline-flex items-center gap-0.5 rounded-full bg-slate-50 px-2 py-1 text-slate-600 ring-1 ring-slate-100">
-                                            <span class="material-symbols-outlined text-[11px] text-slate-400">thumb_up</span>
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex items-center gap-1" title="Suka (Likes)">
+                                            <span class="material-symbols-outlined text-[16px] text-slate-400">thumb_up</span>
                                             <span class="font-bold leading-none">{{ $fmt($ttLikes) }}</span>
                                         </div>
-                                        <div class="inline-flex items-center gap-0.5 rounded-full bg-slate-50 px-2 py-1 text-slate-600 ring-1 ring-slate-100">
-                                            <span class="material-symbols-outlined text-[11px] text-slate-400">comment</span>
+                                        <div class="flex items-center gap-1" title="Komentar (Comments)">
+                                            <span class="material-symbols-outlined text-[16px] text-slate-400">comment</span>
                                             <span class="font-bold leading-none">{{ $fmt($ttComments) }}</span>
                                         </div>
                                     </div>
@@ -2294,19 +2292,18 @@ new class extends Component
                                     </h2>
                                 </div>
                                 
-                                <div class="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 mt-auto text-[10px]">
-                                    <div class="inline-flex min-w-0 items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-slate-600 ring-1 ring-slate-100">
-                                        <span class="material-symbols-outlined text-[11px] text-slate-400">insights</span>
-                                        <span class="font-extrabold leading-none">{{ $fmt($fbReach) }}</span>
-                                        <span class="hidden xl:inline text-[8px] font-bold uppercase tracking-wide text-slate-400">Jangkauan</span>
+                                <div class="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto text-xs text-slate-500 font-medium">
+                                    <div class="flex items-center gap-1.5" title="Jangkauan">
+                                        <span class="material-symbols-outlined text-[16px] text-slate-400">insights</span>
+                                        <span class="font-bold leading-none">{{ $fmt($fbReach) }}</span>
                                     </div>
-                                    <div class="flex shrink-0 items-center gap-1">
-                                        <div class="inline-flex items-center gap-0.5 rounded-full bg-slate-50 px-2 py-1 text-slate-600 ring-1 ring-slate-100">
-                                            <span class="material-symbols-outlined text-[11px] text-slate-400">thumb_up</span>
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex items-center gap-1" title="Suka (Likes)">
+                                            <span class="material-symbols-outlined text-[16px] text-slate-400">thumb_up</span>
                                             <span class="font-bold leading-none">{{ $fmt($fbLikes) }}</span>
                                         </div>
-                                        <div class="inline-flex items-center gap-0.5 rounded-full bg-slate-50 px-2 py-1 text-slate-600 ring-1 ring-slate-100">
-                                            <span class="material-symbols-outlined text-[11px] text-slate-400">comment</span>
+                                        <div class="flex items-center gap-1" title="Komentar (Comments)">
+                                            <span class="material-symbols-outlined text-[16px] text-slate-400">comment</span>
                                             <span class="font-bold leading-none">{{ $fmt($fbComments) }}</span>
                                         </div>
                                     </div>
@@ -2331,14 +2328,13 @@ new class extends Component
                                     </h2>
                                 </div>
                                 
-                                <div class="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 mt-auto text-[10px]">
-                                    <div class="inline-flex min-w-0 items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-slate-600 ring-1 ring-slate-100">
-                                        <span class="material-symbols-outlined text-[11px] text-slate-400">insights</span>
-                                        <span class="font-extrabold leading-none">{{ $fmt($newsReach) }}</span>
-                                        <span class="hidden xl:inline text-[8px] font-bold uppercase tracking-wide text-slate-400">Jangkauan</span>
+                                <div class="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto text-xs text-slate-500 font-medium">
+                                    <div class="flex items-center gap-1.5" title="Jangkauan">
+                                        <span class="material-symbols-outlined text-[16px] text-slate-400">insights</span>
+                                        <span class="font-bold leading-none">{{ $fmt($newsReach) }}</span>
                                     </div>
                                     <div class="flex items-center gap-1">
-                                        <span class="text-[9px] bg-slate-100 text-slate-400 font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200">PORTAL BERITA</span>
+                                        <span class="text-[9px] bg-slate-100 text-slate-500 font-extrabold px-2 py-0.5 rounded border border-slate-200">PORTAL NEWS</span>
                                     </div>
                                 </div>
                             </div>

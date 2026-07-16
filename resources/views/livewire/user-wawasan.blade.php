@@ -5,7 +5,7 @@
             <!-- Brand & Nav -->
             <div class="flex items-center gap-10 h-full justify-self-start">
                 <!-- Brand Logo Arusbawah -->
-                <div class="flex items-center gap-2 font-sans cursor-pointer" onclick="window.location.href='/'">
+                <a href="{{ route('home') }}" class="flex items-center gap-2 font-sans cursor-pointer">
                     <!-- Red A logo -->
                     <svg width="28" height="28" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <polygon points="21,4 39,38 3,38" fill="none" stroke="#c0392b" stroke-width="4" stroke-linejoin="round"/>
@@ -15,7 +15,7 @@
                         <span class="text-sm font-black tracking-wider leading-none text-slate-800">ARUSBAWAH</span>
                         <span class="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Media Intelligence</span>
                     </div>
-                </div>
+                </a>
 
             </div>
 
