@@ -2164,12 +2164,12 @@ new class extends Component
                 </section>
             @elseif($this->isTab('analisis'))
                 <!-- TAB 2: Analisis (Redesigned matching screenshots) -->
-                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                <section class="flex-1 min-w-0 min-h-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
                         <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data untuk proyek <span class="text-[#1fa387] font-bold uppercase">{{ $projectName }}</span></p>
                     </div>
-                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
+                    <div class="flex-1 min-h-0 overflow-y-auto pr-4 space-y-6">
 
                     <!-- Gambaran Umum Card Grid -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-6">
@@ -3352,7 +3352,7 @@ new class extends Component
                 </section>
             @elseif($this->isTab('katakunci'))
                 <!-- TAB 3: Kata Kunci Configuration Page -->
-                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4">
+                <section class="flex-1 min-w-0 min-h-0 space-y-6 h-full overflow-y-auto pr-4">
                     <div class="flex items-center justify-between text-left">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">vpn_key</span>Pengaturan dan Analisis Kata Kunci</h2>
@@ -3786,7 +3786,7 @@ new class extends Component
                         $crisisPingClass = 'bg-emerald-400';
                     }
                 @endphp
-                <section class="flex-1 min-w-0 space-y-6 text-left h-full overflow-y-auto pr-4">
+                <section class="flex-1 min-w-0 min-h-0 space-y-6 text-left h-full overflow-y-auto pr-4">
                     <div class="flex items-center justify-between mb-4">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
@@ -4124,7 +4124,7 @@ new class extends Component
                 </section>
             @elseif($this->isTab('laporan'))
                 <!-- TAB 4: Laporan (Report configuration page matching screenshots) -->
-                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4" x-data="{
+                <section class="flex-1 min-w-0 min-h-0 space-y-6 h-full overflow-y-auto pr-4" x-data="{
                     reportType: 'pdf',
                     pdfToggles: {
                         wawasan: true,
@@ -4523,7 +4523,7 @@ new class extends Component
                 </section>
 
             @elseif($this->isTab('konten'))
-                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4">
+                <section class="flex-1 min-w-0 min-h-0 space-y-6 h-full overflow-y-auto pr-4">
                     <div class="flex items-center justify-between">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5">Manajemen Konten</h2>
@@ -4676,7 +4676,7 @@ new class extends Component
                 </section>
 
             @elseif($this->isTab('sumber'))
-                <section class="flex-1 min-w-0 space-y-6 h-full overflow-y-auto pr-4">
+                <section class="flex-1 min-w-0 min-h-0 space-y-6 h-full overflow-y-auto pr-4">
                     <div class="flex items-center justify-between">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5">Sumber Data</h2>
