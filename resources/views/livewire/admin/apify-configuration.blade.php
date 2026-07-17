@@ -398,6 +398,27 @@
                                     </div>
                                 </div>
                             </div>
+                        @elseif($platform === 'TikTok')
+                            <details open class="rounded-2xl border border-slate-200 bg-white">
+                                <summary class="cursor-pointer list-none px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded bg-emerald-50 flex items-center justify-center text-emerald-500"><span class="material-symbols-outlined text-[13px]">schema</span></span>
+                                    Payload Aktor TikTok
+                                </summary>
+                                <div class="border-t border-slate-100 bg-emerald-50/30 p-4 space-y-4 rounded-b-2xl">
+                                    <div class="grid gap-4 sm:grid-cols-2">
+                                        <div>
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Kunci Query Pencarian</label>
+                                            <input wire:model="keyword_field_mapping" placeholder="Contoh: keyword / searchQueries" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm font-mono text-[#1fa387]">
+                                            @error('keyword_field_mapping') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Default Keyword (Opsional)</label>
+                                            <input wire:model="defaultKeyword" placeholder="Contoh: indonesia" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                            @error('defaultKeyword') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
                         @else
                             <details class="rounded-2xl border border-slate-200 bg-white">
                                 <summary class="cursor-pointer list-none px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
