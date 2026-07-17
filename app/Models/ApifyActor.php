@@ -41,9 +41,7 @@ class ApifyActor extends Model
         'interval_minutes',
         'memory_limit',
         'range_mode',
-        'post_filter_enabled',
         'priority',
-        'cost_reference',
         'maximum_cost_per_run_usd',
     ];
 
@@ -55,9 +53,7 @@ class ApifyActor extends Model
         'no_timeout' => 'boolean',
         'interval_minutes' => 'integer',
         'memory_limit' => 'integer',
-        'post_filter_enabled' => 'boolean',
         'priority' => 'integer',
-        'cost_reference' => 'decimal:4',
         'maximum_cost_per_run_usd' => 'decimal:4',
     ];
 
@@ -253,19 +249,18 @@ class ApifyActor extends Model
             'hashtags' => $hashtags,
             'resultsType' => $resultsType,
             'resultsLimit' => $configuredTotalLimit,
-            'keywordSearch' => (bool) data_get($config, 'keywordSearch', false),
         ];
     }
 
     protected function buildTikTokInputPayload(?string $keyword, ?array $keywords, int $limit, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $keywords = array_values(array_filter(array_map(
-            fn ($value) => $this->sanitizeSocialKeyword((string) $value),
+            fn ($value) => $this->normalizeTikTokHashtag((string) $value),
             $keywords ?? [$keyword]
         )));
 
         if ($keywords === []) {
-            $keywords = [$this->sanitizeSocialKeyword((string) ($keyword ?: $this->default_keyword))];
+            $keywords = [$this->normalizeTikTokHashtag((string) ($keyword ?: $this->default_keyword))];
         }
 
         $config = [];
@@ -276,47 +271,22 @@ class ApifyActor extends Model
             }
         }
 
-        $rangeMode = (string) data_get($config, 'dateRange', '');
-        if ($rangeMode === '' || str_contains($rangeMode, '{time_filter}')) {
-            $rangeMode = match ($this->range_mode) {
-            '24h', '1d' => 'yesterday',
-            '7d' => '7days',
-            '30d' => '30days',
-            '90d' => '90days',
-            default => '7days',
-            };
-        }
-
-        $configuredMaxItems = data_get($config, 'maxItems', null);
+        $configuredMaxItems = data_get($config, 'resultsPerPage', null);
         $configuredTotalLimit = (int) $configuredMaxItems;
-        if (str_contains((string) $configuredMaxItems, '{limit}')) {
+        if ($configuredMaxItems === null || $configuredMaxItems === '' || $configuredTotalLimit < 1 || str_contains((string) $configuredMaxItems, '{limit}')) {
             $configuredTotalLimit = $limit;
         }
 
-        $proxyGroups = data_get($config, 'proxyConfiguration.apifyProxyGroups', ['RESIDENTIAL']);
-        if (! is_array($proxyGroups) || $proxyGroups === []) {
-            $proxyGroups = ['RESIDENTIAL'];
-        }
-
         return [
-            'dateRange' => $rangeMode,
-            'includeSearchKeywords' => (bool) data_get($config, 'includeSearchKeywords', true),
-            'keywords' => $keywords,
-            'location' => (string) data_get($config, 'location', 'ID'),
-            'maxItems' => $configuredTotalLimit,
-            'mirrorVideos' => (bool) data_get($config, 'mirrorVideos', true),
+            'hashtags' => $keywords,
+            'resultsPerPage' => $configuredTotalLimit,
+            'shouldDownloadCovers' => (bool) data_get($config, 'shouldDownloadCovers', false),
+            'shouldDownloadSlideshowImages' => (bool) data_get($config, 'shouldDownloadSlideshowImages', false),
+            'shouldDownloadVideos' => (bool) data_get($config, 'shouldDownloadVideos', false),
+            'downloadSubtitlesOptions' => (string) data_get($config, 'downloadSubtitlesOptions', 'NEVER_DOWNLOAD_SUBTITLES'),
             'proxyConfiguration' => [
                 'useApifyProxy' => (bool) data_get($config, 'proxyConfiguration.useApifyProxy', true),
-                'apifyProxyGroups' => array_values($proxyGroups),
-                'apifyProxyCountry' => (string) data_get($config, 'proxyConfiguration.apifyProxyCountry', 'ID'),
             ],
-            'sortType' => (string) data_get($config, 'sortType', 'RELEVANCE'),
-            'strictKeywordMatch' => (bool) data_get($config, 'strictKeywordMatch', false),
-            'useProxy' => (bool) data_get($config, 'useProxy', true),
-            'minPlayCount' => (int) data_get($config, 'minPlayCount', 0),
-            'mirrorVideoBytes' => (int) data_get($config, 'mirrorVideoBytes', 262144),
-            'minDurationSec' => (int) data_get($config, 'minDurationSec', 0),
-            'maxConcurrentKeywords' => (int) data_get($config, 'maxConcurrentKeywords', 1),
         ];
     }
 
@@ -333,6 +303,16 @@ class ApifyActor extends Model
         $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
 
         return trim($value);
+    }
+
+    /**
+     * TikTok hashtag normalization follows the exact Instagram hashtag rules.
+     * Keep the implementation routed through the Instagram helper so both actors
+     * stay aligned if hashtag cleaning changes later.
+     */
+    protected function normalizeTikTokHashtag(string $value): string
+    {
+        return $this->normalizeInstagramPayloadHashtag($value);
     }
 
     protected function sanitizeInstagramHashtag(string $value): string

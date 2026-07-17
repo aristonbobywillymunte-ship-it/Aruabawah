@@ -29,11 +29,9 @@ class ApifyActorRegistry
                 'interval_minutes' => 720,
                 'memory_limit' => 1024,
                 'range_mode' => '30d',
-                'post_filter_enabled' => true,
                 'priority' => 1,
-                'cost_reference' => 3.9900,
                 'maximum_cost_per_run_usd' => 0.2000,
-                'editable_fields' => ['default_keyword', 'default_limit', 'range_mode', 'post_filter_enabled', 'priority'],
+                'editable_fields' => ['default_keyword', 'default_limit', 'range_mode', 'priority'],
                 'locked_fields' => ['platform', 'actor_slug', 'function_type'],
             ],
             'instagram' => [
@@ -47,43 +45,39 @@ class ApifyActorRegistry
                 'default_limit' => 50,
                 'status' => 'active',
                 'keyword_field_mapping' => 'hashtags',
-                'output_mapping' => '{"hashtags":["{keyword}"],"resultsType":"posts","resultsLimit":"{limit}","keywordSearch":false}',
+                'output_mapping' => '{"hashtags":["{keyword}"],"resultsType":"posts","resultsLimit":"{limit}"}',
                 'build' => 'latest',
                 'timeout_seconds' => 10000,
                 'no_timeout' => false,
                 'interval_minutes' => 720,
                 'memory_limit' => 1024,
                 'range_mode' => '7d',
-                'post_filter_enabled' => false,
                 'priority' => 2,
-                'cost_reference' => 3.0000,
                 'maximum_cost_per_run_usd' => 0.1500,
                 'editable_fields' => ['default_keyword', 'default_limit', 'range_mode', 'priority'],
                 'locked_fields' => ['platform', 'actor_slug', 'function_type'],
             ],
             'tiktok' => [
                 'platform' => 'TikTok',
-                'label' => 'TikTok Keyword Search',
-                'menu_label' => 'TikTok Keyword Search',
-                'actor_name' => 'TikTok Keyword Search',
-                'actor_slug' => 'paul_44/tiktok-search',
+                'label' => 'TikTok Hashtag Scraper',
+                'menu_label' => 'TikTok Hashtag Scraper',
+                'actor_name' => 'TikTok Hashtag Scraper',
+                'actor_slug' => 'clockworks/tiktok-hashtag-scraper',
                 'function_type' => 'Search Post',
-                'default_keyword' => 'walikota samarinda',
+                'default_keyword' => null,
                 'default_limit' => 50,
                 'status' => 'active',
-                'keyword_field_mapping' => 'keyword',
-                'output_mapping' => '{"dateRange":"7days","includeSearchKeywords":true,"keywords":["{keyword}"],"location":"ID","maxItems":"{limit}","mirrorVideos":true,"proxyConfiguration":{"useApifyProxy":true,"apifyProxyGroups":["RESIDENTIAL"],"apifyProxyCountry":"ID"},"sortType":"RELEVANCE","strictKeywordMatch":false,"useProxy":true,"minPlayCount":0,"mirrorVideoBytes":262144,"minDurationSec":0,"maxConcurrentKeywords":1}',
+                'keyword_field_mapping' => 'hashtags',
+                'output_mapping' => '{"hashtags":["{keyword}"],"resultsPerPage":"{limit}","shouldDownloadCovers":false,"shouldDownloadSlideshowImages":false,"shouldDownloadVideos":false,"downloadSubtitlesOptions":"NEVER_DOWNLOAD_SUBTITLES","proxyConfiguration":{"useApifyProxy":true}}',
                 'build' => 'latest',
                 'timeout_seconds' => 10000,
                 'no_timeout' => false,
                 'interval_minutes' => 720,
                 'memory_limit' => 2048,
                 'range_mode' => '7d',
-                'post_filter_enabled' => false,
                 'priority' => 3,
-                'cost_reference' => 0.0000,
                 'maximum_cost_per_run_usd' => 0.1500,
-                'editable_fields' => ['default_keyword', 'default_limit', 'range_mode', 'priority'],
+                'editable_fields' => ['default_limit', 'range_mode', 'priority'],
                 'locked_fields' => ['platform', 'actor_slug', 'function_type'],
             ],
         ];
@@ -98,13 +92,6 @@ class ApifyActorRegistry
                 'menu_label' => 'Legacy / Inactive',
                 'actor_name' => 'Facebook Search Posts',
                 'actor_slug' => 'scrapeflow/facebook-search-posts',
-            ],
-            'tiktok-legacy-1' => [
-                'platform' => 'TikTok',
-                'label' => 'Legacy / Inactive',
-                'menu_label' => 'Legacy / Inactive',
-                'actor_name' => 'TikTok Search Scraper',
-                'actor_slug' => 'epctex/tiktok-search-scraper',
             ],
             'legacy-no-longer-used' => [
                 'platform' => 'Threads',
@@ -159,11 +146,10 @@ class ApifyActorRegistry
             }
         }
 
-        $canonicalInstagramSlug = $this->primaryActors()['instagram']['actor_slug'] ?? null;
-        if ($canonicalInstagramSlug) {
+        foreach ($this->primaryActors() as $actor) {
             ApifyActor::query()
-                ->where('platform', 'Instagram')
-                ->where('actor_slug', '!=', $canonicalInstagramSlug)
+                ->where('platform', $actor['platform'])
+                ->where('actor_slug', '!=', $actor['actor_slug'])
                 ->update([
                     'status' => 'inactive',
                     'updated_at' => now(),
@@ -221,9 +207,7 @@ class ApifyActorRegistry
             'interval_minutes' => $actor['interval_minutes'],
             'memory_limit' => $actor['memory_limit'],
             'range_mode' => $actor['range_mode'],
-            'post_filter_enabled' => $actor['post_filter_enabled'],
             'priority' => $actor['priority'],
-            'cost_reference' => $actor['cost_reference'],
             'maximum_cost_per_run_usd' => $actor['maximum_cost_per_run_usd'] ?? 0.0000,
         ];
 

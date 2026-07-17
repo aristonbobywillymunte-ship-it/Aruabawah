@@ -40,10 +40,6 @@ class ContentMatchingService
         }
         
         $matchedProjectIds = [];
-        
-        if ($discoveryProjectId) {
-            $matchedProjectIds[] = $discoveryProjectId;
-        }
 
         $allProjects = Project::where('is_active', true)->get();
         
@@ -60,6 +56,10 @@ class ContentMatchingService
                     break;
                 }
             }
+        }
+
+        if ($discoveryProjectId && $isArticle && ! in_array($discoveryProjectId, $matchedProjectIds, true)) {
+            $matchedProjectIds[] = $discoveryProjectId;
         }
         
         $uniqueMatchedIds = array_unique($matchedProjectIds);
@@ -234,7 +234,7 @@ class ContentMatchingService
             $decoded = $rawJson;
         }
 
-        foreach (['hashtags', 'tags', 'searchQuery', 'searchTerm', 'keyword', 'query'] as $key) {
+        foreach (['hashtags', 'tags'] as $key) {
             $value = is_array($decoded) ? ($decoded[$key] ?? null) : null;
             if (is_array($value)) {
                 foreach ($value as $entry) {

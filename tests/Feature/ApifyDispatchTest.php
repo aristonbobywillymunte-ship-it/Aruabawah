@@ -216,7 +216,7 @@ class ApifyDispatchTest extends TestCase
         $actors = [
             ['Facebook', 'scrapeflow/facebook-posts-search-scraper', 0.20, 'scrapeflow~facebook-posts-search-scraper'],
             ['Instagram', 'apify/instagram-hashtag-scraper', 0.15, 'apify~instagram-hashtag-scraper'],
-            ['TikTok', 'paul_44/tiktok-search', 0.15, 'paul_44~tiktok-search'],
+            ['TikTok', 'clockworks/tiktok-hashtag-scraper', 0.15, 'clockworks~tiktok-hashtag-scraper'],
         ];
 
         foreach ($actors as [$platform, $slug, $maxCost]) {
@@ -299,7 +299,7 @@ class ApifyDispatchTest extends TestCase
         ]);
         $tiktok = new ApifyActor([
             'platform' => 'TikTok',
-            'actor_slug' => 'paul_44/tiktok-search',
+            'actor_slug' => 'clockworks/tiktok-hashtag-scraper',
             'default_limit' => 50,
             'range_mode' => '7d',
         ]);
@@ -314,8 +314,8 @@ class ApifyDispatchTest extends TestCase
         $this->assertSame(['gubernur kaltim', "rudy mas'ud", 'gubernur kalimantan timur'], $instagramPayload['hashtags']);
         $this->assertSame(17, $instagramPayload['resultsLimit']);
 
-        $this->assertSame($keywords, $tiktokPayload['keywords']);
-        $this->assertSame(17, $tiktokPayload['maxItems']);
+        $this->assertSame(['WakilGubernurKalimantanTimur', 'wagubkaltim', 'SenoAji'], $tiktokPayload['hashtags']);
+        $this->assertSame(17, $tiktokPayload['resultsPerPage']);
     }
 
     public function test_facebook_payload_comes_from_actor_database_fields()
@@ -355,20 +355,47 @@ class ApifyDispatchTest extends TestCase
 
         $tiktok = new ApifyActor([
             'platform' => 'TikTok',
-            'actor_slug' => 'paul_44/tiktok-search',
+            'actor_slug' => 'clockworks/tiktok-hashtag-scraper',
             'default_limit' => 50,
-            'range_mode' => '7d',
             'output_mapping' => json_encode([
-                'dateRange' => '7days',
-                'maxItems' => 15,
-                'keywords' => ['{keyword}'],
+                'hashtags' => ['{keyword}'],
+                'resultsPerPage' => 15,
+                'shouldDownloadCovers' => false,
+                'shouldDownloadSlideshowImages' => false,
+                'shouldDownloadVideos' => false,
+                'downloadSubtitlesOptions' => 'NEVER_DOWNLOAD_SUBTITLES',
+                'proxyConfiguration' => ['useApifyProxy' => true],
             ]),
         ]);
 
         $payload = $tiktok->buildInputPayload('wagub kaltim', 5, null, null, $keywords);
 
-        $this->assertSame($keywords, $payload['keywords']);
-        $this->assertSame(2, $payload['maxItems']);
+        $this->assertSame(['WakilGubernurKalimantanTimur', 'wagubkaltim', 'SenoAji'], $payload['hashtags']);
+        $this->assertSame(2, $payload['resultsPerPage']);
+        $this->assertFalse($payload['shouldDownloadCovers']);
+        $this->assertFalse($payload['shouldDownloadSlideshowImages']);
+        $this->assertFalse($payload['shouldDownloadVideos']);
+        $this->assertSame('NEVER_DOWNLOAD_SUBTITLES', $payload['downloadSubtitlesOptions']);
+        $this->assertTrue($payload['proxyConfiguration']['useApifyProxy']);
+    }
+
+    public function test_tiktok_payload_falls_back_to_runtime_limit_when_config_is_stripped()
+    {
+        $tiktok = new ApifyActor([
+            'platform' => 'TikTok',
+            'actor_slug' => 'clockworks/tiktok-hashtag-scraper',
+            'default_limit' => 50,
+            'output_mapping' => json_encode([
+                'hashtags' => ['{keyword}'],
+            ]),
+        ]);
+
+        $payload = $tiktok->buildInputPayload('gubernur kaltim', 11, null, null, ['gubernur kaltim']);
+
+        $this->assertSame(11, $payload['resultsPerPage']);
+        $this->assertSame(['GubernurKaltim'], $payload['hashtags']);
+        $this->assertSame('NEVER_DOWNLOAD_SUBTITLES', $payload['downloadSubtitlesOptions']);
+        $this->assertTrue($payload['proxyConfiguration']['useApifyProxy']);
     }
 
     public function test_apify_social_search_results_are_trusted_without_caption_keyword_match()
@@ -413,7 +440,7 @@ class ApifyDispatchTest extends TestCase
             ],
             [
                 'platform' => 'TikTok',
-                'slug' => 'paul_44/tiktok-search',
+                'slug' => 'clockworks/tiktok-hashtag-scraper',
                 'run_id' => 'run-tiktok-trusted',
                 'dataset_id' => 'dataset-tiktok-trusted',
                 'item' => [
@@ -1004,8 +1031,8 @@ class ApifyDispatchTest extends TestCase
 
         $actor = ApifyActor::create([
             'platform' => 'TikTok',
-            'actor_name' => 'TikTok Keyword Search',
-            'actor_slug' => 'paul_44/tiktok-search',
+            'actor_name' => 'TikTok Hashtag Scraper',
+            'actor_slug' => 'clockworks/tiktok-hashtag-scraper',
             'function_type' => 'Search Post',
             'status' => 'active',
             'default_limit' => 50,
@@ -1027,7 +1054,7 @@ class ApifyDispatchTest extends TestCase
             $url = (string) $request->url();
             $method = $request->method();
 
-            if (str_contains($url, '/acts/paul_44~tiktok-search/runs')) {
+            if (str_contains($url, '/acts/clockworks~tiktok-hashtag-scraper/runs')) {
                 return Http::response([
                     'data' => [
                         'id' => 'run-tiktok-natural',

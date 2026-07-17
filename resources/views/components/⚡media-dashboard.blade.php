@@ -76,7 +76,7 @@ new class extends Component
 
     public $search = '';
     public $selectedSentiment = ['positive', 'neutral', 'negative'];
-    public $selectedSources = ['Instagram', 'Tiktok', 'Facebook', 'News'];
+    public $selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
     public $selectedCategory = '';
     public $sortBy = 'newest';
     public int $limit = 5;
@@ -703,7 +703,7 @@ new class extends Component
 
         if (!in_array('sources', $exclude) && !empty($this->selectedSources)) {
             $query->where(function($q) {
-                $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'Tiktok', 'Facebook', 'Threads'];
+                $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
                 if (in_array('News', $this->selectedSources)) {
                     $selectedSocials = array_diff($this->selectedSources, ['News']);
                     $q->whereNotIn('source_name', $socials);
@@ -733,10 +733,10 @@ new class extends Component
     public function getCounts()
     {
         $baseQuery = $this->projectArticlesQuery();
-        $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'Tiktok', 'Facebook', 'Threads'];
+        $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
 
         $sourceQuery = $this->applyActiveFilters(clone $baseQuery, ['sources']);
-        $sources = ['Twitter', 'Instagram', 'Youtube', 'Tiktok', 'Facebook', 'Threads'];
+        $sources = ['Twitter', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
         $sourceCounts = [];
         foreach ($sources as $source) {
             $sourceCounts[$source] = (clone $sourceQuery)->where('source_name', $source)->count();
@@ -1559,7 +1559,7 @@ new class extends Component
 
         @php
             $counts = $this->getCounts();
-            $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'Tiktok', 'Facebook', 'Threads'];
+            $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
             
             // Calculate actual database numbers
             $totalMentions = array_sum($counts['sentiments']);
@@ -1575,7 +1575,7 @@ new class extends Component
             }
             $fbCount = $counts['sources']['Facebook'] ?? 0;
             $igCount = $counts['sources']['Instagram'] ?? 0;
-            $ttCount = $counts['sources']['Tiktok'] ?? 0;
+            $ttCount = $counts['sources']['TikTok'] ?? 0;
             $newsCount = $counts['sources']['News'] ?? 0;
             
             $baseActiveQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
@@ -1600,7 +1600,7 @@ new class extends Component
             $ttComments = (int) ($ttStats->comments ?? 0);
 
             // Get REAL reach estimates from AI analysis results
-            $socials = ['Twitter', 'Instagram', 'Youtube', 'Tiktok', 'Facebook', 'Threads'];
+            $socials = ['Twitter', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
             $aiReachSum = function ($builder) {
                 return (int) $builder
                     ->where('analysis_status', 'success')
@@ -1629,7 +1629,7 @@ new class extends Component
 
             $ttReach = $aiReachSum(
                 \App\Models\AiAnalysisResult::query()
-                    ->whereIn('article_id', (clone $baseActiveQuery)->where('source_name', 'Tiktok')->select('articles.id'))
+                ->whereIn('article_id', (clone $baseActiveQuery)->whereRaw('lower(source_name) = ?', ['tiktok'])->select('articles.id'))
             );
 
             $newsReach = $aiReachSum(
@@ -2857,7 +2857,7 @@ new class extends Component
                                         <!-- Content -->
                                         <div class="relative flex flex-col text-left min-w-0">
                                             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] leading-none">TikTok</span>
-                                            <span class="text-[26px] font-black text-slate-900 mt-1 leading-none tracking-tight">{{ $fmt($counts['sources']['Tiktok'] ?? 0) }}</span>
+                                            <span class="text-[26px] font-black text-slate-900 mt-1 leading-none tracking-tight">{{ $fmt($counts['sources']['TikTok'] ?? 0) }}</span>
                                         </div>
                                     </div>
                                 </div>

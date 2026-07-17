@@ -108,12 +108,10 @@ class AdminApifyConfigurationTest extends TestCase
             ->set('defaultLimit', 50)
             ->set('instagram_results_type', 'posts')
             ->set('instagram_results_limit', 50)
-            ->set('instagram_keyword_search', false)
             ->set('interval_minutes', 240)
             ->set('memory_limit', 1024)
             ->set('range_mode', '7d')
             ->set('priority', 1)
-            ->set('cost_reference', 0.0000)
             ->call('saveActor')
             ->assertHasNoErrors();
 
@@ -131,12 +129,10 @@ class AdminApifyConfigurationTest extends TestCase
             ->set('defaultLimit', 50)
             ->set('instagram_results_type', 'posts')
             ->set('instagram_results_limit', 50)
-            ->set('instagram_keyword_search', false)
             ->set('interval_minutes', 240)
             ->set('memory_limit', 1024)
             ->set('range_mode', '7d')
             ->set('priority', 1)
-            ->set('cost_reference', 0.0000)
             ->call('saveActor')
             ->assertHasErrors(['actorSlug']);
     }

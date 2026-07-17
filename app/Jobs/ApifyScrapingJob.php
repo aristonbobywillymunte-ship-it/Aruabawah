@@ -947,7 +947,7 @@ class ApifyScrapingJob implements ShouldQueue
         return match ($platform) {
             'Facebook' => ['maxPosts', isset($input['maxPosts']) ? (int) $input['maxPosts'] : null],
             'Instagram' => ['resultsLimit', isset($input['resultsLimit']) ? (int) $input['resultsLimit'] : null],
-            'TikTok' => ['maxItems', isset($input['maxItems']) ? (int) $input['maxItems'] : null],
+            'TikTok' => ['resultsPerPage', isset($input['resultsPerPage']) ? (int) $input['resultsPerPage'] : null],
             default => ['limit', null],
         };
     }
@@ -1140,7 +1140,7 @@ class ApifyScrapingJob implements ShouldQueue
         }
 
         $explicitSocialTerms = [];
-        foreach (['hashtags', 'tags', 'searchQuery', 'searchTerm', 'keyword', 'query'] as $key) {
+        foreach (['hashtags', 'tags'] as $key) {
             $value = $item[$key] ?? null;
             if (is_array($value)) {
                 foreach ($value as $entry) {

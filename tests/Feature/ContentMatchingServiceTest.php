@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\Article;
+use App\Models\SocialMediaItem;
 use App\Models\Project;
 use App\Services\ContentMatchingService;
 use Illuminate\Support\Facades\DB;
@@ -135,5 +136,61 @@ class ContentMatchingServiceTest extends TestCase
         
         // Hyphenated phrase
         $this->assertTrue($service->isStrictMatch("rumah-sakit", "dia ke rumah-sakit kemarin"));
+    }
+
+    public function test_social_match_ignores_apify_search_query_fields(): void
+    {
+        $project = Project::create([
+            'name' => 'Project Gubernur Kaltim',
+            'topics' => ['gubernur kaltim'],
+            'is_active' => true,
+        ]);
+
+        $item = SocialMediaItem::create([
+            'project_id' => null,
+            'platform' => 'Instagram',
+            'post_url' => 'https://instagram.com/p/test-query-field',
+            'author_name' => 'Akun Publik',
+            'content' => 'Konten umum tanpa kecocokan kata kunci proyek.',
+            'raw_json' => json_encode([
+                'searchQuery' => 'gubernur kaltim',
+                'searchTerm' => 'gubernur kaltim',
+                'keyword' => 'gubernur kaltim',
+                'query' => 'gubernur kaltim',
+            ]),
+        ]);
+
+        $service = app(ContentMatchingService::class);
+        $matched = $service->crossLinkToActiveProjects($item, null);
+
+        $this->assertSame([], $matched);
+        $this->assertSame(0, DB::table('project_social_media_items')->where('social_media_item_id', $item->id)->count());
+    }
+
+    public function test_social_discovery_project_is_not_auto_linked_without_keyword_match(): void
+    {
+        $project = Project::create([
+            'name' => 'Project Gubernur Kaltim',
+            'topics' => ['gubernur kaltim'],
+            'is_active' => true,
+        ]);
+
+        $item = SocialMediaItem::create([
+            'project_id' => null,
+            'platform' => 'Instagram',
+            'post_url' => 'https://instagram.com/p/test-discovery-link',
+            'author_name' => 'Akun Publik',
+            'content' => 'Konten umum tentang kegiatan provinsi tanpa keyword proyek.',
+            'raw_json' => json_encode([
+                'hashtags' => ['kaltimbergerak'],
+                'caption' => 'Konten umum tanpa keyword proyek.',
+            ]),
+        ]);
+
+        $service = app(ContentMatchingService::class);
+        $matched = $service->crossLinkToActiveProjects($item, $project->id);
+
+        $this->assertSame([], $matched);
+        $this->assertSame(0, DB::table('project_social_media_items')->where('social_media_item_id', $item->id)->count());
     }
 }
