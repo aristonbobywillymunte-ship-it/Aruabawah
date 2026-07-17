@@ -53,7 +53,7 @@ class AdminApifyConfigurationTest extends TestCase
             ->assertDontSee('Legacy / Inactive');
     }
 
-    public function test_registry_sync_keeps_primary_actors_and_inactivates_legacy()
+    public function test_registry_sync_keeps_primary_actors_and_uses_hashtag_instagram_actor()
     {
         $registry = app(ApifyActorRegistry::class);
 
@@ -68,31 +68,16 @@ class AdminApifyConfigurationTest extends TestCase
             ]);
         }
 
-        $legacy = ApifyActor::create([
-            'platform' => 'Instagram',
-            'actor_name' => 'Legacy Instagram Scraper',
-            'actor_slug' => 'apify/instagram-scraper',
-            'function_type' => 'Search Post',
-            'status' => 'active',
-            'priority' => 9,
-            'default_limit' => 20,
-            'interval_minutes' => 240,
-            'memory_limit' => 1024,
-            'range_mode' => '7d',
-            'keyword_field_mapping' => 'search',
-        ]);
-
-        $registry->syncManagedActors();
-
-        $this->assertEquals('inactive', $legacy->fresh()->status);
+        $this->assertTrue($registry->isPrimarySlug('apify/instagram-hashtag-scraper'));
+        $this->assertFalse($registry->isLegacySlug('apify/instagram-hashtag-scraper'));
     }
 
     public function test_admin_can_toggle_actor_status()
     {
         $actor = ApifyActor::create([
             'platform' => 'Instagram',
-            'actor_name' => 'Instagram Search Scraper',
-            'actor_slug' => 'apify/instagram-search-scraper',
+            'actor_name' => 'Instagram Hashtag Scraper',
+            'actor_slug' => 'apify/instagram-hashtag-scraper',
             'function_type' => 'Search Post',
             'status' => 'active',
             'priority' => 1,
@@ -100,7 +85,7 @@ class AdminApifyConfigurationTest extends TestCase
             'interval_minutes' => 240,
             'memory_limit' => 1024,
             'range_mode' => '7d',
-            'keyword_field_mapping' => 'search',
+            'keyword_field_mapping' => 'hashtags',
         ]);
 
         Livewire::actingAs($this->adminUser)
@@ -117,11 +102,13 @@ class AdminApifyConfigurationTest extends TestCase
         Livewire::actingAs($this->adminUser)
             ->test(\App\Livewire\Admin\ApifyConfiguration::class)
             ->set('platform', 'Instagram')
-            ->set('actorName', 'Instagram Scraper')
-            ->set('actorSlug', 'apify/instagram-search-scraper')
+            ->set('actorName', 'Instagram Hashtag Scraper')
+            ->set('actorSlug', 'apify/instagram-hashtag-scraper')
             ->set('functionType', 'Search Post')
             ->set('defaultLimit', 50)
-            ->set('keyword_field_mapping', 'search')
+            ->set('instagram_results_type', 'posts')
+            ->set('instagram_results_limit', 50)
+            ->set('instagram_keyword_search', false)
             ->set('interval_minutes', 240)
             ->set('memory_limit', 1024)
             ->set('range_mode', '7d')
@@ -131,7 +118,7 @@ class AdminApifyConfigurationTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertDatabaseHas('apify_actors', [
-            'actor_slug' => 'apify/instagram-search-scraper',
+            'actor_slug' => 'apify/instagram-hashtag-scraper',
         ]);
 
         // Non-whitelisted slug should fail validation
@@ -142,7 +129,9 @@ class AdminApifyConfigurationTest extends TestCase
             ->set('actorSlug', 'some-random/custom-scraper')
             ->set('functionType', 'Search Post')
             ->set('defaultLimit', 50)
-            ->set('keyword_field_mapping', 'search')
+            ->set('instagram_results_type', 'posts')
+            ->set('instagram_results_limit', 50)
+            ->set('instagram_keyword_search', false)
             ->set('interval_minutes', 240)
             ->set('memory_limit', 1024)
             ->set('range_mode', '7d')

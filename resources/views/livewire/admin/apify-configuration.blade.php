@@ -193,7 +193,7 @@
     </div>
     <!-- Form Add/Edit Actor Modal -->
     @if($showActorModal)
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+        <div wire:key="apify-actor-modal-{{ $editingActor ? 'edit' : 'create' }}-{{ $editingActorId ?? 'new' }}-{{ $platform }}" x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
             <div class="w-full max-w-2xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain flex flex-col max-h-[90vh]">
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
                     <div>
@@ -228,9 +228,9 @@
                                 'Instagram' => [
                                     'judul' => 'Panduan Singkat Instagram',
                                     'isi' => [
-                                        'Isi keyword di <span class="font-semibold text-slate-800">search</span> dengan teks dipisah koma.',
-                                        'Isi <span class="font-semibold text-slate-800">searchLimit</span> sebagai batas hasil.',
-                                        'Opsi lain seperti pencarian langsung dan jenis hasil bisa dipakai jika tersedia.',
+                                        'Isi hashtag di <span class="font-semibold text-slate-800">hashtags</span> dengan teks dipisah koma.',
+                                        'Pilih <span class="font-semibold text-slate-800">resultsType</span> untuk posts atau reels.',
+                                        'Isi <span class="font-semibold text-slate-800">resultsLimit</span> sebagai batas hasil per hashtag.',
                                     ],
                                 ],
                                 default => null,
@@ -250,6 +250,7 @@
                             </div>
                         @endif
                         <!-- Group 1: Identitas & Target -->
+                        @if($platform !== 'Instagram')
                         <div>
                             <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                                 <span class="w-5 h-5 rounded bg-slate-100 flex items-center justify-center text-slate-500"><span class="material-symbols-outlined text-[13px]">badge</span></span>
@@ -337,7 +338,7 @@
                                     @endif
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Aktif</label>
-                                        <input wire:model.live="defaultLimit" type="number" min="1" max="50" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                        <input wire:model.live="defaultLimit" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                         <p class="mt-1 text-[10px] font-semibold text-slate-400">
                                             Nilai ini akan langsung menyinkronkan batas hasil {{ $platform }} di payload actor.
                                         </p>
@@ -352,7 +353,54 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
+                        <div>
+                            <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <span class="w-5 h-5 rounded bg-slate-900 flex items-center justify-center text-white"><span class="material-symbols-outlined text-[13px]">play_circle</span></span>
+                                Run Options
+                            </h3>
+                            <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-5">
+                                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                    <div>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Build</label>
+                                        <select wire:model="build" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition">
+                                            <option value="latest">latest</option>
+                                            <option value="beta">beta</option>
+                                            <option value="prod">prod</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Timeout</label>
+                                        <input wire:model="timeout_seconds" type="number" step="1" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition">
+                                    </div>
+                                    <div>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Memory</label>
+                                        <select wire:model="memory_limit" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white">
+                                            <option value="128">128 MB</option>
+                                            <option value="256">256 MB</option>
+                                            <option value="512">512 MB</option>
+                                            <option value="1024">1 GB</option>
+                                            <option value="2048">2 GB</option>
+                                            <option value="4096">4 GB</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Maximum cost per run (USD)</label>
+                                        <input wire:model="maximum_cost_per_run_usd" type="number" step="0.01" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition" placeholder="0.02">
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                    <label class="flex items-center gap-2.5 cursor-pointer">
+                                        <input wire:model="no_timeout" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
+                                        <span class="text-[11px] font-bold text-slate-700">No timeout</span>
+                                    </label>
+                                    <p class="text-[10px] text-slate-400">Menonaktifkan batas waktu run, mirip opsi Apify Console.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if($platform !== 'Instagram')
                         @if($platform === 'TikTok')
                         <div>
                             <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -375,7 +423,7 @@
                                     </div>
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Concurrent Keywords</label>
-                                        <input wire:model="tiktok_max_concurrent_keywords" type="number" min="1" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                        <input wire:model="tiktok_max_concurrent_keywords" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                     </div>
                                 </div>
                                 <div class="grid gap-4 sm:grid-cols-3">
@@ -408,9 +456,10 @@
                             </div>
                         </div>
                         @endif
+                        @endif
 
                         @if($platform === 'Facebook')
-                            <details class="rounded-2xl border border-slate-200 bg-white">
+                            <details open class="rounded-2xl border border-slate-200 bg-white">
                                 <summary class="cursor-pointer list-none px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                     <span class="w-5 h-5 rounded bg-blue-50 flex items-center justify-center text-blue-500"><span class="material-symbols-outlined text-[13px]">schema</span></span>
                                     Payload Aktor Facebook
@@ -434,7 +483,7 @@
                                     <div class="grid gap-4 sm:grid-cols-2">
                                         <div>
                                             <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Facebook <span class="text-rose-600">*</span></label>
-                                            <input wire:model="facebook_max_posts" type="number" min="1" max="50" required class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                            <input wire:model="facebook_max_posts" type="number" required class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                             @error('facebook_max_posts') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                         </div>
                                         <div>
@@ -449,7 +498,7 @@
                                     </div>
                                     <div class="pt-1">
                                         <label class="flex items-center gap-2.5 cursor-pointer group">
-                                            <input wire:model="facebook_use_apify_proxy" type="checkbox" required class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
+                                            <input wire:model="facebook_use_apify_proxy" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
                                             <span class="text-[11px] font-bold text-slate-700">Use Apify Proxy <span class="text-rose-600">*</span></span>
                                         </label>
                                     </div>
@@ -496,7 +545,7 @@
                                 <div class="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil TikTok</label>
-                                        <input wire:model="tiktok_max_items" type="number" min="1" max="50" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                        <input wire:model="tiktok_max_items" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                         @error('tiktok_max_items') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
@@ -522,6 +571,37 @@
                                     </div>
                                 </div>
                             </details>
+                        @elseif($platform === 'Instagram')
+                            <div wire:key="instagram-form-{{ $editingActorId ?? 'new' }}" class="rounded-2xl border border-slate-200 bg-white p-4 space-y-4">
+                                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                    <div>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Content type</label>
+                                        <select wire:model="instagram_results_type" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition">
+                                            <option value="posts">Scrape posts</option>
+                                            <option value="reels">Scrape reels</option>
+                                        </select>
+                                        @error('instagram_results_type') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Maximum posts or reels per hashtag</label>
+                                        <input wire:model="instagram_results_limit" type="number" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition">
+                                        @error('instagram_results_limit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Interval Actor (Menit)</label>
+                                        <input wire:model="interval_minutes" type="number" min="1" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition">
+                                        <p class="mt-1 text-[10px] text-slate-400">Jeda minimal sebelum Instagram actor ini bisa dijalankan lagi.</p>
+                                        @error('interval_minutes') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div class="flex items-end">
+                                        <label class="flex items-center gap-2.5 cursor-pointer group rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 w-full">
+                                            <input wire:model="instagram_keyword_search" type="checkbox" class="rounded border-slate-300 text-emerald-500 focus:ring-emerald-400 w-4 h-4">
+                                            <span class="text-[11px] font-bold text-slate-700 leading-snug">Scrape with a keyword instead of hashtag</span>
+                                        </label>
+                                        @error('instagram_keyword_search') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                    </div>
+                                </div>
+                            </div>
                         @else
                             <details class="rounded-2xl border border-slate-200 bg-white">
                                 <summary class="cursor-pointer list-none px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -541,31 +621,11 @@
                                             @error('defaultKeyword') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                         </div>
                                     </div>
-                                    <div class="grid gap-4 sm:grid-cols-2">
-                                        <div>
-                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Search Limit</label>
-                                            <input wire:model="instagram_search_limit" type="number" min="1" max="50" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
-                                            @error('instagram_search_limit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                                        </div>
-                                        <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-[11px] text-slate-600 space-y-1">
-                                            <p class="font-bold text-emerald-700">Aturan isi Instagram:</p>
-                                            <p><span class="font-mono">search</span> berisi keyword dipisah koma.</p>
-                                            <p><span class="font-mono">searchLimit</span> diatur langsung dari modal actor Instagram.</p>
-                                            <p><span class="font-mono">searchType</span> mengikuti setting actor aktif.</p>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700 flex justify-between items-center">
-                                            Payload Input JSON Aktif Instagram
-                                            <span class="font-normal text-slate-400 text-[10px]">Mendukung variabel: {keyword}, {limit}, {time_filter}</span>
-                                        </label>
-                                        <textarea wire:model="output_mapping" placeholder='{"enhanceUserSearchWithFacebookPage":false,"liveSearch":true,"search":"{keyword}","searchLimit":"{limit}","searchType":"popular"}' rows="4" class="w-full rounded-xl border border-slate-200 p-3.5 text-[11px] font-medium text-slate-700 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-[#f8fafc] shadow-inner font-mono leading-relaxed"></textarea>
-                                        @error('output_mapping') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                                    </div>
                                 </div>
                             </details>
                         @endif
 
+                        @if($platform !== 'Instagram')
                         <!-- Group 4: Status & Filter -->
                         <div class="bg-slate-50 border border-slate-100 p-4 rounded-2xl flex flex-wrap gap-6 items-center">
                             <label class="flex items-center gap-2.5 cursor-pointer group">
@@ -584,10 +644,7 @@
                                 <span class="text-[11px] font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Aktor Dalam Status Aktif</span>
                             </label>
                         </div>
-                        </div>
-
-                        </div>
-
+                        @endif
 
                     <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-white shrink-0">
                         <button type="button" wire:click="closeActorModal" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>

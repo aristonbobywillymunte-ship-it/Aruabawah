@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ApifyActor;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class ApifyActorRegistry
 {
@@ -22,6 +23,9 @@ class ApifyActorRegistry
                 'status' => 'active',
                 'keyword_field_mapping' => 'searchQueries',
                 'output_mapping' => '{"maxPosts":"{limit}","postTimeRange":"24h","proxyConfiguration":{"useApifyProxy":true},"searchQueries":["{keyword}"]}',
+                'build' => 'latest',
+                'timeout_seconds' => 10000,
+                'no_timeout' => false,
                 'interval_minutes' => 720,
                 'memory_limit' => 1024,
                 'range_mode' => '30d',
@@ -36,14 +40,17 @@ class ApifyActorRegistry
                 'platform' => 'Instagram',
                 'label' => 'Instagram Keyword Search',
                 'menu_label' => 'Instagram Keyword Search',
-                'actor_name' => 'Instagram Search Scraper',
-                'actor_slug' => 'apify/instagram-search-scraper',
+                'actor_name' => 'Instagram Hashtag Scraper',
+                'actor_slug' => 'apify/instagram-hashtag-scraper',
                 'function_type' => 'Search Post',
-                'default_keyword' => 'pilkada',
+                'default_keyword' => null,
                 'default_limit' => 50,
                 'status' => 'active',
-                'keyword_field_mapping' => 'search',
-                'output_mapping' => '{"enhanceUserSearchWithFacebookPage":false,"liveSearch":true,"search":"{keyword}","searchLimit":"{limit}","searchType":"popular"}',
+                'keyword_field_mapping' => 'hashtags',
+                'output_mapping' => '{"hashtags":["{keyword}"],"resultsType":"posts","resultsLimit":"{limit}","keywordSearch":false}',
+                'build' => 'latest',
+                'timeout_seconds' => 10000,
+                'no_timeout' => false,
                 'interval_minutes' => 720,
                 'memory_limit' => 1024,
                 'range_mode' => '7d',
@@ -66,6 +73,9 @@ class ApifyActorRegistry
                 'status' => 'active',
                 'keyword_field_mapping' => 'keyword',
                 'output_mapping' => '{"dateRange":"7days","includeSearchKeywords":true,"keywords":["{keyword}"],"location":"ID","maxItems":"{limit}","mirrorVideos":true,"proxyConfiguration":{"useApifyProxy":true,"apifyProxyGroups":["RESIDENTIAL"],"apifyProxyCountry":"ID"},"sortType":"RELEVANCE","strictKeywordMatch":false,"useProxy":true,"minPlayCount":0,"mirrorVideoBytes":262144,"minDurationSec":0,"maxConcurrentKeywords":1}',
+                'build' => 'latest',
+                'timeout_seconds' => 10000,
+                'no_timeout' => false,
                 'interval_minutes' => 720,
                 'memory_limit' => 2048,
                 'range_mode' => '7d',
@@ -88,13 +98,6 @@ class ApifyActorRegistry
                 'menu_label' => 'Legacy / Inactive',
                 'actor_name' => 'Facebook Search Posts',
                 'actor_slug' => 'scrapeflow/facebook-search-posts',
-            ],
-            'instagram-legacy' => [
-                'platform' => 'Instagram',
-                'label' => 'Legacy / Inactive',
-                'menu_label' => 'Legacy / Inactive',
-                'actor_name' => 'Instagram Scraper',
-                'actor_slug' => 'apify/instagram-scraper',
             ],
             'tiktok-legacy-1' => [
                 'platform' => 'TikTok',
@@ -156,6 +159,17 @@ class ApifyActorRegistry
             }
         }
 
+        $canonicalInstagramSlug = $this->primaryActors()['instagram']['actor_slug'] ?? null;
+        if ($canonicalInstagramSlug) {
+            ApifyActor::query()
+                ->where('platform', 'Instagram')
+                ->where('actor_slug', '!=', $canonicalInstagramSlug)
+                ->update([
+                    'status' => 'inactive',
+                    'updated_at' => now(),
+                ]);
+        }
+
         foreach ($this->legacyActors() as $actor) {
             $existing = ApifyActor::where('actor_slug', $actor['actor_slug'])->first();
             if ($existing) {
@@ -196,7 +210,7 @@ class ApifyActorRegistry
 
     protected function databasePayload(array $actor, bool $active = true): array
     {
-        return [
+        $payload = [
             'actor_name' => $actor['actor_name'],
             'function_type' => $actor['function_type'],
             'default_keyword' => $actor['default_keyword'],
@@ -212,5 +226,17 @@ class ApifyActorRegistry
             'cost_reference' => $actor['cost_reference'],
             'maximum_cost_per_run_usd' => $actor['maximum_cost_per_run_usd'] ?? 0.0000,
         ];
+
+        if (Schema::hasColumn('apify_actors', 'build')) {
+            $payload['build'] = $actor['build'] ?? 'latest';
+        }
+        if (Schema::hasColumn('apify_actors', 'timeout_seconds')) {
+            $payload['timeout_seconds'] = $actor['timeout_seconds'] ?? 10000;
+        }
+        if (Schema::hasColumn('apify_actors', 'no_timeout')) {
+            $payload['no_timeout'] = $actor['no_timeout'] ?? false;
+        }
+
+        return $payload;
     }
 }

@@ -53,6 +53,44 @@ new class extends Component
     protected ?array $portalRunningProjectIds = null;
     protected ?array $socialActiveProjects = null;
 
+    protected function normalizeKeywordToHashtag(string $keyword): string
+    {
+        $keyword = trim($keyword);
+        $keyword = preg_replace('/\s+/', ' ', $keyword) ?? $keyword;
+        $keyword = str_replace(["'", "’", "‘", "`"], '', $keyword);
+        $keyword = trim($keyword, " \t\n\r\0\x0B#");
+        $keyword = preg_replace('/[^\p{L}\p{N}\s_]+/u', '', $keyword) ?? $keyword;
+        $keyword = preg_replace('/\s+/u', '', $keyword) ?? $keyword;
+
+        return $keyword === '' ? '' : '#' . $keyword;
+    }
+
+    protected function parseTopicsString(bool $normalize = false): array
+    {
+        $topics = array_map('trim', explode(',', (string) $this->topicsString));
+        $topics = array_filter($topics);
+
+        if ($normalize) {
+            $topics = array_map(fn ($topic) => $this->normalizeKeywordToHashtag($topic), $topics);
+            $topics = array_filter($topics);
+        }
+
+        return array_values(array_unique($topics));
+    }
+
+    protected function parseTopicsStringFromString(string $value, bool $normalize = false): array
+    {
+        $topics = array_map('trim', explode(',', $value));
+        $topics = array_filter($topics);
+
+        if ($normalize) {
+            $topics = array_map(fn ($topic) => $this->normalizeKeywordToHashtag($topic), $topics);
+            $topics = array_filter($topics);
+        }
+
+        return array_values(array_unique($topics));
+    }
+
     protected function hydratePortalScanState(): void
     {
         if ($this->portalScanTimes !== null && $this->portalRunningProjectIds !== null) {
@@ -399,10 +437,7 @@ new class extends Component
         }
 
         // Parse comma-separated topics
-        $topics = array_map('trim', explode(',', $this->topicsString));
-        $topics = array_filter($topics); // remove empty elements
-        $topics = array_unique($topics); // remove duplicates
-        $topics = array_values($topics);
+        $topics = $this->parseTopicsString(false);
 
         if (empty($topics)) {
             $this->addError('topicsString', 'Topik wajib diisi minimal satu kata kunci valid.');
@@ -426,6 +461,11 @@ new class extends Component
         $this->showSuccessModal = true;
         session()->flash(
             'message',
+            'Proyek berhasil dibuat. Data lama yang cocok: '
+            . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
+            . ($matchResult['social_linked'] ?? 0) . ' medsos.'
+        );
+        $this->notifyProjectAction(
             'Proyek berhasil dibuat. Data lama yang cocok: '
             . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
             . ($matchResult['social_linked'] ?? 0) . ' medsos.'
@@ -464,7 +504,7 @@ new class extends Component
             return;
         }
 
-        $topics = array_values(array_unique(array_filter(array_map('trim', explode(',', $this->editTopicsString)))));
+        $topics = $this->parseTopicsStringFromString($this->editTopicsString, false);
 
         if (empty($topics)) {
             $this->addError('editTopicsString', 'Topik wajib diisi minimal satu kata kunci valid.');
@@ -482,6 +522,11 @@ new class extends Component
         $this->editProjectId = null;
         session()->flash(
             'message',
+            'Proyek berhasil diperbarui. Data lama yang cocok: '
+            . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
+            . ($matchResult['social_linked'] ?? 0) . ' medsos.'
+        );
+        $this->notifyProjectAction(
             'Proyek berhasil diperbarui. Data lama yang cocok: '
             . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
             . ($matchResult['social_linked'] ?? 0) . ' medsos.'
@@ -876,6 +921,32 @@ new class extends Component
                                         class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
                                     >
                                     <p class="text-[10px] text-slate-400 mt-1">Tidak peka huruf besar/kecil. Pisahkan dengan Koma atau tekan Enter untuk banyak kata kunci.</p>
+                                    <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4" x-data="{
+                                        topics() {
+                                            return $wire.topicsString ? $wire.topicsString.split(',').map(t => t.trim()).filter(Boolean) : [];
+                                        },
+                                        toHashtag(topic) {
+                                            const clean = topic
+                                                .replace(/^#+/, '')
+                                                .replace(/['’‘`]/g, '')
+                                                .replace(/\s+/g, '');
+                                            return clean ? `#${clean}` : '';
+                                        }
+                                    }">
+                                        <div class="flex items-center justify-between gap-3 mb-3">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Preview Hashtag</span>
+                                            <span class="text-[10px] font-semibold text-slate-500">Hasil akhir saat disimpan</span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2 text-xs">
+                                            <template x-for="topic in topics()" :key="topic">
+                                                <span
+                                                    class="px-3 py-1.5 rounded-full border border-[#1fa387]/20 bg-[#1fa387]/5 text-[#1fa387] font-bold"
+                                                    x-text="toHashtag(topic)"
+                                                ></span>
+                                            </template>
+                                            <span x-show="!$wire.topicsString" class="text-xs text-slate-400 italic">Belum ada keyword.</span>
+                                        </div>
+                                    </div>
                                     @error('topicsString') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                                 </div>
 
@@ -959,15 +1030,15 @@ new class extends Component
 
                                         <!-- Sumber Data Section -->
                                         <div class="space-y-4 pt-4 border-t border-slate-100">
-                                            <div class="flex justify-between items-center">
+                                            <div class="flex items-start justify-between gap-4">
                                                 <div>
                                                     <h4 class="text-xs font-bold text-slate-800">Sumber Data</h4>
-                                                    <p class="text-[10px] text-slate-400">Pilih satu atau lebih platform media yang ingin dipantau</p>
+                                                    <p class="text-[10px] text-slate-400">Pilih satu atau lebih sumber media yang ingin dipantau</p>
                                                 </div>
                                                 <button type="button" @click="$wire.selectedSources = []" class="text-xs text-red-500 font-bold hover:underline cursor-pointer">Hapus Semua</button>
                                             </div>
 
-                                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4" x-data="{
+                                            <div class="space-y-4" x-data="{
                                                 toggleSource(source) {
                                                     let list = [...$wire.selectedSources];
                                                     if (list.includes(source)) {
@@ -978,110 +1049,60 @@ new class extends Component
                                                     $wire.selectedSources = list;
                                                 }
                                             }">
-                                                <!-- Twitter Card -->
-                                                <div 
-                                                    @click="toggleSource('Twitter')"
-                                                    class="border-2 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition select-none bg-white"
-                                                    :class="$wire.selectedSources.includes('Twitter') ? 'border-[#1fa387]/40 bg-[#1fa387]/5 text-slate-800' : 'border-slate-200 hover:border-slate-300 text-slate-500'"
-                                                >
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xs">X</div>
-                                                        <span class="text-xs font-bold text-slate-850">Twitter</span>
+                                                <label class="flex items-center justify-between gap-3 cursor-pointer group">
+                                                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                                                        <input wire:model.live="selectedSources" value="Instagram" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5">
+                                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                                                            <svg class="w-5 h-5 text-fuchsia-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                                                <rect x="4.25" y="4.25" width="15.5" height="15.5" rx="5"></rect>
+                                                                <circle cx="12" cy="12" r="3.15"></circle>
+                                                                <circle cx="17.1" cy="6.9" r="1.05" fill="currentColor" stroke="none"></circle>
+                                                            </svg>
+                                                        </div>
+                                                        <span class="text-sm font-semibold text-slate-700 truncate">Instagram</span>
                                                     </div>
-                                                    <div class="w-5 h-5 rounded-full border flex items-center justify-center transition" :class="$wire.selectedSources.includes('Twitter') ? 'bg-[#1fa387] border-[#1fa387] text-white' : 'border-slate-300'">
-                                                        <svg x-show="$wire.selectedSources.includes('Twitter')" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                                                    </div>
-                                                </div>
+                                                    <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">0</span>
+                                                </label>
 
-                                                <!-- Instagram Card -->
-                                                <div 
-                                                    @click="toggleSource('Instagram')"
-                                                    class="border-2 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition select-none bg-white"
-                                                    :class="$wire.selectedSources.includes('Instagram') ? 'border-[#1fa387]/40 bg-[#1fa387]/5 text-slate-800' : 'border-slate-200 hover:border-slate-300 text-slate-500'"
-                                                >
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-yellow-500 to-purple-650 text-white flex items-center justify-center font-bold text-[10px]">IG</div>
-                                                        <span class="text-xs font-bold text-slate-850">Instagram</span>
+                                                <label class="flex items-center justify-between gap-3 cursor-pointer group">
+                                                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                                                        <input wire:model.live="selectedSources" value="Tiktok" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5">
+                                                        <div class="w-10 h-10 rounded-xl bg-slate-950 shadow-sm shadow-slate-900/20 flex items-center justify-center shrink-0">
+                                                            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
+                                                                <path fill="currentColor" d="M15.8 5.2c.7.8 1.7 1.4 2.8 1.6v2.7c-1 0-2-.2-2.9-.6v5.1c0 2.9-2.4 5.3-5.3 5.3S5.1 17 5.1 14.1s2.4-5.3 5.3-5.3c.2 0 .4 0 .6.1v2.8c-.2 0-.4-.1-.6-.1-1.3 0-2.3 1.1-2.3 2.4s1 2.4 2.3 2.4 2.4-1 2.4-2.4V4.4h2.9c.1.3.1.5.1.8z"/>
+                                                                <path fill="currentColor" d="M15.6 4.4c.2.9.7 1.8 1.4 2.5.8.7 1.6 1.2 2.6 1.4V5.6c-.7-.2-1.3-.5-1.8-.9-.5-.4-1-.9-1.3-1.5h-.9z"/>
+                                                            </svg>
+                                                        </div>
+                                                        <span class="text-sm font-semibold text-slate-700 truncate">TikTok</span>
                                                     </div>
-                                                    <div class="w-5 h-5 rounded-full border flex items-center justify-center transition" :class="$wire.selectedSources.includes('Instagram') ? 'bg-[#1fa387] border-[#1fa387] text-white' : 'border-slate-300'">
-                                                        <svg x-show="$wire.selectedSources.includes('Instagram')" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                                                    </div>
-                                                </div>
+                                                    <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">29</span>
+                                                </label>
 
-                                                <!-- Youtube Card -->
-                                                <div 
-                                                    @click="toggleSource('Youtube')"
-                                                    class="border-2 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition select-none bg-white"
-                                                    :class="$wire.selectedSources.includes('Youtube') ? 'border-[#1fa387]/40 bg-[#1fa387]/5 text-slate-800' : 'border-slate-200 hover:border-slate-300 text-slate-500'"
-                                                >
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-xs">YT</div>
-                                                        <span class="text-xs font-bold text-slate-850">Youtube</span>
+                                                <label class="flex items-center justify-between gap-3 cursor-pointer group">
+                                                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                                                        <input wire:model.live="selectedSources" value="Facebook" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5">
+                                                        <div class="w-10 h-10 rounded-xl bg-blue-600 shadow-sm shadow-blue-600/20 flex items-center justify-center shrink-0">
+                                                            <svg class="w-5 h-5 fill-current text-white" viewBox="0 0 24 24">
+                                                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
+                                                            </svg>
+                                                        </div>
+                                                        <span class="text-sm font-semibold text-slate-700 truncate">Facebook</span>
                                                     </div>
-                                                    <div class="w-5 h-5 rounded-full border flex items-center justify-center transition" :class="$wire.selectedSources.includes('Youtube') ? 'bg-[#1fa387] border-[#1fa387] text-white' : 'border-slate-300'">
-                                                        <svg x-show="$wire.selectedSources.includes('Youtube')" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                                                    </div>
-                                                </div>
+                                                    <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">60</span>
+                                                </label>
 
-                                                <!-- Tiktok Card -->
-                                                <div 
-                                                    @click="toggleSource('Tiktok')"
-                                                    class="border-2 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition select-none bg-white"
-                                                    :class="$wire.selectedSources.includes('Tiktok') ? 'border-[#1fa387]/40 bg-[#1fa387]/5 text-slate-800' : 'border-slate-200 hover:border-slate-300 text-slate-500'"
-                                                >
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-8 h-8 rounded-xl bg-slate-955 text-white flex items-center justify-center font-bold text-xs">TK</div>
-                                                        <span class="text-xs font-bold text-slate-850">Tiktok</span>
+                                                <label class="flex items-center justify-between gap-3 cursor-pointer group">
+                                                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                                                        <input wire:model.live="selectedSources" value="Portal" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5">
+                                                        <div class="w-10 h-10 rounded-xl bg-emerald-500 shadow-sm shadow-emerald-500/20 flex items-center justify-center shrink-0">
+                                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                                                            </svg>
+                                                        </div>
+                                                        <span class="text-sm font-semibold text-slate-700 truncate">Portal News</span>
                                                     </div>
-                                                    <div class="w-5 h-5 rounded-full border flex items-center justify-center transition" :class="$wire.selectedSources.includes('Tiktok') ? 'bg-[#1fa387] border-[#1fa387] text-white' : 'border-slate-300'">
-                                                        <svg x-show="$wire.selectedSources.includes('Tiktok')" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Facebook Card -->
-                                                <div 
-                                                    @click="toggleSource('Facebook')"
-                                                    class="border-2 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition select-none bg-white"
-                                                    :class="$wire.selectedSources.includes('Facebook') ? 'border-[#1fa387]/40 bg-[#1fa387]/5 text-slate-800' : 'border-slate-200 hover:border-slate-300 text-slate-500'"
-                                                >
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs">f</div>
-                                                        <span class="text-xs font-bold text-slate-855">Facebook</span>
-                                                    </div>
-                                                    <div class="w-5 h-5 rounded-full border flex items-center justify-center transition" :class="$wire.selectedSources.includes('Facebook') ? 'bg-[#1fa387] border-[#1fa387] text-white' : 'border-slate-300'">
-                                                        <svg x-show="$wire.selectedSources.includes('Facebook')" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                                                    </div>
-                                                </div>
-
-                                                <!-- News Card -->
-                                                <div 
-                                                    @click="toggleSource('News')"
-                                                    class="border-2 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition select-none bg-white"
-                                                    :class="$wire.selectedSources.includes('News') ? 'border-[#1fa387]/40 bg-[#1fa387]/5 text-slate-800' : 'border-slate-200 hover:border-slate-300 text-slate-500'"
-                                                >
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-8 h-8 rounded-xl bg-sky-500 text-white flex items-center justify-center text-xs">📰</div>
-                                                        <span class="text-xs font-bold text-slate-850">News</span>
-                                                    </div>
-                                                    <div class="w-5 h-5 rounded-full border flex items-center justify-center transition" :class="$wire.selectedSources.includes('News') ? 'bg-[#1fa387] border-[#1fa387] text-white' : 'border-slate-300'">
-                                                        <svg x-show="$wire.selectedSources.includes('News')" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Threads Card -->
-                                                <div 
-                                                    @click="toggleSource('Threads')"
-                                                    class="border-2 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition select-none bg-white"
-                                                    :class="$wire.selectedSources.includes('Threads') ? 'border-[#1fa387]/40 bg-[#1fa387]/5 text-slate-800' : 'border-slate-200 hover:border-slate-300 text-slate-500'"
-                                                >
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="w-8 h-8 rounded-xl bg-slate-800 text-white flex items-center justify-center text-xs">@</div>
-                                                        <span class="text-xs font-bold text-slate-850">Threads</span>
-                                                    </div>
-                                                    <div class="w-5 h-5 rounded-full border flex items-center justify-center transition" :class="$wire.selectedSources.includes('Threads') ? 'bg-[#1fa387] border-[#1fa387] text-white' : 'border-slate-300'">
-                                                        <svg x-show="$wire.selectedSources.includes('Threads')" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
-                                                    </div>
-                                                </div>
+                                                    <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">176</span>
+                                                </label>
                                             </div>
                                         </div>
                                     </div>
@@ -1442,7 +1463,30 @@ new class extends Component
                                     class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                                     placeholder="pisahkan dengan koma, contoh: pilkada, banjir jakarta"
                                 />
-                                <p class="mt-1 text-xs text-slate-400">Pisahkan beberapa kata kunci dengan koma</p>
+                                <p class="mt-1 text-xs text-slate-400">Pisahkan beberapa kata kunci dengan koma. Saat disimpan, keyword akan dinormalisasi ke hashtag.</p>
+                                <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4" x-data="{
+                                    topics() {
+                                        return $wire.editTopicsString ? $wire.editTopicsString.split(',').map(t => t.trim()).filter(Boolean) : [];
+                                    },
+                                    toHashtag(topic) {
+                                        const clean = topic
+                                            .replace(/^#+/, '')
+                                            .replace(/['’‘`]/g, '')
+                                            .replace(/\s+/g, '');
+                                        return clean ? `#${clean}` : '';
+                                    }
+                                }">
+                                    <div class="flex items-center justify-between gap-3 mb-3">
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Preview Hashtag</span>
+                                        <span class="text-[10px] font-semibold text-slate-500">Hasil akhir saat disimpan</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 text-xs">
+                                        <template x-for="topic in topics()" :key="topic">
+                                            <span class="px-3 py-1.5 rounded-full border border-[#1fa387]/20 bg-[#1fa387]/5 text-[#1fa387] font-bold" x-text="toHashtag(topic)"></span>
+                                        </template>
+                                        <span x-show="!$wire.editTopicsString" class="text-xs text-slate-400 italic">Belum ada keyword.</span>
+                                    </div>
+                                </div>
                                 @error('editTopicsString')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                             </div>
                             <div class="flex gap-3 pt-2">

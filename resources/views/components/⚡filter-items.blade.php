@@ -59,8 +59,12 @@
             <label class="flex items-center justify-between cursor-pointer group py-0.5 gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <input wire:model.live="selectedSources" value="Instagram" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                    <div class="w-7 h-7 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-lg flex items-center justify-center shadow-sm shadow-pink-500/15">
-                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-linecap="round"></line></svg>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-fuchsia-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 4.4c2.1 0 2.4.01 3.3.05.9.04 1.5.18 2 .38.5.2.9.44 1.3.82.38.4.62.8.82 1.3.2.5.34 1.1.38 2 .04.9.05 1.2.05 3.3s-.01 2.4-.05 3.3c-.04.9-.18 1.5-.38 2-.2.5-.44.9-.82 1.3-.4.38-.8.62-1.3.82-.5.2-1.1.34-2 .38-.9.04-1.2.05-3.3.05s-2.4-.01-3.3-.05c-.9-.04-1.5-.18-2-.38-.5-.2-.9-.44-1.3-.82-.38-.4-.62-.8-.82-1.3-.2-.5-.34-1.1-.38-2C4.45 14.4 4.4 14.1 4.4 12s.01-2.4.05-3.3c.04-.9.18-1.5.38-2 .2-.5.44-.9.82-1.3.4-.38.8-.62 1.3-.82.5-.2 1.1-.34 2-.38C9.6 4.41 9.9 4.4 12 4.4Z"></path>
+                            <circle cx="12" cy="12" r="3.1"></circle>
+                            <circle cx="16.9" cy="7.1" r="1"></circle>
+                        </svg>
                     </div>
                     <span class="text-sm text-slate-700 group-hover:text-slate-900 font-semibold transition truncate">Instagram</span>
                 </div>
@@ -71,8 +75,11 @@
             <label class="flex items-center justify-between cursor-pointer group py-0.5 gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <input wire:model.live="selectedSources" value="Tiktok" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                    <div class="w-7 h-7 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 rounded-lg flex items-center justify-center shadow-sm shadow-slate-900/15">
-                        <svg class="w-3.5 h-3.5 fill-current text-white" viewBox="0 0 24 24"><path d="M12.525.01c1.306-.022 2.615-.011 3.921-.012.08 1.836 1.011 3.5 2.501 4.485.006 1.341-.004 2.683-.004 4.024-1.57-.107-3.067-.932-3.955-2.247-.008 2.827-.003 5.657-.005 8.486-.098 3.546-3.13 6.643-6.726 6.467-3.526-.067-6.523-3.18-6.241-6.722.215-3.327 3.012-6.104 6.347-5.992v4.06c-1.393-.16-2.775.76-3.085 2.112-.397 1.488.583 3.125 2.1 3.328 1.455.234 2.924-.766 3.14-2.224.048-2.617.02-5.237.03-7.856.002-3.834-.002-7.67.002-11.504z"></path></svg>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-slate-950" fill="none" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M16.4 4.3h2.2c.1 1.7 1.1 3.2 2.7 3.9v2.3c-1.1 0-2.2-.2-3.2-.6v4.9c0 3.1-2.5 5.6-5.6 5.6-2.9 0-5.3-2.4-5.3-5.3 0-3 2.4-5.4 5.4-5.4.4 0 .8 0 1.1.1v2.7c-.3 0-.7-.1-1-.1-1.4 0-2.5 1.1-2.5 2.6 0 1.4 1.1 2.6 2.5 2.6 1.5 0 2.7-1.2 2.7-2.7V4.3z"></path>
+                            <path fill="currentColor" d="M15.3 4.3h1.5c.6 1.2 1.6 2.2 3 2.6v2.2c-1.5-.4-2.7-1-3.6-2-.5-.5-.8-1.1-.9-1.8v-1z"></path>
+                        </svg>
                     </div>
                     <span class="text-sm text-slate-700 group-hover:text-slate-900 font-semibold transition truncate">TikTok</span>
                 </div>
@@ -83,8 +90,10 @@
             <label class="flex items-center justify-between cursor-pointer group py-0.5 gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <input wire:model.live="selectedSources" value="Facebook" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                    <div class="w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm shadow-blue-600/15">
-                        <svg class="w-3.5 h-3.5 fill-current text-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
+                    <div class="w-8 h-8 rounded-lg bg-blue-600 shadow-sm shadow-blue-600/20 flex items-center justify-center">
+                        <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
+                        </svg>
                     </div>
                     <span class="text-sm text-slate-700 group-hover:text-slate-900 font-semibold transition truncate">Facebook</span>
                 </div>
@@ -95,8 +104,10 @@
             <label class="flex items-center justify-between cursor-pointer group py-0.5 gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <input wire:model.live="selectedSources" value="News" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                    <div class="w-7 h-7 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm shadow-emerald-500/15">
-                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500 shadow-sm shadow-emerald-500/20 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                        </svg>
                     </div>
                     <span class="text-sm text-slate-700 group-hover:text-slate-900 font-semibold transition truncate">Portal News</span>
                 </div>

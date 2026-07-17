@@ -2162,6 +2162,20 @@ new class extends Component
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
                         <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data untuk proyek <span class="text-[#1fa387] font-bold uppercase">{{ $projectName }}</span></p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @foreach($this->primaryKeywords as $kw)
+                                @php
+                                    $cleanKw = trim((string) $kw);
+                                    $hashtagKw = preg_replace('/\s+/u', '', preg_replace('/^#+/u', '', $cleanKw) ?? $cleanKw) ?? $cleanKw;
+                                @endphp
+                                @if($cleanKw !== '')
+                                    <span class="inline-flex items-center gap-1.5 rounded-full border border-[#1fa387]/20 bg-[#1fa387]/6 px-3 py-1 text-[10px] font-bold text-[#1fa387]">
+                                        <span>{{ $cleanKw }}</span>
+                                        <span class="text-[#0f766e]">#{{ $hashtagKw }}</span>
+                                    </span>
+                                @endif
+                            @endforeach
+                        </div>
                     </div>
                     <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
@@ -3467,7 +3481,15 @@ new class extends Component
                                             wire:click="toggleKeyword('{{ $cleanKw }}')"
                                             class="hover:bg-[#1fa387]/5 transition cursor-pointer {{ $selectedKeyword === $cleanKw ? 'bg-[#1fa387]/10' : '' }}"
                                         >
-                                            <td class="px-6 py-4 font-bold {{ $selectedKeyword === $cleanKw ? 'text-[#1fa387]' : 'text-slate-900' }}">{{ $row['keyword'] }}</td>
+                                            <td class="px-6 py-4 {{ $selectedKeyword === $cleanKw ? 'text-[#1fa387]' : 'text-slate-900' }}">
+                                                <div class="flex flex-col gap-1">
+                                                    <span class="font-bold">{{ $cleanKw }}</span>
+                                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                                                        <span class="uppercase tracking-wider">Hashtag</span>
+                                                        <span class="text-[#1fa387]">#{{ preg_replace('/\s+/u', '', preg_replace('/^#+/u', '', $cleanKw) ?? $cleanKw) }}</span>
+                                                    </span>
+                                                </div>
+                                            </td>
                                             <td class="px-6 py-4 font-bold text-slate-700">{{ number_format($row['total']) }}</td>
                                             <td class="px-6 py-4">
                                                 @php

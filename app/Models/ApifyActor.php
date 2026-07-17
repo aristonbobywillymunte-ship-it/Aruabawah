@@ -35,6 +35,9 @@ class ApifyActor extends Model
         'last_run_message',
         'keyword_field_mapping',
         'output_mapping',
+        'build',
+        'timeout_seconds',
+        'no_timeout',
         'interval_minutes',
         'memory_limit',
         'range_mode',
@@ -48,6 +51,8 @@ class ApifyActor extends Model
         'date_from' => 'date',
         'date_to' => 'date',
         'last_run_at' => 'datetime',
+        'timeout_seconds' => 'integer',
+        'no_timeout' => 'boolean',
         'interval_minutes' => 'integer',
         'memory_limit' => 'integer',
         'post_filter_enabled' => 'boolean',
@@ -59,17 +64,6 @@ class ApifyActor extends Model
     protected static function booted()
     {
         static::saving(function ($actor) {
-            if (in_array($actor->platform, ['Facebook', 'Instagram', 'TikTok'], true)) {
-                if ($actor->memory_limit < 1024) {
-                    $actor->memory_limit = 1024;
-                }
-                if ($actor->default_limit < 1) {
-                    $actor->default_limit = 1;
-                }
-                if ($actor->default_limit > self::MAX_SOCIAL_ITEMS_PER_RUN) {
-                    $actor->default_limit = self::MAX_SOCIAL_ITEMS_PER_RUN;
-                }
-            }
         });
     }
 
@@ -150,10 +144,6 @@ class ApifyActor extends Model
             $resolvedLimit = (int) ($this->default_limit ?? 50);
         }
 
-        if (in_array($this->platform, ['Facebook', 'Instagram', 'TikTok'], true)) {
-            $resolvedLimit = min(self::MAX_SOCIAL_ITEMS_PER_RUN, max(1, $resolvedLimit));
-        }
-
         if ($this->platform === 'TikTok') {
             return $this->buildTikTokInputPayload($keyword, $keywords, $resolvedLimit, $dateFrom, $dateTo);
         }
@@ -214,8 +204,6 @@ class ApifyActor extends Model
         if ($resolvedMaxPosts < 1 || str_contains((string) $configuredMaxPosts, '{limit}')) {
             $resolvedMaxPosts = $limit;
         }
-        $resolvedMaxPosts = min(self::MAX_SOCIAL_ITEMS_PER_RUN, max(1, $resolvedMaxPosts));
-
         return [
             'maxPosts' => $resolvedMaxPosts,
             'postTimeRange' => $postTimeRange ?: $this->resolveTimeFilter(),
@@ -229,22 +217,18 @@ class ApifyActor extends Model
     protected function buildInstagramInputPayload(?string $keyword, ?array $keywords, int $limit, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $keywords = array_values(array_filter(array_map(
-            fn ($value) => $this->sanitizeSocialKeyword((string) $value),
+            fn ($value) => $this->normalizeInstagramSearchKeyword((string) $value),
             $keywords ?? [$keyword]
         )));
 
         if ($keywords === []) {
-            $keywords = [$this->sanitizeSocialKeyword((string) ($keyword ?: $this->default_keyword))];
+            $keywords = [];
         }
 
-        $keywords = array_values(array_filter(array_map(
-            fn ($value) => $this->sanitizeInstagramSearchTerm((string) $value),
+        $hashtags = array_values(array_filter(array_map(
+            fn ($value) => $this->normalizeInstagramPayloadHashtag((string) $value),
             $keywords
         )));
-
-        if ($keywords === []) {
-            $keywords = [$this->sanitizeInstagramSearchTerm(trim((string) ($keyword ?: $this->default_keyword)))];
-        }
 
         $config = [];
         if (filled($this->output_mapping)) {
@@ -254,33 +238,23 @@ class ApifyActor extends Model
             }
         }
 
-        $enhanceUserSearchWithFacebookPage = (bool) data_get($config, 'enhanceUserSearchWithFacebookPage', false);
-        $liveSearch = (bool) data_get($config, 'liveSearch', false);
-
-        $searchType = trim((string) data_get($config, 'searchType', 'popular'));
-        if ($searchType === '' || str_contains($searchType, '{')) {
-            $searchType = 'popular';
+        $resultsType = trim((string) data_get($config, 'resultsType', 'posts'));
+        if (! in_array($resultsType, ['posts', 'reels'], true)) {
+            $resultsType = 'posts';
         }
 
-        $configuredSearchLimit = data_get($config, 'searchLimit', null);
-        $configuredTotalLimit = (int) $configuredSearchLimit;
-        if ($configuredTotalLimit < 1 || str_contains((string) $configuredSearchLimit, '{limit}')) {
+        $configuredResultsLimit = data_get($config, 'resultsLimit', null);
+        $configuredTotalLimit = (int) $configuredResultsLimit;
+        if ($configuredTotalLimit < 1 || str_contains((string) $configuredResultsLimit, '{limit}')) {
             $configuredTotalLimit = $limit;
-        } else {
-            $configuredTotalLimit = min(self::MAX_SOCIAL_ITEMS_PER_RUN, max(1, $configuredTotalLimit));
         }
 
-        return array_merge([
-            'enhanceUserSearchWithFacebookPage' => false,
-            'liveSearch' => true,
-            'searchType' => 'popular',
-        ], $config, [
-            'enhanceUserSearchWithFacebookPage' => $enhanceUserSearchWithFacebookPage,
-            'liveSearch' => $liveSearch,
-            'search' => implode(',', $keywords),
-            'searchType' => $searchType,
-            'searchLimit' => min(self::MAX_SOCIAL_ITEMS_PER_RUN, max(1, $configuredTotalLimit)),
-        ]);
+        return [
+            'hashtags' => $hashtags,
+            'resultsType' => $resultsType,
+            'resultsLimit' => $configuredTotalLimit,
+            'keywordSearch' => (bool) data_get($config, 'keywordSearch', false),
+        ];
     }
 
     protected function buildTikTokInputPayload(?string $keyword, ?array $keywords, int $limit, ?string $dateFrom = null, ?string $dateTo = null): array
@@ -315,15 +289,9 @@ class ApifyActor extends Model
 
         $configuredMaxItems = data_get($config, 'maxItems', null);
         $configuredTotalLimit = (int) $configuredMaxItems;
-        if ($configuredTotalLimit < 1 || str_contains((string) $configuredMaxItems, '{limit}')) {
+        if (str_contains((string) $configuredMaxItems, '{limit}')) {
             $configuredTotalLimit = $limit;
-        } else {
-            $configuredTotalLimit = min($limit, $configuredTotalLimit);
         }
-
-        // TikTok actor expects maxItems as the total target for the whole run,
-        // not a per-keyword split. We keep the full capped limit from actor config.
-        $maxItems = min(self::MAX_SOCIAL_ITEMS_PER_RUN, max(1, $configuredTotalLimit));
 
         $proxyGroups = data_get($config, 'proxyConfiguration.apifyProxyGroups', ['RESIDENTIAL']);
         if (! is_array($proxyGroups) || $proxyGroups === []) {
@@ -335,7 +303,7 @@ class ApifyActor extends Model
             'includeSearchKeywords' => (bool) data_get($config, 'includeSearchKeywords', true),
             'keywords' => $keywords,
             'location' => (string) data_get($config, 'location', 'ID'),
-            'maxItems' => $maxItems,
+            'maxItems' => $configuredTotalLimit,
             'mirrorVideos' => (bool) data_get($config, 'mirrorVideos', true),
             'proxyConfiguration' => [
                 'useApifyProxy' => (bool) data_get($config, 'proxyConfiguration.useApifyProxy', true),
@@ -348,7 +316,7 @@ class ApifyActor extends Model
             'minPlayCount' => (int) data_get($config, 'minPlayCount', 0),
             'mirrorVideoBytes' => (int) data_get($config, 'mirrorVideoBytes', 262144),
             'minDurationSec' => (int) data_get($config, 'minDurationSec', 0),
-            'maxConcurrentKeywords' => max(1, (int) data_get($config, 'maxConcurrentKeywords', 1)),
+            'maxConcurrentKeywords' => (int) data_get($config, 'maxConcurrentKeywords', 1),
         ];
     }
 
@@ -367,12 +335,25 @@ class ApifyActor extends Model
         return trim($value);
     }
 
-    protected function sanitizeInstagramSearchTerm(string $value): string
+    protected function sanitizeInstagramHashtag(string $value): string
     {
-        $value = preg_replace('/[!?.,:;\\-+=*&%$#@\/\\\\~^|<>()\\[\\]{}"\'`]+/u', ' ', $value) ?? $value;
-        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+        return $this->normalizeInstagramPayloadHashtag($value);
+    }
 
-        return trim($value);
+    protected function normalizeInstagramSearchKeyword(string $value): string
+    {
+        $value = trim($value);
+        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+        $value = str_replace(["'", "’", "‘", "`"], '', $value);
+        $value = trim($value, " \t\n\r\0\x0B#");
+        $value = preg_replace('/[^\p{L}\p{N}\s_]+/u', '', $value) ?? $value;
+
+        return preg_replace('/\s+/u', '', $value) ?? $value;
+    }
+
+    protected function normalizeInstagramPayloadHashtag(string $value): string
+    {
+        return $this->normalizeInstagramSearchKeyword($value);
     }
 
     public function resolveDatePayload(?string $dateFrom = null, ?string $dateTo = null): array
@@ -423,9 +404,6 @@ class ApifyActor extends Model
         $resolvedLimit = $limit;
         if (is_null($resolvedLimit)) {
             $resolvedLimit = (int) ($this->default_limit ?? 50);
-            if (in_array($this->platform, ['Instagram', 'TikTok'], true)) {
-                $resolvedLimit = max(50, $resolvedLimit);
-            }
         }
 
         $context = [

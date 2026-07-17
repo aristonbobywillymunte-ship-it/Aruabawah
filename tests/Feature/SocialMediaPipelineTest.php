@@ -36,8 +36,8 @@ class SocialMediaPipelineTest extends TestCase
 
         ApifyActor::create([
             'platform' => 'Instagram',
-            'actor_name' => 'Instagram Search Scraper',
-            'actor_slug' => 'apify/instagram-search-scraper',
+            'actor_name' => 'Instagram Hashtag Scraper',
+            'actor_slug' => 'apify/instagram-hashtag-scraper',
             'status' => 'active',
             'priority' => 1,
             'default_limit' => 2,

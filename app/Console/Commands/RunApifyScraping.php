@@ -30,6 +30,7 @@ class RunApifyScraping extends Command
                             {--project-id= : Specific project ID to scrape for}
                             {--limit= : Maximum items per actor run}
                             {--keyword= : Specific keyword override for QA purposes}
+                            {--force-dispatch : Force dispatch even if duplicate/stale-safe guard matches}
                             {--no-telegram : Suppress Telegram notifications downstream}';
 
     protected $description = 'Dispatch Apify scraping jobs for all active projects and platforms';
@@ -76,6 +77,7 @@ class RunApifyScraping extends Command
         $filterPlatform  = $this->option('platform');
         $filterProjectId = $this->option('project-id');
         $overrideKeyword = trim((string) $this->option('keyword'));
+        $forceDispatch = (bool) $this->option('force-dispatch');
         $suppressTelegram = (bool) $this->option('no-telegram');
 
         // Load all active actors
@@ -255,6 +257,7 @@ class RunApifyScraping extends Command
                         'project_id'  => $project->id,
                         'actor_id'    => $actor->id,
                         'limit'       => $limitPerRun,
+                        'force_dispatch' => $forceDispatch,
                         'no_telegram' => $suppressTelegram,
                     ]);
 

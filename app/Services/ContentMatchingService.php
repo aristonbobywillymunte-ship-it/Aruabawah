@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\Project;
 use App\Models\SocialMediaItem;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ContentMatchingService
 {
@@ -31,7 +32,11 @@ class ContentMatchingService
         if ($isArticle) {
             $contentToMatch = ($item->title ?? '') . "\n" . ($item->content ?? '');
         } else {
-            $contentToMatch = ($item->author_name ?? '') . "\n" . ($item->content ?? '');
+            $contentToMatch = $this->buildSocialMatchText(
+                $item->author_name ?? null,
+                $item->content ?? null,
+                $item->raw_json ?? null,
+            );
         }
         
         $matchedProjectIds = [];
@@ -47,7 +52,7 @@ class ContentMatchingService
                 continue;
             }
             
-            $keywords = $project->scrapeKeywords();
+            $keywords = $project->scrapeKeywordVariants();
             
             foreach ($keywords as $kw) {
                 if ($this->isStrictMatch($kw, $contentToMatch)) {
@@ -99,7 +104,7 @@ class ContentMatchingService
             ];
         }
 
-        $keywords = $project->scrapeKeywords();
+        $keywords = $project->scrapeKeywordVariants();
         if ($keywords === []) {
             return [
                 'articles_linked' => 0,
@@ -119,6 +124,9 @@ class ContentMatchingService
                     }
 
                     $content = ($article->title ?? '') . "\n" . ($article->content ?? '');
+                    if ($this->shouldSkipGovernorArticleMatch($project, $content)) {
+                        continue;
+                    }
                     foreach ($keywords as $keyword) {
                         if ($this->isStrictMatch($keyword, $content)) {
                             $project->articles()->syncWithoutDetaching([$article->id]);
@@ -138,7 +146,11 @@ class ContentMatchingService
                         continue;
                     }
 
-                    $content = ($item->author_name ?? '') . "\n" . ($item->content ?? '');
+                    $content = $this->buildSocialMatchText(
+                        $item->author_name ?? null,
+                        $item->content ?? null,
+                        $item->raw_json ?? null,
+                    );
                     foreach ($keywords as $keyword) {
                         if ($this->isStrictMatch($keyword, $content)) {
                             $project->socialMediaItems()->syncWithoutDetaching([$item->id]);
@@ -200,7 +212,92 @@ class ContentMatchingService
         // which means "not preceded or followed by a letter or number" to be extremely precise
         // across non-ascii boundaries).
         $pattern = '/(?<![\p{L}\p{N}])' . $escapedKeyword . '(?![\p{L}\p{N}])/iu';
-        
+
         return preg_match($pattern, $text) === 1;
+    }
+
+    /**
+     * Build a conservative matching text for social items.
+     * Keep only identity fields and explicit keyword-like fields so narrative
+     * captions do not trigger project links just because they mention a region.
+     */
+    protected function buildSocialMatchText(?string $authorName, ?string $content, mixed $rawJson): string
+    {
+        $parts = array_filter([
+            $authorName,
+        ], static fn ($value) => filled($value));
+
+        $decoded = null;
+        if (is_string($rawJson)) {
+            $decoded = json_decode($rawJson, true);
+        } elseif (is_array($rawJson)) {
+            $decoded = $rawJson;
+        }
+
+        foreach (['hashtags', 'tags', 'searchQuery', 'searchTerm', 'keyword', 'query'] as $key) {
+            $value = is_array($decoded) ? ($decoded[$key] ?? null) : null;
+            if (is_array($value)) {
+                foreach ($value as $entry) {
+                    if (is_scalar($entry) || $entry === null) {
+                        $trimmed = trim((string) $entry);
+                        if ($trimmed !== '') {
+                            $parts[] = $trimmed;
+                        }
+                    }
+                }
+                continue;
+            }
+
+            if (is_scalar($value) || $value === null) {
+                $trimmed = trim((string) $value);
+                if ($trimmed !== '') {
+                    $parts[] = $trimmed;
+                }
+            }
+        }
+
+        if (is_string($content) && preg_match_all('/(?<!\w)#([^\s#]+)/u', $content, $matches)) {
+            foreach ($matches[1] as $tag) {
+                $parts[] = $tag;
+            }
+        }
+
+        return implode("\n", array_values(array_unique($parts)));
+    }
+
+    /**
+     * Prevent governor projects from absorbing wagub-only articles just because
+     * they share a broad regional keyword such as "Kalimantan Timur".
+     */
+    protected function shouldSkipGovernorArticleMatch(Project $project, string $content): bool
+    {
+        $projectName = Str::lower($project->name ?? '');
+        $contentLower = Str::lower($content);
+
+        if (! Str::contains($projectName, 'gubernur')) {
+            return false;
+        }
+
+        $hasWagubSignal = Str::contains($contentLower, [
+            'wakil gubernur',
+            'wagub',
+            'seno aji',
+        ]);
+
+        if (! $hasWagubSignal) {
+            return false;
+        }
+
+        $hasStrongGovernorSignal = preg_match('/(?<!wakil\s)gubernur\s+kaltim/iu', $contentLower) === 1
+            || preg_match('/(?<!wakil\s)gubernur\s+kalimantan\s+timur/iu', $contentLower) === 1
+            || Str::contains($contentLower, [
+                'rudy mas',
+                'rudy mas\'ud',
+                'rudy mas’ud',
+            ]);
+
+        // If the article is clearly about Wagub but only has broad governor-region
+        // wording, keep it out of the governor project.
+        return ! $hasStrongGovernorSignal;
     }
 }

@@ -215,7 +215,7 @@ class ApifyDispatchTest extends TestCase
 
         $actors = [
             ['Facebook', 'scrapeflow/facebook-posts-search-scraper', 0.20, 'scrapeflow~facebook-posts-search-scraper'],
-            ['Instagram', 'apify/instagram-search-scraper', 0.15, 'apify~instagram-search-scraper'],
+            ['Instagram', 'apify/instagram-hashtag-scraper', 0.15, 'apify~instagram-hashtag-scraper'],
             ['TikTok', 'paul_44/tiktok-search', 0.15, 'paul_44~tiktok-search'],
         ];
 
@@ -293,7 +293,7 @@ class ApifyDispatchTest extends TestCase
         ]);
         $instagram = new ApifyActor([
             'platform' => 'Instagram',
-            'actor_slug' => 'apify/instagram-search-scraper',
+            'actor_slug' => 'apify/instagram-hashtag-scraper',
             'default_limit' => 50,
             'range_mode' => '7d',
         ]);
@@ -311,8 +311,8 @@ class ApifyDispatchTest extends TestCase
         $this->assertSame($keywords, $facebookPayload['searchQueries']);
         $this->assertSame(17, $facebookPayload['maxPosts']);
 
-        $this->assertSame("gubernur kaltim,rudy mas'ud,gubernur kalimantan timur", $instagramPayload['search']);
-        $this->assertSame(17, $instagramPayload['searchLimit']);
+        $this->assertSame(['gubernur kaltim', "rudy mas'ud", 'gubernur kalimantan timur'], $instagramPayload['hashtags']);
+        $this->assertSame(17, $instagramPayload['resultsLimit']);
 
         $this->assertSame($keywords, $tiktokPayload['keywords']);
         $this->assertSame(17, $tiktokPayload['maxItems']);
@@ -400,7 +400,7 @@ class ApifyDispatchTest extends TestCase
             ],
             [
                 'platform' => 'Instagram',
-                'slug' => 'apify/instagram-search-scraper',
+                'slug' => 'apify/instagram-hashtag-scraper',
                 'run_id' => 'run-instagram-trusted',
                 'dataset_id' => 'dataset-instagram-trusted',
                 'item' => [

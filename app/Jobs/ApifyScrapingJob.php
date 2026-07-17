@@ -38,6 +38,7 @@ class ApifyScrapingJob implements ShouldQueue
     {
         $platform = (string) ($params['platform'] ?? '');
         $keyword = (string) ($params['keyword'] ?? '');
+        $forceDispatch = (bool) ($params['force_dispatch'] ?? false);
         $keywords = array_values(array_filter(array_map(
             static fn ($value) => trim((string) $value),
             (array) ($params['keywords'] ?? [])
@@ -84,7 +85,7 @@ class ApifyScrapingJob implements ShouldQueue
         $dispatchKey = hash('sha256', implode('|', $dispatchKeyParts));
 
         try {
-            if ($isSocialPlatform && $actorId) {
+        if ($isSocialPlatform && $actorId && ! $forceDispatch) {
                 $activeThreshold = $now->copy()->subMinutes($staleAfterMinutes);
                 $activeState = \App\Models\ApifyDispatchState::query()
                     ->where('project_id', $projectId)
@@ -139,7 +140,7 @@ class ApifyScrapingJob implements ShouldQueue
             );
 
             // Jika state ternyata bukan baru dibuat, cek apakah boleh di-dispatch lagi
-            if (!$state->wasRecentlyCreated) {
+            if (!$state->wasRecentlyCreated && ! $forceDispatch) {
                 $retryWaitOverdue = $state->status === 'retry_wait'
                     && $state->next_retry_at !== null
                     && $state->next_retry_at->lte($now);
@@ -163,6 +164,9 @@ class ApifyScrapingJob implements ShouldQueue
 
             // Tambahkan ID state ke parameter
             $params['dispatch_state_id'] = $state->id;
+            if ($forceDispatch) {
+                $params['force_dispatch'] = true;
+            }
 
             self::dispatch($params);
             return true;
@@ -281,11 +285,16 @@ class ApifyScrapingJob implements ShouldQueue
 
         // Run the actor — send input directly in the POST body (Apify v2 API format)
         $runUrl = "https://api.apify.com/v2/acts/{$slugForUrl}/runs";
-        $apifyTimeout = 300 + ($limit * 6); // 300s base + 6s per item (e.g. 318s for 3 items, 600s for 50 items)
+        $apifyTimeout = max(1, (int) ($actor->timeout_seconds ?: (300 + ($limit * 6))));
         $runQuery = [
             'memory' => max(128, (int) ($actor->memory_limit ?? 1024)),
+            'build' => $actor->build ?: 'latest',
             'timeout' => $apifyTimeout,
         ];
+
+        if ((bool) ($actor->no_timeout ?? false)) {
+            unset($runQuery['timeout']);
+        }
 
         $maximumCostPerRun = (float) ($actor->maximum_cost_per_run_usd ?? 0);
         if ($maximumCostPerRun > 0) {
@@ -619,10 +628,10 @@ class ApifyScrapingJob implements ShouldQueue
                     ]);
                 }
 
-                $isInstagramPopular = ($actor->actor_slug === 'apify/instagram-search-scraper' && (($input['searchType'] ?? '') === 'popular'));
+                $isInstagramHashtagPosts = ($actor->actor_slug === 'apify/instagram-hashtag-scraper' && (($input['resultsType'] ?? '') === 'posts'));
 
                 if (
-                    !$isInstagramPopular
+                    !$isInstagramHashtagPosts
                     && $postedAtCarbon
                     && $postedAtCarbon->lessThan(now()->subDays(7)->startOfDay())
                 ) {
@@ -631,8 +640,8 @@ class ApifyScrapingJob implements ShouldQueue
                 }
 
                 $item['_metadata'] = [
-                    'source_mode' => $isInstagramPopular ? 'instagram_popular_keyword' : 'posts',
-                    'recency_policy' => $isInstagramPopular ? 'ignored' : 'enforced',
+                    'source_mode' => $isInstagramHashtagPosts ? 'instagram_hashtag_posts' : 'posts',
+                    'recency_policy' => $isInstagramHashtagPosts ? 'ignored' : 'enforced',
                     'is_recent_7d' => $postedAtCarbon ? $postedAtCarbon->greaterThanOrEqualTo(now()->subDays(7)->startOfDay()) : false,
                     'keyword' => $keyword,
                 ];
@@ -644,6 +653,7 @@ class ApifyScrapingJob implements ShouldQueue
                 $author,
                 $authorUrl,
                 $postUrl,
+                $platform,
             );
 
             if (
@@ -936,7 +946,7 @@ class ApifyScrapingJob implements ShouldQueue
     {
         return match ($platform) {
             'Facebook' => ['maxPosts', isset($input['maxPosts']) ? (int) $input['maxPosts'] : null],
-            'Instagram' => ['searchLimit', isset($input['searchLimit']) ? (int) $input['searchLimit'] : null],
+            'Instagram' => ['resultsLimit', isset($input['resultsLimit']) ? (int) $input['resultsLimit'] : null],
             'TikTok' => ['maxItems', isset($input['maxItems']) ? (int) $input['maxItems'] : null],
             default => ['limit', null],
         };
@@ -1110,9 +1120,9 @@ class ApifyScrapingJob implements ShouldQueue
         ?string $author,
         ?string $authorUrl,
         ?string $postUrl,
+        string $platform,
     ): string {
-        return implode("\n", array_filter([
-            $content,
+        $haystackParts = [
             $author,
             $authorUrl,
             $postUrl,
@@ -1123,7 +1133,40 @@ class ApifyScrapingJob implements ShouldQueue
             $item['description'] ?? null,
             $item['topLevelUrl'] ?? null,
             $item['facebookUrl'] ?? null,
-        ], static fn ($value) => filled($value)));
+        ];
+
+        if (! in_array($platform, ['Facebook', 'Instagram', 'TikTok'], true)) {
+            $haystackParts[] = $content;
+        }
+
+        $explicitSocialTerms = [];
+        foreach (['hashtags', 'tags', 'searchQuery', 'searchTerm', 'keyword', 'query'] as $key) {
+            $value = $item[$key] ?? null;
+            if (is_array($value)) {
+                foreach ($value as $entry) {
+                    if (is_scalar($entry) || $entry === null) {
+                        $explicitSocialTerms[] = trim((string) $entry);
+                    }
+                }
+            } elseif (is_scalar($value) || $value === null) {
+                $trimmed = trim((string) $value);
+                if ($trimmed !== '') {
+                    $explicitSocialTerms[] = $trimmed;
+                }
+            }
+        }
+
+        if (is_string($content) && preg_match_all('/(?<!\w)#([^\s#]+)/u', $content, $matches)) {
+            foreach ($matches[1] as $tag) {
+                $explicitSocialTerms[] = $tag;
+            }
+        }
+
+        if ($explicitSocialTerms !== []) {
+            $haystackParts = array_merge($haystackParts, $explicitSocialTerms);
+        }
+
+        return implode("\n", array_filter($haystackParts, static fn ($value) => filled($value)));
     }
 
     protected function matchesAnyKeywordInContent(array $keywords, ?string $content): bool

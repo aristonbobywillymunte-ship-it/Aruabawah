@@ -28,6 +28,24 @@ Semua penyesuaian UI terbaru dipusatkan agar ramah perangkat HP/Mobile pada komp
 
 ---
 
+## ✨ 2B. Form Project: Normalisasi Keyword & Toast
+*   **File Utama**: [⚡projects-list.blade.php](file:///Users/unity/Documents/proyek%20baru/resources/views/components/⚡projects-list.blade.php).
+*   **Normalisasi Wajib**:
+    *   Keyword project sekarang selalu dinormalisasi ke bentuk hashtag saat disimpan.
+    *   Apostrophe variasi (`'`, `’`, `‘`, `` ` ``) dihapus sebelum pembentukan hashtag.
+    *   Contoh input `Rudy Mas'ud` akan diproses menjadi `#rudymasud`.
+*   **Preview UI**:
+    *   Form create dan edit menampilkan preview hashtag live dari keyword yang diinput.
+    *   Checkbox normalisasi dihapus karena perilaku ini sekarang wajib.
+*   **Toast Aksi**:
+    *   Setiap create project dan update project wajib memicu `action toast`.
+    *   Toast dipakai sebagai feedback utama selain modal sukses.
+*   **Edit Form**:
+    *   Modal edit mengikuti aturan normalisasi yang sama dengan form create.
+    *   Keyword hasil edit tetap disimpan dalam bentuk yang sudah dinormalisasi.
+
+---
+
 ## 🔗 3. Sistem Decode URL Google News
 Setiap berita dari Google News RSS memiliki tautan terenkripsi yang harus diterjemahkan ke URL asli portal berita sebelum di-scrape:
 *   **Service PHP**: [`GoogleNewsUrlDecoderService.php`](file:///Users/unity/Documents/proyek%20baru/app/Services/News/GoogleNewsUrlDecoderService.php).

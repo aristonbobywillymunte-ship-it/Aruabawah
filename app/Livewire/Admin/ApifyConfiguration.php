@@ -8,6 +8,7 @@ use App\Services\ApifyActorRegistry;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
 
 class ApifyConfiguration extends Component
@@ -31,17 +32,22 @@ class ApifyConfiguration extends Component
     public string $functionType = 'Search Post';
     public string $defaultKeyword = '';
     public string $defaultLimit = '20';
+    public string $instagram_results_type = 'posts';
+    public ?int $instagram_results_limit = null;
+    public bool $instagram_keyword_search = false;
     public ?string $dateFrom = null;
     public ?string $dateTo = null;
     public string $actorStatus = 'active';
     public string $facebook_post_time_range = '24h';
     public bool $facebook_use_apify_proxy = true;
     public ?int $facebook_max_posts = null;
-    public ?int $instagram_search_limit = null;
     
     // New fields
     public string $keyword_field_mapping = 'search';
     public ?string $output_mapping = '';
+    public string $build = 'latest';
+    public int $timeout_seconds = 10000;
+    public bool $no_timeout = false;
     public int $interval_minutes = 240;
     public int $memory_limit = 1024;
     public string $range_mode = '7d';
@@ -264,15 +270,27 @@ class ApifyConfiguration extends Component
     {
         if ($value === 'TikTok') {
             $this->loadTikTokPayloadDefaults();
-            $this->memory_limit = max(2048, (int) $this->memory_limit);
-            $this->interval_minutes = max(5, (int) $this->interval_minutes);
             $this->keyword_field_mapping = 'keyword';
         } elseif ($value === 'Facebook') {
             $this->loadFacebookPayloadDefaults();
             $this->keyword_field_mapping = 'searchQueries';
         } elseif ($value === 'Instagram') {
             $this->loadInstagramPayloadDefaults();
-            $this->keyword_field_mapping = 'search';
+            $this->keyword_field_mapping = 'hashtags';
+            if (! $this->editingActor) {
+                $instagram = $this->registry()->primaryActors()['instagram'];
+                $this->actorName = $instagram['actor_name'];
+                $this->actorSlug = $instagram['actor_slug'];
+                $this->functionType = $instagram['function_type'];
+                $this->actorStatus = (string) ($instagram['status'] ?? 'active');
+                $this->memory_limit = (int) $instagram['memory_limit'];
+                $this->interval_minutes = (int) $instagram['interval_minutes'];
+                $this->range_mode = (string) $instagram['range_mode'];
+                $this->post_filter_enabled = (bool) $instagram['post_filter_enabled'];
+                $this->priority = (int) $instagram['priority'];
+                $this->cost_reference = (float) $instagram['cost_reference'];
+                $this->maximum_cost_per_run_usd = (float) ($instagram['maximum_cost_per_run_usd'] ?? 0);
+            }
         }
 
         $this->syncDefaultLimitForPlatform();
@@ -280,12 +298,12 @@ class ApifyConfiguration extends Component
 
     public function updatedDefaultLimit($value): void
     {
-        $resolved = min(50, max(1, (int) $value));
+        $resolved = (int) $value;
 
         if ($this->platform === 'Facebook') {
             $this->facebook_max_posts = $resolved;
         } elseif ($this->platform === 'Instagram') {
-            $this->instagram_search_limit = $resolved;
+            $this->instagram_results_limit = $resolved;
         } elseif ($this->platform === 'TikTok') {
             $this->tiktok_max_items = $resolved;
         }
@@ -297,7 +315,7 @@ class ApifyConfiguration extends Component
     {
         if (in_array($propertyName, ['facebook_max_posts', 'facebook_post_time_range', 'facebook_use_apify_proxy'], true)) {
             $this->output_mapping = $this->buildFacebookOutputMapping([]);
-        } elseif (in_array($propertyName, ['instagram_search_limit', 'defaultKeyword'], true)) {
+        } elseif (in_array($propertyName, ['defaultKeyword', 'instagram_results_type', 'instagram_results_limit', 'instagram_keyword_search'], true)) {
             $this->output_mapping = $this->buildInstagramOutputMapping([]);
         } elseif (in_array($propertyName, [
             'tiktok_max_items', 'tiktok_date_range', 'tiktok_location', 'tiktok_mirror_videos',
@@ -314,12 +332,13 @@ class ApifyConfiguration extends Component
         $actor = ApifyActor::findOrFail($id);
 
         $this->editingActorId = $actor->id;
+        $this->editingActor = true;
         $this->platform = $actor->platform;
         $this->actorName = $actor->actor_name;
         $this->actorSlug = $actor->actor_slug;
         $this->functionType = $actor->function_type;
         $this->defaultKeyword = $actor->default_keyword ?? '';
-        $this->defaultLimit = (string) min(50, (int) $actor->default_limit);
+        $this->defaultLimit = (string) (int) $actor->default_limit;
         $this->dateFrom = optional($actor->date_from)->format('Y-m-d');
         $this->dateTo = optional($actor->date_to)->format('Y-m-d');
         $this->actorStatus = $actor->status;
@@ -327,6 +346,9 @@ class ApifyConfiguration extends Component
         // Load new fields
         $this->keyword_field_mapping = $actor->keyword_field_mapping;
         $this->output_mapping = $actor->output_mapping;
+        $this->build = (string) ($actor->build ?? 'latest');
+        $this->timeout_seconds = (int) ($actor->timeout_seconds ?? 10000);
+        $this->no_timeout = (bool) ($actor->no_timeout ?? false);
         $this->interval_minutes = $actor->interval_minutes;
         $this->memory_limit = $actor->memory_limit;
         $this->range_mode = $actor->range_mode;
@@ -337,7 +359,6 @@ class ApifyConfiguration extends Component
 
         // Reset platform-specific state to avoid leakages
         $this->facebook_max_posts = null;
-        $this->instagram_search_limit = null;
         $this->tiktok_max_items = null;
 
         if ($actor->platform === 'Facebook') {
@@ -346,11 +367,15 @@ class ApifyConfiguration extends Component
             $this->loadTikTokPayloadDefaults($actor->output_mapping);
         } elseif ($actor->platform === 'Instagram') {
             $this->loadInstagramPayloadDefaults($actor->output_mapping);
+            $instagram = $this->registry()->primaryActors()['instagram'];
+            $this->actorName = $instagram['actor_name'];
+            $this->actorSlug = $instagram['actor_slug'];
+            $this->functionType = $instagram['function_type'];
+            $this->actorStatus = (string) ($instagram['status'] ?? 'active');
         }
 
         $this->syncDefaultLimitForPlatform();
 
-        $this->editingActor = true;
         $this->showActorModal = true;
     }
 
@@ -365,24 +390,29 @@ class ApifyConfiguration extends Component
                 'actorSlug' => ['required', 'string', 'max:255'],
                 'functionType' => ['required', 'in:Search Post,Detail Post,Comment Scraper'],
                 'defaultKeyword' => ['nullable', 'string', 'max:255'],
-                'defaultLimit' => ['required', 'integer', 'min:1', 'max:50'],
+                'defaultLimit' => ['required', 'integer'],
                 'dateFrom' => ['nullable', 'date'],
                 'dateTo' => ['nullable', 'date', 'after_or_equal:dateFrom'],
                 'actorStatus' => ['required', 'in:active,inactive'],
                 'keyword_field_mapping' => ['required', 'string', 'max:255'],
                 'output_mapping' => ['nullable', 'string'],
-                'interval_minutes' => ['required', 'integer', 'min:5'],
-                'memory_limit' => ['required', 'integer', 'in:128,256,512,1024,2048,4096'],
-                'range_mode' => ['required', 'string', 'in:24h,7d,30d,90d'],
+                'build' => ['required', 'in:latest,beta,prod'],
+                'timeout_seconds' => ['required', 'integer'],
+                'no_timeout' => ['boolean'],
+                'interval_minutes' => ['required', 'integer'],
+                'memory_limit' => ['required', 'integer'],
+                'range_mode' => ['required', 'string'],
                 'post_filter_enabled' => ['boolean'],
-                'priority' => ['required', 'integer', 'min:1'],
-                'cost_reference' => ['required', 'numeric', 'min:0'],
-                'maximum_cost_per_run_usd' => ['nullable', 'numeric', 'min:0', 'max:100'],
-                'facebook_max_posts' => ['required_if:platform,Facebook', 'nullable', 'integer', 'min:1', 'max:50'],
-                'facebook_post_time_range' => ['required_if:platform,Facebook', 'nullable', 'in:24h,7d,30d,90d'],
+                'priority' => ['required', 'integer'],
+                'cost_reference' => ['required', 'numeric'],
+                'maximum_cost_per_run_usd' => ['nullable', 'numeric'],
+                'facebook_max_posts' => ['required_if:platform,Facebook', 'nullable', 'integer'],
+                'facebook_post_time_range' => ['required_if:platform,Facebook', 'nullable', 'string'],
                 'facebook_use_apify_proxy' => ['required_if:platform,Facebook', 'accepted'],
-                'instagram_search_limit' => ['required_if:platform,Instagram', 'nullable', 'integer', 'min:1', 'max:50'],
-                'tiktok_max_items' => ['required_if:platform,TikTok', 'nullable', 'integer', 'min:1', 'max:50'],
+                'instagram_results_type' => ['required_if:platform,Instagram', 'nullable', 'in:posts,reels'],
+                'instagram_results_limit' => ['required_if:platform,Instagram', 'nullable', 'integer'],
+                'instagram_keyword_search' => ['required_if:platform,Instagram', 'boolean'],
+                'tiktok_max_items' => ['required_if:platform,TikTok', 'nullable', 'integer'],
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Illuminate\Support\Facades\Log::error('Apify actor validation failed', [
@@ -403,10 +433,9 @@ class ApifyConfiguration extends Component
             $this->range_mode = $data['range_mode'];
         }
 
-        if (in_array($data['platform'], ['Facebook', 'Instagram', 'TikTok'], true) && $data['memory_limit'] < 1024) {
-            $this->addError('memory_limit', 'Minimal RAM untuk actor sosial media adalah 1024 MB.');
-            return;
-        }
+        $data['build'] = $this->build;
+        $data['timeout_seconds'] = $this->no_timeout ? 0 : (int) $this->timeout_seconds;
+        $data['no_timeout'] = (bool) $this->no_timeout;
 
         // Actor whitelist validation
         $whitelist = $this->registry()->allManagedSlugs();
@@ -456,12 +485,35 @@ class ApifyConfiguration extends Component
             'maximum_cost_per_run_usd' => $data['maximum_cost_per_run_usd'] ?? 0,
         ];
 
-        if ($this->editingActor && $this->editingActorId) {
-            ApifyActor::findOrFail($this->editingActorId)->update($payload);
-            $this->notify('success', 'Actor berhasil diperbarui.');
-        } else {
-            ApifyActor::create($payload);
-            $this->notify('success', 'Actor berhasil ditambahkan.');
+        if (Schema::hasColumn('apify_actors', 'build')) {
+            $payload['build'] = $data['build'];
+        }
+        if (Schema::hasColumn('apify_actors', 'timeout_seconds')) {
+            $payload['timeout_seconds'] = $data['timeout_seconds'];
+        }
+        if (Schema::hasColumn('apify_actors', 'no_timeout')) {
+            $payload['no_timeout'] = $data['no_timeout'];
+        }
+
+        try {
+            if ($this->editingActor && $this->editingActorId) {
+                ApifyActor::findOrFail($this->editingActorId)->update($payload);
+                $this->notify('success', 'Actor berhasil diperbarui.');
+            } else {
+                ApifyActor::create($payload);
+                $this->notify('success', 'Actor berhasil ditambahkan.');
+            }
+        } catch (\Throwable $e) {
+            Log::error('Apify actor save failed', [
+                'message' => $e->getMessage(),
+                'platform' => $data['platform'],
+                'editingActor' => $this->editingActor,
+                'editingActorId' => $this->editingActorId,
+                'payload' => $payload,
+            ]);
+
+            $this->notify('error', 'Gagal menyimpan actor: ' . $e->getMessage());
+            return;
         }
 
         $this->showActorModal = false;
@@ -508,7 +560,7 @@ class ApifyConfiguration extends Component
 
         $this->testingActorId = $actor->id;
         $this->testKeyword = $actor->default_keyword ?? '';
-        $this->testLimit = (string) min(50, (int) $actor->default_limit);
+        $this->testLimit = (string) (int) $actor->default_limit;
         $this->testDateFrom = optional($actor->date_from)->format('Y-m-d');
         $this->testDateTo = optional($actor->date_to)->format('Y-m-d');
         $this->testResultStatus = '';
@@ -524,7 +576,7 @@ class ApifyConfiguration extends Component
 
         $this->validate([
             'testKeyword' => ['required', 'string', 'max:255'],
-            'testLimit' => ['required', 'integer', 'min:1', 'max:1000'],
+            'testLimit' => ['required', 'integer'],
             'testDateFrom' => ['nullable', 'date'],
             'testDateTo' => ['nullable', 'date', 'after_or_equal:testDateFrom'],
         ]);
@@ -551,9 +603,17 @@ class ApifyConfiguration extends Component
             $slugForUrl = str_replace('/', '~', $actor->actor_slug);
 
             // Run Apify Actor remotely
+            $runQuery = [
+                'memory' => $actor->memory_limit,
+                'build' => $actor->build ?: 'latest',
+            ];
+            if (! $actor->no_timeout) {
+                $runQuery['timeout'] = (int) ($actor->timeout_seconds ?: 10000);
+            }
+
             $response = \Illuminate\Support\Facades\Http::timeout(30)
                 ->post(
-                    "https://api.apify.com/v2/acts/{$slugForUrl}/runs?token={$setting->api_token}&memory={$actor->memory_limit}",
+                    "https://api.apify.com/v2/acts/{$slugForUrl}/runs?token={$setting->api_token}&" . http_build_query($runQuery),
                     $input
                 );
 
@@ -619,11 +679,17 @@ class ApifyConfiguration extends Component
         $this->functionType = 'Search Post';
         $this->defaultKeyword = '';
         $this->defaultLimit = '20';
+        $this->instagram_results_type = 'posts';
+        $this->instagram_results_limit = null;
+        $this->instagram_keyword_search = false;
         $this->dateFrom = null;
         $this->dateTo = null;
         $this->actorStatus = 'active';
         $this->keyword_field_mapping = 'searchQueries';
         $this->output_mapping = '';
+        $this->build = 'latest';
+        $this->timeout_seconds = 10000;
+        $this->no_timeout = false;
         $this->interval_minutes = 240;
         $this->memory_limit = 1024;
         $this->range_mode = '7d';
@@ -647,8 +713,6 @@ class ApifyConfiguration extends Component
         $this->facebook_post_time_range = '24h';
         $this->facebook_use_apify_proxy = true;
         $this->facebook_max_posts = null;
-        $this->instagram_search_limit = null;
-
         $this->loadFacebookPayloadDefaults();
         $this->syncDefaultLimitForPlatform();
     }
@@ -662,10 +726,10 @@ class ApifyConfiguration extends Component
 
         $maxPosts = $template['maxPosts'] ?? null;
         if (is_numeric($maxPosts)) {
-            $this->facebook_max_posts = min(50, max(1, (int) $maxPosts));
+            $this->facebook_max_posts = (int) $maxPosts;
         } elseif (!$this->editingActor) {
             $actorDefaultLimit = $this->registry()->primaryActors()['facebook']['default_limit'] ?? $this->defaultLimit;
-            $this->facebook_max_posts = min(50, max(1, (int) $actorDefaultLimit));
+            $this->facebook_max_posts = (int) $actorDefaultLimit;
         }
 
         $resolvedPostTimeRange = (string) ($template['postTimeRange'] ?? '');
@@ -692,11 +756,12 @@ class ApifyConfiguration extends Component
             $template = json_decode($this->registry()->primaryActors()['instagram']['output_mapping'], true) ?: [];
         }
 
-        $search = (string) ($template['search'] ?? '');
-        $this->defaultKeyword = $search !== '' ? $search : ($this->editingActor ? $this->defaultKeyword : $this->registry()->primaryActors()['instagram']['default_keyword']);
-        $this->instagram_search_limit = min(50, max(1, (int) ($template['searchLimit'] ?? $this->registry()->primaryActors()['instagram']['default_limit'])));
-        $this->keyword_field_mapping = 'search';
-        $this->defaultLimit = (string) $this->instagram_search_limit;
+        $resultsType = (string) ($template['resultsType'] ?? 'posts');
+        $this->instagram_results_type = in_array($resultsType, ['posts', 'reels'], true) ? $resultsType : 'posts';
+        $this->instagram_results_limit = (int) ($template['resultsLimit'] ?? $this->registry()->primaryActors()['instagram']['default_limit']);
+        $this->instagram_keyword_search = (bool) ($template['keywordSearch'] ?? false);
+        $this->keyword_field_mapping = 'hashtags';
+        $this->defaultLimit = (string) $this->instagram_results_limit;
     }
 
     protected function loadTikTokPayloadDefaults(?string $outputMapping = null): void
@@ -709,7 +774,7 @@ class ApifyConfiguration extends Component
         $this->tiktok_include_search_keywords = (bool) ($template['includeSearchKeywords'] ?? true);
         $this->tiktok_date_range = (string) ($template['dateRange'] ?? '7days');
         $this->tiktok_location = (string) ($template['location'] ?? 'ID');
-        $this->tiktok_max_items = min(50, max(1, (int) ($template['maxItems'] ?? 100)));
+        $this->tiktok_max_items = (int) ($template['maxItems'] ?? 100);
         $this->tiktok_mirror_videos = (bool) ($template['mirrorVideos'] ?? true);
         $this->tiktok_use_proxy = (bool) ($template['useProxy'] ?? true);
         $this->tiktok_proxy_group = (string) data_get($template, 'proxyConfiguration.apifyProxyGroups.0', 'RESIDENTIAL');
@@ -762,7 +827,7 @@ class ApifyConfiguration extends Component
             'dateRange' => $dateRange,
             'includeSearchKeywords' => (bool) $this->tiktok_include_search_keywords,
             'location' => $this->tiktok_location ?: 'ID',
-            'maxItems' => min(50, max(1, (int) $this->tiktok_max_items)),
+            'maxItems' => (int) $this->tiktok_max_items,
             'mirrorVideos' => (bool) $this->tiktok_mirror_videos,
             'proxyConfiguration' => [
                 'useApifyProxy' => (bool) $this->tiktok_use_proxy,
@@ -775,7 +840,7 @@ class ApifyConfiguration extends Component
             'minPlayCount' => (int) $this->tiktok_min_play_count,
             'mirrorVideoBytes' => (int) $this->tiktok_mirror_video_bytes,
             'minDurationSec' => (int) $this->tiktok_min_duration_sec,
-            'maxConcurrentKeywords' => max(1, (int) $this->tiktok_max_concurrent_keywords),
+            'maxConcurrentKeywords' => (int) $this->tiktok_max_concurrent_keywords,
         ]);
 
         return json_encode($payload, JSON_UNESCAPED_SLASHES);
@@ -792,7 +857,7 @@ class ApifyConfiguration extends Component
             ],
             'searchQueries' => ['{keyword}'],
         ], $existing, [
-            'maxPosts' => min(50, max(1, (int) $this->facebook_max_posts)),
+            'maxPosts' => (int) $this->facebook_max_posts,
             'postTimeRange' => $this->facebook_post_time_range ?: '24h',
             'proxyConfiguration' => [
                 'useApifyProxy' => (bool) $this->facebook_use_apify_proxy,
@@ -804,25 +869,12 @@ class ApifyConfiguration extends Component
 
     protected function buildInstagramOutputMapping(array $data): string
     {
-        $existing = json_decode($this->output_mapping, true) ?: [];
-
-        $keywords = array_values(array_filter(array_map(
-            static fn ($value) => trim((string) $value),
-            preg_split('/\s*,\s*/', (string) ($data['defaultKeyword'] ?? ''), -1, PREG_SPLIT_NO_EMPTY) ?: []
-        )));
-
-        if ($keywords === []) {
-            $keywords = [trim((string) ($data['defaultKeyword'] ?? $this->registry()->primaryActors()['instagram']['default_keyword']))];
-        }
-
-        $payload = array_merge([
-            'enhanceUserSearchWithFacebookPage' => false,
-            'liveSearch' => true,
-            'searchType' => 'popular',
-        ], $existing, [
-            'search' => implode(',', $keywords),
-            'searchLimit' => min(50, max(1, (int) $this->instagram_search_limit)),
-        ]);
+        $payload = [
+            'hashtags' => ['{keyword}'],
+            'resultsType' => in_array($this->instagram_results_type, ['posts', 'reels'], true) ? $this->instagram_results_type : 'posts',
+            'resultsLimit' => (int) $this->instagram_results_limit,
+            'keywordSearch' => (bool) $this->instagram_keyword_search,
+        ];
 
         return json_encode($payload, JSON_UNESCAPED_SLASHES);
     }
@@ -835,10 +887,10 @@ class ApifyConfiguration extends Component
     protected function resolvePlatformLimit(): int
     {
         return match ($this->platform) {
-            'Facebook' => min(50, max(1, (int) $this->facebook_max_posts)),
-            'Instagram' => min(50, max(1, (int) $this->instagram_search_limit)),
-            'TikTok' => min(50, max(1, (int) $this->tiktok_max_items)),
-            default => min(50, max(1, (int) $this->defaultLimit)),
+            'Facebook' => (int) $this->facebook_max_posts,
+            'Instagram' => (int) $this->instagram_results_limit,
+            'TikTok' => (int) $this->tiktok_max_items,
+            default => (int) $this->defaultLimit,
         };
     }
 

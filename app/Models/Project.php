@@ -91,6 +91,34 @@ class Project extends Model
         return $result;
     }
 
+    public function scrapeKeywordVariants(): array
+    {
+        $variants = [];
+
+        foreach ($this->scrapeKeywords() as $keyword) {
+            $variants[] = $keyword;
+
+            $hashtag = $this->toHashtagVariant($keyword);
+            if ($hashtag !== '') {
+                $variants[] = $hashtag;
+            }
+        }
+
+        return array_values(array_unique(array_filter($variants)));
+    }
+
+    protected function toHashtagVariant(string $keyword): string
+    {
+        $keyword = trim($keyword);
+        $keyword = preg_replace('/\s+/u', ' ', $keyword) ?? $keyword;
+        $keyword = str_replace(["'", "’", "‘", "`"], '', $keyword);
+        $keyword = trim($keyword, " \t\n\r\0\x0B#");
+        $keyword = preg_replace('/[^\p{L}\p{N}\s_]+/u', '', $keyword) ?? $keyword;
+        $keyword = preg_replace('/\s+/u', '', $keyword) ?? $keyword;
+
+        return $keyword === '' ? '' : '#' . $keyword;
+    }
+
     public function hasScrapeKeywords(): bool
     {
         return ! empty($this->scrapeKeywords());
