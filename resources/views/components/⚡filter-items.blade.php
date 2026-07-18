@@ -52,15 +52,15 @@
         <div class="space-y-3">
         <div class="flex justify-between items-center">
             <label class="text-sm font-bold text-slate-700">Sumber Data</label>
-            <button wire:click="$set('selectedSources', ['Instagram', 'Tiktok', 'Facebook', 'News'])" class="text-xs text-[#1fa387] hover:underline font-bold">Pilih Semua</button>
+            <button wire:click="$set('selectedSources', ['Instagram', 'TikTok', 'Facebook', 'News'])" class="text-xs text-[#1fa387] hover:underline font-bold">Pilih Semua</button>
         </div>
         <div class="space-y-2.5">
             <!-- Instagram -->
             <label class="flex items-center justify-between cursor-pointer group py-0.5 gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <input wire:model.live="selectedSources" value="Instagram" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-fuchsia-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <div class="w-8 h-8 rounded-lg bg-fuchsia-500 shadow-sm shadow-fuchsia-500/20 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M12 4.4c2.1 0 2.4.01 3.3.05.9.04 1.5.18 2 .38.5.2.9.44 1.3.82.38.4.62.8.82 1.3.2.5.34 1.1.38 2 .04.9.05 1.2.05 3.3s-.01 2.4-.05 3.3c-.04.9-.18 1.5-.38 2-.2.5-.44.9-.82 1.3-.4.38-.8.62-1.3.82-.5.2-1.1.34-2 .38-.9.04-1.2.05-3.3.05s-2.4-.01-3.3-.05c-.9-.04-1.5-.18-2-.38-.5-.2-.9-.44-1.3-.82-.38-.4-.62-.8-.82-1.3-.2-.5-.34-1.1-.38-2C4.45 14.4 4.4 14.1 4.4 12s.01-2.4.05-3.3c.04-.9.18-1.5.38-2 .2-.5.44-.9.82-1.3.4-.38.8-.62 1.3-.82.5-.2 1.1-.34 2-.38C9.6 4.41 9.9 4.4 12 4.4Z"></path>
                             <circle cx="12" cy="12" r="3.1"></circle>
                             <circle cx="16.9" cy="7.1" r="1"></circle>
@@ -71,19 +71,19 @@
                 <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">{{ $counts['sources']['Instagram'] ?? 0 }}</span>
             </label>
 
-            <!-- Tiktok -->
+            <!-- TikTok -->
             <label class="flex items-center justify-between cursor-pointer group py-0.5 gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
-                    <input wire:model.live="selectedSources" value="Tiktok" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-slate-950" fill="none" viewBox="0 0 24 24">
+                    <input wire:model.live="selectedSources" value="TikTok" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
+                    <div class="w-8 h-8 rounded-lg bg-slate-950 shadow-sm shadow-slate-900/20 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                             <path fill="currentColor" d="M16.4 4.3h2.2c.1 1.7 1.1 3.2 2.7 3.9v2.3c-1.1 0-2.2-.2-3.2-.6v4.9c0 3.1-2.5 5.6-5.6 5.6-2.9 0-5.3-2.4-5.3-5.3 0-3 2.4-5.4 5.4-5.4.4 0 .8 0 1.1.1v2.7c-.3 0-.7-.1-1-.1-1.4 0-2.5 1.1-2.5 2.6 0 1.4 1.1 2.6 2.5 2.6 1.5 0 2.7-1.2 2.7-2.7V4.3z"></path>
                             <path fill="currentColor" d="M15.3 4.3h1.5c.6 1.2 1.6 2.2 3 2.6v2.2c-1.5-.4-2.7-1-3.6-2-.5-.5-.8-1.1-.9-1.8v-1z"></path>
                         </svg>
                     </div>
                     <span class="text-sm text-slate-700 group-hover:text-slate-900 font-semibold transition truncate">TikTok</span>
                 </div>
-                <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">{{ $counts['sources']['Tiktok'] ?? 0 }}</span>
+                <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">{{ $counts['sources']['TikTok'] ?? 0 }}</span>
             </label>
 
             <!-- Facebook -->

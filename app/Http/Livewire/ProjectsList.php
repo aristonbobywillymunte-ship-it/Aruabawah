@@ -32,7 +32,7 @@ class ProjectsList extends Component
     public $topicsString = ''; // Reset default to empty string
     public $contextKeywords = '';
     public $excludeKeywords = '';
-    public $selectedSources = ['Twitter', 'Instagram', 'Youtube', 'Tiktok', 'Facebook', 'News', 'Threads'];
+    public $selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
     public $isCreatingProject = false;
     public $showSuccessModal = false;
     public $lastCreatedProjectName = '';
@@ -466,7 +466,7 @@ class ProjectsList extends Component
         );
         
         $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords']);
-        $this->selectedSources = ['Twitter', 'Instagram', 'Youtube', 'Tiktok', 'Facebook', 'News', 'Threads'];
+        $this->selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
     }
 
     public function editProject($id)

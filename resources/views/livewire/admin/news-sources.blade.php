@@ -187,7 +187,7 @@
                                 @error('base_url') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="mb-1.5 block text-xs font-bold text-slate-700">Search URL</label>
+                                <label class="mb-1.5 block text-xs font-bold text-slate-700">Search URL Template <span class="text-rose-500">*</span></label>
                                 <input wire:model="search_url" placeholder="Contoh: https://www.kompas.com/search?q={keyword}" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
                                 @error('search_url') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                             </div>
@@ -249,11 +249,7 @@
                         </div>
 
                         <!-- Row 4: Capabilities -->
-                        <div class="grid gap-3 sm:grid-cols-3 bg-white p-4 rounded-xl border border-slate-100">
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-                                <input type="checkbox" wire:model="is_search_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
-                                Search Enabled
-                            </label>
+                        <div class="grid gap-3 sm:grid-cols-2 bg-white p-4 rounded-xl border border-slate-100">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
                                 <input type="checkbox" wire:model="is_feed_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
                                 Feed Enabled
@@ -262,6 +258,9 @@
                                 <input type="checkbox" wire:model="is_sitemap_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
                                 Sitemap Enabled
                             </label>
+                            <p class="sm:col-span-2 text-[11px] text-slate-500 font-medium">
+                                Search manual kini mengikuti <span class="font-semibold text-slate-700">Search URL</span> jika terisi.
+                            </p>
                         </div>
 
                         <!-- Row 5: Crawling Config -->
@@ -928,7 +927,7 @@
                             {{-- Approve & Aktifkan — confirm + loading + disabled jika tidak verified --}}
                             <button
                                 wire:click="approveSuggestion({{ $selectedSuggestionId }})"
-                                wire:confirm="Verifikasi dan terapkan konfigurasi ini ke News Source resmi?"
+                                wire:confirm="Setujui dan terapkan konfigurasi ini ke News Source resmi?"
                                 wire:loading.attr="disabled"
                                 wire:target="approveSuggestion({{ $selectedSuggestionId }})"
                                 @if(!in_array($testStatus, ['lolos', 'verified'], true)) disabled @endif
@@ -936,7 +935,7 @@
                             >
                                 <span class="material-symbols-outlined text-[16px]">check_circle</span>
                                 <span wire:loading.remove wire:target="approveSuggestion({{ $selectedSuggestionId }})">Terverifikasi</span>
-                                <span wire:loading wire:target="approveSuggestion({{ $selectedSuggestionId }})">Memverifikasi...</span>
+                                <span wire:loading wire:target="approveSuggestion({{ $selectedSuggestionId }})">Mengaktifkan...</span>
                             </button>
                         </div>
                     @endif

@@ -378,7 +378,7 @@ class NewsSources extends Component
             $prompt = "Berikan saran konfigurasi metadata scraping untuk portal berita dengan nama '{$name}' dan domain '{$domain}'. 
             Rincian yang harus Anda analisis dan sarankan:
             1. base_url (URL dasar portal berita, diawali http:// atau https://)
-            2. search_url (URL pencarian kustom dengan placeholder {keyword}, contoh: https://example.com/search?q={keyword} atau search?q={keyword})
+            2. search_url (URL pencarian kustom dengan placeholder {keyword}. Wajib gunakan pola pencarian internal situs yang benar, bukan menebak. Jika situs memakai SearchAction, form search, atau parameter query khusus seperti key/q/search, ikuti pola itu. Contoh: https://example.com/search?q={keyword} atau https://example.com/search?key={keyword})
             3. feed_url (URL Feed RSS jika ada, nullable)
             4. sitemap_url (URL XML Sitemap jika ada, nullable)
             5. search_result_selector (Selector HTML/CSS untuk membungkus list hasil pencarian)
@@ -389,6 +389,12 @@ class NewsSources extends Component
             10. article_date_selector (Opsional. Selector HTML/CSS untuk mengambil tanggal publikasi artikel)
             11. ai_reason (Alasan singkat Anda menyarankan konfigurasi ini)
             12. confidence (Tingkat kepercayaan Anda terhadap saran ini antara 0.0 sampai 1.0)
+
+            Prioritas analisis:
+            - Pertama cari pola search internal yang benar dari halaman situs atau struktur URL yang umum dipakai situs tersebut.
+            - Kedua, cocokkan search_result_selector dengan container hasil pencarian yang benar.
+            - Ketiga, pastikan article_link_selector hanya menunjuk ke link artikel, bukan link menu, kategori, asset, atau social.
+            - Jika ada JSON-LD SearchAction, pakai itu sebagai referensi utama untuk search_url.
 
             Balas HANYA dengan format JSON valid sebagai berikut:
             {
@@ -559,6 +565,11 @@ class NewsSources extends Component
         $this->showTestModal = true;
     }
 
+    public function viewTestResult(int $id): void
+    {
+        $this->showTestResult($id);
+    }
+
     public function updatedManualArticleUrl(): void
     {
         $this->manualArticleUrl = trim($this->manualArticleUrl);
@@ -592,13 +603,11 @@ class NewsSources extends Component
         ];
         $data = $this->syncIconUrl($data, $suggestion->newsSource);
 
-        if ($testMode !== 'manual_url') {
-            $data['feed_url'] = $suggestion->feed_url ?: $suggestion->newsSource?->feed_url;
-            $data['search_url'] = $suggestion->search_url ?: $suggestion->newsSource?->search_url;
-            $data['sitemap_url'] = $suggestion->sitemap_url ?: $suggestion->newsSource?->sitemap_url;
-            $data['search_result_selector'] = $suggestion->search_result_selector ?: $suggestion->newsSource?->search_result_selector;
-            $data['article_link_selector'] = $suggestion->article_link_selector ?: $suggestion->newsSource?->article_link_selector;
-        }
+        $data['feed_url'] = $suggestion->feed_url ?: $suggestion->newsSource?->feed_url;
+        $data['search_url'] = $suggestion->search_url ?: $suggestion->newsSource?->search_url;
+        $data['sitemap_url'] = $suggestion->sitemap_url ?: $suggestion->newsSource?->sitemap_url;
+        $data['search_result_selector'] = $suggestion->search_result_selector ?: $suggestion->newsSource?->search_result_selector;
+        $data['article_link_selector'] = $suggestion->article_link_selector ?: $suggestion->newsSource?->article_link_selector;
 
         if ($suggestion->news_source_id) {
             // Gunakan withTrashed() agar tidak throw ModelNotFoundException

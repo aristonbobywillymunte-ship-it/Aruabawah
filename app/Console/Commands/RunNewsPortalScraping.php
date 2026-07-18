@@ -1337,13 +1337,16 @@ class RunNewsPortalScraping extends Command
             ->where(function ($builder) {
                 $builder->where(function ($query) {
                     $query->where('is_search_enabled', true)
-                        ->whereNotNull('search_url');
+                        ->whereNotNull('search_url')
+                        ->where('search_url', '<>', '');
                 })->orWhere(function ($query) {
                     $query->where('is_feed_enabled', true)
-                        ->whereNotNull('feed_url');
+                        ->whereNotNull('feed_url')
+                        ->where('feed_url', '<>', '');
                 })->orWhere(function ($query) {
                     $query->where('is_sitemap_enabled', true)
-                        ->whereNotNull('sitemap_url');
+                        ->whereNotNull('sitemap_url')
+                        ->where('sitemap_url', '<>', '');
                 });
             })
             ->orderByRaw('CASE WHEN scrape_priority IS NULL THEN 1 ELSE 0 END')

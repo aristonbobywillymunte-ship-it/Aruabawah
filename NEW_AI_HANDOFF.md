@@ -46,6 +46,19 @@ Semua penyesuaian UI terbaru dipusatkan agar ramah perangkat HP/Mobile pada komp
 
 ---
 
+## 📈 2C. Grafik Tren Kata Kunci
+*   **File Utama**: [⚡media-dashboard.blade.php](file:///Users/unity/Documents/proyek%20baru/resources/views/components/⚡media-dashboard.blade.php).
+*   **Pencarian Keyword Grafik**:
+    *   Grafik tren keyword wajib memakai pencarian case-insensitive di PostgreSQL.
+    *   Keyword yang dimulai dari hashtag harus dinormalisasi dulu sebelum dipakai sebagai filter grafik atau tabel kata kunci.
+    *   Pencarian grafik membaca bentuk keyword tanpa `#` dan juga varian hashtag agar data yang sudah ada tetap terdeteksi.
+*   **Catatan Audit**:
+    *   Jika grafik terlihat kosong padahal data tersedia, cek dulu query keyword, normalisasi hashtag, dan case-sensitivity PostgreSQL sebelum mengubah logika chart.
+    *   Audit project `Wagub Kaltim` (`project_id=3`) menunjukkan data memang ada: `project_articles` berisi 433 relasi, 121 artikel berada di rentang `2026-07-01` s/d `2026-07-18`, dan keyword `wagub kaltim` masih punya 55 kecocokan.
+    *   Jika chart tetap kosong pada kasus seperti ini, sumber masalah paling mungkin ada di jalur render/filter aktif/cache, bukan di ketersediaan data mentah.
+
+---
+
 ## 🔗 3. Sistem Decode URL Google News
 Setiap berita dari Google News RSS memiliki tautan terenkripsi yang harus diterjemahkan ke URL asli portal berita sebelum di-scrape:
 *   **Service PHP**: [`GoogleNewsUrlDecoderService.php`](file:///Users/unity/Documents/proyek%20baru/app/Services/News/GoogleNewsUrlDecoderService.php).
@@ -63,6 +76,16 @@ Integrasi Apify diatur agar seimbang antara kebutuhan data dan efisiensi biaya:
 *   **Distribusi Keyword**: Jika satu proyek memiliki $N$ kata kunci, batas per kata kunci diatur dinamis: `ceil(50 / N)` untuk menghindari konsumsi kuota berlebih.
 *   **Rem Biaya Darurat**: Mengirim parameter `maxTotalChargeUsd` (menggunakan nilai `maximum_cost_per_run_usd`) ke Apify.
 *   **Penanganan Selesai Sebagian**: Jika kuota biaya habis atau waktu tunggu habis (15 menit) tetapi dataset sudah terisi sebagian, data tetap diambil, dibersihkan, disimpan ke DB, dan diproses normal dengan status *sukses sebagian*.
+
+## 🎛️ 4B. Konsistensi Nama Source Filter
+*   **Aturan Penting**: Nilai `wire:model` untuk source harus sama persis dengan state default Livewire.
+*   **Daftar Kanonik**: Gunakan `Instagram`, `TikTok`, `Facebook`, dan `News` sebagai daftar source filter utama di seluruh UI yang menampilkan checkbox filter.
+*   **Kasus TikTok**: Gunakan `TikTok` secara konsisten di semua panel, karena `Tiktok` akan dianggap berbeda dan checkbox tidak ikut tercentang saat default state diisi `TikTok`.
+*   **Dampak**: Mismatch casing bisa membuat checkbox tampak tidak aktif walaupun source sebenarnya sudah ada di array default.
+
+## 🔗 4C. Top Isu Negatif
+*   **Link Sumber**: Item pada kartu `Top Isu Negatif` kini dapat dibuka ke sumber artikel pertama yang terasosiasi dengan isu tersebut.
+*   **Fallback**: Jika isu tidak punya URL yang valid, judul tetap tampil sebagai teks biasa agar layout tidak rusak.
 
 ---
 

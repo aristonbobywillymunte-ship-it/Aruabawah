@@ -575,11 +575,11 @@ class ApifyScrapingJob implements ShouldQueue
                     }
                 } catch (\Exception $e) {}
             }
-            $likes      = $item['diggCount'] ?? $item['reactions_count'] ?? $item['like_count'] ?? $item['likesCount'] ?? $item['likeCount'] ?? $item['likes'] ?? 0;
-            $comments   = $item['commentCount'] ?? $item['comment_count'] ?? $item['comments_count'] ?? $item['commentsCount'] ?? $item['comments'] ?? 0;
-            $shares     = $item['shareCount'] ?? $item['share_count'] ?? $item['reshare_count'] ?? $item['sharesCount'] ?? $item['shares'] ?? 0;
-            $views      = $item['playCount'] ?? $item['view_count'] ?? $item['viewsCount'] ?? $item['viewCount'] ?? $item['views'] ?? 0;
-            $followers  = $item['authorMeta']['fans'] ?? $item['follower_count'] ?? $item['followersCount'] ?? $item['followerCount'] ?? 0;
+            $likes      = $this->normalizeSocialMetric($item['diggCount'] ?? $item['reactions_count'] ?? $item['like_count'] ?? $item['likesCount'] ?? $item['likeCount'] ?? $item['likes'] ?? 0);
+            $comments   = $this->normalizeSocialMetric($item['commentCount'] ?? $item['comment_count'] ?? $item['comments_count'] ?? $item['commentsCount'] ?? $item['comments'] ?? 0);
+            $shares     = $this->normalizeSocialMetric($item['shareCount'] ?? $item['share_count'] ?? $item['reshare_count'] ?? $item['sharesCount'] ?? $item['shares'] ?? 0);
+            $views      = $this->normalizeSocialMetric($item['playCount'] ?? $item['view_count'] ?? $item['viewsCount'] ?? $item['viewCount'] ?? $item['views'] ?? 0);
+            $followers  = $this->normalizeSocialMetric($item['authorMeta']['fans'] ?? $item['follower_count'] ?? $item['followersCount'] ?? $item['followerCount'] ?? 0);
 
             if ($platform === 'Instagram') {
                 if (empty($postUrl)) {
@@ -703,7 +703,7 @@ class ApifyScrapingJob implements ShouldQueue
                 ]
             );
 
-            $socialSourceName = $platform === 'TikTok' ? 'Tiktok' : $platform;
+            $socialSourceName = $platform === 'TikTok' ? 'TikTok' : $platform;
             $articleTitle = $platform === 'TikTok' && trim((string) $author) === 'TikTok'
                 ? 'Post dari TikTok'
                 : "Post dari {$platform} oleh {$author}";
@@ -1084,6 +1084,13 @@ class ApifyScrapingJob implements ShouldQueue
         }
 
         return false;
+    }
+
+    protected function normalizeSocialMetric(mixed $value): int
+    {
+        $metric = (int) $value;
+
+        return max(0, $metric);
     }
 
     protected function shouldTrustApifySearchResult(string $platform): bool

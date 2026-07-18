@@ -44,7 +44,7 @@ Route::middleware('auth')->group(function () {
             ->get()
             ->map(function ($project) {
                 $articles = $project->articles();
-                $socialSources = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'Tiktok', 'Facebook', 'Threads'];
+                $socialSources = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
 
                 $socialCount = (clone $articles)->whereIn('source_name', $socialSources)->count();
                 $lastRisk = (clone $articles)
@@ -64,7 +64,7 @@ Route::middleware('auth')->group(function () {
                 ];
             });
 
-        $socialSources = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'Tiktok', 'Facebook', 'Threads'];
+        $socialSources = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
         $totalProjects = \App\Models\Project::count();
         $totalUsers = \App\Models\User::count();
         $totalArticles = \App\Models\Article::count();

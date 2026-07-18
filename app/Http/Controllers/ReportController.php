@@ -134,7 +134,7 @@ class ReportController extends Controller
         })->take(10);
 
         // 4. Sumber Medsos
-        $socialsList = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'Tiktok', 'Facebook', 'Threads'];
+        $socialsList = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
         $socialArticles = $socialMediaItems->filter(function($item) use ($socialsList) {
             return in_array($item->platform, $socialsList, true);
         });

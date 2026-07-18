@@ -622,10 +622,9 @@ new class extends Component
         if (trim($this->newKeywordText) == '') return;
         
         $newKw = trim($this->newKeywordText);
-        $totalCount = clone $this->projectArticlesQuery()->where(function($q) use ($newKw) {
-            $q->where('title', 'like', '%' . $newKw . '%')
-              ->orWhere('content', 'like', '%' . $newKw . '%');
-        })->count();
+        $countQuery = clone $this->projectArticlesQuery();
+        $this->applyKeywordSearch($countQuery, $newKw);
+        $totalCount = $countQuery->count();
         
         $this->keywordsTable[] = [
             'keyword' => '# ' . strtoupper($newKw),
@@ -706,12 +705,25 @@ new class extends Component
                 $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
                 if (in_array('News', $this->selectedSources)) {
                     $selectedSocials = array_diff($this->selectedSources, ['News']);
-                    $q->whereNotIn('source_name', $socials);
+                    $q->whereRaw('lower(coalesce(source_name, \'\')) not in (?, ?, ?, ?, ?, ?, ?, ?)', [
+                        'twitter',
+                        'twitter/x',
+                        'x.com',
+                        'instagram',
+                        'youtube',
+                        'tiktok',
+                        'facebook',
+                        'threads',
+                    ]);
                     if (!empty($selectedSocials)) {
-                        $q->orWhereIn('source_name', $selectedSocials);
+                        $selectedSocials = array_map('strtolower', $selectedSocials);
+                        $q->orWhere(function ($inner) use ($selectedSocials) {
+                            $inner->whereRaw('lower(coalesce(source_name, \'\')) in (' . implode(',', array_fill(0, count($selectedSocials), '?')) . ')', $selectedSocials);
+                        });
                     }
                 } else {
-                    $q->whereIn('source_name', $this->selectedSources);
+                    $normalizedSelectedSources = array_map('strtolower', $this->selectedSources);
+                    $q->whereRaw('lower(coalesce(source_name, \'\')) in (' . implode(',', array_fill(0, count($normalizedSelectedSources), '?')) . ')', $normalizedSelectedSources);
                 }
             });
         }
@@ -734,14 +746,19 @@ new class extends Component
     {
         $baseQuery = $this->projectArticlesQuery();
         $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
+        $normalizedSocials = array_map('strtolower', $socials);
 
         $sourceQuery = $this->applyActiveFilters(clone $baseQuery, ['sources']);
         $sources = ['Twitter', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
         $sourceCounts = [];
         foreach ($sources as $source) {
-            $sourceCounts[$source] = (clone $sourceQuery)->where('source_name', $source)->count();
+            $sourceCounts[$source] = (clone $sourceQuery)
+                ->whereRaw('lower(coalesce(source_name, \'\')) = ?', [strtolower($source)])
+                ->count();
         }
-        $sourceCounts['News'] = (clone $sourceQuery)->whereNotIn('source_name', $socials)->count();
+        $sourceCounts['News'] = (clone $sourceQuery)
+            ->whereRaw('lower(coalesce(source_name, \'\')) not in (' . implode(',', array_fill(0, count($normalizedSocials), '?')) . ')', $normalizedSocials)
+            ->count();
 
         $sentimentQuery = $this->applyActiveFilters(clone $baseQuery, ['sentiment']);
         $sentimentQueryWithAI = (clone $sentimentQuery)->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
@@ -858,20 +875,53 @@ new class extends Component
         return md5($source . '|' . $author . '|' . $date . '|' . $content);
     }
 
+    protected function normalizeKeywordSearchTerm(?string $keyword): string
+    {
+        $keyword = trim((string) $keyword);
+        $keyword = preg_replace('/^#+/u', '', $keyword) ?? $keyword;
+        $keyword = preg_replace("/['’‘`]/u", '', $keyword) ?? $keyword;
+
+        return trim($keyword);
+    }
+
+    protected function applyKeywordSearch($query, string $keyword): void
+    {
+        $term = $this->normalizeKeywordSearchTerm($keyword);
+
+        if ($term === '') {
+            return;
+        }
+
+        $needle = mb_strtolower($term, 'UTF-8');
+        $hashNeedle = mb_strtolower('#' . $term, 'UTF-8');
+
+        $query->where(function ($q) use ($needle, $hashNeedle) {
+            $q->whereRaw('lower(coalesce(title, \'\')) like ?', ['%' . $needle . '%'])
+              ->orWhereRaw('lower(coalesce(content, \'\')) like ?', ['%' . $needle . '%'])
+              ->orWhereRaw('lower(coalesce(title, \'\')) like ?', ['%' . $hashNeedle . '%'])
+              ->orWhereRaw('lower(coalesce(content, \'\')) like ?', ['%' . $hashNeedle . '%']);
+        });
+    }
+
     public function getTrendPoints(string $mode, string $metric = 'penyebutan', ?int $forceMax = null): array
     {
         $projectIdDecoded = $this->getDecodedProjectId();
-        $cacheKey = "project_trend_{$projectIdDecoded}_{$mode}_{$metric}_{$forceMax}_" . 
-            md5($this->startDate . '_' . $this->endDate . '_' . $this->selectedKeyword);
+        $stateSignature = md5(json_encode([
+            'startDate' => $this->startDate,
+            'endDate' => $this->endDate,
+            'keyword' => $this->selectedKeyword,
+            'search' => $this->search,
+            'sources' => $this->selectedSources,
+            'sentiment' => $this->selectedSentiment,
+            'category' => $this->selectedCategory,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $cacheKey = "project_trend_{$projectIdDecoded}_{$mode}_{$metric}_{$forceMax}_{$stateSignature}";
 
         return Cache::remember($cacheKey, 120, function () use ($mode, $metric, $forceMax) {
-            $baseQuery = $this->projectArticlesQuery();
+            $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['date']);
             
             if (!empty($this->selectedKeyword)) {
-                $baseQuery->where(function($q) {
-                    $q->where('title', 'like', '%' . $this->selectedKeyword . '%')
-                      ->orWhere('content', 'like', '%' . $this->selectedKeyword . '%');
-                });
+                $this->applyKeywordSearch($baseQuery, $this->selectedKeyword);
             }
             
             $start_date = $this->startDate;
@@ -1044,18 +1094,40 @@ new class extends Component
     public function getProjectSources()
     {
         $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
-        
-        return $baseQuery->leftJoin('ai_analysis_results as ai', function ($join) {
+        $rawSources = (clone $baseQuery)
+            ->leftJoin('ai_analysis_results as ai', function ($join) {
                 $join->on('articles.id', '=', 'ai.article_id')
                      ->where('ai.analysis_status', '=', 'success');
             })
-            ->select('articles.source_name', \DB::raw('count(articles.id) as total'))
+            ->selectRaw('lower(coalesce(articles.source_name, \'\')) as source_key')
+            ->selectRaw('count(articles.id) as total')
             ->selectRaw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive")
             ->selectRaw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral")
             ->selectRaw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
-            ->groupBy('articles.source_name')
+            ->groupBy('source_key')
             ->orderByDesc('total')
             ->get();
+
+        return $rawSources->map(function ($row) {
+            $sourceKey = (string) ($row->source_key ?? '');
+            $sourceName = match ($sourceKey) {
+                'tiktok' => 'TikTok',
+                'instagram' => 'Instagram',
+                'facebook' => 'Facebook',
+                'twitter', 'twitter/x', 'x.com' => 'Twitter',
+                'youtube' => 'Youtube',
+                'threads' => 'Threads',
+                default => $sourceKey !== '' ? $sourceKey : 'Sumber tidak diketahui',
+            };
+
+            return (object) [
+                'source_name' => $sourceName,
+                'total' => (int) $row->total,
+                'positive' => (int) ($row->positive ?? 0),
+                'neutral' => (int) ($row->neutral ?? 0),
+                'negative' => (int) ($row->negative ?? 0),
+            ];
+        });
     }
 
     public function getWawasan()
@@ -1185,7 +1257,7 @@ new class extends Component
 
         $negativeIssues = (clone $baseQueryWithAI)
             ->where('ai.sentiment', 'negative')
-            ->selectRaw('COALESCE(ai.main_issue, articles.category, articles.title) as issue, COUNT(*) as total')
+            ->selectRaw('COALESCE(ai.main_issue, articles.category, articles.title) as issue, COUNT(*) as total, MIN(articles.url) as url')
             ->groupBy('issue')
             ->orderByDesc('total')
             ->limit(5)
@@ -1194,6 +1266,7 @@ new class extends Component
                 'issue' => Str::limit((string) $row->issue, 90),
                 'total' => (int) $row->total,
                 'pct' => $neg > 0 ? round(((int) $row->total / $neg) * 100) : 0,
+                'url' => $row->url ?: null,
             ])
             ->toArray();
 
@@ -4000,7 +4073,13 @@ new class extends Component
                                     @forelse($w['negative_issues'] as $issue)
                                         <div class="space-y-2 pb-3 border-b border-slate-100 last:border-0 last:pb-0">
                                             <div class="flex items-start justify-between gap-3">
-                                                <p class="text-xs font-bold text-slate-700 leading-relaxed">{{ $issue['issue'] }}</p>
+                                                @if(!empty($issue['url']))
+                                                    <a href="{{ $issue['url'] }}" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-slate-700 leading-relaxed hover:text-[#1fa387] hover:underline transition">
+                                                        {{ $issue['issue'] }}
+                                                    </a>
+                                                @else
+                                                    <p class="text-xs font-bold text-slate-700 leading-relaxed">{{ $issue['issue'] }}</p>
+                                                @endif
                                                 <span class="text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-2 py-0.5 whitespace-nowrap">{{ $issue['total'] }} item</span>
                                             </div>
                                             <div class="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
