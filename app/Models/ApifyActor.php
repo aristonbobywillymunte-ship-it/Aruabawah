@@ -263,29 +263,19 @@ class ApifyActor extends Model
             $keywords = [$this->normalizeTikTokHashtag((string) ($keyword ?: $this->default_keyword))];
         }
 
-        $config = [];
-        if (filled($this->output_mapping)) {
-            $decoded = json_decode($this->output_mapping, true);
-            if (is_array($decoded)) {
-                $config = $decoded;
-            }
-        }
-
-        $configuredMaxItems = data_get($config, 'resultsPerPage', null);
-        $configuredTotalLimit = (int) $configuredMaxItems;
-        if ($configuredMaxItems === null || $configuredMaxItems === '' || $configuredTotalLimit < 1 || str_contains((string) $configuredMaxItems, '{limit}')) {
-            $configuredTotalLimit = (int) ($this->default_limit ?? $limit);
+        $configuredTotalLimit = (int) ($this->default_limit ?? $this->tiktok_results_per_page ?? $limit);
+        if ($configuredTotalLimit < 1) {
+            $configuredTotalLimit = max(1, $limit);
         }
 
         return [
-            'hashtags' => $keywords,
-            'resultsPerPage' => $configuredTotalLimit,
-            'shouldDownloadCovers' => (bool) data_get($config, 'shouldDownloadCovers', false),
-            'shouldDownloadSlideshowImages' => (bool) data_get($config, 'shouldDownloadSlideshowImages', false),
-            'shouldDownloadVideos' => (bool) data_get($config, 'shouldDownloadVideos', false),
-            'downloadSubtitlesOptions' => (string) data_get($config, 'downloadSubtitlesOptions', 'NEVER_DOWNLOAD_SUBTITLES'),
+            'customMapFunction' => '(object) => { return {...object} }',
+            'endPage' => 1,
+            'extendOutputFunction' => '($) => { return {} }',
+            'maxItems' => $configuredTotalLimit,
+            'search' => $keywords,
             'proxyConfiguration' => [
-                'useApifyProxy' => (bool) data_get($config, 'proxyConfiguration.useApifyProxy', true),
+                'useApifyProxy' => (bool) ($this->tiktok_use_apify_proxy ?? true),
             ],
         ];
     }

@@ -947,7 +947,7 @@ class ApifyScrapingJob implements ShouldQueue
         return match ($platform) {
             'Facebook' => ['maxPosts', isset($input['maxPosts']) ? (int) $input['maxPosts'] : null],
             'Instagram' => ['resultsLimit', isset($input['resultsLimit']) ? (int) $input['resultsLimit'] : null],
-            'TikTok' => ['resultsPerPage', isset($input['resultsPerPage']) ? (int) $input['resultsPerPage'] : null],
+            'TikTok' => ['maxItems', isset($input['maxItems']) ? (int) $input['maxItems'] : null],
             default => ['limit', null],
         };
     }

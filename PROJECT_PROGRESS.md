@@ -583,3 +583,11 @@
 ### 42. Registry TikTok Diverifikasi Ulang
 * Registry default TikTok sudah dicek ulang agar tetap menunjuk ke `clockworks/tiktok-hashtag-scraper` dengan payload `hashtags` dan `resultsPerPage`.
 * Audit ini memastikan seed/default yang dipakai app tetap selaras dengan payload runtime yang dikirim worker ke Apify.
+
+### 43. TikTok MaxItems Dipisah per Actor
+* Modal TikTok sekarang menampilkan `Batas Hasil Aktif` sebagai `maxItems` per aktor, bukan lagi istilah `resultsPerPage`.
+* Teks bantuan dan payload TikTok sudah diseragamkan agar nilai limit berasal dari konfigurasi tiap aktor dan bisa berbeda antar actor.
+
+### 44. Audit Payload TikTok Mengikuti `maxItems`
+* Jalur audit worker TikTok di `ApifyScrapingJob` sekarang membaca `maxItems` sebagai field limit yang resmi.
+* Ini mencegah log dan inspeksi payload TikTok kembali menampilkan label lama `resultsPerPage` saat run dijalankan.

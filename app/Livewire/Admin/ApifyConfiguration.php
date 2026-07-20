@@ -775,7 +775,7 @@ class ApifyConfiguration extends Component
             $template = json_decode($this->registry()->primaryActors()['tiktok']['output_mapping'], true) ?: [];
         }
 
-        $this->tiktok_results_per_page = (int) ($template['resultsPerPage'] ?? $this->registry()->primaryActors()['tiktok']['default_limit']);
+        $this->tiktok_results_per_page = (int) ($template['maxItems'] ?? $template['resultsPerPage'] ?? $this->registry()->primaryActors()['tiktok']['default_limit']);
         $this->tiktok_should_download_covers = (bool) data_get($template, 'shouldDownloadCovers', false);
         $this->tiktok_should_download_slideshow_images = (bool) data_get($template, 'shouldDownloadSlideshowImages', false);
         $this->tiktok_should_download_videos = (bool) data_get($template, 'shouldDownloadVideos', false);
@@ -787,19 +787,11 @@ class ApifyConfiguration extends Component
     protected function buildTikTokOutputMapping(array $data): string
     {
         $payload = [
-            'hashtags' => ['{keyword}'],
-            'resultsPerPage' => max(1, (int) ($this->tiktok_results_per_page ?? $this->defaultLimit ?? 1)),
-            'shouldDownloadCovers' => (bool) $this->tiktok_should_download_covers,
-            'shouldDownloadSlideshowImages' => (bool) $this->tiktok_should_download_slideshow_images,
-            'shouldDownloadVideos' => (bool) $this->tiktok_should_download_videos,
-            'downloadSubtitlesOptions' => in_array($this->tiktok_download_subtitles_options, [
-                'NEVER_DOWNLOAD_SUBTITLES',
-                'AUTO_DOWNLOAD_SUBTITLES',
-                'DOWNLOAD_SUBTITLES',
-            ], true) ? $this->tiktok_download_subtitles_options : 'NEVER_DOWNLOAD_SUBTITLES',
-            'proxyConfiguration' => [
-                'useApifyProxy' => (bool) $this->tiktok_use_apify_proxy,
-            ],
+            'customMapFunction' => '(object) => { return {...object} }',
+            'endPage' => 1,
+            'extendOutputFunction' => '($) => { return {} }',
+            'maxItems' => max(1, (int) ($this->tiktok_results_per_page ?? $this->defaultLimit ?? 1)),
+            'search' => ['{keyword}'],
         ];
 
         return json_encode($payload, JSON_UNESCAPED_SLASHES);

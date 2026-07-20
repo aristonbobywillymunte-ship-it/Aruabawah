@@ -222,7 +222,7 @@
                                     'isi' => [
                                         'Isi daftar keyword di <span class="font-semibold text-slate-800">keywords</span>.',
                                         'Gunakan actor <span class="font-semibold text-slate-800">clockworks/tiktok-hashtag-scraper</span> sebagai sumber payload.',
-                                        'Isi <span class="font-semibold text-slate-800">resultsPerPage</span> sebagai batas total hasil, lalu sistem kirim ke Apify apa adanya.',
+                                        'Isi <span class="font-semibold text-slate-800">maxItems</span> sebagai batas total hasil per aktor, lalu sistem kirim ke Apify apa adanya.',
                                     ],
                                 ],
                                 'Instagram' => [
@@ -274,7 +274,7 @@
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Aktif</label>
                                         <input wire:model.defer="defaultLimit" type="number" min="0" inputmode="numeric" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                         <p class="mt-1 text-[10px] font-semibold text-slate-400">
-                                            Nilai ini hanya konfigurasi aktor dan tidak dipakai sebagai pembatas otomatis payload {{ $platform }}.
+                                            Nilai ini adalah <span class="font-mono">maxItems</span> per aktor dan tidak dipakai sebagai pembatas otomatis payload {{ $platform }} lain.
                                         </p>
                                         @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
@@ -409,7 +409,7 @@
                                         <div>
                                             <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Aktif</label>
                                             <input wire:model="defaultLimit" type="number" min="1" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
-                                            <p class="mt-1 text-[10px] text-slate-400">Nilai ini akan dikirim sebagai <span class="font-mono">resultsPerPage</span> ke actor TikTok.</p>
+                                            <p class="mt-1 text-[10px] text-slate-400">Nilai ini akan dikirim sebagai <span class="font-mono">maxItems</span> ke actor TikTok dan bisa berbeda untuk tiap aktor.</p>
                                             @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                         </div>
                                         <div>
