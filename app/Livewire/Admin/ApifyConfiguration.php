@@ -791,7 +791,7 @@ class ApifyConfiguration extends Component
             'endPage' => 1,
             'extendOutputFunction' => '($) => { return {} }',
             'maxItems' => max(1, (int) ($this->tiktok_results_per_page ?? $this->defaultLimit ?? 1)),
-            'search' => ['{keyword}'],
+            'hashtags' => ['{keyword}'],
         ];
 
         return json_encode($payload, JSON_UNESCAPED_SLASHES);

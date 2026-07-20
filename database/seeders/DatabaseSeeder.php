@@ -303,7 +303,7 @@ class DatabaseSeeder extends Seeder
                 'default_limit' => 50,
                 'status' => 'active',
                 'keyword_field_mapping' => 'hashtags',
-                'output_mapping' => '{"customMapFunction":"(object) => { return {...object} }","endPage":1,"extendOutputFunction":"($) => { return {} }","maxItems":"{limit}","search":["{keyword}"],"proxyConfiguration":{"useApifyProxy":true}}',
+                'output_mapping' => '{"customMapFunction":"(object) => { return {...object} }","endPage":1,"extendOutputFunction":"($) => { return {} }","maxItems":"{limit}","hashtags":["{keyword}"],"proxyConfiguration":{"useApifyProxy":true}}',
                 'build' => 'latest',
                 'timeout_seconds' => 10000,
                 'no_timeout' => false,

@@ -273,7 +273,7 @@ class ApifyActor extends Model
             'endPage' => 1,
             'extendOutputFunction' => '($) => { return {} }',
             'maxItems' => $configuredTotalLimit,
-            'search' => $keywords,
+            'hashtags' => $keywords,
             'proxyConfiguration' => [
                 'useApifyProxy' => (bool) ($this->tiktok_use_apify_proxy ?? true),
             ],

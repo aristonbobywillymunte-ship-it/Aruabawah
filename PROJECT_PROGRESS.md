@@ -591,3 +591,7 @@
 ### 44. Audit Payload TikTok Mengikuti `maxItems`
 * Jalur audit worker TikTok di `ApifyScrapingJob` sekarang membaca `maxItems` sebagai field limit yang resmi.
 * Ini mencegah log dan inspeksi payload TikTok kembali menampilkan label lama `resultsPerPage` saat run dijalankan.
+
+### 45. TikTok Wajib Kirim `hashtags`
+* Payload TikTok sekarang mengirim `hashtags` sebagai field input yang diwajibkan actor `clockworks/tiktok-hashtag-scraper`.
+* Field limit tetap memakai `maxItems`, sehingga input runtime sesuai validasi Apify sekaligus tetap per-aktor.
