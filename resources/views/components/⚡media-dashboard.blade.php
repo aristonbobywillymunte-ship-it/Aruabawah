@@ -748,7 +748,9 @@ new class extends Component
         $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
         $normalizedSocials = array_map('strtolower', $socials);
 
-        $sourceQuery = $this->applyActiveFilters(clone $baseQuery, ['sources']);
+        // Counts for the filter panel should reflect the visible article pool,
+        // not disappear just because sentiment AI is still pending.
+        $sourceQuery = $this->applyActiveFilters(clone $baseQuery, ['sources', 'sentiment']);
         $sources = ['Twitter', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
         $sourceCounts = [];
         foreach ($sources as $source) {
@@ -1093,7 +1095,8 @@ new class extends Component
 
     public function getProjectSources()
     {
-        $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
+        // Keep the source breakdown stable even if sentiment analysis is not yet available.
+        $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['sentiment']);
         $rawSources = (clone $baseQuery)
             ->leftJoin('ai_analysis_results as ai', function ($join) {
                 $join->on('articles.id', '=', 'ai.article_id')

@@ -1133,6 +1133,7 @@ class ApifyScrapingJob implements ShouldQueue
             $author,
             $authorUrl,
             $postUrl,
+            $content,
             $item['pageName'] ?? null,
             $item['authorName'] ?? null,
             $item['username'] ?? null,

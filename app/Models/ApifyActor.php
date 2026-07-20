@@ -242,7 +242,7 @@ class ApifyActor extends Model
         $configuredResultsLimit = data_get($config, 'resultsLimit', null);
         $configuredTotalLimit = (int) $configuredResultsLimit;
         if ($configuredTotalLimit < 1 || str_contains((string) $configuredResultsLimit, '{limit}')) {
-            $configuredTotalLimit = $limit;
+            $configuredTotalLimit = (int) ($this->default_limit ?? $limit);
         }
 
         return [
@@ -274,7 +274,7 @@ class ApifyActor extends Model
         $configuredMaxItems = data_get($config, 'resultsPerPage', null);
         $configuredTotalLimit = (int) $configuredMaxItems;
         if ($configuredMaxItems === null || $configuredMaxItems === '' || $configuredTotalLimit < 1 || str_contains((string) $configuredMaxItems, '{limit}')) {
-            $configuredTotalLimit = $limit;
+            $configuredTotalLimit = (int) ($this->default_limit ?? $limit);
         }
 
         return [
