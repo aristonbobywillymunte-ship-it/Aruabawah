@@ -5,6 +5,15 @@
 
 ---
 
+## Log Aktivitas Terbaru (20 Juli 2026)
+
+### 1. State Filter Dashboard Dipaksa Reset Saat Buka Project
+* Komponen dashboard `media-dashboard` sekarang mereset state filter saat project dimount, termasuk `search`, `selectedSentiment`, `selectedSources`, `selectedCategory`, `sortBy`, `limit`, dan `selectedKeyword`.
+* Tujuannya agar tampilan IG/TikTok tidak nyangkut di state lama seperti `selectedSources = ['News']` ketika pengguna pindah atau membuka project lain.
+* Validasi syntax Blade untuk file dashboard perlu dicek ulang setelah perubahan.
+
+---
+
 ## Log Aktivitas Terbaru (17 Juli 2026)
 
 ### 1. Payload TikTok Disamakan dengan Modal Admin

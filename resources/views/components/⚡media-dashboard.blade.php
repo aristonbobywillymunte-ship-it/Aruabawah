@@ -194,10 +194,18 @@ new class extends Component
         $project = $this->resolveProjectOrFail($projectId);
         $this->projectId = base64_encode($project->id);
         $this->projectName = $project->name;
+        $this->resolvedProjectCache = null;
 
         // Atur agar default terfilter berdasarkan bulan berjalan (tanggal 1 hingga hari ini)
         $this->startDate = now()->startOfMonth()->format('Y-m-d');
         $this->endDate = now()->format('Y-m-d');
+        $this->search = '';
+        $this->selectedSentiment = ['positive', 'neutral', 'negative'];
+        $this->selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
+        $this->selectedCategory = '';
+        $this->sortBy = 'newest';
+        $this->limit = 5;
+        $this->selectedKeyword = null;
 
         // Parse tab if present in query parameter
         $tabFromUrl = request()->query('tab');
