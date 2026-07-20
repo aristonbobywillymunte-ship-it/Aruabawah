@@ -595,3 +595,23 @@
 ### 45. TikTok Wajib Kirim `hashtags`
 * Payload TikTok sekarang mengirim `hashtags` sebagai field input yang diwajibkan actor `clockworks/tiktok-hashtag-scraper`.
 * Field limit tetap memakai `maxItems`, sehingga input runtime sesuai validasi Apify sekaligus tetap per-aktor.
+
+### 46. Filter Konten TikTok Dilonggarkan
+* Validasi konten sosial yang terlalu pendek sekarang dilonggarkan khusus TikTok dari 30 karakter menjadi 8 karakter.
+* Tujuannya supaya post TikTok yang pendek tapi sudah lolos keyword match tidak ikut terbuang sebelum disimpan ke database.
+
+### 47. Filter IG dan TikTok Dipaksa Berbasis Hashtag
+* Jalur pencocokan hasil sosial untuk Instagram dan TikTok sekarang memakai `hashtags`/`tags` dan hashtag eksplisit di konten, bukan narasi penuh.
+* Ini membuat data yang tampil benar-benar mengikuti hashtag proyek, sehingga hasil 100 dari Apify tidak lagi banyak gugur hanya karena caption mengandung kata yang tidak relevan.
+
+### 48. Social Matching Tidak Lagi Mengandalkan Author Name
+* Pencocokan project untuk item sosial tidak lagi memakai `author_name` sebagai bagian dari teks pemicu.
+* Ini mengurangi false positive pada detail project IG/TikTok agar yang tampil benar-benar berasal dari hashtag yang cocok.
+
+### 49. Edit Project Melepas Social Hashtag Lama
+* Saat project diubah, relasi social media project sekarang disinkronkan ulang berdasarkan keyword terbaru.
+* Hashtag/social item lama yang tidak cocok lagi otomatis dilepas dari project agar detail proyek hanya menampilkan hasil yang relevan.
+
+### 50. Sinkronisasi Edit Project Dipasang di UI
+* Jalur simpan edit project di komponen UI proyek sekarang langsung memanggil resync social content setelah update topics.
+* Dengan begitu, saat user klik simpan, hashtag lama yang sudah dihapus langsung hilang dari detail project tanpa menunggu proses manual.

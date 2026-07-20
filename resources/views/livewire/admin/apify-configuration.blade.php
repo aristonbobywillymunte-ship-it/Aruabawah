@@ -274,7 +274,7 @@
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Aktif</label>
                                         <input wire:model.defer="defaultLimit" type="number" min="0" inputmode="numeric" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                         <p class="mt-1 text-[10px] font-semibold text-slate-400">
-                                            Nilai ini adalah <span class="font-mono">maxItems</span> per aktor dan tidak dipakai sebagai pembatas otomatis payload {{ $platform }} lain.
+                                            <span class="font-mono">maxItems</span> = <span class="font-semibold text-slate-600">Batas Hasil Aktif</span>.
                                         </p>
                                         @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
@@ -402,14 +402,14 @@
                             <details open class="rounded-2xl border border-slate-200 bg-white">
                                 <summary class="cursor-pointer list-none px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                     <span class="w-5 h-5 rounded bg-emerald-50 flex items-center justify-center text-emerald-500"><span class="material-symbols-outlined text-[13px]">schema</span></span>
-                                    Payload Aktor TikTok
+                                    Konfigurasi Khusus TikTok
                                 </summary>
                                 <div class="border-t border-slate-100 bg-emerald-50/30 p-4 space-y-4 rounded-b-2xl">
                                     <div class="grid gap-4 sm:grid-cols-2">
                                         <div>
                                             <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Aktif</label>
                                             <input wire:model="defaultLimit" type="number" min="1" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
-                                            <p class="mt-1 text-[10px] text-slate-400">Nilai ini akan dikirim sebagai <span class="font-mono">maxItems</span> ke actor TikTok dan bisa berbeda untuk tiap aktor.</p>
+                                            <p class="mt-1 text-[10px] text-slate-400"><span class="font-mono">maxItems</span> = <span class="font-semibold text-slate-600">Batas Hasil Aktif</span>.</p>
                                             @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                         </div>
                                         <div>

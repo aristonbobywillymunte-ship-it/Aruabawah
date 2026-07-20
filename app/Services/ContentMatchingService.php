@@ -33,7 +33,6 @@ class ContentMatchingService
             $contentToMatch = ($item->title ?? '') . "\n" . ($item->content ?? '');
         } else {
             $contentToMatch = $this->buildSocialMatchText(
-                $item->author_name ?? null,
                 $item->content ?? null,
                 $item->raw_json ?? null,
             );
@@ -147,7 +146,6 @@ class ContentMatchingService
                     }
 
                     $content = $this->buildSocialMatchText(
-                        $item->author_name ?? null,
                         $item->content ?? null,
                         $item->raw_json ?? null,
                     );
@@ -172,6 +170,67 @@ class ContentMatchingService
         return [
             'articles_linked' => $articlesLinked,
             'social_linked' => $socialLinked,
+            'skipped' => false,
+            'reason' => null,
+        ];
+    }
+
+    /**
+     * Rebuild social-media links for a project so stale hashtag matches are removed
+     * when project topics change.
+     */
+    public function syncProjectSocialContent(Project $project): array
+    {
+        $project = $project->fresh();
+
+        if (! $project || ! $project->is_active || $project->trashed()) {
+            return [
+                'detached' => 0,
+                'attached' => 0,
+                'skipped' => true,
+                'reason' => 'project_inactive_or_deleted',
+            ];
+        }
+
+        $keywords = $project->scrapeKeywordVariants();
+        if ($keywords === []) {
+            $detached = $project->socialMediaItems()->count();
+            $project->socialMediaItems()->detach();
+
+            return [
+                'detached' => $detached,
+                'attached' => 0,
+                'skipped' => false,
+                'reason' => 'no_keywords',
+            ];
+        }
+
+        $matchedIds = [];
+        SocialMediaItem::query()
+            ->select(['id', 'author_name', 'content', 'raw_json'])
+            ->chunkById(250, function ($items) use ($keywords, &$matchedIds) {
+                foreach ($items as $item) {
+                    $content = $this->buildSocialMatchText(
+                        $item->content ?? null,
+                        $item->raw_json ?? null,
+                    );
+
+                    foreach ($keywords as $keyword) {
+                        if ($this->isStrictMatch($keyword, $content)) {
+                            $matchedIds[] = $item->id;
+                            break;
+                        }
+                    }
+                }
+            });
+
+        $matchedIds = array_values(array_unique($matchedIds));
+        $detached = $project->socialMediaItems()->count();
+        $project->socialMediaItems()->sync($matchedIds);
+
+        return [
+            'detached' => $detached,
+            'attached' => count($matchedIds),
             'skipped' => false,
             'reason' => null,
         ];
@@ -221,11 +280,9 @@ class ContentMatchingService
      * Keep only identity fields and explicit keyword-like fields so narrative
      * captions do not trigger project links just because they mention a region.
      */
-    protected function buildSocialMatchText(?string $authorName, ?string $content, mixed $rawJson): string
+    protected function buildSocialMatchText(?string $content, mixed $rawJson): string
     {
-        $parts = array_filter([
-            $authorName,
-        ], static fn ($value) => filled($value));
+        $parts = [];
 
         $decoded = null;
         if (is_string($rawJson)) {

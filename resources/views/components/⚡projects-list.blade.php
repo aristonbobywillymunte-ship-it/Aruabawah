@@ -516,7 +516,9 @@ new class extends Component
             'topics' => $topics,
         ]);
 
-        $matchResult = app(ContentMatchingService::class)->matchExistingContentForProject($project);
+        $matchingService = app(ContentMatchingService::class);
+        $matchResult = $matchingService->matchExistingContentForProject($project);
+        $socialSyncResult = $matchingService->syncProjectSocialContent($project);
 
         $this->showEditModal = false;
         $this->editProjectId = null;
@@ -524,12 +526,18 @@ new class extends Component
             'message',
             'Proyek berhasil diperbarui. Data lama yang cocok: '
             . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
-            . ($matchResult['social_linked'] ?? 0) . ' medsos.'
+            . ($matchResult['social_linked'] ?? 0) . ' medsos. '
+            . 'Social disinkronkan ulang: '
+            . ($socialSyncResult['attached'] ?? 0) . ' tertaut, '
+            . ($socialSyncResult['detached'] ?? 0) . ' dilepas.'
         );
         $this->notifyProjectAction(
             'Proyek berhasil diperbarui. Data lama yang cocok: '
             . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
-            . ($matchResult['social_linked'] ?? 0) . ' medsos.'
+            . ($matchResult['social_linked'] ?? 0) . ' medsos. '
+            . 'Social disinkronkan ulang: '
+            . ($socialSyncResult['attached'] ?? 0) . ' tertaut, '
+            . ($socialSyncResult['detached'] ?? 0) . ' dilepas.'
         );
     }
 

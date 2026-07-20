@@ -647,14 +647,16 @@ class ApifyScrapingJob implements ShouldQueue
                 ];
             }
 
-            $keywordHaystack = $this->keywordMatchHaystack(
-                $item,
-                $content,
-                $author,
-                $authorUrl,
-                $postUrl,
-                $platform,
-            );
+            $keywordHaystack = in_array($platform, ['Instagram', 'TikTok'], true)
+                ? $this->socialHashtagMatchHaystack($item)
+                : $this->keywordMatchHaystack(
+                    $item,
+                    $content,
+                    $author,
+                    $authorUrl,
+                    $postUrl,
+                    $platform,
+                );
 
             if (
                 in_array($platform, ['Facebook', 'Instagram', 'TikTok'], true)
@@ -672,7 +674,7 @@ class ApifyScrapingJob implements ShouldQueue
             }
             if (
                 in_array($platform, ['Facebook', 'Instagram', 'TikTok'], true)
-                && $this->isInvalidSocialContent($content)
+                && $this->isInvalidSocialContent($content, $platform)
             ) {
                 Log::info('[Apify] Skipped social item: konten medsos tidak layak simpan.', [
                     'platform' => $platform,
@@ -1098,7 +1100,7 @@ class ApifyScrapingJob implements ShouldQueue
         return in_array($platform, ['Facebook', 'Instagram', 'TikTok'], true);
     }
 
-    protected function isInvalidSocialContent(?string $content): bool
+    protected function isInvalidSocialContent(?string $content, ?string $platform = null): bool
     {
         $normalized = trim(preg_replace('/\s+/u', ' ', strip_tags((string) $content)) ?? '');
 
@@ -1106,7 +1108,9 @@ class ApifyScrapingJob implements ShouldQueue
             return true;
         }
 
-        if (mb_strlen($normalized) < 30) {
+        $minimumLength = $platform === 'TikTok' ? 8 : 30;
+
+        if (mb_strlen($normalized) < $minimumLength) {
             return true;
         }
 
@@ -1175,6 +1179,42 @@ class ApifyScrapingJob implements ShouldQueue
         }
 
         return implode("\n", array_filter($haystackParts, static fn ($value) => filled($value)));
+    }
+
+    protected function socialHashtagMatchHaystack(array $item): string
+    {
+        $parts = [];
+
+        foreach (['hashtags', 'tags'] as $key) {
+            $value = $item[$key] ?? null;
+            if (is_array($value)) {
+                foreach ($value as $entry) {
+                    if (is_scalar($entry) || $entry === null) {
+                        $trimmed = trim((string) $entry);
+                        if ($trimmed !== '') {
+                            $parts[] = $trimmed;
+                        }
+                    }
+                }
+                continue;
+            }
+
+            if (is_scalar($value) || $value === null) {
+                $trimmed = trim((string) $value);
+                if ($trimmed !== '') {
+                    $parts[] = $trimmed;
+                }
+            }
+        }
+
+        $content = $item['content'] ?? $item['description'] ?? null;
+        if (is_string($content) && preg_match_all('/(?<!\w)#([^\s#]+)/u', $content, $matches)) {
+            foreach ($matches[1] as $tag) {
+                $parts[] = $tag;
+            }
+        }
+
+        return implode("\n", array_values(array_unique($parts)));
     }
 
     protected function matchesAnyKeywordInContent(array $keywords, ?string $content): bool
