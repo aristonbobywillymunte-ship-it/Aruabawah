@@ -1060,7 +1060,7 @@ new class extends Component
                                                 <label class="flex items-center justify-between gap-3 cursor-pointer group">
                                                     <div class="flex items-center gap-3 min-w-0 flex-1">
                                                         <input wire:model.live="selectedSources" value="Instagram" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5">
-                                                        <div class="w-10 h-10 rounded-xl bg-fuchsia-500 shadow-sm shadow-fuchsia-500/20 flex items-center justify-center shrink-0">
+                                                        <div class="w-10 h-10 rounded-xl bg-fuchsia-500 shadow-sm shadow-fuchsia-500/20 flex items-center justify-center shrink-0" style="background-color: #e1306c;">
                                                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                                                 <rect x="4.25" y="4.25" width="15.5" height="15.5" rx="5"></rect>
                                                                 <circle cx="12" cy="12" r="3.15"></circle>
@@ -1075,7 +1075,7 @@ new class extends Component
                                                 <label class="flex items-center justify-between gap-3 cursor-pointer group">
                                                     <div class="flex items-center gap-3 min-w-0 flex-1">
                                                         <input wire:model.live="selectedSources" value="TikTok" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5">
-                                                        <div class="w-10 h-10 rounded-xl bg-slate-950 shadow-sm shadow-slate-900/20 flex items-center justify-center shrink-0">
+                                                        <div class="w-10 h-10 rounded-xl bg-slate-950 shadow-sm shadow-slate-900/20 flex items-center justify-center shrink-0" style="background-color: #000000;">
                                                             <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24">
                                                                 <path fill="currentColor" d="M15.8 5.2c.7.8 1.7 1.4 2.8 1.6v2.7c-1 0-2-.2-2.9-.6v5.1c0 2.9-2.4 5.3-5.3 5.3S5.1 17 5.1 14.1s2.4-5.3 5.3-5.3c.2 0 .4 0 .6.1v2.8c-.2 0-.4-.1-.6-.1-1.3 0-2.3 1.1-2.3 2.4s1 2.4 2.3 2.4 2.4-1 2.4-2.4V4.4h2.9c.1.3.1.5.1.8z"/>
                                                                 <path fill="currentColor" d="M15.6 4.4c.2.9.7 1.8 1.4 2.5.8.7 1.6 1.2 2.6 1.4V5.6c-.7-.2-1.3-.5-1.8-.9-.5-.4-1-.9-1.3-1.5h-.9z"/>

@@ -59,7 +59,7 @@
             <label class="flex items-center justify-between cursor-pointer group py-0.5 gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <input wire:model.live="selectedSources" value="Instagram" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                    <div class="w-8 h-8 rounded-lg bg-fuchsia-500 shadow-sm shadow-fuchsia-500/20 flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-lg bg-fuchsia-500 shadow-sm shadow-fuchsia-500/20 flex items-center justify-center" style="background-color: #e1306c;">
                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M12 4.4c2.1 0 2.4.01 3.3.05.9.04 1.5.18 2 .38.5.2.9.44 1.3.82.38.4.62.8.82 1.3.2.5.34 1.1.38 2 .04.9.05 1.2.05 3.3s-.01 2.4-.05 3.3c-.04.9-.18 1.5-.38 2-.2.5-.44.9-.82 1.3-.4.38-.8.62-1.3.82-.5.2-1.1.34-2 .38-.9.04-1.2.05-3.3.05s-2.4-.01-3.3-.05c-.9-.04-1.5-.18-2-.38-.5-.2-.9-.44-1.3-.82-.38-.4-.62-.8-.82-1.3-.2-.5-.34-1.1-.38-2C4.45 14.4 4.4 14.1 4.4 12s.01-2.4.05-3.3c.04-.9.18-1.5.38-2 .2-.5.44-.9.82-1.3.4-.38.8-.62 1.3-.82.5-.2 1.1-.34 2-.38C9.6 4.41 9.9 4.4 12 4.4Z"></path>
                             <circle cx="12" cy="12" r="3.1"></circle>
@@ -75,7 +75,7 @@
             <label class="flex items-center justify-between cursor-pointer group py-0.5 gap-3">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <input wire:model.live="selectedSources" value="TikTok" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                    <div class="w-8 h-8 rounded-lg bg-slate-950 shadow-sm shadow-slate-900/20 flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-lg bg-slate-950 shadow-sm shadow-slate-900/20 flex items-center justify-center" style="background-color: #000000;">
                         <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                             <path fill="currentColor" d="M16.4 4.3h2.2c.1 1.7 1.1 3.2 2.7 3.9v2.3c-1.1 0-2.2-.2-3.2-.6v4.9c0 3.1-2.5 5.6-5.6 5.6-2.9 0-5.3-2.4-5.3-5.3 0-3 2.4-5.4 5.4-5.4.4 0 .8 0 1.1.1v2.7c-.3 0-.7-.1-1-.1-1.4 0-2.5 1.1-2.5 2.6 0 1.4 1.1 2.6 2.5 2.6 1.5 0 2.7-1.2 2.7-2.7V4.3z"></path>
                             <path fill="currentColor" d="M15.3 4.3h1.5c.6 1.2 1.6 2.2 3 2.6v2.2c-1.5-.4-2.7-1-3.6-2-.5-.5-.8-1.1-.9-1.8v-1z"></path>
