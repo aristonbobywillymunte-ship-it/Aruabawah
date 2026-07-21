@@ -19,7 +19,7 @@ class RunNeedsRescrape extends Command
                             {--apply : Actually run the recommended action instead of dry-run}
                             {--no-telegram : Suppress downstream Telegram notifications}';
 
-    protected $description = 'Run small safe rescrape passes for project_articles marked needs_rescrape.';
+    protected $description = 'Run small safe rescrape passes for content marked needs_rescrape.';
 
     public function __construct(
         private readonly AiAnalysisDispatchStateService $dispatchStateService,

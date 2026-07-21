@@ -21,7 +21,7 @@ class RequeueOrphanQueuedAiStates extends Command
                             {--max-batches=15 : Maximum batches to run in auto-drain mode}
                             {--stop-on-failed-after=200 : Stop if failed_jobs ids exceed this baseline}';
 
-    protected $description = 'Requeue orphan queued AI states selectively with safety checks.';
+    protected $description = 'Globally requeue orphan queued AI states selectively with safety checks.';
 
     public function handle(): int
     {

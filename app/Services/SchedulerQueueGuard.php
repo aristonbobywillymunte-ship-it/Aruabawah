@@ -11,6 +11,38 @@ class SchedulerQueueGuard
 {
     private const STALE_APIFY_STATE_MINUTES = 45;
 
+    public function aiBusyReason(): ?string
+    {
+        if ($this->queueHasJobs('redis-ai', ['ai-analysis', 'ai-backfill'])) {
+            return 'Masih ada job AI menunggu di antrean redis-ai.';
+        }
+
+        $processingCount = \App\Models\AiAnalysisDispatchState::query()
+            ->where('status', 'processing')
+            ->count();
+
+        if ($processingCount > 0) {
+            return 'Masih ada job AI yang sedang diproses worker.';
+        }
+
+        $activeCooldownProvider = \App\Models\AiProvider::query()
+            ->where('is_active', true)
+            ->whereNotNull('cooldown_until')
+            ->where('cooldown_until', '>', now())
+            ->first();
+
+        if ($activeCooldownProvider) {
+            return "Provider AI {$activeCooldownProvider->name} masih cooldown sampai {$activeCooldownProvider->cooldown_until}.";
+        }
+
+        return null;
+    }
+
+    public function aiIsIdle(): bool
+    {
+        return $this->aiBusyReason() === null;
+    }
+
     public function apifyIsIdle(): bool
     {
         return $this->apifyBusyReason() === null;

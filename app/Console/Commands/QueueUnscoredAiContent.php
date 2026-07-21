@@ -1,0 +1,101 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Jobs\AiAnalysisJob;
+use App\Models\AiAnalysisDispatchState;
+use App\Models\Article;
+use App\Models\Project;
+use App\Services\ContentMatchingService;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Queue;
+
+class QueueUnscoredAiContent extends Command
+{
+    protected $signature = 'ai:queue-unscored-content
+                            {--limit=20 : Maximum items to enqueue per run}
+                            {--hours=48 : Look back window for content without AI analysis}';
+
+    protected $description = 'Queue content that matches active project filters but has no AI result yet.';
+
+    public function handle(ContentMatchingService $matchingService): int
+    {
+        $limit = max(1, (int) $this->option('limit'));
+        $hours = max(1, (int) $this->option('hours'));
+        $cutoff = now()->subHours($hours);
+        $queued = 0;
+        $skipped = 0;
+
+        $activeProjects = Project::query()
+            ->where('is_active', true)
+            ->when(
+                \Illuminate\Support\Facades\Schema::hasColumn('projects', 'priority'),
+                fn ($query) => $query->orderBy('priority')
+            )
+            ->orderBy('id')
+            ->get();
+
+        if ($activeProjects->isEmpty()) {
+            $this->info('No active projects found.');
+            return self::SUCCESS;
+        }
+
+        Article::query()
+            ->with('aiAnalysisResult')
+            ->whereDoesntHave('aiAnalysisResult')
+            ->where(function ($query) use ($cutoff) {
+                $query->where('published_at', '>=', $cutoff)
+                    ->orWhere('created_at', '>=', $cutoff);
+            })
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->chunkById(100, function ($articles) use ($activeProjects, $matchingService, $limit, &$queued, &$skipped) {
+                foreach ($articles as $article) {
+                    if ($queued >= $limit) {
+                        return false;
+                    }
+
+                    if (AiAnalysisDispatchState::withTrashed()
+                        ->where('analyzable_type', 'article')
+                        ->where('analyzable_id', $article->id)
+                        ->exists()) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $matchedProjects = $matchingService->crossLinkToActiveProjects($article);
+                    if ($matchedProjects === []) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $projectId = $matchedProjects[0];
+                    $type = in_array(strtolower((string) $article->source_name), ['facebook', 'instagram', 'tiktok'], true)
+                        || strtolower((string) $article->category) === 'social'
+                        ? 'social'
+                        : 'article';
+
+                    $payload = [
+                        'type' => $type,
+                        'id' => $article->id,
+                        'project_id' => $projectId,
+                        'title' => $article->title,
+                        'url' => $article->url,
+                        'content' => $article->content,
+                        'source_name' => $article->source_name,
+                        'published_at' => optional($article->published_at)?->toIso8601String(),
+                        'no_telegram' => true,
+                    ];
+
+                    AiAnalysisJob::dispatch($payload)->onConnection('redis-ai')->onQueue('ai-analysis');
+                    $queued++;
+                }
+
+                return true;
+            });
+
+        $this->info("Queued {$queued} unscored item(s); skipped {$skipped} item(s).");
+
+        return self::SUCCESS;
+    }
+}

@@ -198,12 +198,17 @@ class ReportController extends Controller
     private function getArticles($projectId, $startDate, $endDate)
     {
         $project = $this->resolveProjectOrFail($projectId);
-        $primaryKeywords = $project->scrapeKeywordVariants();
-        $contextKeywords = $project->scrapeContextKeywordVariants();
-        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+        $hashtagKeywords = array_values(array_unique(array_filter(array_merge(
+            $project->scrapeKeywordHashtagVariants(),
+            $project->scrapeContextKeywordVariants()
+        ))));
+        $plainKeywords = array_values(array_unique(array_filter(array_merge(
+            $project->scrapeKeywordPlainVariants(),
+            $project->scrapeContextKeywords()
+        ))));
         $excludeKeywords = $project->scrapeExcludeKeywords();
 
-        if ($matchKeywords === []) {
+        if ($hashtagKeywords === [] && $plainKeywords === []) {
             return collect();
         }
 
@@ -212,14 +217,25 @@ class ReportController extends Controller
             ->with(['aiAnalysisResult' => function ($query) {
                 $query->completeOfficialAiResult();
             }])
-            ->where(function ($contentQuery) use ($matchKeywords) {
-                foreach ($matchKeywords as $index => $keyword) {
-                    $method = $index === 0 ? 'where' : 'orWhere';
-                    $contentQuery->{$method}(function ($inner) use ($keyword) {
-                        $inner->where('title', 'ilike', '%' . $keyword . '%')
-                            ->orWhere('content', 'ilike', '%' . $keyword . '%')
-                            ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
-                            ->orWhere('ai.summary', 'ilike', '%' . $keyword . '%');
+            ->where(function ($contentQuery) use ($hashtagKeywords, $plainKeywords) {
+                foreach ([$hashtagKeywords, $plainKeywords] as $groupIndex => $keywords) {
+                    if ($keywords === []) {
+                        continue;
+                    }
+
+                    $groupMethod = $groupIndex === 0 ? 'where' : 'orWhere';
+                    $contentQuery->{$groupMethod}(function ($groupQuery) use ($keywords) {
+                        foreach ($keywords as $index => $keyword) {
+                            $method = $index === 0 ? 'where' : 'orWhere';
+                            $groupQuery->{$method}(function ($inner) use ($keyword) {
+                                $inner->where('title', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('content', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('articles.summary', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('author', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('source_name', 'ilike', '%' . $keyword . '%');
+                            });
+                        }
                     });
                 }
             });
@@ -248,10 +264,17 @@ class ReportController extends Controller
     private function getSocialMediaItems($projectId, $startDate, $endDate)
     {
         $project = $this->resolveProjectOrFail($projectId);
-        $primaryKeywords = $project->scrapeKeywordVariants();
+        $hashtagKeywords = array_values(array_unique(array_filter(array_merge(
+            $project->scrapeKeywordHashtagVariants(),
+            $project->scrapeContextKeywordVariants()
+        ))));
+        $plainKeywords = array_values(array_unique(array_filter(array_merge(
+            $project->scrapeKeywordPlainVariants(),
+            $project->scrapeContextKeywords()
+        ))));
         $excludeKeywords = $project->scrapeExcludeKeywords();
 
-        if ($primaryKeywords === []) {
+        if ($hashtagKeywords === [] && $plainKeywords === []) {
             return collect();
         }
 
@@ -259,13 +282,23 @@ class ReportController extends Controller
             ->with(['aiAnalysisResult' => function ($query) {
                 $query->completeOfficialAiResult();
             }])
-            ->where(function ($contentQuery) use ($primaryKeywords) {
-                foreach ($primaryKeywords as $index => $keyword) {
-                    $method = $index === 0 ? 'where' : 'orWhere';
-                    $contentQuery->{$method}(function ($inner) use ($keyword) {
-                        $inner->where('content', 'ilike', '%' . $keyword . '%')
-                            ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
-                            ->orWhere('author_name', 'ilike', '%' . $keyword . '%');
+            ->where(function ($contentQuery) use ($hashtagKeywords, $plainKeywords) {
+                foreach ([$hashtagKeywords, $plainKeywords] as $groupIndex => $keywords) {
+                    if ($keywords === []) {
+                        continue;
+                    }
+
+                    $groupMethod = $groupIndex === 0 ? 'where' : 'orWhere';
+                    $contentQuery->{$groupMethod}(function ($groupQuery) use ($keywords) {
+                        foreach ($keywords as $index => $keyword) {
+                            $method = $index === 0 ? 'where' : 'orWhere';
+                            $groupQuery->{$method}(function ($inner) use ($keyword) {
+                                $inner->where('content', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('author_name', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('post_url', 'ilike', '%' . $keyword . '%');
+                            });
+                        }
                     });
                 }
             });

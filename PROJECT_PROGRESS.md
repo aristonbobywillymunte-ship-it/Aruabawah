@@ -3,9 +3,24 @@
 ## Status Proyek Saat Ini:
 * **Seluruh Portal Utama:** 13 portal berita aktif di Kalimantan Timur telah dibersihkan dari duplikasi data, server mati (`samarindatv.com` dihapus), dan statusnya berhasil diverifikasi (**`verified`** / Lolos Uji).
 
+## Catatan Audit Terbaru (21 Juli 2026)
+* Retry AI untuk item sosial yang terkena rate limit kini dilindungi dari cleanup massal di Pipeline Monitor.
+* Aksi `clearAllPendingAiStates()` tidak lagi menghapus state `retry_wait` yang masih punya `next_retry_at` di masa depan.
+* Test feature ditambahkan untuk memastikan cleanup massal hanya menutup antrean `queued`, sementara retry aktif tetap bertahan sampai waktunya dieksekusi lagi.
+* Konten global yang belum punya hasil AI sekarang punya jalur auto-queue tersendiri agar item “belum dinilai” bisa masuk antrean lagi secara otomatis.
+* State AI `queued` yang nyangkut juga sekarang punya scheduler requeue global sendiri, jadi item lama yang belum pernah diproses bisa dipompa ulang saat queue idle tanpa dipisah per proyek.
+* Auto-queue global `ai:queue-unscored-content` diperbaiki agar tidak gagal saat kolom `priority` pada tabel `projects` belum tersedia di database runtime.
+* Guard scheduler AI kini menahan job baru ketika worker masih processing, queue Redis masih sibuk, atau provider sedang cooldown, lalu hanya melanjutkan saat kondisi idle dan provider aktif kembali.
+* Social ingest Apify kini menormalisasi `post_url` sebelum `updateOrCreate`, jadi variasi URL tracking/trailing slash tidak membuat IG/TikTok/Facebook tersimpan dobel.
+
 ---
 
 ## Log Aktivitas Terbaru (20 Juli 2026)
+
+### 1. Audit Filter-Only Project Matching Ditegaskan
+* Tampilan dashboard dan report dipastikan memakai filter project terhadap data global, bukan mengandalkan pivot sebagai sumber utama hasil.
+* Komentar/label legacy yang masih menyebut `project_articles pivot` pada panel admin mulai dibersihkan agar tidak menyesatkan saat maintenance.
+* Pivot lama tetap ada sebagai data historis/warisan schema, tetapi bukan jalur utama untuk menentukan hasil yang tampil di dashboard.
 
 ### 1. Modal Edit Proyek Disamakan dengan Tambah Proyek
 * Modal edit proyek sekarang menampilkan field `Konteks` dan `Dikecualikan` agar isi edit konsisten dengan form tambah proyek.

@@ -389,8 +389,12 @@ class ProjectsList extends Component
                 ? \Carbon\Carbon::parse($lastPortalTime)->locale('id')->diffForHumans() 
                 : 'Belum ada data');
                 
-            $lastMedsosUpdate = $lastMedsosTime
-                ? \Carbon\Carbon::parse($lastMedsosTime)->locale('id')->diffForHumans() 
+            $lastMedsosRunAt = $this->latestSuccessfulSocialRunForProject($project->id)
+                ?? $this->latestSocialRunForProject($project->id)
+                ?? $lastMedsosTime;
+
+            $lastMedsosUpdate = $lastMedsosRunAt
+                ? \Carbon\Carbon::parse($lastMedsosRunAt)->locale('id')->diffForHumans()
                 : 'Belum ada data';
 
             return [

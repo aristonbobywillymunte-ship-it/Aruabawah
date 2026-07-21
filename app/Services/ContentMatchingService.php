@@ -93,7 +93,7 @@ class ContentMatchingService
      * using project filters.
      *
      * The runtime now treats the global tables as the source of truth, so this
-     * method only resolves matching project IDs without writing pivot links.
+     * method only resolves matching project IDs for audit/logging purposes.
      *
      * @param Article|SocialMediaItem $item The item to match
      * @param int|null $discoveryProjectId The ID of the project that discovered the item, if any
@@ -163,9 +163,9 @@ class ContentMatchingService
     }
 
     /**
-     * Link existing global content to a newly created or updated active project.
-     * This is intentionally not scraping: it only connects existing database
-     * articles/social posts that already match the project's filters.
+     * Re-evaluate existing global content against a project filter.
+     * This intentionally does not write relationship records; the dashboard
+     * reads directly from the global tables using the active project filter.
      */
     public function matchExistingContentForProject(Project $project): array
     {
@@ -195,15 +195,10 @@ class ContentMatchingService
         }
 
         $articlesLinked = 0;
-        $articleKeywordMap = [];
         Article::query()
             ->select(['id', 'title', 'content'])
-            ->chunkById(250, function ($articles) use ($project, $matchKeywords, $excludeKeywords, &$articlesLinked, &$articleKeywordMap) {
+            ->chunkById(250, function ($articles) use ($project, $matchKeywords, $excludeKeywords, &$articlesLinked) {
                 foreach ($articles as $article) {
-                    if ($project->articles()->where('articles.id', $article->id)->exists()) {
-                        continue;
-                    }
-
                     $content = ($article->title ?? '') . "\n" . ($article->content ?? '');
                     if ($this->shouldSkipGovernorArticleMatch($project, $content)) {
                         continue;
@@ -214,15 +209,10 @@ class ContentMatchingService
                     }
 
                     if ($this->matchesAnyKeyword($matchKeywords, $content)) {
-                        $articleKeywordMap[] = $article->id;
                         $articlesLinked++;
                     }
                 }
             });
-
-        if ($articleKeywordMap !== []) {
-            $project->articles()->syncWithoutDetaching($articleKeywordMap);
-        }
 
         $socialLinked = 0;
         SocialMediaItem::query()
@@ -243,7 +233,7 @@ class ContentMatchingService
                 }
             });
 
-        Log::info('[Project Matching] Existing content linked to project.', [
+        Log::info('[Project Matching] Existing content evaluated for project filter.', [
             'project_id' => $project->id,
             'project_name' => $project->name,
             'primary_keywords' => $primaryKeywords,
@@ -261,8 +251,8 @@ class ContentMatchingService
     }
 
     /**
-     * Rebuild social-media links for a project so stale matches are removed
-     * when project filters change.
+     * Re-evaluate social-media matches for a project filter without writing
+     * relationship records.
      */
     public function syncProjectSocialContent(Project $project): array
     {
@@ -283,11 +273,8 @@ class ContentMatchingService
         $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
 
         if ($primaryKeywords === []) {
-            $detached = $project->socialMediaItems()->count();
-            $project->socialMediaItems()->detach();
-
             return [
-                'detached' => $detached,
+                'detached' => 0,
                 'attached' => 0,
                 'skipped' => false,
                 'reason' => 'no_keywords',
@@ -315,11 +302,8 @@ class ContentMatchingService
         });
 
         $matchedIds = array_values(array_unique($matchedIds));
-        $detached = $project->socialMediaItems()->count();
-        $project->socialMediaItems()->sync($matchedIds);
-
         return [
-            'detached' => $detached,
+            'detached' => 0,
             'attached' => count($matchedIds),
             'skipped' => false,
             'reason' => null,

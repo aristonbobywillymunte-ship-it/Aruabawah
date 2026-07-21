@@ -59,7 +59,7 @@ class Project extends Model
     /**
      * Scope: hanya project yang bisa diakses oleh user tertentu.
      * Admin → semua project.
-     * User  → hanya yang di-assign via pivot.
+     * User  → hanya yang di-assign pada relasi project-user.
      */
     public function scopeAccessibleBy(Builder $query, User $user): Builder
     {
@@ -112,6 +112,25 @@ class Project extends Model
         foreach ($this->scrapeKeywords() as $keyword) {
             $variants[] = $keyword;
 
+            $hashtag = $this->toHashtagVariant($keyword);
+            if ($hashtag !== '') {
+                $variants[] = $hashtag;
+            }
+        }
+
+        return array_values(array_unique(array_filter($variants)));
+    }
+
+    public function scrapeKeywordPlainVariants(): array
+    {
+        return $this->scrapeKeywords();
+    }
+
+    public function scrapeKeywordHashtagVariants(): array
+    {
+        $variants = [];
+
+        foreach ($this->scrapeKeywords() as $keyword) {
             $hashtag = $this->toHashtagVariant($keyword);
             if ($hashtag !== '') {
                 $variants[] = $hashtag;

@@ -149,7 +149,7 @@ class TestPortalUrlScraping extends Command
             $newArticle = $existingArticleId ? false : true;
             $reusedArticle = $existingArticleId ? true : false;
             $reason = $existingArticleId ? 'Existing article reused' : 'New article saved';
-            $projectReason = $projectMatchesContent ? 'Project keyword matched on content' : 'Project keyword did not match content';
+            $projectReason = $projectMatchesContent ? 'Project filter matched on content' : 'Project filter did not match content';
 
             DB::commit();
 
@@ -164,7 +164,7 @@ class TestPortalUrlScraping extends Command
                 'new_article' => $newArticle,
                 'reused_article' => $reusedArticle,
                 'project_reason' => $projectReason,
-                'project_match' => $projectMatchesContent,
+                'filter_match' => $projectMatchesContent,
                 'title' => $title,
                 'canonical_url' => $canonicalUrl,
                 'source_name' => $sourceName,

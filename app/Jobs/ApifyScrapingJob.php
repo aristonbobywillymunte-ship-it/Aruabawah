@@ -533,7 +533,8 @@ class ApifyScrapingJob implements ShouldQueue
 
         foreach ($items as $item) {
             // Normalise fields across platforms
-            $postUrl    = $item['webVideoUrl'] ?? $item['url'] ?? $item['facebookUrl'] ?? $item['topLevelUrl'] ?? $item['post_url'] ?? $item['postUrl'] ?? $item['link'] ?? null;
+            $rawPostUrl = $item['webVideoUrl'] ?? $item['url'] ?? $item['facebookUrl'] ?? $item['topLevelUrl'] ?? $item['post_url'] ?? $item['postUrl'] ?? $item['link'] ?? null;
+            $postUrl    = $this->normalizeSocialPostUrl($rawPostUrl);
             $content    = $item['message'] ?? $item['text'] ?? $item['caption'] ?? $item['description'] ?? $item['title'] ?? '';
             $authorFallback = $platform === 'TikTok' ? 'TikTok' : 'Unknown Author';
             $author     = $item['author']['name']
@@ -1091,6 +1092,28 @@ class ApifyScrapingJob implements ShouldQueue
         $metric = (int) $value;
 
         return max(0, $metric);
+    }
+
+    protected function normalizeSocialPostUrl(mixed $url): ?string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        $parts = parse_url($url);
+        if (! is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return $url;
+        }
+
+        $scheme = strtolower((string) $parts['scheme']);
+        $host = strtolower((string) $parts['host']);
+        $path = $parts['path'] ?? '';
+        $path = preg_replace('#/+$#', '', $path) ?? $path;
+        $path = $path === '' ? '/' : $path;
+
+        return $scheme . '://' . $host . $path;
     }
 
     protected function shouldTrustApifySearchResult(string $platform): bool

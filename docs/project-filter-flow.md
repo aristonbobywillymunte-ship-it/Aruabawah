@@ -33,6 +33,13 @@ bukan logika utama yang berdiri sendiri.
 - Untuk social media, pencocokan tetap mengikuti aturan project, bukan sekadar jumlah data mentah yang masuk.
 - Jalur tampil dan resync sekarang tidak lagi menahan data hanya karena `context_keywords`.
 
+## Active vs Legacy
+
+- **Alur aktif:** dashboard, report, dan count project membaca data global lalu mencocokkannya langsung ke filter project.
+- **Legacy schema:** `project_articles` dan `project_social_media_items` masih bisa muncul di command/migration lama, tetapi tidak menjadi sumber utama hasil tampil.
+- **Maintenance only:** command rescrape atau sync lama boleh tetap menyebut pivot karena fungsinya untuk perawatan data warisan, bukan untuk menentukan apa yang tampil di dashboard.
+- **Aturan aman:** kalau satu artikel cocok ke beberapa project, item itu harus tampil di semua project yang sesuai saat query filter dijalankan.
+
 ## Catatan Terkini
 
 - Ringkasan card proyek di halaman daftar sekarang memakai hitung global berbasis filter project.

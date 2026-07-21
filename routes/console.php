@@ -124,6 +124,8 @@ if ($isActive) {
         ->runInBackground()
         ->appendOutputTo(storage_path('logs/ai-health-check-scheduler.log'));
 
+    $aiGuard = app(SchedulerQueueGuard::class);
+
     Schedule::command('ai:requeue-overdue-retries --limit=1')
         ->everyMinute()
         ->when(function () use ($isActive) {
@@ -132,6 +134,11 @@ if ($isActive) {
             }
 
             try {
+                $guard = app(SchedulerQueueGuard::class);
+                if ($guard->aiBusyReason() !== null) {
+                    return false;
+                }
+
                 return \App\Models\AiAnalysisDispatchState::query()
                     ->where('status', 'retry_wait')
                     ->whereNotNull('next_retry_at')
@@ -144,6 +151,54 @@ if ($isActive) {
         ->withoutOverlapping()
         ->runInBackground()
         ->appendOutputTo(storage_path('logs/ai-requeue-overdue.log'));
+
+    Schedule::command('ai:queue-unscored-content --limit=20 --hours=48')
+        ->everyFiveMinutes()
+        ->when(function () use ($isActive) {
+            if (! $isActive) {
+                return false;
+            }
+
+            try {
+                $guard = app(SchedulerQueueGuard::class);
+                if ($guard->aiBusyReason() !== null) {
+                    return false;
+                }
+
+                $aiAnalysis = Queue::connection('redis-ai')->size('ai-analysis');
+                $aiBackfill = Queue::connection('redis-ai')->size('ai-backfill');
+                return $aiAnalysis === 0 && $aiBackfill === 0;
+            } catch (\Throwable $e) {
+                return false;
+            }
+        })
+        ->withoutOverlapping()
+        ->runInBackground()
+        ->appendOutputTo(storage_path('logs/ai-queue-unscored.log'));
+
+    Schedule::command('ai:requeue-orphan-queued-states --limit=1 --apply')
+        ->everyMinute()
+        ->when(function () use ($isActive) {
+            if (! $isActive) {
+                return false;
+            }
+
+            try {
+                $guard = app(SchedulerQueueGuard::class);
+                if ($guard->aiBusyReason() !== null) {
+                    return false;
+                }
+
+                $aiAnalysis = Queue::connection('redis-ai')->size('ai-analysis');
+                $aiBackfill = Queue::connection('redis-ai')->size('ai-backfill');
+                return $aiAnalysis === 0 && $aiBackfill === 0;
+            } catch (\Throwable $e) {
+                return false;
+            }
+        })
+        ->withoutOverlapping()
+        ->runInBackground()
+        ->appendOutputTo(storage_path('logs/ai-requeue-orphan.log'));
 
     // Run AI backfill readers, but only when ai-analysis and ai-backfill queues are idle.
     Schedule::command('ai:backfill-article-readers --execute --limit=10')

@@ -53,7 +53,7 @@ class User extends Authenticatable
     // ─── Relations ───────────────────────────────────────────────────────
 
     /**
-     * Project yang di-assign ke user ini (pivot: project_user).
+     * Project yang di-assign ke user ini melalui relasi project-user.
      * Admin tidak perlu relasi ini — mereka lihat semua.
      */
     public function projects(): BelongsToMany

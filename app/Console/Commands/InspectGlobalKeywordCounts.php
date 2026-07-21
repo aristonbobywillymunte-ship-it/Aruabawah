@@ -14,7 +14,7 @@ class InspectGlobalKeywordCounts extends Command
                             {--limit=10 : Tampilkan sampel maksimal}
                             {--no-excerpt : Jangan tampilkan excerpt singkat}';
 
-    protected $description = 'Inspect global article/social counts for a keyword without project pivot filters.';
+    protected $description = 'Inspect global article/social counts for a keyword without project filters.';
 
     public function handle(): int
     {

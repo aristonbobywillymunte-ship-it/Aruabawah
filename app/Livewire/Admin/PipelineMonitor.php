@@ -75,7 +75,12 @@ class PipelineMonitor extends Component
     public function retryAiState(int $id): void
     {
         try {
-            $state = \App\Models\AiAnalysisDispatchState::findOrFail($id);
+            $state = \App\Models\AiAnalysisDispatchState::withTrashed()->findOrFail($id);
+
+            if ($state->trashed()) {
+                $state->restore();
+            }
+
             $state->update([
                 'status' => 'queued',
                 'attempts' => 0,
@@ -214,8 +219,16 @@ class PipelineMonitor extends Component
     public function clearAllPendingAiStates(): void
     {
         try {
-            $count = \App\Models\AiAnalysisDispatchState::whereIn('status', ['queued', 'retry_wait', 'processing'])->delete();
-            $payload = ['type' => 'success', 'title' => "Berhasil menutup {$count} tugas antrean AI.", 'message' => ''];
+            $queuedCount = \App\Models\AiAnalysisDispatchState::where('status', 'queued')->delete();
+            $retryCount = \App\Models\AiAnalysisDispatchState::query()
+                ->where('status', 'retry_wait')
+                ->where(function ($query) {
+                    $query->whereNull('next_retry_at')
+                        ->orWhere('next_retry_at', '<=', now()->subMinutes(5));
+                })
+                ->delete();
+
+            $payload = ['type' => 'success', 'title' => "Berhasil menutup {$queuedCount} antrean queued dan {$retryCount} retry yang sudah lewat tenggat.", 'message' => ''];
             if (method_exists($this, 'dispatchBrowserEvent')) {
                 $this->dispatchBrowserEvent('admin-toast', $payload);
             }
@@ -349,7 +362,7 @@ class PipelineMonitor extends Component
     }
 
     /**
-     * Tab Scraping: Artikel portal berita yang masuk ke proyek via project_articles pivot
+     * Tab Scraping: artikel portal yang tampil berdasarkan filter project aktif.
      */
     public function getScrapingItems()
     {

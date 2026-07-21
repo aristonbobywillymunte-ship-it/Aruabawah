@@ -148,6 +148,24 @@ class AiRequeueOrphanQueuedStatesTest extends TestCase
         ])->assertExitCode(1);
     }
 
+    public function test_apply_keeps_orphan_state_queued_until_job_consumes_it(): void
+    {
+        Queue::fake();
+
+        [$project, $article, $template] = $this->seedAiContext();
+        $state = $this->createQueuedState($project, $article, $template);
+
+        $this->artisan('ai:requeue-orphan-queued-states', ['--limit' => 1, '--apply' => true])
+            ->assertExitCode(0);
+
+        Queue::assertPushedOn('ai-analysis', AiAnalysisJob::class);
+
+        $state->refresh();
+        $this->assertSame('queued', $state->status);
+        $this->assertSame(0, (int) $state->attempts);
+        $this->assertNull($state->last_error_code);
+    }
+
     private function seedAiContext(): array
     {
         $project = Project::create([

@@ -171,4 +171,60 @@ class PipelineMonitorTest extends TestCase
         $this->assertEquals('Provider Test', $backfillStats['cooldown_providers']->first()->name);
         $this->assertEquals('daily_quota_exhausted', $backfillStats['cooldown_providers']->first()->last_failure_code);
     }
+
+    public function test_clear_all_pending_ai_states_keeps_fresh_retry_wait_states(): void
+    {
+        $project = Project::create(['name' => 'Project Retry Safe', 'topics' => ['A'], 'is_active' => true]);
+
+        $queued = AiAnalysisDispatchState::create([
+            'analyzable_type' => 'article',
+            'analyzable_id' => 101,
+            'project_id' => $project->id,
+            'prompt_template_id' => null,
+            'provider_context_hash' => str_repeat('a', 64),
+            'dispatch_key' => str_repeat('c', 64),
+            'status' => 'queued',
+            'attempts' => 0,
+            'meta_json' => [],
+        ]);
+
+        $retryWait = AiAnalysisDispatchState::create([
+            'analyzable_type' => 'article',
+            'analyzable_id' => 102,
+            'project_id' => $project->id,
+            'prompt_template_id' => null,
+            'provider_context_hash' => str_repeat('b', 64),
+            'dispatch_key' => str_repeat('d', 64),
+            'status' => 'retry_wait',
+            'attempts' => 1,
+            'next_retry_at' => now()->addMinutes(30),
+            'meta_json' => [],
+        ]);
+
+        $processing = AiAnalysisDispatchState::create([
+            'analyzable_type' => 'article',
+            'analyzable_id' => 103,
+            'project_id' => $project->id,
+            'prompt_template_id' => null,
+            'provider_context_hash' => str_repeat('e', 64),
+            'dispatch_key' => str_repeat('f', 64),
+            'status' => 'processing',
+            'attempts' => 1,
+            'meta_json' => [],
+        ]);
+
+        Livewire::test(PipelineMonitor::class)
+            ->call('clearAllPendingAiStates')
+            ->assertDispatched('admin-toast');
+
+        $this->assertSoftDeleted('ai_analysis_dispatch_states', ['id' => $queued->id]);
+        $this->assertDatabaseHas('ai_analysis_dispatch_states', [
+            'id' => $retryWait->id,
+            'status' => 'retry_wait',
+        ]);
+        $this->assertDatabaseHas('ai_analysis_dispatch_states', [
+            'id' => $processing->id,
+            'status' => 'processing',
+        ]);
+    }
 }

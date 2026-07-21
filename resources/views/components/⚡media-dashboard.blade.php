@@ -180,12 +180,17 @@ new class extends Component
         abort_unless($this->projectId, 403, 'Project belum dipilih.');
 
         $project = $this->resolveProjectOrFail($this->projectId);
-        $primaryKeywords = $project->scrapeKeywordVariants();
-        $contextKeywords = $project->scrapeContextKeywordVariants();
-        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+        $hashtagKeywords = array_values(array_unique(array_filter(array_merge(
+            $project->scrapeKeywordHashtagVariants(),
+            $project->scrapeContextKeywordVariants()
+        ))));
+        $plainKeywords = array_values(array_unique(array_filter(array_merge(
+            $project->scrapeKeywordPlainVariants(),
+            $project->scrapeContextKeywords()
+        ))));
         $excludeKeywords = $project->scrapeExcludeKeywords();
 
-        if ($matchKeywords === []) {
+        if ($hashtagKeywords === [] && $plainKeywords === []) {
             return \App\Models\Article::query()
                 ->with(['aiAnalysisResult'])
                 ->whereRaw('1 = 0');
@@ -197,14 +202,25 @@ new class extends Component
                 $ai->completeOfficialAiResult();
             });
 
-        $query->where(function ($contentQuery) use ($matchKeywords) {
-            foreach ($matchKeywords as $index => $keyword) {
-                $method = $index === 0 ? 'where' : 'orWhere';
-                $contentQuery->{$method}(function ($q) use ($keyword) {
-                    $q->where('title', 'ilike', '%' . $keyword . '%')
-                      ->orWhere('content', 'ilike', '%' . $keyword . '%')
-                      ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
-                      ->orWhere('articles.summary', 'ilike', '%' . $keyword . '%');
+        $query->where(function ($contentQuery) use ($hashtagKeywords, $plainKeywords) {
+            $groups = [$hashtagKeywords, $plainKeywords];
+
+            foreach ($groups as $groupIndex => $keywords) {
+                if ($keywords === []) {
+                    continue;
+                }
+
+                $groupMethod = $groupIndex === 0 ? 'where' : 'orWhere';
+                $contentQuery->{$groupMethod}(function ($groupQuery) use ($keywords) {
+                    foreach ($keywords as $index => $keyword) {
+                        $method = $index === 0 ? 'where' : 'orWhere';
+                        $groupQuery->{$method}(function ($q) use ($keyword) {
+                            $q->where('title', 'ilike', '%' . $keyword . '%')
+                              ->orWhere('content', 'ilike', '%' . $keyword . '%')
+                              ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
+                              ->orWhere('articles.summary', 'ilike', '%' . $keyword . '%');
+                        });
+                    }
                 });
             }
         });
@@ -727,6 +743,9 @@ new class extends Component
             $query->where(function($q) {
                 $q->where('title', 'like', '%' . $this->search . '%')
                   ->orWhere('content', 'like', '%' . $this->search . '%')
+                  ->orWhere('excerpt', 'like', '%' . $this->search . '%')
+                  ->orWhere('articles.summary', 'like', '%' . $this->search . '%')
+                  ->orWhere('author', 'like', '%' . $this->search . '%')
                   ->orWhere('source_name', 'like', '%' . $this->search . '%');
             });
         }
