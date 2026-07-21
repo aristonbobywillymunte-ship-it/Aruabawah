@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Project;
+use App\Models\Article;
 use App\Services\AiProviderRouter;
 use App\Services\AllProvidersFailedException;
 use App\Services\RateLimitRetryException;
@@ -31,9 +32,25 @@ class GenerateProjectAiInsightJob implements ShouldQueue
         }
 
         // Kumpulkan data statistik terbaru
-        $articles = $project->articles()
+        $articles = Article::query()
             ->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
             ->where('ai.analysis_status', 'success')
+            ->where(function ($contentQuery) use ($project) {
+                $matchKeywords = array_values(array_unique(array_filter(array_merge(
+                    $project->scrapeKeywordVariants(),
+                    $project->scrapeContextKeywordVariants()
+                ))));
+
+                foreach ($matchKeywords as $index => $keyword) {
+                    $method = $index === 0 ? 'where' : 'orWhere';
+                    $contentQuery->{$method}(function ($inner) use ($keyword) {
+                        $inner->where('title', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('content', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('ai.summary', 'ilike', '%' . $keyword . '%');
+                    });
+                }
+            })
             ->select('articles.title', 'ai.sentiment', 'ai.summary')
             ->latest('articles.published_at')
             ->limit(100)

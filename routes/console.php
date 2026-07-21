@@ -7,15 +7,26 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schedule;
 
 // Check if the scheduler should restart (triggered from System Maintenance)
-if (\Illuminate\Support\Facades\Cache::get('scheduler_should_restart')) {
-    \Illuminate\Support\Facades\Cache::forget('scheduler_should_restart');
-    \Illuminate\Support\Facades\Log::info('[Scheduler] Exit signal received. Terminating scheduler process.');
-    
-    $ppid = function_exists('posix_getppid') ? posix_getppid() : null;
-    if ($ppid && function_exists('posix_kill')) {
-        posix_kill($ppid, 15); // SIGTERM (15) to kill parent artisan schedule:work
+try {
+    $cacheStore = config('cache.default');
+    $cacheTableReady = true;
+
+    if ($cacheStore === 'database') {
+        $cacheTableReady = \Illuminate\Support\Facades\Schema::hasTable('cache');
     }
-    exit(0);
+
+    if ($cacheTableReady && \Illuminate\Support\Facades\Cache::get('scheduler_should_restart')) {
+        \Illuminate\Support\Facades\Cache::forget('scheduler_should_restart');
+        \Illuminate\Support\Facades\Log::info('[Scheduler] Exit signal received. Terminating scheduler process.');
+
+        $ppid = function_exists('posix_getppid') ? posix_getppid() : null;
+        if ($ppid && function_exists('posix_kill')) {
+            posix_kill($ppid, 15); // SIGTERM (15) to kill parent artisan schedule:work
+        }
+        exit(0);
+    }
+} catch (\Throwable $e) {
+    \Illuminate\Support\Facades\Log::warning('[Scheduler] Restart guard skipped: ' . $e->getMessage());
 }
 
 Artisan::command('inspire', function () {

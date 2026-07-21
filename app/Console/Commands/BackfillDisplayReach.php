@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\AiAnalysisResult;
+use App\Models\Project;
+use App\Services\ContentMatchingService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -32,17 +34,22 @@ class BackfillDisplayReach extends Command
         $ids = array_values(array_unique($ids));
         sort($ids);
 
-        $rows = DB::table('project_articles')
-            ->join('articles', 'project_articles.article_id', '=', 'articles.id')
+        $project = Project::query()->find($projectId);
+        if (! $project) {
+            $this->error("Project {$projectId} tidak ditemukan.");
+            return self::FAILURE;
+        }
+
+        $matchingService = app(ContentMatchingService::class);
+
+        $rows = DB::table('articles')
             ->leftJoin('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-            ->where('project_articles.project_id', $projectId)
             ->whereIn('articles.id', $ids)
             ->where('ai.analysis_status', 'success')
             ->where('ai.reach_method', 'ai_reader_estimate_v1')
             ->orderBy('articles.id')
             ->get([
                 'articles.id as article_id',
-                'project_articles.project_id',
                 'articles.title',
                 'articles.url',
                 'articles.content',
@@ -65,8 +72,14 @@ class BackfillDisplayReach extends Command
 
         $this->info('Dry run: ' . ($apply ? 'Tidak' : 'Ya'));
         $this->info('Target exact IDs: ' . implode(',', $ids));
+        $this->info('Project target: ' . $project->name);
 
         foreach ($rows as $row) {
+            if (! $matchingService->matchesProjectContent($project, (string) ($row->content ?? ''))) {
+                $this->warn("Skipped article_id={$row->article_id}: tidak cocok dengan filter project.");
+                continue;
+            }
+
             $hasComplete = $this->hasDisplayReachData($row);
             $currentReaders = (int) ($row->project_estimated_readers ?? 0);
             $effectiveReaders = $currentReaders >= 1

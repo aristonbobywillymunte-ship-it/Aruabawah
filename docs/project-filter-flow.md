@@ -6,7 +6,7 @@ Dokumen ini menjelaskan alur terbaru pemetaan konten ke project.
 
 - Filter project adalah sumber kebenaran utama.
 - `topics` / kata kunci utama menentukan apakah item layak masuk.
-- `context_keywords` harus ikut cocok jika diisi.
+- `context_keywords` sekarang dianggap filter tambahan yang tidak mengunci hasil utama.
 - `exclude_keywords` menggugurkan item jika ada salah satu kata yang cocok.
 
 ## Alur Kerja
@@ -31,3 +31,12 @@ bukan logika utama yang berdiri sendiri.
 - Jika filter terlalu ketat, data project bisa berkurang.
 - Jika filter cocok, item lama bisa diresync dan muncul lagi di dashboard.
 - Untuk social media, pencocokan tetap mengikuti aturan project, bukan sekadar jumlah data mentah yang masuk.
+- Jalur tampil dan resync sekarang tidak lagi menahan data hanya karena `context_keywords`.
+
+## Catatan Terkini
+
+- Ringkasan card proyek di halaman daftar sekarang memakai hitung global berbasis filter project.
+- Saat project disimpan atau diedit, sistem perlu melakukan resync agar data lama yang tidak cocok ikut dilepas.
+- Logika lama yang hanya bergantung pada relasi pivot harus dianggap legacy dan tidak dipakai sebagai sumber utama tampilan.
+- Runtime utama sekarang membaca global `articles` dan `social_media_items` lalu mencocokkannya langsung ke filter project.
+- `project_articles` dan `project_social_media_items` hanya tersisa di jalur legacy / maintenance, bukan sumber kebenaran dashboard.

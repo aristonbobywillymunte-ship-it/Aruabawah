@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Jobs\BackfillArticleReadersJob;
+use App\Models\Project;
+use App\Services\ContentMatchingService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -30,6 +32,12 @@ class BackfillArticleReadersCommand extends Command
             return 0;
         }
 
+        $matchingService = app(ContentMatchingService::class);
+        $activeProjects = Project::query()
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->get();
+
         $query = DB::table('ai_analysis_results')
             ->join('articles', 'ai_analysis_results.article_id', '=', 'articles.id')
             ->where('ai_analysis_results.analysis_status', 'success')
@@ -37,14 +45,7 @@ class BackfillArticleReadersCommand extends Command
             ->whereNotNull('ai_analysis_results.article_id')
             ->where('articles.url', 'not ilike', '%google.com%')
             ->whereNotNull('articles.content')
-            ->whereRaw('LENGTH(articles.content) > 100') // Validasi panjang konten minimal
-            ->whereExists(function ($q) {
-                $q->select(DB::raw(1))
-                  ->from('project_articles')
-                  ->join('projects', 'project_articles.project_id', '=', 'projects.id')
-                  ->whereColumn('project_articles.article_id', 'articles.id')
-                  ->where('projects.is_active', true);
-            });
+            ->whereRaw('LENGTH(articles.content) > 100');
 
         $query->where(function ($subQuery) {
             $subQuery->whereNull('ai_analysis_results.project_estimated_readers')
@@ -79,25 +80,25 @@ class BackfillArticleReadersCommand extends Command
 
         if ($isDryRun) {
             foreach ($candidates as $row) {
+                $matchedProjectNames = $this->matchedProjectNames($activeProjects, $matchingService, (string) ($row->content ?? ''));
+                if ($matchedProjectNames === []) {
+                    $this->warn("Skipping Article ID {$row->article_id}: tidak cocok dengan project aktif.");
+                    continue;
+                }
                 $action = $row->project_estimated_readers !== null
                     ? '[DRY RUN] Akan repair skor resmi'
                     : '[DRY RUN] Akan dispatch AI Job';
-                $this->line("{$action} untuk Article ID: {$row->article_id} ({$row->title})");
+                $this->line("{$action} untuk Article ID: {$row->article_id} ({$row->title}) | matched_projects=" . implode(', ', $matchedProjectNames));
             }
             return 0;
         }
 
         $count = 0;
         foreach ($candidates as $row) {
-            // Mengambil satu project_id aktif secara acak/pertama untuk konteks job
-            $firstActiveProjectId = DB::table('project_articles')
-                ->join('projects', 'project_articles.project_id', '=', 'projects.id')
-                ->where('project_articles.article_id', $row->article_id)
-                ->where('projects.is_active', true)
-                ->value('projects.id');
+            $matchedProject = $this->firstMatchedProject($activeProjects, $matchingService, (string) ($row->content ?? ''));
 
-            if (!$firstActiveProjectId) {
-                $this->warn("Skipped Article ID {$row->article_id}: tidak ada project aktif.");
+            if (! $matchedProject) {
+                $this->warn("Skipped Article ID {$row->article_id}: tidak ada project aktif yang cocok.");
                 continue;
             }
 
@@ -106,7 +107,7 @@ class BackfillArticleReadersCommand extends Command
                 BackfillArticleReadersJob::dispatch([
                     'type' => 'article',
                     'id' => $row->article_id,
-                    'project_id' => $firstActiveProjectId,
+                    'project_id' => $matchedProject->id,
                     'title' => $row->title,
                     'content' => $row->content,
                     'url' => $row->url,
@@ -122,7 +123,7 @@ class BackfillArticleReadersCommand extends Command
             BackfillArticleReadersJob::dispatch([
                 'type' => 'article',
                 'id' => $row->article_id,
-                'project_id' => $firstActiveProjectId,
+                'project_id' => $matchedProject->id,
                 'title' => $row->title,
                 'content' => $row->content,
                 'url' => $row->url,
@@ -135,6 +136,36 @@ class BackfillArticleReadersCommand extends Command
 
         $this->info("Selesai. Telah mengantrekan {$count} jobs.");
         return 0;
+    }
+
+    /**
+     * @param \Illuminate\Support\Collection<int, Project> $projects
+     */
+    private function matchedProjectNames($projects, ContentMatchingService $matchingService, string $content): array
+    {
+        $matches = [];
+
+        foreach ($projects as $project) {
+            if ($matchingService->matchesProjectContent($project, $content)) {
+                $matches[] = $project->name;
+            }
+        }
+
+        return $matches;
+    }
+
+    /**
+     * @param \Illuminate\Support\Collection<int, Project> $projects
+     */
+    private function firstMatchedProject($projects, ContentMatchingService $matchingService, string $content): ?Project
+    {
+        foreach ($projects as $project) {
+            if ($matchingService->matchesProjectContent($project, $content)) {
+                return $project;
+            }
+        }
+
+        return null;
     }
 
     protected function isAiBackfillQueueBusy(): bool

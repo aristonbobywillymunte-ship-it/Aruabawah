@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Console\Commands\TestPortalUrlScraping::class,
         \App\Console\Commands\TestSmallScrapingPipeline::class,
         \App\Console\Commands\ReconcileDispatchStates::class,
+        \App\Console\Commands\InspectGlobalKeywordCounts::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append([

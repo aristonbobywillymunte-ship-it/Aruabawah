@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\SocialMediaItem;
 use App\Models\Project;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -54,9 +55,34 @@ class SocialProjectScrapePriorityService
 
     private function lastSocialDataTimestamp(Project $project): ?int
     {
-        $value = DB::table('project_social_media_items')
-            ->where('project_id', $project->id)
-            ->max('created_at');
+        $matchKeywords = array_values(array_unique(array_filter(array_merge(
+            $project->scrapeKeywordVariants(),
+            $project->scrapeContextKeywordVariants()
+        ))));
+
+        if ($matchKeywords === []) {
+            return null;
+        }
+
+        $value = SocialMediaItem::query()
+            ->where(function ($contentQuery) use ($matchKeywords) {
+                foreach ($matchKeywords as $index => $keyword) {
+                    $method = $index === 0 ? 'where' : 'orWhere';
+                    $contentQuery->{$method}(function ($inner) use ($keyword) {
+                        $inner->where('content', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('author_name', 'ilike', '%' . $keyword . '%');
+                    });
+                }
+            })
+            ->where(function ($q) use ($project) {
+                foreach ($project->scrapeExcludeKeywords() as $keyword) {
+                    $q->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                      ->whereRaw('LOWER(COALESCE(raw_json, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                      ->whereRaw('LOWER(COALESCE(author_name, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                }
+            })
+            ->max('posted_at');
 
         if (! $value) {
             return null;

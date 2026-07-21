@@ -11,6 +11,71 @@ use Illuminate\Support\Str;
 class ContentMatchingService
 {
     /**
+     * Count global content that matches the current project filters.
+     *
+     * @return array{articles:int, social:int}
+     */
+    public function countMatchingContentForProject(Project $project): array
+    {
+        $project = $project->fresh();
+
+        if (! $project || ! $project->is_active || $project->trashed()) {
+            return ['articles' => 0, 'social' => 0];
+        }
+
+        $primaryKeywords = $project->scrapeKeywordVariants();
+        $contextKeywords = $project->scrapeContextKeywordVariants();
+        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+        $excludeKeywords = $project->scrapeExcludeKeywords();
+
+        if ($matchKeywords === []) {
+            return ['articles' => 0, 'social' => 0];
+        }
+
+        $articleCount = 0;
+        Article::query()
+            ->select(['id', 'title', 'content'])
+            ->chunkById(250, function ($articles) use ($matchKeywords, $excludeKeywords, &$articleCount) {
+                foreach ($articles as $article) {
+                    $content = ($article->title ?? '') . "\n" . ($article->content ?? '');
+
+                    if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
+                        continue;
+                    }
+
+                    if ($this->matchesAnyKeyword($matchKeywords, $content)) {
+                        $articleCount++;
+                    }
+                }
+            });
+
+        $socialCount = 0;
+        SocialMediaItem::query()
+            ->select(['id', 'author_name', 'content', 'raw_json'])
+            ->chunkById(250, function ($items) use ($matchKeywords, $excludeKeywords, &$socialCount) {
+                foreach ($items as $item) {
+                    $content = $this->buildSocialMatchText(
+                        $item->content ?? null,
+                        $item->raw_json ?? null,
+                    );
+
+                    if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
+                        continue;
+                    }
+
+                    if ($this->matchesAnyKeyword($matchKeywords, $content)) {
+                        $socialCount++;
+                    }
+                }
+            });
+
+        return [
+            'articles' => $articleCount,
+            'social' => $socialCount,
+        ];
+    }
+
+    /**
      * Resync project content using the current project filters.
      *
      * @return array{match: array, social_sync: array}
@@ -25,8 +90,10 @@ class ContentMatchingService
 
     /**
      * Match a global article or social media item against all active projects
-     * using project filters, then link it via project_articles or
-     * project_social_media_items pivot.
+     * using project filters.
+     *
+     * The runtime now treats the global tables as the source of truth, so this
+     * method only resolves matching project IDs without writing pivot links.
      *
      * @param Article|SocialMediaItem $item The item to match
      * @param int|null $discoveryProjectId The ID of the project that discovered the item, if any
@@ -34,12 +101,6 @@ class ContentMatchingService
      */
     public function crossLinkToActiveProjects($item, ?int $discoveryProjectId = null): array
     {
-        /*
-         * Articles are global records. A discovered article must be linked to every 
-         * active project it matches through project_articles. 
-         * The discovery project is not the exclusive owner.
-         */
-        
         $isArticle = $item instanceof Article;
         
         // Prepare text content for regex matching
@@ -66,19 +127,17 @@ class ContentMatchingService
         }
 
         foreach ($projectKeywordMap as $projectId => $keywordSets) {
+            $matchKeywords = array_values(array_unique(array_filter(array_merge($keywordSets['primary'], $keywordSets['context']))));
+
             if ($this->matchesExcludeKeywords($keywordSets['exclude'], $contentToMatch)) {
                 continue;
             }
 
-            if (! $this->matchesAnyKeyword($keywordSets['primary'], $contentToMatch)) {
+            if (! $this->matchesAnyKeyword($matchKeywords, $contentToMatch)) {
                 continue;
             }
 
-            if (! $this->matchesAllKeywords($keywordSets['context'], $contentToMatch)) {
-                continue;
-            }
-
-            foreach ($keywordSets['primary'] as $kw) {
+            foreach ($matchKeywords as $kw) {
                 if ($this->isStrictMatch($kw, $contentToMatch)) {
                     $matchedProjectIds[] = $projectId;
                     break;
@@ -91,26 +150,6 @@ class ContentMatchingService
         }
         
         $uniqueMatchedIds = array_unique($matchedProjectIds);
-        
-        if ($uniqueMatchedIds !== []) {
-            $projects = Project::query()
-                ->whereIn('id', $uniqueMatchedIds)
-                ->get()
-                ->keyBy('id');
-
-            foreach ($uniqueMatchedIds as $pid) {
-                $proj = $projects->get($pid);
-                if (! $proj) {
-                    continue;
-                }
-
-                if ($isArticle) {
-                    $proj->articles()->syncWithoutDetaching([$item->id]);
-                } else {
-                    $proj->socialMediaItems()->syncWithoutDetaching([$item->id]);
-                }
-            }
-        }
         
         if (count($uniqueMatchedIds) > 1) {
             Log::info("[Cross-Project Matching] Item {$item->id} matched multiple projects", [
@@ -143,9 +182,10 @@ class ContentMatchingService
 
         $primaryKeywords = $project->scrapeKeywordVariants();
         $contextKeywords = $project->scrapeContextKeywordVariants();
+        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
         $excludeKeywords = $project->scrapeExcludeKeywords();
 
-        if ($primaryKeywords === []) {
+        if ($matchKeywords === []) {
             return [
                 'articles_linked' => 0,
                 'social_linked' => 0,
@@ -158,7 +198,7 @@ class ContentMatchingService
         $articleKeywordMap = [];
         Article::query()
             ->select(['id', 'title', 'content'])
-            ->chunkById(250, function ($articles) use ($project, $primaryKeywords, $contextKeywords, $excludeKeywords, &$articlesLinked, &$articleKeywordMap) {
+            ->chunkById(250, function ($articles) use ($project, $matchKeywords, $excludeKeywords, &$articlesLinked, &$articleKeywordMap) {
                 foreach ($articles as $article) {
                     if ($project->articles()->where('articles.id', $article->id)->exists()) {
                         continue;
@@ -173,11 +213,7 @@ class ContentMatchingService
                         continue;
                     }
 
-                    if (! $this->matchesAllKeywords($contextKeywords, $content)) {
-                        continue;
-                    }
-
-                    if ($this->matchesAnyKeyword($primaryKeywords, $content)) {
+                    if ($this->matchesAnyKeyword($matchKeywords, $content)) {
                         $articleKeywordMap[] = $article->id;
                         $articlesLinked++;
                     }
@@ -189,15 +225,10 @@ class ContentMatchingService
         }
 
         $socialLinked = 0;
-        $socialMatchedIds = [];
         SocialMediaItem::query()
             ->select(['id', 'author_name', 'content', 'raw_json'])
-            ->chunkById(250, function ($items) use ($project, $primaryKeywords, $contextKeywords, $excludeKeywords, &$socialLinked, &$socialMatchedIds) {
+            ->chunkById(250, function ($items) use ($project, $matchKeywords, $excludeKeywords, &$socialLinked) {
                 foreach ($items as $item) {
-                    if ($project->socialMediaItems()->where('social_media_items.id', $item->id)->exists()) {
-                        continue;
-                    }
-
                     $content = $this->buildSocialMatchText(
                         $item->content ?? null,
                         $item->raw_json ?? null,
@@ -206,26 +237,16 @@ class ContentMatchingService
                         continue;
                     }
 
-                    if (! $this->matchesAllKeywords($contextKeywords, $content)) {
-                        continue;
-                    }
-
-                    if ($this->matchesAnyKeyword($primaryKeywords, $content)) {
-                        $socialMatchedIds[] = $item->id;
+                    if ($this->matchesAnyKeyword($matchKeywords, $content)) {
                         $socialLinked++;
                     }
                 }
             });
 
-        if ($socialMatchedIds !== []) {
-            $project->socialMediaItems()->syncWithoutDetaching(array_values(array_unique($socialMatchedIds)));
-        }
-
         Log::info('[Project Matching] Existing content linked to project.', [
             'project_id' => $project->id,
             'project_name' => $project->name,
             'primary_keywords' => $primaryKeywords,
-            'context_keywords' => $contextKeywords,
             'exclude_keywords' => $excludeKeywords,
             'articles_linked' => $articlesLinked,
             'social_linked' => $socialLinked,
@@ -259,6 +280,7 @@ class ContentMatchingService
         $primaryKeywords = $project->scrapeKeywordVariants();
         $contextKeywords = $project->scrapeContextKeywordVariants();
         $excludeKeywords = $project->scrapeExcludeKeywords();
+        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
 
         if ($primaryKeywords === []) {
             $detached = $project->socialMediaItems()->count();
@@ -275,7 +297,7 @@ class ContentMatchingService
         $matchedIds = [];
         SocialMediaItem::query()
             ->select(['id', 'author_name', 'content', 'raw_json'])
-            ->chunkById(250, function ($items) use ($primaryKeywords, $contextKeywords, $excludeKeywords, &$matchedIds) {
+            ->chunkById(250, function ($items) use ($matchKeywords, $excludeKeywords, &$matchedIds) {
                 foreach ($items as $item) {
                     $content = $this->buildSocialMatchText(
                         $item->content ?? null,
@@ -286,11 +308,7 @@ class ContentMatchingService
                         continue;
                     }
 
-                    if (! $this->matchesAllKeywords($contextKeywords, $content)) {
-                        continue;
-                    }
-
-                    if ($this->matchesAnyKeyword($primaryKeywords, $content)) {
+                    if ($this->matchesAnyKeyword($matchKeywords, $content)) {
                         $matchedIds[] = $item->id;
                     }
                 }

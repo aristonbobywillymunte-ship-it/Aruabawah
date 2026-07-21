@@ -198,18 +198,48 @@ class ReportController extends Controller
     private function getArticles($projectId, $startDate, $endDate)
     {
         $project = $this->resolveProjectOrFail($projectId);
-        $q = $project->articles()
+        $primaryKeywords = $project->scrapeKeywordVariants();
+        $contextKeywords = $project->scrapeContextKeywordVariants();
+        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+        $excludeKeywords = $project->scrapeExcludeKeywords();
+
+        if ($matchKeywords === []) {
+            return collect();
+        }
+
+        $q = Article::query()
             ->withCompleteOfficialAiResult()
             ->with(['aiAnalysisResult' => function ($query) {
                 $query->completeOfficialAiResult();
             }])
-            ->where(function ($query) {
-                $query->whereNull('source_name')
-                    ->orWhereRaw(
-                        'LOWER(TRIM(source_name)) NOT IN (' . implode(',', array_fill(0, count(self::SOCIAL_SOURCE_NAMES), '?')) . ')',
-                        self::SOCIAL_SOURCE_NAMES
-                    );
+            ->where(function ($contentQuery) use ($matchKeywords) {
+                foreach ($matchKeywords as $index => $keyword) {
+                    $method = $index === 0 ? 'where' : 'orWhere';
+                    $contentQuery->{$method}(function ($inner) use ($keyword) {
+                        $inner->where('title', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('content', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('ai.summary', 'ilike', '%' . $keyword . '%');
+                    });
+                }
             });
+
+        if ($excludeKeywords !== []) {
+            foreach ($excludeKeywords as $keyword) {
+                $q->where(function ($inner) use ($keyword) {
+                    $inner->whereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                        ->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                });
+            }
+        }
+
+        $q->where(function ($query) {
+            $query->whereNull('source_name')
+                ->orWhereRaw(
+                    'LOWER(TRIM(source_name)) NOT IN (' . implode(',', array_fill(0, count(self::SOCIAL_SOURCE_NAMES), '?')) . ')',
+                    self::SOCIAL_SOURCE_NAMES
+                );
+        });
         if ($startDate) $q->whereDate('published_at', '>=', $startDate);
         if ($endDate)   $q->whereDate('published_at', '<=', $endDate);
         return $q->orderByDesc('published_at')->get();
@@ -218,10 +248,37 @@ class ReportController extends Controller
     private function getSocialMediaItems($projectId, $startDate, $endDate)
     {
         $project = $this->resolveProjectOrFail($projectId);
-        $q = $project->socialMediaItems()
+        $primaryKeywords = $project->scrapeKeywordVariants();
+        $excludeKeywords = $project->scrapeExcludeKeywords();
+
+        if ($primaryKeywords === []) {
+            return collect();
+        }
+
+        $q = SocialMediaItem::query()
             ->with(['aiAnalysisResult' => function ($query) {
                 $query->completeOfficialAiResult();
-            }]);
+            }])
+            ->where(function ($contentQuery) use ($primaryKeywords) {
+                foreach ($primaryKeywords as $index => $keyword) {
+                    $method = $index === 0 ? 'where' : 'orWhere';
+                    $contentQuery->{$method}(function ($inner) use ($keyword) {
+                        $inner->where('content', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('author_name', 'ilike', '%' . $keyword . '%');
+                    });
+                }
+            });
+
+        if ($excludeKeywords !== []) {
+            foreach ($excludeKeywords as $keyword) {
+                $q->where(function ($inner) use ($keyword) {
+                    $inner->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                        ->whereRaw('LOWER(COALESCE(raw_json, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                        ->whereRaw('LOWER(COALESCE(author_name, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                });
+            }
+        }
 
         if ($startDate) {
             $q->whereDate('posted_at', '>=', $startDate);

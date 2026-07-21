@@ -8,6 +8,7 @@ use App\Models\RiskNotification;
 use App\Models\SocialMediaItem;
 use App\Models\Project;
 use Illuminate\Support\Facades\DB;
+use App\Services\ContentMatchingService;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithoutUrlPagination;
@@ -149,8 +150,9 @@ class PipelineMonitor extends Component
             }
 
             // Find project
-            $projectId = $analysis->article ? DB::table('project_articles')->where('article_id', $analysis->article_id)->value('project_id') 
-                : DB::table('project_social_media_items')->where('social_media_item_id', $analysis->social_media_item_id)->value('project_id');
+            $projectId = $analysis->article
+                ? $this->resolveProjectIdFromArticle($analysis->article)
+                : $this->resolveProjectIdFromSocialItem($analysis->socialMediaItem);
             $projectName = \App\Models\Project::find($projectId)?->name ?? 'N/A';
 
             $title = $analysis->article ? $analysis->article->title : ($analysis->socialMediaItem ? 'Post dari ' . $analysis->socialMediaItem->platform . ' oleh ' . $analysis->socialMediaItem->author_name : 'Postingan');
@@ -233,8 +235,22 @@ class PipelineMonitor extends Component
 
         // Artikel dari portal berita (Global count)
         $globalArticles = $this->portalArticleBaseQuery()->count();
-        // Artikel unik yang sudah masuk setidaknya satu proyek
-        $portalItems  = (clone $this->portalArticleBaseQuery())->has('projects')->count();
+        // Artikel unik yang cocok dengan setidaknya satu project aktif
+        $portalItems = 0;
+        $activeProjects = Project::where('is_active', true)->get();
+        $this->portalArticleBaseQuery()
+            ->select(['id', 'title', 'content'])
+            ->chunkById(250, function ($articles) use (&$portalItems, $activeProjects) {
+                foreach ($articles as $article) {
+                    $content = trim(($article->title ?? '') . "\n" . ($article->content ?? ''));
+                    foreach ($activeProjects as $project) {
+                        if ($this->projectKeywordsMatch($project, $content)) {
+                            $portalItems++;
+                            break;
+                        }
+                    }
+                }
+            });
 
         // Social media items
         $globalSocial = SocialMediaItem::count();
@@ -282,13 +298,6 @@ class PipelineMonitor extends Component
                     ->orWhereNull('ai_analysis_results.project_reach_score')
                     ->orWhereNull('ai_analysis_results.project_reach_level')
                     ->orWhereNull('ai_analysis_results.project_reach_band');
-            })
-            ->whereExists(function ($q) {
-                $q->select(DB::raw(1))
-                  ->from('project_articles')
-                  ->join('projects', 'project_articles.project_id', '=', 'projects.id')
-                  ->whereColumn('project_articles.article_id', 'articles.id')
-                  ->where('projects.is_active', true);
             })
             ->count('ai_analysis_results.id');
 
@@ -345,23 +354,43 @@ class PipelineMonitor extends Component
     public function getScrapingItems()
     {
         $query = $this->portalArticleBaseQuery()
-            ->has('projects')
-            ->with(['projects', 'aiAnalysisResult']);
+            ->with(['aiAnalysisResult']);
 
         if ($this->search) {
             $query->where(function ($q) {
                 $q->where('articles.title', 'ilike', "%{$this->search}%")
                   ->orWhere('articles.source_name', 'ilike', "%{$this->search}%")
-                  ->orWhereHas('projects', function($sq) {
-                      $sq->where('projects.name', 'ilike', "%{$this->search}%");
-                  });
+                  ->orWhere('articles.content', 'ilike', "%{$this->search}%");
             });
         }
 
-        if ($this->filterProject) {
-            $query->whereHas('projects', function($sq) {
-                $sq->where('projects.id', $this->filterProject);
-            });
+            if ($this->filterProject) {
+                $project = Project::find($this->filterProject);
+                if ($project) {
+                $primaryKeywords = $project->scrapeKeywordVariants();
+                $contextKeywords = $project->scrapeContextKeywordVariants();
+                $keywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+                $excludeKeywords = $project->scrapeExcludeKeywords();
+
+                $query->where(function ($contentQuery) use ($keywords) {
+                    foreach ($keywords as $index => $keyword) {
+                        $method = $index === 0 ? 'where' : 'orWhere';
+                                $contentQuery->{$method}(function ($inner) use ($keyword) {
+                                $inner->where('articles.title', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('articles.content', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('articles.excerpt', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('ai.summary', 'ilike', '%' . $keyword . '%');
+                            });
+                        }
+                    });
+
+                foreach ($excludeKeywords as $keyword) {
+                    $query->where(function ($inner) use ($keyword) {
+                        $inner->whereRaw('LOWER(COALESCE(articles.title, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                            ->whereRaw('LOWER(COALESCE(articles.content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                    });
+                }
+            }
         }
 
         if ($this->filterPlatform) {
@@ -427,9 +456,24 @@ class PipelineMonitor extends Component
         }
 
         if ($this->filterProject) {
-            $query->whereHas('projects', function($sq) {
-                $sq->where('projects.id', $this->filterProject);
-            });
+            $project = Project::find($this->filterProject);
+            if ($project) {
+                $query->where(function ($q) use ($project) {
+                    $q->where(function ($contentQuery) use ($project) {
+                        $primaryKeywords = $project->scrapeKeywordVariants();
+                        $contextKeywords = $project->scrapeContextKeywordVariants();
+                        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+                        foreach ($matchKeywords as $index => $keyword) {
+                            $method = $index === 0 ? 'where' : 'orWhere';
+                            $contentQuery->{$method}(function ($inner) use ($keyword) {
+                                $inner->where('content', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('author_name', 'ilike', '%' . $keyword . '%');
+                            });
+                        }
+                    });
+                });
+            }
         }
 
         if ($this->filterAiState === 'success') {
@@ -462,18 +506,20 @@ class PipelineMonitor extends Component
     {
         $query = AiAnalysisResult::query()
             ->select('ai_analysis_results.*')
-            ->with(['article.projects', 'socialMediaItem.projects']);
+            ->with(['article', 'socialMediaItem']);
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('ai_analysis_results.summary', 'ilike', "%{$this->search}%")
+                $q->where('ai.summary', 'ilike', "%{$this->search}%")
                   ->orWhere('ai_analysis_results.main_issue', 'ilike', "%{$this->search}%")
                   ->orWhere('ai_analysis_results.risk_reason', 'ilike', "%{$this->search}%")
-                  ->orWhereHas('article.projects', function($sq) {
-                      $sq->where('projects.name', 'ilike', "%{$this->search}%");
+                  ->orWhereHas('article', function($sq) {
+                      $sq->where('title', 'ilike', "%{$this->search}%")
+                         ->orWhere('content', 'ilike', "%{$this->search}%");
                   })
-                  ->orWhereHas('socialMediaItem.projects', function($sq) {
-                      $sq->where('projects.name', 'ilike', "%{$this->search}%");
+                  ->orWhereHas('socialMediaItem', function($sq) {
+                      $sq->where('content', 'ilike', "%{$this->search}%")
+                         ->orWhere('author_name', 'ilike', "%{$this->search}%");
                   });
             });
         }
@@ -487,14 +533,42 @@ class PipelineMonitor extends Component
         }
 
         if ($this->filterProject) {
-            $query->where(function ($q) {
-                $q->whereHas('article.projects', function($sq) {
-                    $sq->where('projects.id', $this->filterProject);
-                })
-                ->orWhereHas('socialMediaItem.projects', function($sq) {
-                    $sq->where('projects.id', $this->filterProject);
+            $project = Project::find($this->filterProject);
+            if ($project) {
+                $query->where(function ($q) use ($project) {
+                    $q->whereHas('article', function ($sq) use ($project) {
+                        $sq->where(function ($contentQuery) use ($project) {
+                            $primaryKeywords = $project->scrapeKeywordVariants();
+                            $contextKeywords = $project->scrapeContextKeywordVariants();
+                            $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+                            foreach ($matchKeywords as $index => $keyword) {
+                                $method = $index === 0 ? 'where' : 'orWhere';
+                                $contentQuery->{$method}(function ($inner) use ($keyword) {
+                                $inner->where('title', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('content', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('ai.summary', 'ilike', '%' . $keyword . '%');
+                            });
+                        }
+                    });
+                    })
+                    ->orWhereHas('socialMediaItem', function ($sq) use ($project) {
+                        $sq->where(function ($contentQuery) use ($project) {
+                            $primaryKeywords = $project->scrapeKeywordVariants();
+                            $contextKeywords = $project->scrapeContextKeywordVariants();
+                            $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+                            foreach ($matchKeywords as $index => $keyword) {
+                                $method = $index === 0 ? 'where' : 'orWhere';
+                                $contentQuery->{$method}(function ($inner) use ($keyword) {
+                                    $inner->where('content', 'ilike', '%' . $keyword . '%')
+                                        ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
+                                        ->orWhere('author_name', 'ilike', '%' . $keyword . '%');
+                                });
+                            }
+                        });
+                    });
                 });
-            });
+            }
         }
 
         return $query->orderByDesc('ai_analysis_results.created_at')->paginate($this->perPage);
@@ -573,13 +647,91 @@ class PipelineMonitor extends Component
     public function getSources(): array
     {
         return $this->portalArticleBaseQuery()
-            ->join('project_articles', 'project_articles.article_id', '=', 'articles.id')
             ->distinct()
             ->pluck('articles.source_name')
             ->filter()
             ->sort()
             ->values()
             ->toArray();
+    }
+
+    protected function resolveProjectIdFromArticle(?Article $article): ?int
+    {
+        if (! $article) {
+            return null;
+        }
+
+        $content = trim(($article->title ?? '') . "\n" . ($article->content ?? ''));
+
+        foreach (Project::where('is_active', true)->get() as $project) {
+            if ($this->projectKeywordsMatch($project, $content)) {
+                return $project->id;
+            }
+        }
+
+        return null;
+    }
+
+    protected function resolveProjectIdFromSocialItem(?SocialMediaItem $item): ?int
+    {
+        if (! $item) {
+            return null;
+        }
+
+        $content = $this->buildSocialMatchText(
+            $item->content ?? null,
+            $item->raw_json ?? null,
+        );
+
+        foreach (Project::where('is_active', true)->get() as $project) {
+            if ($this->projectKeywordsMatch($project, $content)) {
+                return $project->id;
+            }
+        }
+
+        return null;
+    }
+
+    protected function projectKeywordsMatch(Project $project, string $content): bool
+    {
+        $primaryKeywords = $project->scrapeKeywordVariants();
+        $contextKeywords = $project->scrapeContextKeywordVariants();
+        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+        $excludeKeywords = $project->scrapeExcludeKeywords();
+
+        if ($matchKeywords === []) {
+            return false;
+        }
+
+        foreach ($excludeKeywords as $keyword) {
+            if ($this->matchesText($keyword, $content)) {
+                return false;
+            }
+        }
+
+        foreach ($matchKeywords as $keyword) {
+            if ($this->matchesText($keyword, $content)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function matchesText(string $keyword, string $text): bool
+    {
+        $keyword = trim($keyword);
+        if ($keyword === '') {
+            return false;
+        }
+
+        $keyword = preg_replace('/[’‘`´]/u', "'", $keyword);
+        $text = preg_replace('/[’‘`´]/u', "'", $text);
+        $keyword = preg_replace('/\s+/u', ' ', $keyword);
+        $escapedKeyword = preg_quote($keyword, '/');
+        $pattern = '/(?<![\p{L}\p{N}])' . $escapedKeyword . '(?![\p{L}\p{N}])/iu';
+
+        return preg_match($pattern, $text) === 1;
     }
 
     protected function portalArticleBaseQuery()
@@ -708,9 +860,8 @@ class PipelineMonitor extends Component
         $telegramRecipientCount = \App\Models\ProjectTelegramRecipient::where('is_active', true)->count();
 
         // Breakdown Belum Siap Tampil (Pending)
-        $pendingNoAi = DB::table('project_articles')
-            ->leftJoin('ai_analysis_results', 'project_articles.article_id', '=', 'ai_analysis_results.article_id')
-            ->whereNull('ai_analysis_results.id')
+        $pendingNoAi = Article::query()
+            ->whereDoesntHave('aiAnalysisResult')
             ->count();
 
         $pendingBackfillReach = DB::table('ai_analysis_results')

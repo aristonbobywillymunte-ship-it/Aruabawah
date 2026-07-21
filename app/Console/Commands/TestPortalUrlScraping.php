@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Article;
 use App\Models\Project;
 use App\Models\ScrapingItem;
+use App\Services\ContentMatchingService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -100,10 +101,8 @@ class TestPortalUrlScraping extends Command
         DB::beginTransaction();
         try {
             $existingArticleId = Article::where('canonical_url', $canonicalKey)->value('id');
-            $existingProjectAttach = DB::table('project_articles')
-                ->where('project_id', $project->id)
-                ->where('article_id', $existingArticleId)
-                ->exists();
+            $matchingService = app(ContentMatchingService::class);
+            $projectMatchesContent = $matchingService->matchesProjectContent($project, $content);
 
             DB::table('candidate_links')->updateOrInsert(
                 ['canonical_url' => $canonicalKey],
@@ -146,13 +145,11 @@ class TestPortalUrlScraping extends Command
                 ]
             );
 
-            $project->articles()->syncWithoutDetaching([$article->id]);
-            $projectAttachStatus = $existingProjectAttach ? 'already_attached' : 'attached';
             $articleStatus = $existingArticleId ? 'reused' : 'saved';
             $newArticle = $existingArticleId ? false : true;
             $reusedArticle = $existingArticleId ? true : false;
             $reason = $existingArticleId ? 'Existing article reused' : 'New article saved';
-            $projectReason = $existingProjectAttach ? 'Project already attached' : 'Project attached';
+            $projectReason = $projectMatchesContent ? 'Project keyword matched on content' : 'Project keyword did not match content';
 
             DB::commit();
 
@@ -166,8 +163,8 @@ class TestPortalUrlScraping extends Command
                 'reason' => $reason,
                 'new_article' => $newArticle,
                 'reused_article' => $reusedArticle,
-                'project_attach_status' => $projectAttachStatus,
                 'project_reason' => $projectReason,
+                'project_match' => $projectMatchesContent,
                 'title' => $title,
                 'canonical_url' => $canonicalUrl,
                 'source_name' => $sourceName,

@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ReportController;
+use App\Models\Project;
+use App\Services\ContentMatchingService;
 
 // Public routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -14,11 +16,14 @@ Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth');
             ->select('status', 'analyzable_type', \Illuminate\Support\Facades\DB::raw('count(*) as count'))
             ->groupBy('status', 'analyzable_type')
             ->get();
-            
-        $inProject = \Illuminate\Support\Facades\DB::table('project_articles')
-            ->distinct('article_id')
-            ->count('article_id');
-            
+
+        $inProject = Project::query()
+            ->where('is_active', true)
+            ->get()
+            ->sum(function ($project) {
+                return app(ContentMatchingService::class)->countMatchingContentForProject($project)['articles'] ?? 0;
+            });
+
         return response()->json([
             'dispatch_states' => $stats,
             'distinct_articles_in_project' => $inProject,
@@ -38,16 +43,40 @@ Route::middleware('auth')->group(function () {
         $user = auth()->user();
 
         $projects = \App\Models\Project::query()
-            ->withCount('articles')
             ->orderByDesc('created_at')
             ->limit(6)
             ->get()
             ->map(function ($project) {
-                $articles = $project->articles();
                 $socialSources = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
+                $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
+                $matchKeywords = array_values(array_unique(array_filter(array_merge(
+                    $project->scrapeKeywordVariants(),
+                    $project->scrapeContextKeywordVariants()
+                ))));
 
-                $socialCount = (clone $articles)->whereIn('source_name', $socialSources)->count();
-                $lastRisk = (clone $articles)
+                $articleQuery = \App\Models\Article::query()
+                    ->withCompleteOfficialAiResult()
+                    ->where(function ($contentQuery) use ($matchKeywords) {
+                        foreach ($matchKeywords as $index => $keyword) {
+                            $method = $index === 0 ? 'where' : 'orWhere';
+                            $contentQuery->{$method}(function ($inner) use ($keyword) {
+                                $inner->where('title', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('content', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
+                                    ->orWhere('ai.summary', 'ilike', '%' . $keyword . '%');
+                            });
+                        }
+                    });
+
+                foreach ($project->scrapeExcludeKeywords() as $keyword) {
+                    $articleQuery->where(function ($q) use ($keyword) {
+                        $q->whereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                          ->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                    });
+                }
+
+                $socialCount = $matchedCounts['social'] ?? 0;
+                $lastRisk = (clone $articleQuery)
                     ->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
                     ->where('ai.analysis_status', 'success')
                     ->orderByDesc('articles.published_at')
@@ -56,8 +85,8 @@ Route::middleware('auth')->group(function () {
                 return [
                     'id' => $project->id,
                     'name' => $project->name,
-                    'status' => $project->articles_count > 0 ? 'Aktif' : 'Belum Aktif',
-                    'articles_count' => $project->articles_count,
+                    'status' => ($matchedCounts['articles'] ?? 0) > 0 ? 'Aktif' : 'Belum Aktif',
+                    'articles_count' => $matchedCounts['articles'] ?? 0,
                     'social_count' => $socialCount,
                     'risk_level' => $lastRisk ? ucfirst($lastRisk) : 'Rendah',
                     'last_risk_score' => $lastRisk,

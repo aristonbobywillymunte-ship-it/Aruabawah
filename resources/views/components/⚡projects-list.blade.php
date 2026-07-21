@@ -252,7 +252,7 @@ new class extends Component
 
     protected function latestSocialDataForProject(int $projectId): ?string
     {
-        return DB::table('project_social_media_items')
+        return DB::table('social_media_items')
             ->where('project_id', $projectId)
             ->max('created_at');
     }
@@ -298,68 +298,20 @@ new class extends Component
     {
         return Project::accessibleBy(auth()->user())
             ->where('is_active', true)
-            ->withCount(['articles', 'socialMediaItems'])
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()->map(function($project) {
-            $analyzedArticlesQuery = clone $project->articles();
-            $analyzedArticlesQuery->whereHas('aiAnalysisResult', function($q) {
+            $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
+            $analyzedArticlesQuery = Article::query()
+                ->whereHas('aiAnalysisResult', function($q) {
                 $q->completeOfficialAiResult()
                   ->whereNotNull('summary')
                   ->whereNotNull('sentiment')
                   ->whereNotNull('risk_level');
             });
             $totalAiValid = (clone $analyzedArticlesQuery)->count();
-
-            // Mutually exclusive rescrapeCount (Needs Rescrape if NOT display_ready)
-            $rescrapeCount = DB::table('project_articles')
-                ->join('articles', 'project_articles.article_id', '=', 'articles.id')
-                ->where('project_articles.project_id', $project->id)
-                ->where('project_articles.rescrape_status', 'needs_rescrape')
-                ->whereNotExists(function($q) {
-                    $q->select(DB::raw(1))
-                      ->from('ai_analysis_results as ai')
-                      ->whereColumn('ai.article_id', 'articles.id')
-                      ->where('ai.analysis_status', 'success')
-                      ->where('ai.reach_method', 'ai_reader_estimate_v1')
-                      ->whereNotNull('ai.project_estimated_readers')
-                      ->where('ai.project_estimated_readers', '>=', 1)
-                      ->whereNotNull('ai.project_reach_score')
-                      ->whereNotNull('ai.project_reach_level')
-                      ->whereNotNull('ai.summary')
-                      ->whereNotNull('ai.sentiment')
-                      ->whereNotNull('ai.risk_level');
-                })->count();
-
-            // Mutually exclusive totalAiFailed (Failed / Skipped / Closed if NOT display_ready and NOT needs_rescrape)
-            $totalAiFailed = DB::table('project_articles')
-                ->join('articles', 'project_articles.article_id', '=', 'articles.id')
-                ->leftJoin('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-                ->leftJoin('ai_analysis_dispatch_states as ds', 'articles.id', '=', 'ds.analyzable_id')
-                ->where('project_articles.project_id', $project->id)
-                ->where(function($q) {
-                    $q->whereNull('project_articles.rescrape_status')
-                      ->orWhere('project_articles.rescrape_status', '!=', 'needs_rescrape');
-                })
-                ->whereNotExists(function($q) {
-                    $q->select(DB::raw(1))
-                      ->from('ai_analysis_results as ai2')
-                      ->whereColumn('ai2.article_id', 'articles.id')
-                      ->where('ai2.analysis_status', 'success')
-                      ->where('ai2.reach_method', 'ai_reader_estimate_v1')
-                      ->whereNotNull('ai2.project_estimated_readers')
-                      ->where('ai2.project_estimated_readers', '>=', 1)
-                      ->whereNotNull('ai2.project_reach_score')
-                      ->whereNotNull('ai2.project_reach_level')
-                      ->whereNotNull('ai2.summary')
-                      ->whereNotNull('ai2.sentiment')
-                      ->whereNotNull('ai2.risk_level');
-                })
-                ->where(function($q) {
-                    $q->whereIn('ai.analysis_status', ['failed', 'invalid_ai_reach'])
-                      ->orWhereIn('ds.last_error_code', ['empty_content', 'invalid_content', 'orphan_dispatch_state', 'stale_orphan', 'stale_dispatch']);
-                })
-                ->count();
+            $rescrapeCount = 0;
+            $totalAiFailed = 0;
 
             $pendingAi = DB::table('ai_analysis_dispatch_states')
                 ->where('project_id', $project->id)
@@ -383,7 +335,7 @@ new class extends Component
                 $highCriticalRisk = 0;
             }
 
-            $mentions = $project->articles_count;
+            $mentions = $matchedCounts['articles'] ?? 0;
             $reachQuery = AiAnalysisResult::query()
                 ->completeOfficialAiResult()
                 ->whereIn('article_id', (clone $analyzedArticlesQuery)->select('articles.id'));
@@ -391,18 +343,12 @@ new class extends Component
             $hasOfficialReach = (clone $reachQuery)->exists();
             $reach = $hasOfficialReach ? number_format($officialReach, 0, ',', '.') : 'Belum tersedia';
 
-            $lastPortalTime = DB::table('project_articles')
-                ->where('project_id', $project->id)
-                ->max('created_at');
-                
             $lastMedsosTime = $this->latestSocialUpdateForProject($project->id);
 
             $lastPortalScanTime = $this->latestPortalScanForProject($project->id);
             $lastPortalUpdate = $lastPortalScanTime
                 ? \Carbon\Carbon::parse($lastPortalScanTime)->locale('id')->diffForHumans()
-                : ($lastPortalTime
-                ? \Carbon\Carbon::parse($lastPortalTime)->locale('id')->diffForHumans() 
-                : 'Belum ada data');
+                : 'Belum ada data';
                 
             $lastMedsosUpdate = $lastMedsosTime
                 ? \Carbon\Carbon::parse($lastMedsosTime)->locale('id')->diffForHumans() 
@@ -427,6 +373,8 @@ new class extends Component
                 'last_medsos_update' => $lastMedsosUpdate,
                 'medsos_is_running' => $this->isSocialScanRunningForProject($project->id),
                 'medsos_running_label' => $this->socialRunningLabelForProject($project->id),
+                'articles_count' => $matchedCounts['articles'] ?? 0,
+                'social_count' => $matchedCounts['social'] ?? 0,
             ];
         });
     }
@@ -691,18 +639,10 @@ new class extends Component
             ->onlyTrashed()
             ->findOrFail($id);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($project) {
-            \Illuminate\Support\Facades\DB::table('project_user')
-                ->where('project_id', $project->id)
-                ->delete();
-
-            \Illuminate\Support\Facades\DB::table('project_articles')
-                ->where('project_id', $project->id)
-                ->delete();
-
-            \Illuminate\Support\Facades\DB::table('project_social_media_items')
-                ->where('project_id', $project->id)
-                ->delete();
+            \Illuminate\Support\Facades\DB::transaction(function () use ($project) {
+                \Illuminate\Support\Facades\DB::table('project_user')
+                    ->where('project_id', $project->id)
+                    ->delete();
 
             if (\Illuminate\Support\Facades\Schema::hasTable('ai_analysis_dispatch_states')) {
                 \Illuminate\Support\Facades\DB::table('ai_analysis_dispatch_states')

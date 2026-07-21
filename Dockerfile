@@ -44,7 +44,7 @@ RUN composer install --no-interaction --optimize-autoloader --no-scripts
 # Expose Laravel development port
 EXPOSE 8000
 
-ENTRYPOINT ["/var/web/scripts/docker-entrypoint.sh"]
+ENTRYPOINT ["sh", "/var/web/scripts/docker-entrypoint.sh"]
 
 # Start Laravel built-in web server
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

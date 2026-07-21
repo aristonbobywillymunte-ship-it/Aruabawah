@@ -180,13 +180,46 @@ new class extends Component
         abort_unless($this->projectId, 403, 'Project belum dipilih.');
 
         $project = $this->resolveProjectOrFail($this->projectId);
+        $primaryKeywords = $project->scrapeKeywordVariants();
+        $contextKeywords = $project->scrapeContextKeywordVariants();
+        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+        $excludeKeywords = $project->scrapeExcludeKeywords();
 
-        $decodedId = $this->getDecodedProjectId();
-        return \App\Models\Article::withCompleteOfficialAiResult()
+        if ($matchKeywords === []) {
+            return \App\Models\Article::query()
+                ->with(['aiAnalysisResult'])
+                ->whereRaw('1 = 0');
+        }
+
+        $query = \App\Models\Article::query()
             ->with(['aiAnalysisResult'])
-            ->whereHas('projects', function($q) use ($decodedId) {
-                $q->where('projects.id', $decodedId);
+            ->whereHas('aiAnalysisResult', function ($ai) {
+                $ai->completeOfficialAiResult();
             });
+
+        $query->where(function ($contentQuery) use ($matchKeywords) {
+            foreach ($matchKeywords as $index => $keyword) {
+                $method = $index === 0 ? 'where' : 'orWhere';
+                $contentQuery->{$method}(function ($q) use ($keyword) {
+                    $q->where('title', 'ilike', '%' . $keyword . '%')
+                      ->orWhere('content', 'ilike', '%' . $keyword . '%')
+                      ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
+                      ->orWhere('articles.summary', 'ilike', '%' . $keyword . '%');
+                });
+            }
+        });
+
+        if ($excludeKeywords !== []) {
+            foreach ($excludeKeywords as $keyword) {
+                $query->where(function ($q) use ($keyword) {
+                    $q->whereNull('title')
+                      ->orWhereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                      ->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                });
+            }
+        }
+
+        return $query;
     }
 
     public function mount($projectId = null)
@@ -602,10 +635,6 @@ new class extends Component
             'published_at'    => now(),
         ]);
 
-        $this->resolveProjectOrFail($this->projectId)
-            ->articles()
-            ->syncWithoutDetaching([$article->id]);
-
         $this->reset(['title', 'content', 'url', 'source_name', 'category', 'showAddModal']);
         session()->flash('message', 'Mention analyzed and added successfully.');
     }
@@ -755,7 +784,6 @@ new class extends Component
         $baseQuery = $this->projectArticlesQuery();
         $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
         $normalizedSocials = array_map('strtolower', $socials);
-
         // Counts for the filter panel should reflect the visible article pool,
         // not disappear just because sentiment AI is still pending.
         $sourceQuery = $this->applyActiveFilters(clone $baseQuery, ['sources', 'sentiment']);
@@ -5202,10 +5230,10 @@ new class extends Component
     >
         <div 
             @click.away="$wire.set('showDatePicker', false)" 
-            class="bg-white w-full max-w-[700px] rounded-3xl overflow-hidden shadow-2xl flex border border-slate-200"
+            class="bg-white w-full max-w-[700px] h-[720px] max-h-[calc(100vh-2rem)] rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-slate-200"
         >
             <!-- Left Panel (PERIODE Presets) -->
-            <div class="w-[200px] border-r border-slate-100 bg-[#FAFBFD] p-6 text-left space-y-4">
+            <div class="w-full md:w-[200px] border-r border-slate-100 bg-[#FAFBFD] p-6 text-left space-y-4 flex-shrink-0">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">PERIODE</span>
                 <div class="flex flex-col gap-2.5">
                     <button type="button" @click="setPeriod(1)" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold">Hari ini</button>
@@ -5218,8 +5246,8 @@ new class extends Component
             </div>
 
             <!-- Right Panel (Calendar Grid) -->
-            <div class="flex-grow p-6 flex flex-col justify-between">
-                <div>
+            <div class="flex-1 min-h-0 p-6 flex flex-col justify-between">
+                <div class="min-h-0">
                     <!-- Calendar Header -->
                     <div class="flex justify-between items-center mb-6">
                         <h4 class="text-sm font-bold text-slate-800">Tanggal khusus</h4>
@@ -5272,10 +5300,10 @@ new class extends Component
                 </div>
 
                 <!-- Footer Action Controls -->
-                <div class="flex justify-between items-center gap-3 pt-6 border-t border-slate-100">
+                <div class="flex justify-between items-center gap-3 pt-6 border-t border-slate-100 flex-shrink-0">
                     <button 
                         type="button" 
-                        @click="$wire.set('startDate', null); $wire.set('endDate', null); $wire.set('showDatePicker', false);" 
+                        @click="localStart = null; localEnd = null;" 
                         class="px-4 py-2 text-slate-500 hover:text-[#1fa387] font-bold text-xs transition underline-offset-2 hover:underline"
                     >
                         Semua Waktu

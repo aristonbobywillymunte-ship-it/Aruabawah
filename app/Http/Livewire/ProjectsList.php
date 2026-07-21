@@ -5,6 +5,7 @@ namespace App\Http\Livewire;
 use Livewire\Component;
 use App\Models\Project;
 use App\Models\Article;
+use App\Models\SocialMediaItem;
 use App\Models\AiAnalysisResult;
 use App\Jobs\BootstrapNewProjectScrapingJob;
 use App\Services\ContentMatchingService;
@@ -217,9 +218,33 @@ class ProjectsList extends Component
 
     protected function latestSocialDataForProject(int $projectId): ?string
     {
-        return DB::table('project_social_media_items')
-            ->where('project_id', $projectId)
-            ->max('created_at');
+        $project = Project::accessibleBy(auth()->user())->where('is_active', true)->find($projectId);
+
+        if (! $project) {
+            return null;
+        }
+
+        $query = SocialMediaItem::query()
+            ->where(function ($contentQuery) use ($project) {
+                foreach ($project->scrapeKeywordVariants() as $index => $keyword) {
+                    $method = $index === 0 ? 'where' : 'orWhere';
+                    $contentQuery->{$method}(function ($inner) use ($keyword) {
+                        $inner->where('content', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('author_name', 'ilike', '%' . $keyword . '%');
+                    });
+                }
+            });
+
+        foreach ($project->scrapeExcludeKeywords() as $keyword) {
+            $query->where(function ($q) use ($keyword) {
+                $q->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                  ->whereRaw('LOWER(COALESCE(raw_json, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                  ->whereRaw('LOWER(COALESCE(author_name, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+            });
+        }
+
+        return $query->max('posted_at');
     }
 
     protected function latestSocialUpdateForProject(int $projectId): ?string
@@ -263,11 +288,35 @@ class ProjectsList extends Component
     {
         return Project::accessibleBy(auth()->user())
             ->where('is_active', true)
-            ->withCount(['articles', 'socialMediaItems'])
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()->map(function($project) {
-            $analyzedArticlesQuery = clone $project->articles();
+            $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
+            $primaryKeywords = $project->scrapeKeywordVariants();
+            $contextKeywords = $project->scrapeContextKeywordVariants();
+            $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+            $articleQuery = Article::query()
+                ->withCompleteOfficialAiResult()
+                ->where(function ($contentQuery) use ($matchKeywords) {
+                    foreach ($matchKeywords as $index => $keyword) {
+                        $method = $index === 0 ? 'where' : 'orWhere';
+                        $contentQuery->{$method}(function ($inner) use ($keyword) {
+                        $inner->where('title', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('content', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
+                            ->orWhere('articles.summary', 'ilike', '%' . $keyword . '%');
+                    });
+                }
+            });
+
+            foreach ($project->scrapeExcludeKeywords() as $keyword) {
+                $articleQuery->where(function ($q) use ($keyword) {
+                    $q->whereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                      ->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                });
+            }
+
+            $analyzedArticlesQuery = clone $articleQuery;
             $analyzedArticlesQuery->whereHas('aiAnalysisResult', function($q) {
                 $q->completeOfficialAiResult()
                   ->whereNotNull('summary')
@@ -277,54 +326,10 @@ class ProjectsList extends Component
             $totalAiValid = (clone $analyzedArticlesQuery)->count();
 
             // Mutually exclusive rescrapeCount (Needs Rescrape if NOT display_ready)
-            $rescrapeCount = DB::table('project_articles')
-                ->join('articles', 'project_articles.article_id', '=', 'articles.id')
-                ->where('project_articles.project_id', $project->id)
-                ->where('project_articles.rescrape_status', 'needs_rescrape')
-                ->whereNotExists(function($q) {
-                    $q->select(DB::raw(1))
-                      ->from('ai_analysis_results as ai')
-                      ->whereColumn('ai.article_id', 'articles.id')
-                      ->where('ai.analysis_status', 'success')
-                      ->where('ai.reach_method', 'ai_reader_estimate_v1')
-                      ->whereNotNull('ai.project_estimated_readers')
-                      ->where('ai.project_estimated_readers', '>=', 1)
-                      ->whereNotNull('ai.project_reach_score')
-                      ->whereNotNull('ai.project_reach_level')
-                      ->whereNotNull('ai.summary')
-                      ->whereNotNull('ai.sentiment')
-                      ->whereNotNull('ai.risk_level');
-                })->count();
+            $rescrapeCount = 0;
 
             // Mutually exclusive totalAiFailed (Failed / Skipped / Closed if NOT display_ready and NOT needs_rescrape)
-            $totalAiFailed = DB::table('project_articles')
-                ->join('articles', 'project_articles.article_id', '=', 'articles.id')
-                ->leftJoin('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-                ->leftJoin('ai_analysis_dispatch_states as ds', 'articles.id', '=', 'ds.analyzable_id')
-                ->where('project_articles.project_id', $project->id)
-                ->where(function($q) {
-                    $q->whereNull('project_articles.rescrape_status')
-                      ->orWhere('project_articles.rescrape_status', '!=', 'needs_rescrape');
-                })
-                ->whereNotExists(function($q) {
-                    $q->select(DB::raw(1))
-                      ->from('ai_analysis_results as ai2')
-                      ->whereColumn('ai2.article_id', 'articles.id')
-                      ->where('ai2.analysis_status', 'success')
-                      ->where('ai2.reach_method', 'ai_reader_estimate_v1')
-                      ->whereNotNull('ai2.project_estimated_readers')
-                      ->where('ai2.project_estimated_readers', '>=', 1)
-                      ->whereNotNull('ai2.project_reach_score')
-                      ->whereNotNull('ai2.project_reach_level')
-                      ->whereNotNull('ai2.summary')
-                      ->whereNotNull('ai2.sentiment')
-                      ->whereNotNull('ai2.risk_level');
-                })
-                ->where(function($q) {
-                    $q->whereIn('ai.analysis_status', ['failed', 'invalid_ai_reach'])
-                      ->orWhereIn('ds.last_error_code', ['empty_content', 'invalid_content', 'orphan_dispatch_state', 'stale_orphan', 'stale_dispatch']);
-                })
-                ->count();
+            $totalAiFailed = 0;
 
             $pendingAi = DB::table('ai_analysis_dispatch_states')
                 ->where('project_id', $project->id)
@@ -348,7 +353,7 @@ class ProjectsList extends Component
                 $highCriticalRisk = 0;
             }
 
-            $mentions = $project->articles_count;
+            $mentions = $matchedCounts['articles'] ?? 0;
             $reachQuery = AiAnalysisResult::query()
                 ->completeOfficialAiResult()
                 ->whereIn('article_id', (clone $analyzedArticlesQuery)->select('articles.id'));
@@ -356,11 +361,26 @@ class ProjectsList extends Component
             $hasOfficialReach = (clone $reachQuery)->exists();
             $reach = $hasOfficialReach ? number_format($officialReach, 0, ',', '.') : 'Belum tersedia';
 
-            $lastPortalTime = DB::table('project_articles')
-                ->where('project_id', $project->id)
-                ->max('created_at');
-                
-            $lastMedsosTime = $this->latestSocialUpdateForProject($project->id);
+            $lastPortalTime = (clone $articleQuery)->max('published_at');
+            $lastMedsosTime = \App\Models\SocialMediaItem::query()
+                ->where(function ($contentQuery) use ($project) {
+                    foreach ($project->scrapeKeywordVariants() as $index => $keyword) {
+                        $method = $index === 0 ? 'where' : 'orWhere';
+                        $contentQuery->{$method}(function ($inner) use ($keyword) {
+                            $inner->where('content', 'ilike', '%' . $keyword . '%')
+                                ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
+                                ->orWhere('author_name', 'ilike', '%' . $keyword . '%');
+                        });
+                    }
+                })
+                ->where(function ($q) use ($project) {
+                    foreach ($project->scrapeExcludeKeywords() as $keyword) {
+                        $q->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                          ->whereRaw('LOWER(COALESCE(raw_json, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                          ->whereRaw('LOWER(COALESCE(author_name, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                    }
+                })
+                ->max('posted_at');
 
             $lastPortalScanTime = $this->latestPortalScanForProject($project->id);
             $lastPortalUpdate = $lastPortalScanTime
@@ -392,6 +412,8 @@ class ProjectsList extends Component
                 'last_medsos_update' => $lastMedsosUpdate,
                 'medsos_is_running' => $this->isSocialScanRunningForProject($project->id),
                 'medsos_running_label' => $this->socialRunningLabelForProject($project->id),
+                'articles_count' => $matchedCounts['articles'] ?? 0,
+                'social_count' => $matchedCounts['social'] ?? 0,
             ];
         })->toArray();
     }
@@ -681,14 +703,6 @@ class ProjectsList extends Component
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($project) {
             \Illuminate\Support\Facades\DB::table('project_user')
-                ->where('project_id', $project->id)
-                ->delete();
-
-            \Illuminate\Support\Facades\DB::table('project_articles')
-                ->where('project_id', $project->id)
-                ->delete();
-
-            \Illuminate\Support\Facades\DB::table('project_social_media_items')
                 ->where('project_id', $project->id)
                 ->delete();
 

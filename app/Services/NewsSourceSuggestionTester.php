@@ -27,13 +27,20 @@ class NewsSourceSuggestionTester
         $rejectedUrls = [];
         $validArticles = [];
         $reasons = [];
+        $warnings = [];
 
         $keyword = filled($testKeyword) ? $testKeyword : 'politik';
+        $hasSearchUrl = filled($suggestion->search_url);
+        $usedSearchUrl = false;
         $discoveryUrl = null;
         $discoverySource = 'search_url';
 
+        if (! $hasSearchUrl) {
+            $warnings[] = 'Search URL kosong. Discovery memakai fallback, tetapi hasil tidak dianggap valid penuh untuk portal manual.';
+        }
+
         $discoveryCandidates = [];
-        if (filled($suggestion->search_url)) {
+        if ($hasSearchUrl) {
             $discoveryCandidates[] = [
                 'url' => str_replace('{keyword}', rawurlencode($keyword), $suggestion->search_url),
                 'source' => 'search_url'
@@ -76,6 +83,7 @@ class NewsSourceSuggestionTester
                     $discoveryUrl = $candidate['url'];
                     $discoverySource = $candidate['source'];
                     $discoveryHttpStatus = $statusTemp;
+                    $usedSearchUrl = ($candidate['source'] === 'search_url');
                     break;
                 } else {
                     $reasons[] = "Discovery via {$candidate['source']} gagal (HTTP {$statusTemp})";
@@ -196,19 +204,27 @@ class NewsSourceSuggestionTester
 
         // Determine Status & Build Reasons Checklist
         if (count($validArticles) > 0) {
-            $status = 'verified';
+            $status = $hasSearchUrl ? 'verified' : 'needs_review';
             $reasons[] = "Selector berhasil mengambil isi artikel";
             $reasons[] = "Canonical URL valid";
             $reasons[] = "Content > 500 karakter";
             $reasons[] = "Konten relevan dengan keyword \"{$keyword}\"";
             $reasons[] = "URL bukan Google News";
+            if (! $hasSearchUrl) {
+                $reasons[] = 'Search URL kosong, jadi hasil hanya valid parsial untuk portal manual.';
+            } elseif (! $usedSearchUrl) {
+                $reasons[] = 'Search URL tersedia tetapi discovery memakai fallback, perlu cek prioritas search_url.';
+            }
         } else {
-            $status = 'failed';
+            $status = $hasSearchUrl ? 'failed' : 'needs_review';
             $reasons[] = "Tidak ada artikel valid ditemukan";
             if (count($discoveredUrls) === 0) {
                 $reasons[] = "Selector tidak menemukan link artikel pada halaman pencarian";
             } else {
                 $reasons[] = "Content kurang dari 500 karakter atau selector tidak menemukan body artikel";
+            }
+            if (! $hasSearchUrl) {
+                $reasons[] = 'Search URL kosong, hasil fallback tidak cukup untuk dinyatakan berhasil pada portal manual.';
             }
         }
 
@@ -219,6 +235,9 @@ class NewsSourceSuggestionTester
             'manual_url' => null,
             'source' => $suggestion->source_name ?: $suggestion->domain,
             'tested_at' => now()->toDateTimeString(),
+            'warnings' => $warnings,
+            'search_url_used' => $usedSearchUrl,
+            'search_url_present' => $hasSearchUrl,
             'discovered_urls' => $discoveredUrls,
             'rejected_urls' => $rejectedUrls,
             'valid_articles' => $validArticles,

@@ -31,6 +31,40 @@
             </button>
         </div>
     </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-4">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Alur Portal Manual</p>
+        <div class="mt-3 grid gap-3 md:grid-cols-3">
+            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 border border-slate-100">
+                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1fa387]/10 text-[#1fa387]">
+                    <span class="material-symbols-outlined text-[18px]">language</span>
+                </span>
+                <div>
+                    <p class="text-xs font-bold text-slate-800">1. Input domain</p>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Masukkan domain portal berita.</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 border border-slate-100">
+                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1fa387]/10 text-[#1fa387]">
+                    <span class="material-symbols-outlined text-[18px]">psychology</span>
+                </span>
+                <div>
+                    <p class="text-xs font-bold text-slate-800">2. AI cari URL</p>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Cari <span class="font-semibold">Search URL</span> dan selector.</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 border border-slate-100">
+                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1fa387]/10 text-[#1fa387]">
+                    <span class="material-symbols-outlined text-[18px]">verified</span>
+                </span>
+                <div>
+                    <p class="text-xs font-bold text-slate-800">3. Test & aktifkan</p>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Tes hasilnya, lalu aktifkan jika lolos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- News Sources Table Card -->
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left">
         <div class="border-b border-slate-100 px-6 py-4">
@@ -189,6 +223,7 @@
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold text-slate-700">Search URL Template <span class="text-rose-500">*</span></label>
                                 <input wire:model="search_url" placeholder="Contoh: https://www.kompas.com/search?q={keyword}" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                <p class="mt-1 text-[10px] text-slate-500">Boleh diisi manual jika AI belum menemukan pola search situs.</p>
                                 @error('search_url') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                             </div>
                         </div>

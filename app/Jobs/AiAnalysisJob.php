@@ -1320,16 +1320,13 @@ class AiAnalysisJob implements ShouldQueue
         }
 
         $articleId = $payload['id'] ?? null;
-        $projectId = $payload['project_id'] ?? null;
         $outletCount = 0;
-        if ($articleId && $projectId) {
+        if ($articleId) {
             $article = Article::find($articleId);
             if ($article) {
                 $title = mb_strtolower((string) $article->title);
                 $terms = array_values(array_filter(explode(' ', preg_replace('/[^\pL\pN\s]+/u', ' ', $title)), fn ($term) => mb_strlen($term) >= 4));
-                $query = DB::table('project_articles')
-                    ->join('articles', 'project_articles.article_id', '=', 'articles.id')
-                    ->where('project_articles.project_id', $projectId)
+                $query = DB::table('articles')
                     ->where('articles.id', '!=', $articleId);
 
                 foreach (array_slice($terms, 0, 3) as $term) {

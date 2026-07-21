@@ -6,6 +6,7 @@ use App\Models\NewsSource;
 use App\Services\NewsSourceIconResolver;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class NewsSources extends Component
@@ -134,23 +135,8 @@ class NewsSources extends Component
             ->orderBy('id', 'desc')
             ->paginate(10, ['*'], 'suggestionsPage');
 
-        $suggestionSourceIds = [];
-        $suggestionDomains = [];
-        \App\Models\NewsSourceSuggestion::query()
-            ->select(['news_source_id', 'domain'])
-            ->orderBy('id')
-            ->chunk(200, function ($rows) use (&$suggestionSourceIds, &$suggestionDomains) {
-                foreach ($rows as $row) {
-                    if ($row->news_source_id) {
-                        $suggestionSourceIds[(int) $row->news_source_id] = true;
-                    }
-
-                    $domain = $this->normalizeDomain((string) $row->domain);
-                    if ($domain !== '') {
-                        $suggestionDomains[$domain] = true;
-                    }
-                }
-            });
+        $suggestionSourceIds = $this->getSuggestionSourceIds();
+        $suggestionDomains = $this->getSuggestionDomains();
 
         return view('livewire.admin.news-sources', [
             'sources' => $sources,
@@ -267,6 +253,7 @@ class NewsSources extends Component
             $this->notify('success', 'Portal berita baru berhasil ditambahkan.');
         }
 
+        $this->flushSuggestionUiCache();
         $this->showFormModal = false;
         $this->resetForm();
     }
@@ -296,6 +283,7 @@ class NewsSources extends Component
             $source->delete();
             $this->notify('success', 'Portal berita berhasil dihapus.');
         }
+        $this->flushSuggestionUiCache();
         $this->confirmingDelete = false;
         $this->resetForm();
     }
@@ -375,10 +363,27 @@ class NewsSources extends Component
         }
 
         try {
-            $prompt = "Berikan saran konfigurasi metadata scraping untuk portal berita dengan nama '{$name}' dan domain '{$domain}'. 
-            Rincian yang harus Anda analisis dan sarankan:
+            $prompt = "Berikan saran konfigurasi metadata scraping untuk portal berita dengan nama '{$name}' dan domain '{$domain}'.
+
+            ATURAN WAJIB:
+            - `search_url` adalah prioritas pertama dan harus diidentifikasi dulu sebelum field lain.
+            - Untuk portal manual, jalur pencarian internal WAJIB dipakai. Jangan jadikan `base_url` atau beranda sebagai pengganti `search_url`.
+            - Jangan menebak URL pencarian secara acak. Cari dari HTML, form search, parameter query, sitemap, atau JSON-LD SearchAction.
+            - Jika ada beberapa kemungkinan, pilih URL pencarian yang paling langsung menghasilkan daftar artikel.
+            - Setelah `search_url` jelas, barulah isi selector dan metadata artikel.
+
+            Urutan analisis yang wajib diikuti:
+            1. Temukan `search_url` internal yang benar dengan placeholder `{keyword}`.
+            2. Temukan `search_result_selector` yang membungkus hasil pencarian.
+            3. Temukan `article_link_selector` yang hanya mengarah ke link artikel.
+            4. Temukan `article_content_selector` untuk isi artikel penuh.
+            5. Temukan `article_author_selector` bila ada.
+            6. Temukan `article_date_selector` bila ada.
+            7. Baru isi `feed_url`, `sitemap_url`, dan penjelasan AI.
+
+            Rincian output yang harus Anda sarankan:
             1. base_url (URL dasar portal berita, diawali http:// atau https://)
-            2. search_url (URL pencarian kustom dengan placeholder {keyword}. Wajib gunakan pola pencarian internal situs yang benar, bukan menebak. Jika situs memakai SearchAction, form search, atau parameter query khusus seperti key/q/search, ikuti pola itu. Contoh: https://example.com/search?q={keyword} atau https://example.com/search?key={keyword})
+            2. search_url (URL pencarian kustom dengan placeholder {keyword}, wajib internal site search yang benar)
             3. feed_url (URL Feed RSS jika ada, nullable)
             4. sitemap_url (URL XML Sitemap jika ada, nullable)
             5. search_result_selector (Selector HTML/CSS untuk membungkus list hasil pencarian)
@@ -389,12 +394,6 @@ class NewsSources extends Component
             10. article_date_selector (Opsional. Selector HTML/CSS untuk mengambil tanggal publikasi artikel)
             11. ai_reason (Alasan singkat Anda menyarankan konfigurasi ini)
             12. confidence (Tingkat kepercayaan Anda terhadap saran ini antara 0.0 sampai 1.0)
-
-            Prioritas analisis:
-            - Pertama cari pola search internal yang benar dari halaman situs atau struktur URL yang umum dipakai situs tersebut.
-            - Kedua, cocokkan search_result_selector dengan container hasil pencarian yang benar.
-            - Ketiga, pastikan article_link_selector hanya menunjuk ke link artikel, bukan link menu, kategori, asset, atau social.
-            - Jika ada JSON-LD SearchAction, pakai itu sebagai referensi utama untuk search_url.
 
             Balas HANYA dengan format JSON valid sebagai berikut:
             {
@@ -652,6 +651,7 @@ class NewsSources extends Component
         $suggestion->approved_by = auth()->id();
         $suggestion->approved_at = now();
         $suggestion->save();
+        $this->flushSuggestionUiCache();
 
         $this->showTestModal = false;
         $this->notify('success', 'Saran berhasil diverifikasi dan diterapkan ke News Sources.');
@@ -664,6 +664,7 @@ class NewsSources extends Component
 
         $suggestion->status = 'needs_review';
         $suggestion->save();
+        $this->flushSuggestionUiCache();
 
         $this->showTestModal = false;
         $this->notify('success', 'Saran disimpan sebagai draf review.');
@@ -675,6 +676,7 @@ class NewsSources extends Component
         $suggestion = \App\Models\NewsSourceSuggestion::findOrFail($id);
         $suggestion->status = 'rejected';
         $suggestion->save();
+        $this->flushSuggestionUiCache();
 
         $this->showTestModal = false;
         $this->notify('success', 'Saran ditolak.');
@@ -685,6 +687,7 @@ class NewsSources extends Component
         $this->adminOnly();
         $suggestion = \App\Models\NewsSourceSuggestion::findOrFail($id);
         $suggestion->delete();
+        $this->flushSuggestionUiCache();
 
         if ($this->selectedSuggestionId === $id) {
             $this->selectedSuggestionId = null;
@@ -792,5 +795,39 @@ class NewsSources extends Component
             'ai_reason' => 'Otomatis dibuat saat portal baru ditambahkan.',
             'status' => 'draft_ai',
         ]);
+
+        $this->flushSuggestionUiCache();
+    }
+
+    private function getSuggestionSourceIds(): array
+    {
+        return Cache::remember('news_sources:suggestion_source_ids', now()->addMinutes(10), function () {
+            return \App\Models\NewsSourceSuggestion::query()
+                ->whereNotNull('news_source_id')
+                ->distinct()
+                ->pluck('news_source_id')
+                ->mapWithKeys(fn ($id) => [(int) $id => true])
+                ->all();
+        });
+    }
+
+    private function getSuggestionDomains(): array
+    {
+        return Cache::remember('news_sources:suggestion_domains', now()->addMinutes(10), function () {
+            return \App\Models\NewsSourceSuggestion::query()
+                ->whereNotNull('domain')
+                ->distinct()
+                ->pluck('domain')
+                ->map(fn ($domain) => $this->normalizeDomain((string) $domain))
+                ->filter()
+                ->mapWithKeys(fn ($domain) => [$domain => true])
+                ->all();
+        });
+    }
+
+    private function flushSuggestionUiCache(): void
+    {
+        Cache::forget('news_sources:suggestion_source_ids');
+        Cache::forget('news_sources:suggestion_domains');
     }
 }
