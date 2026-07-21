@@ -1259,6 +1259,21 @@ class ApifyScrapingJob implements ShouldQueue
             $keywordAlt = str_replace(' ', '', $keywordLower);
             $contentAlt = str_replace(' ', '', $contentLower);
             $matched = str_contains($contentAlt, $keywordAlt);
+
+            if (! $matched) {
+                $tokens = array_values(array_filter(preg_split('/\s+/u', $keywordLower) ?: []));
+                $tokens = array_values(array_filter($tokens, static fn ($token) => mb_strlen($token) >= 3));
+
+                if ($tokens !== []) {
+                    $matched = true;
+                    foreach ($tokens as $token) {
+                        if (! str_contains($contentLower, $token)) {
+                            $matched = false;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         if (!$matched) {

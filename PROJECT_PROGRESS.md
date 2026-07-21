@@ -644,3 +644,7 @@
 ### 52. Hashtag Object Instagram dan TikTok Dibaca Benar
 * Helper matching social sekarang membaca array `hashtags` dan `tags` yang berisi objek `name`, `tag`, `text`, atau `value`.
 * Ini mencegah item Instagram/TikTok gugur hanya karena struktur JSON Apify menyimpan hashtag sebagai objek, bukan string polos.
+
+### 53. Matching Facebook Diperlonggar ke Token Keyword
+* Pencocokan Facebook sekarang punya fallback token-match jika frasa utuh tidak ditemukan.
+* Ini membantu item seperti `Bupati Kutai Kartanegara (Kukar)` tetap lolos saat project memakai keyword `bupati kukar`, tanpa mengubah Facebook menjadi hashtag-based.
