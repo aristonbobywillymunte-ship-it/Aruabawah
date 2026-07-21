@@ -210,7 +210,9 @@ class ContentMatchingService
         Log::info('[Project Matching] Existing content linked to project.', [
             'project_id' => $project->id,
             'project_name' => $project->name,
-            'keywords' => $keywords,
+            'primary_keywords' => $primaryKeywords,
+            'context_keywords' => $contextKeywords,
+            'exclude_keywords' => $excludeKeywords,
             'articles_linked' => $articlesLinked,
             'social_linked' => $socialLinked,
         ]);

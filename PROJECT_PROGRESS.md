@@ -7,6 +7,11 @@
 
 ## Log Aktivitas Terbaru (20 Juli 2026)
 
+### 1. Resync Massal Project Aktif Disiapkan untuk Filter Baru
+* Matching service untuk project aktif sudah diperbaiki agar log tidak lagi merujuk ke variabel keyword lama setelah context/exclude diaktifkan.
+* Resync massal sekarang bisa dipakai untuk melepaskan relasi lama dan membangun ulang pivot project berdasarkan aturan filter baru.
+* Validasi syntax PHP untuk service matching lulus setelah perbaikan log.
+
 ### 1. Filter Detail Kata Kunci Proyek Diaktifkan
 * Field `UTAMA`, `Konteks`, dan `Dikecualikan` sekarang dipakai benar-benar oleh backend matching, bukan sekadar tampil di form.
 * `UTAMA` dipakai sebagai keyword utama yang cukup salah satu cocok, `Konteks` harus semuanya muncul, dan `Dikecualikan` langsung menolak item yang mengandung salah satu kata terlarang.
