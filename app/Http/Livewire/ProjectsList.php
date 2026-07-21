@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\Project;
 use App\Models\Article;
 use App\Models\AiAnalysisResult;
+use App\Jobs\BootstrapNewProjectScrapingJob;
 use App\Services\ContentMatchingService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Url;
@@ -455,6 +456,7 @@ class ProjectsList extends Component
         }
 
         $matchResult = app(ContentMatchingService::class)->matchExistingContentForProject($project);
+        BootstrapNewProjectScrapingJob::dispatch($project->id)->onQueue('news');
 
         $this->lastCreatedProjectName = $this->name;
         $this->showSuccessModal = true;

@@ -7,6 +7,11 @@
 
 ## Log Aktivitas Terbaru (20 Juli 2026)
 
+### 1. Proyek Baru Otomatis Bootstrap Scraping
+* Saat proyek baru dibuat, sistem sekarang langsung mengantrikan job bootstrap yang menjalankan portal/news scraping lalu Apify scraping untuk project tersebut.
+* Bootstrap berjalan di background melalui queue agar proses simpan proyek tetap cepat dan tidak menunggu scraping selesai di request UI.
+* Validasi syntax PHP untuk job bootstrap dan Livewire proyek akan dicek setelah perubahan.
+
 ### 1. State Filter Dashboard Dipaksa Reset Saat Buka Project
 * Komponen dashboard `media-dashboard` sekarang mereset state filter saat project dimount, termasuk `search`, `selectedSentiment`, `selectedSources`, `selectedCategory`, `sortBy`, `limit`, dan `selectedKeyword`.
 * Tujuannya agar tampilan IG/TikTok tidak nyangkut di state lama seperti `selectedSources = ['News']` ketika pengguna pindah atau membuka project lain.
