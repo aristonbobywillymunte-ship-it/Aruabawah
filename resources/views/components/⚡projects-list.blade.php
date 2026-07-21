@@ -465,20 +465,20 @@ new class extends Component
             $project->users()->attach($user->id);
         }
 
-        $matchResult = app(ContentMatchingService::class)->matchExistingContentForProject($project);
+        $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
 
         $this->lastCreatedProjectName = $this->name;
         $this->showSuccessModal = true;
         session()->flash(
             'message',
-            'Proyek berhasil dibuat. Data lama yang cocok: '
-            . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
-            . ($matchResult['social_linked'] ?? 0) . ' medsos.'
+            'Proyek berhasil dibuat. Data lama yang sesuai filter: '
+            . (($resyncResult['match']['articles_linked'] ?? 0)) . ' artikel, '
+            . (($resyncResult['match']['social_linked'] ?? 0)) . ' medsos.'
         );
         $this->notifyProjectAction(
-            'Proyek berhasil dibuat. Data lama yang cocok: '
-            . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
-            . ($matchResult['social_linked'] ?? 0) . ' medsos.'
+            'Proyek berhasil dibuat. Data lama yang sesuai filter: '
+            . (($resyncResult['match']['articles_linked'] ?? 0)) . ' artikel, '
+            . (($resyncResult['match']['social_linked'] ?? 0)) . ' medsos.'
         );
         
         $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords']);
@@ -530,28 +530,26 @@ new class extends Component
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
         ]);
 
-        $matchingService = app(ContentMatchingService::class);
-        $matchResult = $matchingService->matchExistingContentForProject($project);
-        $socialSyncResult = $matchingService->syncProjectSocialContent($project);
+        $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
 
         $this->showEditModal = false;
         $this->editProjectId = null;
         session()->flash(
             'message',
-            'Proyek berhasil diperbarui. Data lama yang cocok: '
-            . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
-            . ($matchResult['social_linked'] ?? 0) . ' medsos. '
+            'Proyek berhasil diperbarui. Data lama yang sesuai filter: '
+            . (($resyncResult['match']['articles_linked'] ?? 0)) . ' artikel, '
+            . (($resyncResult['match']['social_linked'] ?? 0)) . ' medsos. '
             . 'Social disinkronkan ulang: '
-            . ($socialSyncResult['attached'] ?? 0) . ' tertaut, '
-            . ($socialSyncResult['detached'] ?? 0) . ' dilepas.'
+            . (($resyncResult['social_sync']['attached'] ?? 0)) . ' tertaut, '
+            . (($resyncResult['social_sync']['detached'] ?? 0)) . ' dilepas.'
         );
         $this->notifyProjectAction(
-            'Proyek berhasil diperbarui. Data lama yang cocok: '
-            . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
-            . ($matchResult['social_linked'] ?? 0) . ' medsos. '
+            'Proyek berhasil diperbarui. Data lama yang sesuai filter: '
+            . (($resyncResult['match']['articles_linked'] ?? 0)) . ' artikel, '
+            . (($resyncResult['match']['social_linked'] ?? 0)) . ' medsos. '
             . 'Social disinkronkan ulang: '
-            . ($socialSyncResult['attached'] ?? 0) . ' tertaut, '
-            . ($socialSyncResult['detached'] ?? 0) . ' dilepas.'
+            . (($resyncResult['social_sync']['attached'] ?? 0)) . ' tertaut, '
+            . (($resyncResult['social_sync']['detached'] ?? 0)) . ' dilepas.'
         );
     }
 
@@ -1459,14 +1457,14 @@ new class extends Component
                     x-transition:enter-end="opacity-100"
                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
                 >
-                    <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-slate-100 overflow-hidden">
-                        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                    <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] shadow-2xl border border-slate-100 overflow-hidden flex flex-col">
+                        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
                             <h3 class="text-base font-hanken font-bold text-slate-900">Edit Proyek</h3>
                             <button wire:click="closeModals" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
                             </button>
                         </div>
-                        <form wire:submit.prevent="updateProject" class="px-8 py-6 space-y-5">
+                        <form wire:submit.prevent="updateProject" class="px-8 py-6 space-y-5 overflow-y-auto flex-1 min-h-0">
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Proyek</label>
                                 <input

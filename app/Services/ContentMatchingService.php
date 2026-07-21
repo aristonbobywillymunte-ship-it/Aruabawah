@@ -11,8 +11,22 @@ use Illuminate\Support\Str;
 class ContentMatchingService
 {
     /**
+     * Resync project content using the current project filters.
+     *
+     * @return array{match: array, social_sync: array}
+     */
+    public function resyncProjectContent(Project $project): array
+    {
+        return [
+            'match' => $this->matchExistingContentForProject($project),
+            'social_sync' => $this->syncProjectSocialContent($project),
+        ];
+    }
+
+    /**
      * Match a global article or social media item against all active projects
-     * and link it via project_articles or project_social_media_items pivot.
+     * using project filters, then link it via project_articles or
+     * project_social_media_items pivot.
      *
      * @param Article|SocialMediaItem $item The item to match
      * @param int|null $discoveryProjectId The ID of the project that discovered the item, if any
@@ -112,7 +126,7 @@ class ContentMatchingService
     /**
      * Link existing global content to a newly created or updated active project.
      * This is intentionally not scraping: it only connects existing database
-     * articles/social posts that already match the project's keywords.
+     * articles/social posts that already match the project's filters.
      */
     public function matchExistingContentForProject(Project $project): array
     {
@@ -226,8 +240,8 @@ class ContentMatchingService
     }
 
     /**
-     * Rebuild social-media links for a project so stale hashtag matches are removed
-     * when project topics change.
+     * Rebuild social-media links for a project so stale matches are removed
+     * when project filters change.
      */
     public function syncProjectSocialContent(Project $project): array
     {

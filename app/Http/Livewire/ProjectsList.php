@@ -465,16 +465,16 @@ class ProjectsList extends Component
             $project->users()->attach($user->id);
         }
 
-        $matchResult = app(ContentMatchingService::class)->matchExistingContentForProject($project);
+        $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
         BootstrapNewProjectScrapingJob::dispatch($project->id)->onQueue('news');
 
         $this->lastCreatedProjectName = $this->name;
         $this->showSuccessModal = true;
         session()->flash(
             'message',
-            'Proyek berhasil dibuat. Data lama yang cocok: '
-            . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
-            . ($matchResult['social_linked'] ?? 0) . ' medsos.'
+            'Proyek berhasil dibuat. Data lama yang sesuai filter: '
+            . (($resyncResult['match']['articles_linked'] ?? 0)) . ' artikel, '
+            . (($resyncResult['match']['social_linked'] ?? 0)) . ' medsos.'
         );
         
         $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords']);
@@ -526,20 +526,18 @@ class ProjectsList extends Component
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
         ]);
 
-        $matchingService = app(ContentMatchingService::class);
-        $matchResult = $matchingService->matchExistingContentForProject($project);
-        $socialSyncResult = $matchingService->syncProjectSocialContent($project);
+        $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
 
         $this->showEditModal = false;
         $this->editProjectId = null;
         session()->flash(
             'message',
-            'Proyek berhasil diperbarui. Data lama yang cocok: '
-            . ($matchResult['articles_linked'] ?? 0) . ' artikel, '
-            . ($matchResult['social_linked'] ?? 0) . ' medsos. '
+            'Proyek berhasil diperbarui. Data lama yang sesuai filter: '
+            . (($resyncResult['match']['articles_linked'] ?? 0)) . ' artikel, '
+            . (($resyncResult['match']['social_linked'] ?? 0)) . ' medsos. '
             . 'Social disinkronkan ulang: '
-            . ($socialSyncResult['attached'] ?? 0) . ' tertaut, '
-            . ($socialSyncResult['detached'] ?? 0) . ' dilepas.'
+            . (($resyncResult['social_sync']['attached'] ?? 0)) . ' tertaut, '
+            . (($resyncResult['social_sync']['detached'] ?? 0)) . ' dilepas.'
         );
     }
 
