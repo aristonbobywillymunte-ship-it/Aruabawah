@@ -7,6 +7,11 @@
 
 ## Log Aktivitas Terbaru (20 Juli 2026)
 
+### 1. Modal Edit Proyek Disamakan dengan Tambah Proyek
+* Modal edit proyek sekarang menampilkan field `Konteks` dan `Dikecualikan` agar isi edit konsisten dengan form tambah proyek.
+* Nilai field tersebut ikut dibaca saat modal edit dibuka dan disimpan kembali ke database bersama `topics`.
+* Validasi syntax Blade dan PHP lulus setelah penyesuaian modal edit.
+
 ### 1. Resync Massal Project Aktif Disiapkan untuk Filter Baru
 * Matching service untuk project aktif sudah diperbaiki agar log tidak lagi merujuk ke variabel keyword lama setelah context/exclude diaktifkan.
 * Resync massal sekarang bisa dipakai untuk melepaskan relasi lama dan membangun ulang pivot project berdasarkan aturan filter baru.

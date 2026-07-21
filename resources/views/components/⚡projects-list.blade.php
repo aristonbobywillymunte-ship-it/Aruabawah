@@ -1511,6 +1511,43 @@ new class extends Component
                                 </div>
                                 @error('editTopicsString')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                             </div>
+                            <div class="border border-slate-200 rounded-2xl bg-slate-50/70 p-5 space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Detail Filter Kata Kunci</h4>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-4">
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-1.5">
+                                            <label class="text-xs font-bold text-slate-800">Konteks</label>
+                                            <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-400 leading-tight">Semua kata kunci ini harus muncul agar penyebutan dikumpulkan.</p>
+                                        <input
+                                            type="text"
+                                            wire:model="contextKeywords"
+                                            class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all bg-white"
+                                            placeholder="Pisahkan dengan koma, contoh: kaltim, wagub"
+                                        />
+                                        <p class="text-[9px] text-slate-400">Pisahkan dengan koma.</p>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-1.5">
+                                            <label class="text-xs font-bold text-slate-800">Dikecualikan</label>
+                                            <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-400 leading-tight">Penyebutan tidak akan dikumpulkan jika mengandung kata kunci ini.</p>
+                                        <input
+                                            type="text"
+                                            wire:model="excludeKeywords"
+                                            class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all bg-white"
+                                            placeholder="Pisahkan dengan koma, contoh: promo, iklan"
+                                        />
+                                        <p class="text-[9px] text-slate-400">Pisahkan dengan koma.</p>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="flex gap-3 pt-2">
                                 <button
                                     type="submit"
