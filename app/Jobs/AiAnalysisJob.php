@@ -117,7 +117,18 @@ class AiAnalysisJob implements ShouldQueue
 
         $dispatchState = $dispatchStateService->claimProcessing($this->payload, $promptTemplateId, $providerContextHash);
         if (! $dispatchState) {
-            Log::info('[Pipeline] Skip AI job because dispatch state is already settled or not due.');
+            Log::info('[Pipeline] Skip AI job because dispatch state is already settled or not due.', [
+                'analyzable_type' => $type,
+                'analyzable_id' => $this->payload['id'] ?? $this->payload['item_id'] ?? null,
+                'project_id' => $this->payload['project_id'] ?? null,
+                'dispatch_key' => app(AiAnalysisDispatchStateService::class)->buildDispatchKey(
+                    (string) ($this->payload['type'] ?? 'article'),
+                    (int) ($this->payload['id'] ?? $this->payload['item_id'] ?? 0),
+                    isset($this->payload['project_id']) ? (int) $this->payload['project_id'] : null,
+                    $promptTemplateId,
+                    $providerContextHash
+                ),
+            ]);
             return;
         }
 

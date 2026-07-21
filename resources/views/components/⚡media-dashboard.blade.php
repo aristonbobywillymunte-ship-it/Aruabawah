@@ -16,6 +16,8 @@ new class extends Component
 {
     use WithPagination;
 
+    private const DASHBOARD_CACHE_VERSION = 'v3';
+
     private const SOCIAL_SOURCE_NAMES = [
         'facebook',
         'instagram',
@@ -43,6 +45,7 @@ new class extends Component
     // Tab state ('penyebutan' or 'analisis')
     #[Url(as: 'tab')]
     public $activeTab = 'cGVueWVidXRhbg==';
+    public bool $analysisLoaded = false;
 
     public function getDecodedProjectId()
     {
@@ -54,6 +57,22 @@ new class extends Component
             return (int) $decoded;
         }
         return $this->projectId;
+    }
+
+    protected function dashboardCacheSignature(): string
+    {
+        return md5(json_encode([
+            'cacheVersion' => self::DASHBOARD_CACHE_VERSION,
+            'startDate' => $this->startDate,
+            'endDate' => $this->endDate,
+            'sources' => $this->selectedSources,
+            'search' => $this->search,
+            'keyword' => $this->selectedKeyword,
+            'sentiment' => $this->selectedSentiment,
+            'category' => $this->selectedCategory,
+            'sortBy' => $this->sortBy,
+            'limit' => $this->limit,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     public function isTab($name)
@@ -71,6 +90,9 @@ new class extends Component
     public function setTab($name)
     {
         $this->activeTab = base64_encode($name);
+        if ($name === 'analisis') {
+            $this->analysisLoaded = false;
+        }
         $this->js('window.scrollTo(0, 0);');
     }
 
@@ -106,6 +128,7 @@ new class extends Component
     public $keywordsTable = [];
     public $keywordSearch = '';
     public $selectedKeyword = null;
+    public bool $dashboardLoaded = false;
 
     public function toggleKeyword($keyword)
     {
@@ -275,7 +298,25 @@ new class extends Component
         $this->supportKeywords = [];
         $this->excludeKeywords = [];
 
+    }
+
+    public function loadDashboard(): void
+    {
+        if ($this->dashboardLoaded) {
+            return;
+        }
+
+        $this->dashboardLoaded = true;
         $this->rebuildKeywordsTable();
+    }
+
+    public function loadAnalysis(): void
+    {
+        if ($this->analysisLoaded) {
+            return;
+        }
+
+        $this->analysisLoaded = true;
     }
 
     /**
@@ -482,7 +523,11 @@ new class extends Component
 
     public function getProjectArticleCount(): int
     {
-        return (int) $this->projectArticlesQuery()->count();
+        $cacheKey = 'media_dashboard_project_count:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
+
+        return (int) Cache::remember($cacheKey, 120, function () {
+            return $this->projectArticlesQuery()->count();
+        });
     }
 
     public function cleanNoiseText(?string $text): string
@@ -554,6 +599,7 @@ new class extends Component
             ->where('published_at', '>=', now()->subDays(7))
             ->orderByDesc('published_at')
             ->limit(30)
+            ->with('aiAnalysisResult')
             ->get();
     }
 
@@ -800,48 +846,52 @@ new class extends Component
 
     public function getCounts()
     {
-        $baseQuery = $this->projectArticlesQuery();
-        $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
-        $normalizedSocials = array_map('strtolower', $socials);
-        // Counts for the filter panel should reflect the visible article pool,
-        // not disappear just because sentiment AI is still pending.
-        $sourceQuery = $this->applyActiveFilters(clone $baseQuery, ['sources', 'sentiment']);
-        $sources = ['Twitter', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
-        $sourceCounts = [];
-        foreach ($sources as $source) {
-            $sourceCounts[$source] = (clone $sourceQuery)
-                ->whereRaw('lower(coalesce(source_name, \'\')) = ?', [strtolower($source)])
+        $cacheKey = 'media_dashboard_counts:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
+
+        return Cache::remember($cacheKey, 120, function () {
+            $baseQuery = $this->projectArticlesQuery();
+            $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
+            $normalizedSocials = array_map('strtolower', $socials);
+            // Counts for the filter panel should reflect the visible article pool,
+            // not disappear just because sentiment AI is still pending.
+            $sourceQuery = $this->applyActiveFilters(clone $baseQuery, ['sources', 'sentiment']);
+            $sources = ['Twitter', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
+            $sourceCounts = [];
+            foreach ($sources as $source) {
+                $sourceCounts[$source] = (clone $sourceQuery)
+                    ->whereRaw('lower(coalesce(source_name, \'\')) = ?', [strtolower($source)])
+                    ->count();
+            }
+            $sourceCounts['News'] = (clone $sourceQuery)
+                ->whereRaw('lower(coalesce(source_name, \'\')) not in (' . implode(',', array_fill(0, count($normalizedSocials), '?')) . ')', $normalizedSocials)
                 ->count();
-        }
-        $sourceCounts['News'] = (clone $sourceQuery)
-            ->whereRaw('lower(coalesce(source_name, \'\')) not in (' . implode(',', array_fill(0, count($normalizedSocials), '?')) . ')', $normalizedSocials)
-            ->count();
 
-        $sentimentQuery = $this->applyActiveFilters(clone $baseQuery, ['sentiment']);
-        $sentimentQueryWithAI = (clone $sentimentQuery)->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-            ->where('ai.analysis_status', 'success')
-            ->whereNotNull('ai.summary')
-            ->whereNotNull('ai.sentiment')
-            ->whereNotNull('ai.risk_level');
-            
-        $sentimentCounts = [
-            'positive' => (clone $sentimentQueryWithAI)->where('ai.sentiment', 'positive')->count(),
-            'neutral'  => (clone $sentimentQueryWithAI)->where('ai.sentiment', 'neutral')->count(),
-            'negative' => (clone $sentimentQueryWithAI)->where('ai.sentiment', 'negative')->count(),
-        ];
+            $sentimentQuery = $this->applyActiveFilters(clone $baseQuery, ['sentiment']);
+            $sentimentQueryWithAI = (clone $sentimentQuery)->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
+                ->where('ai.analysis_status', 'success')
+                ->whereNotNull('ai.summary')
+                ->whereNotNull('ai.sentiment')
+                ->whereNotNull('ai.risk_level');
+                
+            $sentimentCounts = [
+                'positive' => (clone $sentimentQueryWithAI)->where('ai.sentiment', 'positive')->count(),
+                'neutral'  => (clone $sentimentQueryWithAI)->where('ai.sentiment', 'neutral')->count(),
+                'negative' => (clone $sentimentQueryWithAI)->where('ai.sentiment', 'negative')->count(),
+            ];
 
-        $riskCounts = [
-            'low' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'low')->count(),
-            'medium' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'medium')->count(),
-            'high' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'high')->count(),
-            'critical' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'critical')->count(),
-        ];
+            $riskCounts = [
+                'low' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'low')->count(),
+                'medium' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'medium')->count(),
+                'high' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'high')->count(),
+                'critical' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'critical')->count(),
+            ];
 
-        return [
-            'sources'    => $sourceCounts,
-            'sentiments' => $sentimentCounts,
-            'risks'      => $riskCounts,
-        ];
+            return [
+                'sources'    => $sourceCounts,
+                'sentiments' => $sentimentCounts,
+                'risks'      => $riskCounts,
+            ];
+        });
     }
 
     public function getArticles()
@@ -1150,156 +1200,162 @@ new class extends Component
 
     public function getProjectSources()
     {
-        // Keep the source breakdown stable even if sentiment analysis is not yet available.
-        $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['sentiment']);
-        $rawSources = (clone $baseQuery)
-            ->leftJoin('ai_analysis_results as ai', function ($join) {
-                $join->on('articles.id', '=', 'ai.article_id')
-                     ->where('ai.analysis_status', '=', 'success');
-            })
-            ->selectRaw('lower(coalesce(articles.source_name, \'\')) as source_key')
-            ->selectRaw('count(articles.id) as total')
-            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive")
-            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral")
-            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
-            ->groupBy('source_key')
-            ->orderByDesc('total')
-            ->get();
+        $cacheKey = 'media_dashboard_project_sources:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
 
-        return $rawSources->map(function ($row) {
-            $sourceKey = (string) ($row->source_key ?? '');
-            $sourceName = match ($sourceKey) {
-                'tiktok' => 'TikTok',
-                'instagram' => 'Instagram',
-                'facebook' => 'Facebook',
-                'twitter', 'twitter/x', 'x.com' => 'Twitter',
-                'youtube' => 'Youtube',
-                'threads' => 'Threads',
-                default => $sourceKey !== '' ? $sourceKey : 'Sumber tidak diketahui',
-            };
+        return Cache::remember($cacheKey, 120, function () {
+            // Keep the source breakdown stable even if sentiment analysis is not yet available.
+            $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['sentiment']);
+            $rawSources = (clone $baseQuery)
+                ->leftJoin('ai_analysis_results as ai', function ($join) {
+                    $join->on('articles.id', '=', 'ai.article_id')
+                         ->where('ai.analysis_status', '=', 'success');
+                })
+                ->selectRaw('lower(coalesce(articles.source_name, \'\')) as source_key')
+                ->selectRaw('count(articles.id) as total')
+                ->selectRaw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive")
+                ->selectRaw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral")
+                ->selectRaw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
+                ->groupBy('source_key')
+                ->orderByDesc('total')
+                ->get();
 
-            return (object) [
-                'source_name' => $sourceName,
-                'total' => (int) $row->total,
-                'positive' => (int) ($row->positive ?? 0),
-                'neutral' => (int) ($row->neutral ?? 0),
-                'negative' => (int) ($row->negative ?? 0),
-            ];
+            return $rawSources->map(function ($row) {
+                $sourceKey = (string) ($row->source_key ?? '');
+                $sourceName = match ($sourceKey) {
+                    'tiktok' => 'TikTok',
+                    'instagram' => 'Instagram',
+                    'facebook' => 'Facebook',
+                    'twitter', 'twitter/x', 'x.com' => 'Twitter',
+                    'youtube' => 'Youtube',
+                    'threads' => 'Threads',
+                    default => $sourceKey !== '' ? $sourceKey : 'Sumber tidak diketahui',
+                };
+
+                return (object) [
+                    'source_name' => $sourceName,
+                    'total' => (int) $row->total,
+                    'positive' => (int) ($row->positive ?? 0),
+                    'neutral' => (int) ($row->neutral ?? 0),
+                    'negative' => (int) ($row->negative ?? 0),
+                ];
+            });
         });
     }
 
     public function getWawasan()
     {
-        $project = $this->resolveProjectOrFail($this->projectId);
-        $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
-        $total = $baseQuery->count();
-        if ($total === 0) {
-            return [
-                'total' => 0,
-                'positive_pct' => 0,
-                'neutral_pct' => 0,
-                'negative_pct' => 0,
-                'reputation_score' => 100,
-                'crisis_signal' => 'Rendah',
-                'crisis_color' => 'emerald',
-                'summary' => 'Belum ada data artikel yang terkumpul untuk proyek ini. Silakan tambahkan artikel atau hubungkan dengan scraper untuk mendapatkan analisis wawasan otomatis.',
-                'recommendations' => [
-                    'Mulai kumpulkan data dari media berita atau media sosial.',
-                    'Definisikan kata kunci utama dan pendukung untuk memfokuskan pencarian.'
-                ],
-                'categories' => [],
-                'sources' => [],
-                'negative_issues' => [],
-                'risk_triggers' => [],
-                'sentiment_shift' => [
-                    'label' => 'Belum ada data pembanding',
-                    'tone' => 'slate',
-                    'current_negative_pct' => 0,
-                    'previous_negative_pct' => 0,
-                    'delta' => 0,
-                ],
-                'response_actions' => [
-                    ['level' => 'Pantau', 'text' => 'Kumpulkan data terlebih dahulu sebelum mengambil keputusan komunikasi.'],
-                ],
-                'viral_status' => 'Normal',
-                'viral_color' => 'slate',
-                'viral_desc' => 'Volume berita stabil',
-            ];
-        }
+        $cacheKey = 'media_dashboard_wawasan:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
 
-        $baseQueryWithAI = (clone $baseQuery)->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-            ->where('ai.analysis_status', 'success')
-            ->whereNotNull('ai.summary')
-            ->whereNotNull('ai.sentiment')
-            ->whereNotNull('ai.risk_level');
-        $total = (clone $baseQuery)->count();
-
-        $sentimentCounts = (clone $baseQueryWithAI)
-            ->selectRaw("
-                SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive,
-                SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral,
-                SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative
-            ")
-            ->first();
-        $pos = (int) ($sentimentCounts->positive ?? 0);
-        $neu = (int) ($sentimentCounts->neutral ?? 0);
-        $neg = (int) ($sentimentCounts->negative ?? 0);
-
-        $pos_pct = round(($pos / $total) * 100);
-        $neu_pct = round(($neu / $total) * 100);
-        $neg_pct = round(($neg / $total) * 100);
-
-        // Reputation score formula: (Pos + 0.5 * Neu) / Total * 100
-        $reputation_score = round((($pos + ($neu * 0.5)) / $total) * 100);
-
-        if ($neg_pct >= 30) {
-            $crisis_signal = 'Tinggi';
-            $crisis_color = 'rose';
-        } elseif ($neg_pct >= 15) {
-            $crisis_signal = 'Sedang';
-            $crisis_color = 'amber';
-        } else {
-            $crisis_signal = 'Rendah';
-            $crisis_color = 'emerald';
-        }
-
-        // Prioritaskan wawasan buatan AI (jika sudah di-generate)
-        if (!empty($project->ai_insight_summary) && !empty($project->ai_insight_recommendations)) {
-            $summary = $project->ai_insight_summary;
-            $recs = $project->ai_insight_recommendations;
-        } else {
-            // Generate dynamic executive summary based on data (Fallback Template)
-            $summary = "Berdasarkan analisis terhadap **{$total}** penyebutan, proyek **" . strtoupper($this->projectName) . "** memiliki reputasi media yang ";
-            if ($reputation_score >= 75) {
-                $summary .= "sangat kuat (**{$reputation_score}/100**). Sentimen positif mendominasi perbincangan sebesar **{$pos_pct}%**, yang mencerminkan respons masyarakat yang sangat baik.";
-            } elseif ($reputation_score >= 50) {
-                $summary .= "cukup stabil (**{$reputation_score}/100**). Sebagian besar perbincangan bersifat netral (**{$neu_pct}%**), menunjukkan liputan berita yang bersifat informatif tanpa opini yang kuat.";
-            } else {
-                $summary .= "kurang kondusif (**{$reputation_score}/100**). Volume sentimen negatif mencapai **{$neg_pct}%**, mengindikasikan adanya isu sensitif atau kritik yang perlu segera direspon.";
+        return Cache::remember($cacheKey, 120, function () {
+            $project = $this->resolveProjectOrFail($this->projectId);
+            $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
+            $total = $baseQuery->count();
+            if ($total === 0) {
+                return [
+                    'total' => 0,
+                    'positive_pct' => 0,
+                    'neutral_pct' => 0,
+                    'negative_pct' => 0,
+                    'reputation_score' => 100,
+                    'crisis_signal' => 'Rendah',
+                    'crisis_color' => 'emerald',
+                    'summary' => 'Belum ada data artikel yang terkumpul untuk proyek ini. Silakan tambahkan artikel atau hubungkan dengan scraper untuk mendapatkan analisis wawasan otomatis.',
+                    'recommendations' => [
+                        'Mulai kumpulkan data dari media berita atau media sosial.',
+                        'Definisikan kata kunci utama dan pendukung untuk memfokuskan pencarian.'
+                    ],
+                    'categories' => [],
+                    'sources' => [],
+                    'negative_issues' => [],
+                    'risk_triggers' => [],
+                    'sentiment_shift' => [
+                        'label' => 'Belum ada data pembanding',
+                        'tone' => 'slate',
+                        'current_negative_pct' => 0,
+                        'previous_negative_pct' => 0,
+                        'delta' => 0,
+                    ],
+                    'response_actions' => [
+                        ['level' => 'Pantau', 'text' => 'Kumpulkan data terlebih dahulu sebelum mengambil keputusan komunikasi.'],
+                    ],
+                    'viral_status' => 'Normal',
+                    'viral_color' => 'slate',
+                    'viral_desc' => 'Volume berita stabil',
+                ];
             }
 
-            // Recommendations based on sentiment
-            $recs = [];
-            if ($neg_pct >= 20) {
-                $recs[] = "Lakukan klarifikasi segera melalui siaran pers terkait isu negatif utama yang berkembang.";
-                $recs[] = "Tingkatkan frekuensi publikasi berita positif untuk menyeimbangkan sentimen di media online.";
+            $baseQueryWithAI = (clone $baseQuery)->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
+                ->where('ai.analysis_status', 'success')
+                ->whereNotNull('ai.summary')
+                ->whereNotNull('ai.sentiment')
+                ->whereNotNull('ai.risk_level');
+            $total = (clone $baseQuery)->count();
+
+            $sentimentCounts = (clone $baseQueryWithAI)
+                ->selectRaw("
+                    SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive,
+                    SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral,
+                    SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative
+                ")
+                ->first();
+            $pos = (int) ($sentimentCounts->positive ?? 0);
+            $neu = (int) ($sentimentCounts->neutral ?? 0);
+            $neg = (int) ($sentimentCounts->negative ?? 0);
+
+            $pos_pct = round(($pos / $total) * 100);
+            $neu_pct = round(($neu / $total) * 100);
+            $neg_pct = round(($neg / $total) * 100);
+
+            // Reputation score formula: (Pos + 0.5 * Neu) / Total * 100
+            $reputation_score = round((($pos + ($neu * 0.5)) / $total) * 100);
+
+            if ($neg_pct >= 30) {
+                $crisis_signal = 'Tinggi';
+                $crisis_color = 'rose';
+            } elseif ($neg_pct >= 15) {
+                $crisis_signal = 'Sedang';
+                $crisis_color = 'amber';
             } else {
-                $recs[] = "Pertahankan kampanye komunikasi yang sedang berjalan dan perluas jangkauan ke media nasional terkemuka.";
-                $recs[] = "Optimalkan kata kunci pendukung untuk menangkap peluang publikasi yang lebih luas.";
+                $crisis_signal = 'Rendah';
+                $crisis_color = 'emerald';
             }
-            $recs[] = "Gunakan influencer lokal untuk memperkuat pesan positif di kanal media sosial utama.";
-        }
 
-        // Top categories
-        $categories = (clone $baseQuery)->select('category', \DB::raw('count(*) as total'))
-            ->groupBy('category')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get()
-            ->toArray();
+            // Prioritaskan wawasan buatan AI (jika sudah di-generate)
+            if (!empty($project->ai_insight_summary) && !empty($project->ai_insight_recommendations)) {
+                $summary = $project->ai_insight_summary;
+                $recs = $project->ai_insight_recommendations;
+            } else {
+                // Generate dynamic executive summary based on data (Fallback Template)
+                $summary = "Berdasarkan analisis terhadap **{$total}** penyebutan, proyek **" . strtoupper($this->projectName) . "** memiliki reputasi media yang ";
+                if ($reputation_score >= 75) {
+                    $summary .= "sangat kuat (**{$reputation_score}/100**). Sentimen positif mendominasi perbincangan sebesar **{$pos_pct}%**, yang mencerminkan respons masyarakat yang sangat baik.";
+                } elseif ($reputation_score >= 50) {
+                    $summary .= "cukup stabil (**{$reputation_score}/100**). Sebagian besar perbincangan bersifat netral (**{$neu_pct}%**), menunjukkan liputan berita yang bersifat informatif tanpa opini yang kuat.";
+                } else {
+                    $summary .= "kurang kondusif (**{$reputation_score}/100**). Volume sentimen negatif mencapai **{$neg_pct}%**, mengindikasikan adanya isu sensitif atau kritik yang perlu segera direspon.";
+                }
 
-        // Top sources with sentiment breakdown
-        $sources = (clone $baseQuery)->leftJoin('ai_analysis_results as ai', function ($join) {
+                // Recommendations based on sentiment
+                $recs = [];
+                if ($neg_pct >= 20) {
+                    $recs[] = "Lakukan klarifikasi segera melalui siaran pers terkait isu negatif utama yang berkembang.";
+                    $recs[] = "Tingkatkan frekuensi publikasi berita positif untuk menyeimbangkan sentimen di media online.";
+                } else {
+                    $recs[] = "Pertahankan kampanye komunikasi yang sedang berjalan dan perluas jangkauan ke media nasional terkemuka.";
+                    $recs[] = "Optimalkan kata kunci pendukung untuk menangkap peluang publikasi yang lebih luas.";
+                }
+                $recs[] = "Gunakan influencer lokal untuk memperkuat pesan positif di kanal media sosial utama.";
+            }
+            // Top categories
+            $categories = (clone $baseQuery)->select('category', \DB::raw('count(*) as total'))
+                ->groupBy('category')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get()
+                ->toArray();
+
+            // Top sources with sentiment breakdown
+            $sources = (clone $baseQuery)->leftJoin('ai_analysis_results as ai', function ($join) {
                 $join->on('articles.id', '=', 'ai.article_id')
                      ->where('ai.analysis_status', '=', 'success');
             })
@@ -1313,26 +1369,26 @@ new class extends Component
             ->get()
             ->toArray();
 
-        $negativeIssues = (clone $baseQueryWithAI)
-            ->where('ai.sentiment', 'negative')
-            ->selectRaw('COALESCE(ai.main_issue, articles.category, articles.title) as issue, COUNT(*) as total, MIN(articles.url) as url')
-            ->groupBy('issue')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get()
-            ->map(fn ($row) => [
-                'issue' => Str::limit((string) $row->issue, 90),
-                'total' => (int) $row->total,
-                'pct' => $neg > 0 ? round(((int) $row->total / $neg) * 100) : 0,
-                'url' => $row->url ?: null,
-            ])
-            ->toArray();
+            $negativeIssues = (clone $baseQueryWithAI)
+                ->where('ai.sentiment', 'negative')
+                ->selectRaw('COALESCE(ai.main_issue, articles.category, articles.title) as issue, COUNT(*) as total, MIN(articles.url) as url')
+                ->groupBy('issue')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get()
+                ->map(fn ($row) => [
+                    'issue' => Str::limit((string) $row->issue, 90),
+                    'total' => (int) $row->total,
+                    'pct' => $neg > 0 ? round(((int) $row->total / $neg) * 100) : 0,
+                    'url' => $row->url ?: null,
+                ])
+                ->toArray();
 
-        $riskTriggers = (clone $baseQueryWithAI)
-            ->whereIn('ai.risk_level', ['high', 'critical'])
-            ->orderByRaw("CASE ai.risk_level WHEN 'critical' THEN 2 WHEN 'high' THEN 1 ELSE 0 END DESC")
-            ->orderByDesc('ai.project_estimated_readers')
-            ->orderByDesc('articles.published_at')
+            $riskTriggers = (clone $baseQueryWithAI)
+                ->whereIn('ai.risk_level', ['high', 'critical'])
+                ->orderByRaw("CASE ai.risk_level WHEN 'critical' THEN 2 WHEN 'high' THEN 1 ELSE 0 END DESC")
+                ->orderByDesc('ai.project_estimated_readers')
+                ->orderByDesc('articles.published_at')
             ->limit(5)
             ->get([
                 'articles.id',
@@ -1405,7 +1461,7 @@ new class extends Component
             $viral_desc = 'Volume berita stabil';
         }
 
-        return [
+            return [
             'total' => $total,
             'positive_pct' => $pos_pct,
             'neutral_pct' => $neu_pct,
@@ -1424,7 +1480,8 @@ new class extends Component
             'viral_status' => $viral_status ?? 'Normal',
             'viral_color' => $viral_color ?? 'slate',
             'viral_desc' => $viral_desc ?? 'Volume berita stabil',
-        ];
+            ];
+        });
     }
 };
 ?>
@@ -1543,43 +1600,43 @@ new class extends Component
             <!-- Navigation Links -->
             <nav class="hidden md:flex items-center justify-center gap-6 h-full justify-self-center">
                     <a 
-                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('penyebutan')]) }}"
+                        href="{{ route('home', ['project' => $this->projectId, 'tab' => base64_encode('penyebutan')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('penyebutan') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Penyebutan
                     </a>
                     <a 
-                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('analisis')]) }}"
+                        href="{{ route('home', ['project' => $this->projectId, 'tab' => base64_encode('analisis')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('analisis') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Analisis
                     </a>
                     <a 
-                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('katakunci')]) }}"
+                        href="{{ route('home', ['project' => $this->projectId, 'tab' => base64_encode('katakunci')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('katakunci') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Kata Kunci
                     </a>
                     <a 
-                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('wawasan')]) }}"
+                        href="{{ route('home', ['project' => $this->projectId, 'tab' => base64_encode('wawasan')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('wawasan') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Wawasan
                     </a>
                     <a 
-                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('konten')]) }}"
+                        href="{{ route('home', ['project' => $this->projectId, 'tab' => base64_encode('konten')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('konten') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Konten
                     </a>
                     <a 
-                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('sumber')]) }}"
+                        href="{{ route('home', ['project' => $this->projectId, 'tab' => base64_encode('sumber')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('sumber') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Sumber
                     </a>
                     <a 
-                        href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode('laporan')]) }}"
+                        href="{{ route('home', ['project' => $this->projectId, 'tab' => base64_encode('laporan')]) }}"
                         class="font-bold text-sm px-1 py-5 h-full flex items-center transition-all cursor-pointer border-b-2 {{ $this->isTab('laporan') ? 'text-[#1fa387] border-[#1fa387]' : 'text-slate-500 border-transparent hover:text-slate-800' }}"
                     >
                         Laporan
@@ -1644,7 +1701,7 @@ new class extends Component
             ['key' => 'laporan', 'label' => 'Laporan']
         ] as $tab)
             <a 
-                href="{{ route('home', ['project' => request()->query('project'), 'tab' => base64_encode($tab['key'])]) }}"
+                href="{{ route('home', ['project' => $this->projectId, 'tab' => base64_encode($tab['key'])]) }}"
                 class="flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {{ $this->isTab($tab['key']) ? 'bg-[#1fa387]/10 text-[#1fa387]' : 'text-slate-500 hover:text-slate-800' }}"
             >
                 {{ $tab['label'] }}
@@ -1667,14 +1724,20 @@ new class extends Component
                     <span class="text-[#1fa387] uppercase tracking-wide truncate max-w-[200px] sm:max-w-none">{{ $projectName }}</span>
                 </h1>
                 <p class="mt-1 text-[9px] sm:text-[10px] font-semibold text-slate-500">
-                    Total berita: <span class="text-slate-800">{{ number_format($this->getProjectArticleCount(), 0, ',', '.') }}</span>
+                    Total berita:
+                    @if($dashboardLoaded)
+                        <span class="text-slate-800">{{ number_format($this->getProjectArticleCount(), 0, ',', '.') }}</span>
+                    @else
+                        <span class="inline-block w-10 h-3 rounded bg-slate-200 animate-pulse align-middle"></span>
+                    @endif
                 </p>
             </div>
         </div>
     </div>
 
     <!-- Main Workspace Layout with Real Full-Height Left Sidebar -->
-    <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 min-h-0 overflow-hidden">
+    <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 min-h-0 overflow-hidden" wire:init="loadDashboard">
+        @if($dashboardLoaded)
         
         <!-- Left Sidebar -->
         <aside class="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-6 gap-5 flex-shrink-0 h-full">
@@ -2289,24 +2352,11 @@ new class extends Component
                 </section>
             @elseif($this->isTab('analisis'))
                 <!-- TAB 2: Analisis (Redesigned matching screenshots) -->
-                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:init="loadAnalysis">
+                    @if($analysisLoaded)
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
-                        <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data untuk proyek <span class="text-[#1fa387] font-bold uppercase">{{ $projectName }}</span></p>
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            @foreach($this->primaryKeywords as $kw)
-                                @php
-                                    $cleanKw = trim((string) $kw);
-                                    $hashtagKw = preg_replace('/\s+/u', '', preg_replace('/^#+/u', '', $cleanKw) ?? $cleanKw) ?? $cleanKw;
-                                @endphp
-                                @if($cleanKw !== '')
-                                    <span class="inline-flex items-center gap-1.5 rounded-full border border-[#1fa387]/20 bg-[#1fa387]/6 px-3 py-1 text-[10px] font-bold text-[#1fa387]">
-                                        <span>{{ $cleanKw }}</span>
-                                        <span class="text-[#0f766e]">#{{ $hashtagKw }}</span>
-                                    </span>
-                                @endif
-                            @endforeach
-                        </div>
+                        <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data yang relevan untuk proyek aktif.</p>
                     </div>
                     <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
@@ -3527,6 +3577,22 @@ new class extends Component
                             </div>
                         </div>
                     </div>
+                    @else
+                        <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm animate-pulse">
+                            <div class="h-5 w-48 rounded bg-slate-100 mb-2"></div>
+                            <div class="h-3 w-80 rounded bg-slate-100"></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            @for($i = 0; $i < 3; $i++)
+                                <div class="h-28 rounded-2xl bg-white border border-slate-200 shadow-sm animate-pulse"></div>
+                            @endfor
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @for($i = 0; $i < 4; $i++)
+                                <div class="h-36 rounded-2xl bg-white border border-slate-200 shadow-sm animate-pulse"></div>
+                            @endfor
+                        </div>
+                    @endif
                 </section>
             @elseif($this->isTab('katakunci'))
                 <!-- TAB 3: Kata Kunci Configuration Page -->
@@ -5347,6 +5413,40 @@ new class extends Component
             </div>
         </div>
     </div>
+
+        @else
+            <div class="flex-1 min-w-0 min-h-0 p-4 sm:p-6">
+                <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6 h-full">
+                    <div class="space-y-4">
+                        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm animate-pulse">
+                            <div class="h-4 w-48 rounded bg-slate-100 mb-4"></div>
+                            <div class="h-8 w-80 rounded bg-slate-100 mb-2"></div>
+                            <div class="h-4 w-96 rounded bg-slate-100"></div>
+                        </div>
+                        <div class="space-y-4">
+                            @for($i = 0; $i < 4; $i++)
+                                <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm animate-pulse">
+                                    <div class="h-4 w-28 rounded bg-slate-100 mb-3"></div>
+                                    <div class="h-5 w-3/4 rounded bg-slate-100 mb-4"></div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="h-20 rounded-2xl bg-slate-100"></div>
+                                        <div class="h-20 rounded-2xl bg-slate-100"></div>
+                                    </div>
+                                </div>
+                            @endfor
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm animate-pulse h-fit">
+                        <div class="h-4 w-28 rounded bg-slate-100 mb-4"></div>
+                        <div class="space-y-3">
+                            @for($i = 0; $i < 6; $i++)
+                                <div class="h-10 rounded-xl bg-slate-100"></div>
+                            @endfor
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
     <!-- Viral Articles Modal (Alpine.js) -->
     <div 

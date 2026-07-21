@@ -197,6 +197,19 @@ Repository ini sedang dikembangkan secara aktif. Beberapa bagian UI dan navigasi
 - Gunakan `npm run dev` untuk mode pengembangan frontend.
 - Gunakan queue worker untuk proses background jika fitur scraping atau job aktif.
 
+## Menjalankan Di Docker
+
+Repository ini menggunakan `docker-compose.yml` untuk menjalankan aplikasi, Redis, dan PostgreSQL.
+
+- Jalankan perintah artisan di container aplikasi:
+  - `docker exec -it media_intelligent_container php artisan migrate`
+  - `docker exec -it media_intelligent_container php artisan tinker`
+  - `docker exec -it media_intelligent_container php artisan queue:work`
+- Jangan jalankan artisan dari host lokal jika `.env` memakai `DB_HOST=postgres`, karena hostname itu hanya bisa di-resolve dari jaringan Docker.
+- Jika ingin menjalankan perintah dari host, ubah dulu `DB_HOST` ke alamat PostgreSQL yang bisa diakses dari host tersebut.
+- Script Artisan generik di `composer.json` tetap ada untuk environment yang sudah berada di dalam container; jangan anggap itu perintah host lokal langsung.
+- Kalau kamu melihat `composer setup` atau `composer dev`, jalankan itu hanya di environment yang memang sudah punya akses ke Docker DB, bukan dari shell host yang masih memakai hostname `postgres`.
+
 ## Lisensi
 
 Proyek ini digunakan untuk kebutuhan internal ARUSBAWAH Media Intelligence.

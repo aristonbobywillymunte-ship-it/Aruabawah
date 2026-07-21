@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class AiAnalysisDispatchStateService
 {
     public const MAX_AUTO_ATTEMPTS = 3;
-    public const DEFAULT_RETRY_MINUTES = 15;
+    public const DEFAULT_RETRY_MINUTES = 5;
 
     public function buildDispatchKey(string $analyzableType, int $analyzableId, ?int $projectId, ?int $promptTemplateId, string $providerContextHash): string
     {

@@ -7,6 +7,7 @@ use App\Models\AiAnalysisDispatchState;
 use App\Models\Article;
 use App\Models\Project;
 use App\Services\ContentMatchingService;
+use App\Services\AiAnalysisDispatchStateService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Queue;
 
@@ -18,7 +19,7 @@ class QueueUnscoredAiContent extends Command
 
     protected $description = 'Queue content that matches active project filters but has no AI result yet.';
 
-    public function handle(ContentMatchingService $matchingService): int
+    public function handle(ContentMatchingService $matchingService, AiAnalysisDispatchStateService $dispatchStateService): int
     {
         $limit = max(1, (int) $this->option('limit'));
         $hours = max(1, (int) $this->option('hours'));
@@ -28,10 +29,6 @@ class QueueUnscoredAiContent extends Command
 
         $activeProjects = Project::query()
             ->where('is_active', true)
-            ->when(
-                \Illuminate\Support\Facades\Schema::hasColumn('projects', 'priority'),
-                fn ($query) => $query->orderBy('priority')
-            )
             ->orderBy('id')
             ->get();
 
@@ -49,7 +46,7 @@ class QueueUnscoredAiContent extends Command
             })
             ->orderByDesc('published_at')
             ->orderByDesc('id')
-            ->chunkById(100, function ($articles) use ($activeProjects, $matchingService, $limit, &$queued, &$skipped) {
+            ->chunkById(100, function ($articles) use ($activeProjects, $matchingService, $dispatchStateService, $limit, &$queued, &$skipped) {
                 foreach ($articles as $article) {
                     if ($queued >= $limit) {
                         return false;
@@ -87,8 +84,10 @@ class QueueUnscoredAiContent extends Command
                         'no_telegram' => true,
                     ];
 
-                    AiAnalysisJob::dispatch($payload)->onConnection('redis-ai')->onQueue('ai-analysis');
-                    $queued++;
+                    $decision = $dispatchStateService->reserveQueuedStateAndDispatch($payload);
+                    if ($decision['should_dispatch'] ?? false) {
+                        $queued++;
+                    }
                 }
 
                 return true;

@@ -6,6 +6,7 @@ use App\Jobs\AiAnalysisJob;
 use App\Models\AiAnalysisDispatchState;
 use App\Models\Article;
 use App\Models\SocialMediaItem;
+use App\Services\AiAnalysisDispatchStateService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -142,9 +143,8 @@ class RequeueOrphanQueuedAiStates extends Command
             ->get();
 
         $eligible = 0;
-        $processed = 0;
         foreach ($states as $state) {
-            if ($processed >= $limit) {
+            if ($eligible >= $limit) {
                 break;
             }
 
@@ -161,7 +161,6 @@ class RequeueOrphanQueuedAiStates extends Command
                 $canDispatch ? 'yes' : 'no',
                 $reason
             ));
-            $processed++;
 
             if (! $canDispatch || ! $apply) {
                 continue;
@@ -170,9 +169,9 @@ class RequeueOrphanQueuedAiStates extends Command
             try {
                 AiAnalysisJob::dispatch(array_merge($payload, [
                     'no_telegram' => true,
-                ]))
-                    ->onConnection('redis-ai')
-                    ->onQueue('ai-analysis');
+                    'prompt_template_id' => $state->prompt_template_id ? (int) $state->prompt_template_id : null,
+                    'provider_context_hash' => $state->provider_context_hash ?: null,
+                ]))->onConnection('redis-ai')->onQueue('ai-analysis');
 
                 $eligible++;
                 $dispatchedStateIds[] = $state->id;

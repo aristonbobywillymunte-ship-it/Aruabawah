@@ -1107,56 +1107,54 @@ new class extends Component
                         </div>
                     </section>
 
-                    @php
-                        $projects = $this->getProjects();
-                    @endphp
-
-                    @if(!auth()->user()?->isAdmin() && empty($projects))
-                        <div class="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-600 shadow-sm">
-                            Belum ada project yang diberikan ke akun Anda.
-                        </div>
-                    @endif
-
-                    <!-- Project Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-                        <!-- Create Project Card -->
-                        @if(auth()->check())
-                            <div 
-                                wire:click="$set('isCreatingProject', true)"
-                                class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col self-start min-h-[880px] cursor-pointer hover:bg-white/50 transition-all duration-300 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
-                            >
-                                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                                    </svg>
+                    <div wire:init="loadProjects">
+                        @if($projectsLoaded)
+                            @if(!auth()->user()?->isAdmin() && empty($projects))
+                                <div class="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-600 shadow-sm">
+                                    Belum ada project yang diberikan ke akun Anda.
                                 </div>
-                                <h3 class="text-xl font-hanken font-bold text-slate-800 mb-2">Buat Proyek Baru</h3>
-                                <p class="text-slate-400 text-sm max-w-[220px] leading-relaxed">
-                                    Tambahkan monitoring media online, cetak, dan media sosial baru
-                                </p>
-                            </div>
-                        @endif
+                            @endif
 
-                        <!-- Dynamic Projects List -->
-                        @foreach($projects as $idx => $project)
-                            @php
-                                $projectCreatedAt = $project['created_at'] ?? '—';
-                                $portalIsRunning = (bool) ($project['portal_is_running'] ?? false);
-                                $lastPortalUpdate = $project['last_portal_update'] ?? 'Belum ada data';
-                                $medsosIsRunning = (bool) ($project['medsos_is_running'] ?? false);
-                                $medsosRunningLabel = $project['medsos_running_label'] ?? 'Data Medsos Terakhir';
-                                $lastMedsosUpdate = $project['last_medsos_update'] ?? 'Belum ada data';
-                            @endphp
-                            <article
-                                x-data="{
-                                    showRiskStats: JSON.parse(localStorage.getItem('project-risk-stats-{{ $project['id'] }}') || 'false'),
-                                    toggleRiskStats() {
-                                        this.showRiskStats = !this.showRiskStats;
-                                        localStorage.setItem('project-risk-stats-{{ $project['id'] }}', JSON.stringify(this.showRiskStats));
-                                    }
-                                }"
-                                class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col self-start shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all"
-                            >
+                            <!-- Project Grid -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+                                <!-- Create Project Card -->
+                                @if(auth()->check())
+                                    <div 
+                                        wire:click="$set('isCreatingProject', true)"
+                                        class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col self-start min-h-[880px] cursor-pointer hover:bg-white/50 transition-all duration-300 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+                                    >
+                                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                            <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                                            </svg>
+                                        </div>
+                                        <h3 class="text-xl font-hanken font-bold text-slate-800 mb-2">Buat Proyek Baru</h3>
+                                        <p class="text-slate-400 text-sm max-w-[220px] leading-relaxed">
+                                            Tambahkan monitoring media online, cetak, dan media sosial baru
+                                        </p>
+                                    </div>
+                                @endif
+
+                                <!-- Dynamic Projects List -->
+                                @foreach($projects as $idx => $project)
+                                    @php
+                                        $projectCreatedAt = $project['created_at'] ?? '—';
+                                        $portalIsRunning = (bool) ($project['portal_is_running'] ?? false);
+                                        $lastPortalUpdate = $project['last_portal_update'] ?? 'Belum ada data';
+                                        $medsosIsRunning = (bool) ($project['medsos_is_running'] ?? false);
+                                        $medsosRunningLabel = $project['medsos_running_label'] ?? 'Data Medsos Terakhir';
+                                        $lastMedsosUpdate = $project['last_medsos_update'] ?? 'Belum ada data';
+                                    @endphp
+                                    <article
+                                        x-data="{
+                                            showRiskStats: JSON.parse(localStorage.getItem('project-risk-stats-{{ $project['id'] }}') || 'false'),
+                                            toggleRiskStats() {
+                                                this.showRiskStats = !this.showRiskStats;
+                                                localStorage.setItem('project-risk-stats-{{ $project['id'] }}', JSON.stringify(this.showRiskStats));
+                                            }
+                                        }"
+                                        class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col self-start shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all"
+                                    >
                                 <!-- Card Header -->
                                 <div class="flex items-start justify-between mb-8">
                                     <div class="flex items-center gap-3">
@@ -1340,8 +1338,28 @@ new class extends Component
                                         </span>
                                     </a>
                                 </div>
-                            </article>
-                        @endforeach
+                                    </article>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+                                @if(auth()->check())
+                                    <div class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col self-start min-h-[880px] cursor-default animate-pulse shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)]">
+                                        <div class="w-12 h-12 rounded-full bg-slate-100 mb-6"></div>
+                                        <div class="h-6 w-40 rounded bg-slate-100 mb-2"></div>
+                                        <div class="h-4 w-56 rounded bg-slate-100"></div>
+                                    </div>
+                                @endif
+                                @for($i = 0; $i < 4; $i++)
+                                    <div class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col self-start min-h-[880px] animate-pulse shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)]">
+                                        <div class="h-4 w-24 rounded bg-slate-100 mb-6"></div>
+                                        <div class="h-7 w-3/4 rounded bg-slate-100 mb-4"></div>
+                                        <div class="h-40 rounded bg-slate-100 mb-4"></div>
+                                        <div class="h-10 rounded bg-slate-100 mt-auto"></div>
+                                    </div>
+                                @endfor
+                            </div>
+                        @endif
                     </div>
                 @endif
             </main>

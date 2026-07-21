@@ -9,6 +9,7 @@ use App\Models\SocialMediaItem;
 use App\Models\Project;
 use Illuminate\Support\Facades\DB;
 use App\Services\ContentMatchingService;
+use App\Services\AiAnalysisDispatchStateService;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithoutUrlPagination;
@@ -104,7 +105,11 @@ class PipelineMonitor extends Component
                     'prompt_template_id' => $state->prompt_template_id,
                     'provider_context_hash' => $state->provider_context_hash,
                 ];
-                \App\Jobs\AiAnalysisJob::dispatch($payload)->onQueue('ai-analysis');
+                app(AiAnalysisDispatchStateService::class)->reserveQueuedStateAndDispatch(
+                    $payload,
+                    $state->prompt_template_id,
+                    $state->provider_context_hash
+                );
             }
 
             $payload = ['type' => 'success', 'title' => 'Tugas AI berhasil dikembalikan ke antrean.', 'message' => ''];

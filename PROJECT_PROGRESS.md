@@ -4,6 +4,18 @@
 * **Seluruh Portal Utama:** 13 portal berita aktif di Kalimantan Timur telah dibersihkan dari duplikasi data, server mati (`samarindatv.com` dihapus), dan statusnya berhasil diverifikasi (**`verified`** / Lolos Uji).
 
 ## Catatan Audit Terbaru (21 Juli 2026)
+* Repo ini memang dijalankan lewat Docker Compose; hostname database `postgres` hanya valid dari container, bukan dari host lokal langsung.
+* Perintah artisan untuk migrasi, tinker, queue, dan scheduler sebaiknya dijalankan lewat `docker exec` ke container `media_intelligent_container`.
+* Script `composer setup` dan `composer dev` tetap ada untuk environment container, jadi jangan dipakai dari host lokal yang belum bisa resolve `DB_HOST=postgres`.
+* `ai:queue-unscored-content` sempat berhenti karena closure chunk tidak membawa `AiAnalysisDispatchStateService`; variabel itu sudah dimasukkan ke `use (...)` agar requeue bisa lanjut normal.
+* Dari audit state AI terakhir, 25 baris `queued` tipe `article` ternyata sudah punya `ai_analysis_results` sukses dan sudah dibersihkan dari `ai_analysis_dispatch_states`; sisa `queued` sekarang hanya 32 baris tipe `social` yang masih belum punya hasil sukses.
+* `ai:requeue-orphan-queued-states` sempat hanya memeriksa baris queued pertama dan terhenti di `empty_content`; limit sekarang dihitung dari jumlah state yang benar-benar eligible, sehingga item sosial valid bisa lanjut dipompa.
+* Enam baris `queued` sosial yang benar-benar `empty_content` sudah dibersihkan dari `ai_analysis_dispatch_states`, sehingga sisa queued sosial sekarang hanya 26 baris yang masih punya konten.
+* Retry dasar AI dipersingkat dari 15 menit menjadi 5 menit agar kasus `retry_wait` tidak terlalu lama menunggu sebelum dicoba lagi.
+* Tab Analisis di `media-dashboard` sekarang tidak lagi menghitung wawasan berat di level render awal; data `getWawasan()` dipanggil hanya saat tab analisis aktif dan hasilnya ikut di-cache singkat.
+* Breakdown sumber proyek (`getProjectSources()`) juga diberi cache singkat agar buka tab analisis tidak mengulang query agregasi yang sama berkali-kali.
+* Setelah caching dipindahkan, pembacaan wawasan dikembalikan ke satu sumber render supaya isi kartu analisis tetap muncul dan tidak kosong.
+* Dedupe dispatch AI sekarang memasukkan `project_id` ke `dispatch_key`, jadi artikel yang sama bisa dianalisis per project tanpa saling menimpa state project lain.
 * Retry AI untuk item sosial yang terkena rate limit kini dilindungi dari cleanup massal di Pipeline Monitor.
 * Aksi `clearAllPendingAiStates()` tidak lagi menghapus state `retry_wait` yang masih punya `next_retry_at` di masa depan.
 * Test feature ditambahkan untuk memastikan cleanup massal hanya menutup antrean `queued`, sementara retry aktif tetap bertahan sampai waktunya dieksekusi lagi.
@@ -12,6 +24,9 @@
 * Auto-queue global `ai:queue-unscored-content` diperbaiki agar tidak gagal saat kolom `priority` pada tabel `projects` belum tersedia di database runtime.
 * Guard scheduler AI kini menahan job baru ketika worker masih processing, queue Redis masih sibuk, atau provider sedang cooldown, lalu hanya melanjutkan saat kondisi idle dan provider aktif kembali.
 * Social ingest Apify kini menormalisasi `post_url` sebelum `updateOrCreate`, jadi variasi URL tracking/trailing slash tidak membuat IG/TikTok/Facebook tersimpan dobel.
+* Panel konfigurasi Apify tidak lagi melakukan `syncManagedActors()` di setiap `render()`, supaya buka modal edit tidak ikut kena sinkronisasi berat berulang.
+* Halaman daftar proyek sekarang menunda hitung data proyek sampai setelah render awal lewat `wire:init`, supaya paint pertama lebih ringan.
+* Klik edit proyek sekarang memakai cache daftar proyek yang sudah dimuat, jadi modal edit tidak memicu hitung ulang statistik proyek yang berat.
 
 ---
 
@@ -689,3 +704,23 @@
 ### 53. Matching Facebook Diperlonggar ke Token Keyword
 * Pencocokan Facebook sekarang punya fallback token-match jika frasa utuh tidak ditemukan.
 * Ini membantu item seperti `Bupati Kutai Kartanegara (Kukar)` tetap lolos saat project memakai keyword `bupati kukar`, tanpa mengubah Facebook menjadi hashtag-based.
+
+### 54. Forum Penyebutan Di-lazy-load
+* Halaman forumPenyebutan / media dashboard sekarang menunda pemuatan metrik berat dan daftar artikel sampai render awal selesai.
+* Penghitung total berita di header juga ikut ditunda agar shell halaman terasa lebih ringan saat pertama kali dibuka.
+
+### 55. Tab Forum Penyebutan Tidak Lagi Reload ke Daftar Proyek
+* Navigasi tab di media dashboard sekarang memakai `setTab(...)` via Livewire, bukan link penuh ke `route('home')`.
+* Ini mencegah klik tab seperti Analisis memantul ke daftar proyek karena reload halaman penuh.
+
+### 56. Tab Analisis Di-lazy-load
+* Konten tab Analisis sekarang menampilkan skeleton dulu lalu memuat metrik berat setelah render awal selesai.
+* Ini mengurangi jeda saat klik Analisis karena query agregasi tidak dijalankan bersamaan dengan perpindahan tab.
+
+### 57. Cache Dashboard User
+* Dashboard user sekarang menyimpan cache singkat untuk hitungan proyek, daftar artikel, artikel viral, dan ringkasan panel utama.
+* Key cache mengikuti project dan filter aktif supaya data tetap cepat tapi masih aman saat user ganti tab atau filter.
+
+### 58. Cache Dashboard Tidak Lagi Menyimpan Collection Mentah
+* Cache daftar artikel viral dan daftar artikel utama sekarang menyimpan ID terlebih dahulu, lalu model diambil ulang saat render.
+* Ini mencegah error unserialize / incomplete object pada Eloquent Collection yang pernah muncul setelah cache diaktifkan.

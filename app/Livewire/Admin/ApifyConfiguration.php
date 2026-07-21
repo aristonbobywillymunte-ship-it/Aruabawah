@@ -118,13 +118,15 @@ class ApifyConfiguration extends Component
         $this->lastTestDatasetId = $setting->last_test_dataset_id ?? '';
         $this->lastTestMessage = $setting->last_test_message ?? '';
         $this->lastTestAt = $setting->last_test_at?->toDateTimeString();
+
+        // Sync managed actors once on initial mount so the modal render path stays ringan.
+        $this->registry()->syncManagedActors();
     }
 
     public function render()
     {
         $this->adminOnly();
 
-        $this->registry()->syncManagedActors();
         $actors = $this->actorQuery()->get();
         $primarySlugs = collect($this->registry()->managedSlugs());
         $legacySlugs = collect($this->registry()->legacySlugs());

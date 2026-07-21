@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Jobs\AiAnalysisJob;
 use App\Models\AiAnalysisDispatchState;
+use App\Services\AiAnalysisDispatchStateService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Queue;
 
@@ -13,7 +14,7 @@ class RequeueOverdueAiAnalysisRetries extends Command
 
     protected $description = 'Requeue overdue AI retry_wait states selectively.';
 
-    public function handle(): int
+    public function handle(AiAnalysisDispatchStateService $dispatchStateService): int
     {
         $limit = max(1, (int) $this->option('limit'));
         $now = now();
@@ -35,7 +36,11 @@ class RequeueOverdueAiAnalysisRetries extends Command
                 'project_id' => $state->project_id,
             ];
 
-            AiAnalysisJob::dispatch($payload)->onQueue('ai-analysis');
+            $dispatchStateService->reserveQueuedStateAndDispatch(
+                $payload,
+                $state->prompt_template_id ? (int) $state->prompt_template_id : null,
+                $state->provider_context_hash ?: null
+            );
             $count++;
         }
 
