@@ -314,6 +314,10 @@ class ContentMatchingService
             $value = is_array($decoded) ? ($decoded[$key] ?? null) : null;
             if (is_array($value)) {
                 foreach ($value as $entry) {
+                    if (is_array($entry)) {
+                        $entry = $entry['name'] ?? $entry['tag'] ?? $entry['text'] ?? $entry['value'] ?? null;
+                    }
+
                     if (is_scalar($entry) || $entry === null) {
                         $trimmed = trim((string) $entry);
                         if ($trimmed !== '') {

@@ -640,3 +640,7 @@
 * Worker `ApifyScrapingJob` sekarang mengambil seluruh item dataset dari Apify tanpa `limit` di query fetch.
 * Pembatas yang tersisa hanya dipakai saat mengirim payload ke Apify, bukan saat aplikasi menerima hasil dari dataset.
 * Jalur stop-early untuk social platform juga dimatikan supaya hasil TikTok/Instagram/Facebook yang valid tidak terpotong sebelum disimpan.
+
+### 52. Hashtag Object Instagram dan TikTok Dibaca Benar
+* Helper matching social sekarang membaca array `hashtags` dan `tags` yang berisi objek `name`, `tag`, `text`, atau `value`.
+* Ini mencegah item Instagram/TikTok gugur hanya karena struktur JSON Apify menyimpan hashtag sebagai objek, bukan string polos.
