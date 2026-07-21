@@ -10,10 +10,13 @@ use App\Models\AiAnalysisResult;
 use App\Jobs\BootstrapNewProjectScrapingJob;
 use App\Services\ContentMatchingService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Url;
 
 class ProjectsList extends Component
 {
+    private const PROJECTS_CACHE_TTL_SECONDS = 60;
+
     #[Url(as: 'project')]
     public $projectId;
 
@@ -58,6 +61,21 @@ class ProjectsList extends Component
     protected ?array $portalScanTimes = null;
     protected ?array $portalRunningProjectIds = null;
     protected ?array $socialActiveProjects = null;
+
+    protected function projectsCacheKey(): string
+    {
+        $userId = (int) (auth()->id() ?? 0);
+
+        return 'projects_list:' . $userId . ':' . md5(json_encode([
+            'project' => $this->getDecodedProjectId(),
+            'user' => $userId,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    protected function forgetProjectsCache(): void
+    {
+        \Illuminate\Support\Facades\Cache::forget($this->projectsCacheKey());
+    }
 
     protected function parseOptionalKeywordString(string $value): array
     {
@@ -288,139 +306,145 @@ class ProjectsList extends Component
 
     public function getProjects()
     {
-        return Project::accessibleBy(auth()->user())
-            ->where('is_active', true)
-            ->orderBy('created_at')
-            ->orderBy('id')
-            ->get()
-            ->map(function ($project) {
-                $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
-                $primaryKeywords = $project->scrapeKeywordVariants();
-                $contextKeywords = $project->scrapeContextKeywordVariants();
-                $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+        return \Illuminate\Support\Facades\Cache::remember(
+            $this->projectsCacheKey(),
+            self::PROJECTS_CACHE_TTL_SECONDS,
+            function () {
+                return Project::accessibleBy(auth()->user())
+                    ->where('is_active', true)
+                    ->orderBy('created_at')
+                    ->orderBy('id')
+                    ->get()
+                    ->map(function ($project) {
+                        $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
+                        $primaryKeywords = $project->scrapeKeywordVariants();
+                        $contextKeywords = $project->scrapeContextKeywordVariants();
+                        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
 
-                $articleQuery = Article::query()
-                    ->withCompleteOfficialAiResult()
-                    ->where(function ($contentQuery) use ($matchKeywords) {
-                        foreach ($matchKeywords as $index => $keyword) {
-                            $method = $index === 0 ? 'where' : 'orWhere';
-                            $contentQuery->{$method}(function ($inner) use ($keyword) {
-                                $inner->where('title', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('content', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('articles.summary', 'ilike', '%' . $keyword . '%');
+                        $articleQuery = Article::query()
+                            ->withCompleteOfficialAiResult()
+                            ->where(function ($contentQuery) use ($matchKeywords) {
+                                foreach ($matchKeywords as $index => $keyword) {
+                                    $method = $index === 0 ? 'where' : 'orWhere';
+                                    $contentQuery->{$method}(function ($inner) use ($keyword) {
+                                        $inner->where('title', 'ilike', '%' . $keyword . '%')
+                                            ->orWhere('content', 'ilike', '%' . $keyword . '%')
+                                            ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
+                                            ->orWhere('articles.summary', 'ilike', '%' . $keyword . '%');
+                                    });
+                                }
                             });
-                        }
-                    });
 
-                foreach ($project->scrapeExcludeKeywords() as $keyword) {
-                    $articleQuery->where(function ($q) use ($keyword) {
-                        $q->whereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
-                          ->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
-                    });
-                }
-
-                $analyzedArticlesQuery = clone $articleQuery;
-                $analyzedArticlesQuery->whereHas('aiAnalysisResult', function ($q) {
-                    $q->completeOfficialAiResult()
-                        ->whereNotNull('summary')
-                        ->whereNotNull('sentiment')
-                        ->whereNotNull('risk_level');
-                });
-                $totalAiValid = (clone $analyzedArticlesQuery)->count();
-
-                $rescrapeCount = 0;
-                $totalAiFailed = 0;
-
-                $pendingAi = DB::table('ai_analysis_dispatch_states')
-                    ->where('project_id', $project->id)
-                    ->whereIn('status', ['queued', 'processing', 'retry_wait'])
-                    ->count();
-
-                if ($totalAiValid > 0) {
-                    $analyzedArticlesQueryWithAI = (clone $analyzedArticlesQuery)
-                        ->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id');
-
-                    $positive = (clone $analyzedArticlesQueryWithAI)->where('ai.sentiment', 'positive')->count();
-                    $negative = (clone $analyzedArticlesQueryWithAI)->where('ai.sentiment', 'negative')->count();
-                    $highCriticalRisk = (clone $analyzedArticlesQueryWithAI)->whereIn('ai.risk_level', ['high', 'critical'])->count();
-
-                    $posPercent = round(($positive / $totalAiValid) * 100);
-                    $negPercent = round(($negative / $totalAiValid) * 100);
-                } else {
-                    $posPercent = 0;
-                    $negPercent = 0;
-                    $highCriticalRisk = 0;
-                }
-
-                $mentions = $matchedCounts['articles'] ?? 0;
-                $reachQuery = AiAnalysisResult::query()
-                    ->completeOfficialAiResult()
-                    ->whereIn('article_id', (clone $analyzedArticlesQuery)->select('articles.id'));
-                $officialReach = (clone $reachQuery)->sum('project_estimated_readers');
-                $hasOfficialReach = (clone $reachQuery)->exists();
-                $reach = $hasOfficialReach ? number_format($officialReach, 0, ',', '.') : 'Belum tersedia';
-
-                $lastPortalTime = (clone $articleQuery)->max('published_at');
-                $lastMedsosTime = \App\Models\SocialMediaItem::query()
-                    ->where(function ($contentQuery) use ($project) {
-                        foreach ($project->scrapeKeywordVariants() as $index => $keyword) {
-                            $method = $index === 0 ? 'where' : 'orWhere';
-                            $contentQuery->{$method}(function ($inner) use ($keyword) {
-                                $inner->where('content', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('author_name', 'ilike', '%' . $keyword . '%');
-                            });
-                        }
-                    })
-                    ->where(function ($q) use ($project) {
                         foreach ($project->scrapeExcludeKeywords() as $keyword) {
-                            $q->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
-                              ->whereRaw('LOWER(COALESCE(raw_json, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
-                              ->whereRaw('LOWER(COALESCE(author_name, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                            $articleQuery->where(function ($q) use ($keyword) {
+                                $q->whereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                                  ->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                            });
                         }
+
+                        $analyzedArticlesQuery = clone $articleQuery;
+                        $analyzedArticlesQuery->whereHas('aiAnalysisResult', function ($q) {
+                            $q->completeOfficialAiResult()
+                                ->whereNotNull('summary')
+                                ->whereNotNull('sentiment')
+                                ->whereNotNull('risk_level');
+                        });
+                        $totalAiValid = (clone $analyzedArticlesQuery)->count();
+
+                        $rescrapeCount = 0;
+                        $totalAiFailed = 0;
+
+                        $pendingAi = DB::table('ai_analysis_dispatch_states')
+                            ->where('project_id', $project->id)
+                            ->whereIn('status', ['queued', 'processing', 'retry_wait'])
+                            ->count();
+
+                        if ($totalAiValid > 0) {
+                            $analyzedArticlesQueryWithAI = (clone $analyzedArticlesQuery)
+                                ->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id');
+
+                            $positive = (clone $analyzedArticlesQueryWithAI)->where('ai.sentiment', 'positive')->count();
+                            $negative = (clone $analyzedArticlesQueryWithAI)->where('ai.sentiment', 'negative')->count();
+                            $highCriticalRisk = (clone $analyzedArticlesQueryWithAI)->whereIn('ai.risk_level', ['high', 'critical'])->count();
+
+                            $posPercent = round(($positive / $totalAiValid) * 100);
+                            $negPercent = round(($negative / $totalAiValid) * 100);
+                        } else {
+                            $posPercent = 0;
+                            $negPercent = 0;
+                            $highCriticalRisk = 0;
+                        }
+
+                        $mentions = $matchedCounts['articles'] ?? 0;
+                        $reachQuery = AiAnalysisResult::query()
+                            ->completeOfficialAiResult()
+                            ->whereIn('article_id', (clone $analyzedArticlesQuery)->select('articles.id'));
+                        $officialReach = (clone $reachQuery)->sum('project_estimated_readers');
+                        $hasOfficialReach = (clone $reachQuery)->exists();
+                        $reach = $hasOfficialReach ? number_format($officialReach, 0, ',', '.') : 'Belum tersedia';
+
+                        $lastPortalTime = (clone $articleQuery)->max('published_at');
+                        $lastMedsosTime = \App\Models\SocialMediaItem::query()
+                            ->where(function ($contentQuery) use ($project) {
+                                foreach ($project->scrapeKeywordVariants() as $index => $keyword) {
+                                    $method = $index === 0 ? 'where' : 'orWhere';
+                                    $contentQuery->{$method}(function ($inner) use ($keyword) {
+                                        $inner->where('content', 'ilike', '%' . $keyword . '%')
+                                            ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
+                                            ->orWhere('author_name', 'ilike', '%' . $keyword . '%');
+                                    });
+                                }
+                            })
+                            ->where(function ($q) use ($project) {
+                                foreach ($project->scrapeExcludeKeywords() as $keyword) {
+                                    $q->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                                      ->whereRaw('LOWER(COALESCE(raw_json, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
+                                      ->whereRaw('LOWER(COALESCE(author_name, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
+                                }
+                            })
+                            ->max('posted_at');
+
+                        $lastPortalScanTime = $this->latestPortalScanForProject($project->id);
+                        $lastPortalUpdate = $lastPortalScanTime
+                            ? \Carbon\Carbon::parse($lastPortalScanTime)->locale('id')->diffForHumans()
+                            : ($lastPortalTime
+                                ? \Carbon\Carbon::parse($lastPortalTime)->locale('id')->diffForHumans()
+                                : 'Belum ada data');
+
+                        $lastMedsosRunAt = $this->latestSuccessfulSocialRunForProject($project->id)
+                            ?? $this->latestSocialRunForProject($project->id)
+                            ?? $lastMedsosTime;
+
+                        $lastMedsosUpdate = $lastMedsosRunAt
+                            ? \Carbon\Carbon::parse($lastMedsosRunAt)->locale('id')->diffForHumans()
+                            : 'Belum ada data';
+
+                        return [
+                            'id' => $project->id,
+                            'name' => $project->name,
+                            'mentions' => number_format($mentions, 0, ',', '.'),
+                            'reach' => $reach,
+                            'positive' => $posPercent . '%',
+                            'negative' => $negPercent . '%',
+                            'topics' => $project->topics ?? [],
+                            'ai_valid' => $totalAiValid,
+                            'ai_failed' => $totalAiFailed,
+                            'ai_pending' => $pendingAi,
+                            'ai_rescrape' => $rescrapeCount,
+                            'high_risk' => $highCriticalRisk,
+                            'created_at' => $project->created_at ? $project->created_at->format('d M Y H:i') : '—',
+                            'last_portal_update' => $lastPortalUpdate,
+                            'portal_is_running' => $this->isPortalScanRunningForProject($project->id),
+                            'last_medsos_update' => $lastMedsosUpdate,
+                            'medsos_is_running' => $this->isSocialScanRunningForProject($project->id),
+                            'medsos_running_label' => $this->socialRunningLabelForProject($project->id),
+                            'articles_count' => $matchedCounts['articles'] ?? 0,
+                            'social_count' => $matchedCounts['social'] ?? 0,
+                        ];
                     })
-                    ->max('posted_at');
-
-                $lastPortalScanTime = $this->latestPortalScanForProject($project->id);
-                $lastPortalUpdate = $lastPortalScanTime
-                    ? \Carbon\Carbon::parse($lastPortalScanTime)->locale('id')->diffForHumans()
-                    : ($lastPortalTime
-                        ? \Carbon\Carbon::parse($lastPortalTime)->locale('id')->diffForHumans()
-                        : 'Belum ada data');
-
-                $lastMedsosRunAt = $this->latestSuccessfulSocialRunForProject($project->id)
-                    ?? $this->latestSocialRunForProject($project->id)
-                    ?? $lastMedsosTime;
-
-                $lastMedsosUpdate = $lastMedsosRunAt
-                    ? \Carbon\Carbon::parse($lastMedsosRunAt)->locale('id')->diffForHumans()
-                    : 'Belum ada data';
-
-                return [
-                    'id' => $project->id,
-                    'name' => $project->name,
-                    'mentions' => number_format($mentions, 0, ',', '.'),
-                    'reach' => $reach,
-                    'positive' => $posPercent . '%',
-                    'negative' => $negPercent . '%',
-                    'topics' => $project->topics ?? [],
-                    'ai_valid' => $totalAiValid,
-                    'ai_failed' => $totalAiFailed,
-                    'ai_pending' => $pendingAi,
-                    'ai_rescrape' => $rescrapeCount,
-                    'high_risk' => $highCriticalRisk,
-                    'created_at' => $project->created_at ? $project->created_at->format('d M Y H:i') : '—',
-                    'last_portal_update' => $lastPortalUpdate,
-                    'portal_is_running' => $this->isPortalScanRunningForProject($project->id),
-                    'last_medsos_update' => $lastMedsosUpdate,
-                    'medsos_is_running' => $this->isSocialScanRunningForProject($project->id),
-                    'medsos_running_label' => $this->socialRunningLabelForProject($project->id),
-                    'articles_count' => $matchedCounts['articles'] ?? 0,
-                    'social_count' => $matchedCounts['social'] ?? 0,
-                ];
-            })
-            ->toArray();
+                    ->toArray();
+            }
+        );
     }
 
     public function loadProjects(): void
@@ -432,6 +456,11 @@ class ProjectsList extends Component
     public function mount()
     {
         $this->projectId = $this->resolveProjectOrDefault($this->getDecodedProjectId());
+
+        if (Cache::has($this->projectsCacheKey())) {
+            $this->projectsLoaded = true;
+            $this->projects = $this->getProjects();
+        }
     }
 
     public function updatedProjectId($value): void
@@ -500,6 +529,7 @@ class ProjectsList extends Component
 
         $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
         BootstrapNewProjectScrapingJob::dispatch($project->id)->onQueue('news');
+        $this->forgetProjectsCache();
 
         $this->lastCreatedProjectName = $this->name;
         $this->showSuccessModal = true;
@@ -560,6 +590,7 @@ class ProjectsList extends Component
         ]);
 
         $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
+        $this->forgetProjectsCache();
 
         $this->showEditModal = false;
         $this->editProjectId = null;
@@ -672,6 +703,7 @@ class ProjectsList extends Component
         // Data sumber (portal/sosmed) tetap disimpan dan tidak ikut dihapus.
         $project->update(['is_active' => false]);
         $project->delete();
+        $this->forgetProjectsCache();
 
         if ((int) $this->getDecodedProjectId() === (int) $project->id) {
             $this->projectId = null;
@@ -698,6 +730,7 @@ class ProjectsList extends Component
             
         $project->restore();
         $project->update(['is_active' => true]);
+        $this->forgetProjectsCache();
 
         $this->showConfirmModal = false;
         session()->flash('message', 'Proyek berhasil diaktifkan kembali.');
@@ -761,6 +794,7 @@ class ProjectsList extends Component
 
             $project->forceDelete();
         });
+        $this->forgetProjectsCache();
 
         if ((int) $this->getDecodedProjectId() === (int) $project->id) {
             $this->projectId = null;

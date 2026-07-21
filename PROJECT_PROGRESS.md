@@ -724,3 +724,133 @@
 ### 58. Cache Dashboard Tidak Lagi Menyimpan Collection Mentah
 * Cache daftar artikel viral dan daftar artikel utama sekarang menyimpan ID terlebih dahulu, lalu model diambil ulang saat render.
 * Ini mencegah error unserialize / incomplete object pada Eloquent Collection yang pernah muncul setelah cache diaktifkan.
+
+### 59. Wawasan Tidak Lagi Dieksekusi di Render Awal
+* `getWawasan()` pada media dashboard sekarang dipanggil hanya saat tab Wawasan dibuka, bukan saat seluruh halaman dashboard pertama kali dirender.
+* Perubahan ini mengurangi beban initial render pada VPS kecil karena query agregasi wawasan yang berat tidak lagi ikut berjalan di halaman default.
+
+### 60. Daftar Proyek Kini Di-cache Singkat
+* Hasil `getProjects()` pada halaman daftar proyek sekarang disimpan cache singkat selama 60 detik.
+* Cache dibersihkan otomatis saat proyek dibuat, diubah, dinonaktifkan, dipulihkan, atau dihapus permanen agar daftar tetap cepat tanpa menampilkan data basi terlalu lama.
+
+### 61. Penyebutan Kini Menggunakan Cache Daftar dan Total Artikel
+* Halaman Penyebutan sekarang meng-cache hasil `getArticles()` dan total artikel aktif agar render kartu artikel tidak menghitung ulang query yang sama berkali-kali.
+* Ini mengurangi beban saat tab Penyebutan dibuka di VPS kecil tanpa mengubah worker atau alur background job.
+
+### 62. Memoisasi Per-Request Untuk Statistik Dashboard
+* Dashboard sekarang menyimpan hasil `getCounts()`, `getArticles()`, `getTotalArticlesCount()`, dan `getTrendPoints()` di memori request yang sama.
+* Ini mencegah query yang identik diulang berkali-kali dalam satu render Livewire, sehingga tab Penyebutan dan grafik terasa lebih ringan.
+
+### 63. Query Wawasan Diperjelas dan Cache Artikel Dipasangkan Guard
+* Referensi `summary` pada query analisis yang memakai join sekarang dikualifikasi agar tidak memicu error ambigu saat tabel AI ikut terlibat.
+* Cache daftar artikel sekarang punya guard untuk membuang nilai cache yang tidak berbentuk array sebelum re-query, supaya render tidak jatuh ke objek tak lengkap setelah hydration Livewire.
+
+### 64. Ringkasan Kecocokan Proyek Di-cache
+* Perhitungan `countMatchingContentForProject()` sekarang disimpan cache singkat per proyek.
+* Ini memangkas scan global berulang pada daftar proyek, sehingga kartu proyek tidak lagi menghitung kecocokan konten dari nol setiap kali halaman dirender ulang.
+
+### 65. Lazy Load Penyebutan Dipisah ke Kartu Saja
+* Tab Penyebutan sekarang menampilkan skeleton khusus di area kartu konten terlebih dahulu, tanpa menahan elemen halaman lain lebih lama dari perlu.
+* Data artikel baru diminta setelah area feed siap, sehingga shell halaman terasa lebih responsif di awal render.
+
+### 66. Struktur Blade Tab Dipisah Agar Aman
+* Blok tab Penyebutan dan Analisis dipisah menjadi conditional yang lebih jelas supaya lazy-load tambahan tidak memecah pasangan `@if/@elseif`.
+* Ini mencegah parse error `unexpected token elseif` yang sempat muncul setelah penyisipan lazy-load di feed Penyebutan.
+
+### 67. Daftar Proyek Langsung Memakai Cache Saat Sudah Ada
+* Komponen daftar proyek sekarang mengisi data saat mount jika cache daftar proyek sudah tersedia.
+* Ini membuat transisi balik ke halaman daftar proyek terasa lebih instan karena isi kartu tidak perlu menunggu `wire:init` bila cache sudah siap.
+
+### 68. Dashboard Penyebutan Bisa Langsung Hidup Dari Cache
+* Komponen dashboard sekarang menyalakan shell lebih cepat saat cache hitungan ringkas sudah tersedia.
+* Pada tab Penyebutan, isi feed juga bisa langsung dianggap siap jika cache kartu artikelnya sudah ada, sehingga perpindahan dari detail proyek terasa lebih cepat.
+
+### 69. Analisa Dipisah Menjadi Tahap Ringan Dan Tahap Grafik
+* Tab Analisa sekarang menampilkan ringkasan utama lebih dulu, lalu memuat grafik tren, word cloud, dan tabel sumber setelah fase kedua siap.
+* Pemecahan ini menurunkan beban render awal supaya klik Analisa tidak terasa berat di VPS kecil.
+
+### 70. Analisa Diberi Skeleton Saat Fase Awal
+* Tab Analisa sekarang punya fallback skeleton saat `analysisLoaded` belum siap, jadi halaman tidak terlihat kosong.
+* Ini menjaga pengalaman render tetap jelas sambil data berat masih diproses bertahap.
+
+### 71. Tab Analisa Digrupkan Sebagai Elseif
+* Blok tab Analisa sekarang mengikuti alur `@elseif` setelah Penyebutan, supaya tidak ikut ter-render saat Penyebutan aktif.
+* Ini mencegah heading Analisis muncul di area Penyebutan karena blok tab yang berdiri sendiri.
+
+### 72. Sisa Cabang Blade Analisa Dibersihkan
+* Satu `@else` duplikat yang tersisa di tab Analisa dihapus agar tidak memicu parse error pada compiled view.
+* Compiled view juga dibersihkan supaya Laravel memuat template terbaru, bukan cache Blade lama.
+
+### 73. Skeleton Analisa Tidak Lagi Mengulang Judul
+* Fallback loading untuk grafik Analisa sekarang hanya menampilkan placeholder kartu, tanpa mengulang judul halaman yang sudah tampil di header utama.
+* Hasilnya tab Analisa jadi lebih bersih dan tidak terlihat seperti ada dua nama halaman yang sama.
+
+### 74. Analisa Langsung Menyalakan Grafik Saat Load
+* Saat tab Analisa dipanggil, state `analysisChartsLoaded` sekarang ikut diaktifkan agar konten grafik tidak berhenti di skeleton.
+* Ini mencegah tampilan Analisa terlihat kosong atau “nyangkut” hanya karena tahap grafik belum pernah dipicu.
+
+### 75. Rantai Tab Analisa Dikembalikan Utuh
+* Rantai `@if/@elseif` tab utama diperbaiki supaya tab Analisa tidak memutus susunan layout dan tidak membuat panel kanan/footer ikut hilang.
+* Setelah itu compiled view dibersihkan lagi agar browser memuat struktur Blade yang sudah benar.
+
+### 76. Panel Filter Desktop Dibuat Sticky Dan Footer Dashboard Ditampilkan Lagi
+* Panel filter desktop sekarang sticky di viewport supaya tidak tenggelam saat konten utama panjang.
+* Footer dashboard ditambahkan kembali di shell utama agar area bawah halaman tetap punya penutup visual yang konsisten.
+
+### 77. Extra `@endif` Di Blok Modal Kata Kunci Dihapus
+* Ada satu `@endif` yang tidak punya pasangan di tab Kata Kunci dan itu bisa memicu parse error Blade saat view dikompilasi ulang.
+* Setelah dihapus, struktur kondisional tab kembali seimbang dan compiled view dibersihkan lagi.
+
+### 78. Cache View Dan Bootstrap Dibersihkan Manual
+* Karena `optimize:clear` gagal saat mencoba konek ke PostgreSQL, compiled view dan cache bootstrap dibersihkan langsung dari filesystem.
+* Langkah ini mencegah browser/Laravel memakai Blade lama yang masih menyimpan struktur kondisional rusak.
+
+### 79. Rantai `@elseif` Tab Analisis Diperbaiki
+* Satu penutup Blade yang memutus rantai `@if/@elseif` tab utama di area Penyebutan -> Analisis dihapus.
+* Setelah itu struktur tab kembali valid, compiled view dibersihkan ulang, dan halaman bisa dimuat tanpa parse error `unexpected token elseif`.
+
+### 80. Cache Livewire Dalam Container Dibersihkan Dan Container Web Direstart
+* Cache compiled Livewire di `storage/framework/views/livewire/` ikut dibersihkan karena masih menyimpan view lama yang memicu parse error.
+* Container web `media_intelligent_container` direstart agar opcache dan compiled view yang dipakai port 80 benar-benar memuat versi terbaru.
+
+### 81. Penutup Blade Sebelum Tab Analisis Dihapus Dari Source
+* Masih ada satu `@endif` di source `media-dashboard.blade.php` tepat sebelum `@elseif($this->isTab('analisis'))`.
+* Penutup itu dihapus supaya rantai tab utama kembali valid dari Penyebutan ke Analisis tanpa memunculkan `unexpected token elseif`.
+
+### 82. Source Container Dan Cache Blade Disinkronkan Ulang
+* Source di container `/var/web/resources/views/components/⚡media-dashboard.blade.php` sudah disamakan dengan repo lokal.
+* `php artisan view:cache` di container berhasil dijalankan ulang, jadi compiled Blade sekarang dibangun dari struktur terbaru yang valid.
+
+### 83. Blok Dashboard Utama Ditutup Lengkap
+* Rantai `@if($dashboardLoaded)` dan tab Penyebutan -> Analisis ditutup dengan lengkap supaya parser Blade tidak lagi berhenti di `unexpected token elseif`.
+* Cache view dibersihkan lagi setelah source dirapikan.
+
+### 84. Kolom Konten Utama Dipersempit Agar Sidebar Filter Tetap Muncul
+* Wrapper workspace utama diubah dari `w-full flex-grow` menjadi `flex-1 min-w-0` supaya sidebar filter kanan tidak terdorong keluar area visible.
+* Setelah itu cache Blade di container dibangun ulang agar perubahan layout langsung dipakai oleh halaman `localhost`.
+
+### 85. Filter Panel Desktop Dipaksa Fixed Agar Selalu Terlihat
+* Sidebar filter desktop diubah dari sticky menjadi fixed di kanan viewport pada desktop.
+* Workspace utama diberi padding kanan tambahan supaya panel filter tidak tertutup konten utama.
+
+### 86. Wrapper Dashboard Dibuka Agar Panel Filter dan Footer Tidak Terpotong Setelah Lazy Load
+* Root dashboard diubah menjadi `min-h-screen` dengan scroll vertikal aktif supaya footer tetap bisa muncul.
+* Container workspace utama dibuka dari `overflow-hidden` menjadi `overflow-visible` agar sidebar filter tidak hilang setelah state lazy load selesai.
+
+### 87. Scroll Global Dashboard Dibuka Untuk Lazy Load
+* CSS global dashboard tidak lagi memaksa `html, body` ke `overflow: hidden`, karena itu membuat footer dan elemen yang turun setelah lazy load tidak bisa terlihat.
+* Workspace dashboard diberi fallback `lg:flex-row` supaya panel filter tetap berada di samping konten meskipun style internal Livewire berubah saat re-render.
+
+### 88. Panel Filter Desktop Tidak Lagi Bergantung Pada Class Hidden
+* Class `hidden lg:block` dihapus dari panel filter desktop karena setelah lazy load Livewire class itu bisa membuat panel tidak tampil.
+* Panel desktop sekarang dikontrol penuh oleh CSS `.desktop-filter-panel`, dibuat fixed di kanan viewport, dan diberi `wire:ignore.self` supaya morph Livewire tidak menghapus state visualnya.
+
+### 89. Panel Filter Dan Footer Dipisah Dari Lazy Workspace
+* Panel filter desktop dipindahkan keluar dari area `wire:init="loadDashboard"` supaya tidak hilang saat lazy loading konten selesai.
+* Breakpoint panel diturunkan ke 900px karena viewport browser lokal masih dianggap di bawah `lg`, sementara layout desktop sudah membutuhkan panel kanan.
+* Footer dashboard dibuat sebagai shell fixed sebelum workspace lazy-load agar tetap tampil dan tidak ikut terhapus oleh morph Livewire.
+
+### 90. Footer Dashboard Tidak Lagi Tertindih Panel Filter
+* Lebar footer desktop dibatasi agar berhenti sebelum panel filter kanan, sehingga keduanya tidak saling menumpuk.
+* Tinggi maksimal panel filter dikurangi sedikit dari bawah viewport agar tidak memotong atau menimpa area footer fixed.
+* Verifikasi DOM menunjukkan panel dan footer sama-sama tampil dengan status overlap `false`.

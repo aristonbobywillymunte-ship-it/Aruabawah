@@ -46,6 +46,7 @@ new class extends Component
     #[Url(as: 'tab')]
     public $activeTab = 'cGVueWVidXRhbg==';
     public bool $analysisLoaded = false;
+    public bool $analysisChartsLoaded = false;
 
     public function getDecodedProjectId()
     {
@@ -129,6 +130,42 @@ new class extends Component
     public $keywordSearch = '';
     public $selectedKeyword = null;
     public bool $dashboardLoaded = false;
+    public bool $mentionsLoaded = false;
+    protected array $trendPointsMemo = [];
+    protected array $articlesMemo = [];
+    protected array $totalArticlesCountMemo = [];
+    protected array $countsMemo = [];
+    protected array $projectArticleCountMemo = [];
+    protected array $wawasanMemo = [];
+    protected array $projectSourcesMemo = [];
+
+    protected function dashboardCacheKeyPrefix(): string
+    {
+        return $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
+    }
+
+    protected function projectArticleCountCacheKey(): string
+    {
+        return 'media_dashboard_project_count:' . $this->dashboardCacheKeyPrefix();
+    }
+
+    protected function countsCacheKey(): string
+    {
+        return 'media_dashboard_counts:' . $this->dashboardCacheKeyPrefix();
+    }
+
+    protected function articlesCacheKey(): string
+    {
+        return 'media_dashboard_articles:v2:' . $this->dashboardCacheKeyPrefix() . ':' . md5(json_encode([
+            'sortBy' => $this->sortBy,
+            'limit' => $this->limit,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    protected function totalArticlesCountCacheKey(): string
+    {
+        return 'media_dashboard_total_articles:' . $this->dashboardCacheKeyPrefix();
+    }
 
     public function toggleKeyword($keyword)
     {
@@ -298,6 +335,16 @@ new class extends Component
         $this->supportKeywords = [];
         $this->excludeKeywords = [];
 
+        // Jika cache shell dashboard sudah ada, tampilkan isi utama lebih cepat
+        // tanpa menunggu wire:init untuk pertama kali.
+        if (Cache::has($this->projectArticleCountCacheKey()) || Cache::has($this->countsCacheKey())) {
+            $this->dashboardLoaded = true;
+        }
+
+        if ($this->dashboardLoaded && $this->isTab('penyebutan') && Cache::has($this->articlesCacheKey())) {
+            $this->mentionsLoaded = true;
+        }
+
     }
 
     public function loadDashboard(): void
@@ -310,6 +357,15 @@ new class extends Component
         $this->rebuildKeywordsTable();
     }
 
+    public function loadMentions(): void
+    {
+        if ($this->mentionsLoaded) {
+            return;
+        }
+
+        $this->mentionsLoaded = true;
+    }
+
     public function loadAnalysis(): void
     {
         if ($this->analysisLoaded) {
@@ -317,6 +373,16 @@ new class extends Component
         }
 
         $this->analysisLoaded = true;
+        $this->analysisChartsLoaded = true;
+    }
+
+    public function loadAnalysisCharts(): void
+    {
+        if ($this->analysisChartsLoaded) {
+            return;
+        }
+
+        $this->analysisChartsLoaded = true;
     }
 
     /**
@@ -525,7 +591,11 @@ new class extends Component
     {
         $cacheKey = 'media_dashboard_project_count:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
 
-        return (int) Cache::remember($cacheKey, 120, function () {
+        if (isset($this->projectArticleCountMemo[$cacheKey])) {
+            return $this->projectArticleCountMemo[$cacheKey];
+        }
+
+        return $this->projectArticleCountMemo[$cacheKey] = (int) Cache::remember($cacheKey, 120, function () {
             return $this->projectArticlesQuery()->count();
         });
     }
@@ -848,7 +918,11 @@ new class extends Component
     {
         $cacheKey = 'media_dashboard_counts:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
 
-        return Cache::remember($cacheKey, 120, function () {
+        if (isset($this->countsMemo[$cacheKey])) {
+            return $this->countsMemo[$cacheKey];
+        }
+
+        return $this->countsMemo[$cacheKey] = Cache::remember($cacheKey, 120, function () {
             $baseQuery = $this->projectArticlesQuery();
             $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
             $normalizedSocials = array_map('strtolower', $socials);
@@ -896,38 +970,88 @@ new class extends Component
 
     public function getArticles()
     {
-        // Selalu scoped ke projectId yang sedang aktif
-        $query = $this->projectArticlesQuery()->with('aiAnalysisResult');
-        $query = $this->applyActiveFilters($query);
+        $cacheKey = 'media_dashboard_articles:v2:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature() . ':' . md5(json_encode([
+            'sortBy' => $this->sortBy,
+            'limit' => $this->limit,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
-        if ($this->sortBy == 'popular') {
-            $reachSubquery = AiAnalysisResult::selectRaw('COALESCE(project_estimated_readers, 0)')
-                ->whereColumn('article_id', 'articles.id')
-                ->where('analysis_status', 'success')
-                ->where('reach_method', 'ai_reader_estimate_v1')
-                ->limit(1);
-
-            $query->orderByRaw(
-                '(
-                    COALESCE((
-                        SELECT COALESCE(project_estimated_readers, 0)
-                        FROM ai_analysis_results
-                        WHERE ai_analysis_results.article_id = articles.id
-                          AND analysis_status = \'success\'
-                          AND reach_method = \'ai_reader_estimate_v1\'
-                        LIMIT 1
-                    ), 0) * 100
-                ) DESC'
-            )->orderByDesc($reachSubquery)->orderBy('published_at', 'desc');
-        } else {
-            $query->orderBy('published_at', 'desc');
+        if (isset($this->articlesMemo[$cacheKey])) {
+            return $this->articlesMemo[$cacheKey];
         }
 
-        $fetchLimit = max($this->limit * 4, $this->limit);
+        $cached = Cache::remember($cacheKey, 60, function () {
+            // Selalu scoped ke projectId yang sedang aktif
+            $query = $this->projectArticlesQuery()->with('aiAnalysisResult');
+            $query = $this->applyActiveFilters($query);
 
-        return $this->dedupeSocialArticles($query->limit($fetchLimit)->get())
-            ->take($this->limit)
-            ->values();
+            if ($this->sortBy == 'popular') {
+                $reachSubquery = AiAnalysisResult::selectRaw('COALESCE(project_estimated_readers, 0)')
+                    ->whereColumn('article_id', 'articles.id')
+                    ->where('analysis_status', 'success')
+                    ->where('reach_method', 'ai_reader_estimate_v1')
+                    ->limit(1);
+
+                $query->orderByRaw(
+                    '(
+                        COALESCE((
+                            SELECT COALESCE(project_estimated_readers, 0)
+                            FROM ai_analysis_results
+                            WHERE ai_analysis_results.article_id = articles.id
+                              AND analysis_status = \'success\'
+                              AND reach_method = \'ai_reader_estimate_v1\'
+                            LIMIT 1
+                        ), 0) * 100
+                    ) DESC'
+                )->orderByDesc($reachSubquery)->orderBy('published_at', 'desc');
+            } else {
+                $query->orderBy('published_at', 'desc');
+            }
+
+            $fetchLimit = max($this->limit * 4, $this->limit);
+
+            $articles = $this->dedupeSocialArticles($query->limit($fetchLimit)->get())
+                ->take($this->limit)
+                ->values();
+
+            return [
+                'ids' => $articles->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
+                'order' => $articles->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
+            ];
+        });
+
+        if ($cached instanceof \Illuminate\Support\Collection) {
+            return $this->articlesMemo[$cacheKey] = $cached;
+        }
+
+        if (!is_array($cached)) {
+            Cache::forget($cacheKey);
+            return $this->articlesMemo[$cacheKey] = collect();
+        }
+
+        $ids = array_values(array_unique(array_map('intval', $cached['ids'] ?? [])));
+
+        if ($ids === []) {
+            return $this->articlesMemo[$cacheKey] = collect();
+        }
+
+        return $this->articlesMemo[$cacheKey] = Article::query()
+            ->with('aiAnalysisResult')
+            ->whereIn('id', $ids)
+            ->orderByRaw('array_position(ARRAY[' . implode(',', $ids) . ']::int[], id)')
+            ->get();
+    }
+
+    public function getTotalArticlesCount(): int
+    {
+        $cacheKey = 'media_dashboard_total_articles:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
+
+        if (isset($this->totalArticlesCountMemo[$cacheKey])) {
+            return $this->totalArticlesCountMemo[$cacheKey];
+        }
+
+        return $this->totalArticlesCountMemo[$cacheKey] = (int) Cache::remember($cacheKey, 60, function () {
+            return (int) $this->applyActiveFilters($this->projectArticlesQuery())->count();
+        });
     }
 
     protected function dedupeSocialArticles($articles)
@@ -1024,7 +1148,11 @@ new class extends Component
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         $cacheKey = "project_trend_{$projectIdDecoded}_{$mode}_{$metric}_{$forceMax}_{$stateSignature}";
 
-        return Cache::remember($cacheKey, 120, function () use ($mode, $metric, $forceMax) {
+        if (isset($this->trendPointsMemo[$cacheKey])) {
+            return $this->trendPointsMemo[$cacheKey];
+        }
+
+        $points = Cache::remember($cacheKey, 120, function () use ($mode, $metric, $forceMax) {
             $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['date']);
             
             if (!empty($this->selectedKeyword)) {
@@ -1056,7 +1184,7 @@ new class extends Component
                     if ($articleIds->isEmpty()) return 0;
                     return (int) \App\Models\AiAnalysisResult::whereIn('article_id', $articleIds)
                         ->where('analysis_status', 'success')
-                        ->whereNotNull('summary')->whereNotNull('sentiment')->whereNotNull('risk_level')
+                        ->whereNotNull('ai_analysis_results.summary')->whereNotNull('sentiment')->whereNotNull('risk_level')
                         ->where('reach_method', 'ai_reader_estimate_v1')
                         ->whereNotNull('project_estimated_readers')
                         ->sum('project_estimated_readers');
@@ -1196,13 +1324,21 @@ new class extends Component
             
             return $rendered;
         });
+
+        $this->trendPointsMemo[$cacheKey] = $points;
+
+        return $points;
     }
 
     public function getProjectSources()
     {
         $cacheKey = 'media_dashboard_project_sources:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
 
-        return Cache::remember($cacheKey, 120, function () {
+        if (isset($this->projectSourcesMemo[$cacheKey])) {
+            return $this->projectSourcesMemo[$cacheKey];
+        }
+
+        return $this->projectSourcesMemo[$cacheKey] = Cache::remember($cacheKey, 120, function () {
             // Keep the source breakdown stable even if sentiment analysis is not yet available.
             $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['sentiment']);
             $rawSources = (clone $baseQuery)
@@ -1246,7 +1382,11 @@ new class extends Component
     {
         $cacheKey = 'media_dashboard_wawasan:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
 
-        return Cache::remember($cacheKey, 120, function () {
+        if (isset($this->wawasanMemo[$cacheKey])) {
+            return $this->wawasanMemo[$cacheKey];
+        }
+
+        return $this->wawasanMemo[$cacheKey] = Cache::remember($cacheKey, 120, function () {
             $project = $this->resolveProjectOrFail($this->projectId);
             $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
             $total = $baseQuery->count();
@@ -1483,40 +1623,105 @@ new class extends Component
             ];
         });
     }
+
+    public function getViralMeta(): array
+    {
+        $cacheKey = 'media_dashboard_viral_meta:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
+
+        return Cache::remember($cacheKey, 120, function () {
+            $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
+            $recent7d = (clone $baseQuery)->where('published_at', '>=', now()->subDays(7))->count();
+
+            if ($recent7d >= 100) {
+                return [
+                    'viral_status' => 'Sangat Viral',
+                    'viral_color' => 'purple',
+                    'viral_desc' => 'Lonjakan percakapan sangat tinggi',
+                ];
+            }
+
+            if ($recent7d >= 30) {
+                return [
+                    'viral_status' => 'Mulai Viral',
+                    'viral_color' => 'blue',
+                    'viral_desc' => 'Ada peningkatan atensi',
+                ];
+            }
+
+            return [
+                'viral_status' => 'Normal',
+                'viral_color' => 'slate',
+                'viral_desc' => 'Volume berita stabil',
+            ];
+        });
+    }
 };
 ?>
 
-@php
-    $w = $this->getWawasan();
-@endphp
-
 <div>
+@php
+    $viralMeta = $this->getViralMeta();
+@endphp
 <style>
     html, body {
-        height: 100vh !important;
-        overflow: hidden !important;
+        min-height: 100% !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
     }
     div[wire\:id] {
-        height: 100% !important;
+        min-height: 100vh !important;
         display: flex !important;
         flex-direction: column !important;
-        min-height: 0 !important;
     }
-    @media (min-width: 1024px) {
+    @media (min-width: 900px) {
         .desktop-filter-scroll {
             height: calc(100vh - 420px) !important;
             overflow-y: auto !important;
             padding-right: 4px !important;
         }
+        .desktop-workspace-area {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 24px !important;
+            align-items: stretch !important;
+            padding-right: 360px !important;
+        }
         .desktop-filter-panel {
             display: flex !important;
             flex-direction: column !important;
             gap: 20px !important;
-            height: calc(100vh - 190px) !important;
+            position: fixed !important;
+            top: 190px !important;
+            right: 24px !important;
+            width: 320px !important;
+            max-height: calc(100vh - 266px) !important;
+            z-index: 20 !important;
+            align-self: flex-start !important;
+            background: #ffffff !important;
+        }
+    }
+    @media (max-width: 899px) {
+        .desktop-filter-panel {
+            display: none !important;
+        }
+    }
+    .dashboard-fixed-footer {
+        display: none;
+    }
+    @media (min-width: 900px) {
+        .dashboard-fixed-footer {
+            display: flex !important;
+            position: fixed !important;
+            left: 64px !important;
+            right: 368px !important;
+            bottom: 0 !important;
+            z-index: 18 !important;
+            background: rgba(247, 249, 255, 0.94) !important;
+            backdrop-filter: blur(10px) !important;
         }
     }
 </style>
-<div class="h-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-hidden"
+<div class="h-full min-h-screen bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-x-hidden overflow-y-auto pb-14"
      x-data="{
          detailModalOpen: false,
          showViralModal: false,
@@ -1524,7 +1729,7 @@ new class extends Component
          showAiSummaryModal: false,
          scrolledDown: false,
          mobileFilterOpen: false,
-         isMobile: window.innerWidth < 1024,
+         isMobile: window.innerWidth < 900,
          detailTitle: '',
          detailSource: '',
          detailDate: '',
@@ -1563,8 +1768,8 @@ new class extends Component
              window.scrollTo({ top: 0, behavior: 'smooth' });
          }
      }"
-     x-effect="document.body.style.overflow = (detailModalOpen || showViralModal) ? 'hidden' : ''"
-     x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 1024; }); isMobile = window.innerWidth < 1024;"
+     x-effect="document.body.style.overflow = (detailModalOpen || showViralModal) ? 'hidden' : 'auto'"
+     x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 900; }); isMobile = window.innerWidth < 900;"
 >
     
     <!-- Top Header -->
@@ -1735,8 +1940,23 @@ new class extends Component
         </div>
     </div>
 
+    <footer class="dashboard-fixed-footer px-6 border-t border-slate-200 items-center justify-between gap-4 py-3" wire:key="dashboard-fixed-footer-shell">
+        <p class="text-xs text-slate-400 font-medium">© 2026 Arusbawah Media Intelligence. All rights reserved.</p>
+        <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-[0.18em]">Media Intelligence Dashboard</p>
+    </footer>
+
+    @php
+        $counts = $this->getCounts();
+    @endphp
+
+    <!-- Desktop filter is fixed outside the lazy workspace so Livewire refreshes cannot remove it. -->
+    <aside class="desktop-filter-panel shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-200 rounded-2xl p-6 bg-white flex-shrink-0" wire:key="desktop-filter-panel-shell" wire:ignore.self>
+        <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3 flex-shrink-0">Filter Panel</h4>
+        @include('components.⚡filter-items')
+    </aside>
+
     <!-- Main Workspace Layout with Real Full-Height Left Sidebar -->
-    <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 min-h-0 overflow-hidden" wire:init="loadDashboard">
+    <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 min-h-0 overflow-visible" wire:init="loadDashboard">
         @if($dashboardLoaded)
         
         <!-- Left Sidebar -->
@@ -1798,7 +2018,7 @@ new class extends Component
             $aiReachSum = function ($builder) {
                 return (int) $builder
                     ->where('analysis_status', 'success')
-                    ->whereNotNull('summary')
+                    ->whereNotNull('ai_analysis_results.summary')
                     ->whereNotNull('sentiment')
                     ->whereNotNull('risk_level')
                     ->where('reach_method', 'ai_reader_estimate_v1')
@@ -1838,7 +2058,7 @@ new class extends Component
 
             $canonicalAiFilter = function($q) {
                 $q->where('analysis_status', 'success')
-                  ->whereNotNull('summary')
+                  ->whereNotNull('ai_analysis_results.summary')
                   ->whereNotNull('sentiment')
                   ->whereNotNull('risk_level');
             };
@@ -1957,12 +2177,12 @@ new class extends Component
             ];
         @endphp
 
-        <!-- Main Workspace (Center feed & Right Filter) -->
-        <div class="flex-grow flex flex-col lg:flex-row gap-6 px-4 sm:px-8 py-6 items-stretch w-full h-full min-h-0 overflow-hidden">
+        <!-- Main Workspace (Center feed only; filter panel stays in the fixed shell above) -->
+        <div class="desktop-workspace-area flex-1 min-w-0 flex flex-col lg:flex-row gap-6 px-4 sm:px-8 py-6 items-stretch h-full min-h-0 overflow-visible pb-8 lg:pb-0" wire:key="desktop-workspace-area">
             
             @if($this->isTab('penyebutan'))
                 <!-- TAB 1: Penyebutan (Mentions Feed View) -->
-                <section class="flex-1 min-w-0 min-h-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                <section class="flex-1 min-w-0 min-h-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:key="dashboard-mentions-section">
                     <!-- Section Title & Sort Selector -->
                     <div class="flex items-center justify-between">
                         <div>
@@ -2025,21 +2245,35 @@ new class extends Component
                         </div>
                     </div>
 
-                    @php 
-                        $articlesList = $this->getArticles();
-                    @endphp
-
                     <!-- Mentions Cards Feed -->
-                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-4">
-                        @if($articlesList->isEmpty())
-                        <div class="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-4 shadow-sm">
-                            <svg class="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <p class="text-sm font-semibold text-slate-600">Belum ada penyebutan media ditemukan untuk proyek ini.</p>
-                        </div>
-                    @else
-                        <div class="space-y-4">
+                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-4" wire:init="loadMentions">
+                        @if(!$mentionsLoaded)
+                            <div class="space-y-4">
+                                @for($i = 0; $i < 4; $i++)
+                                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm animate-pulse space-y-4">
+                                        <div class="h-4 w-28 rounded bg-slate-100"></div>
+                                        <div class="h-5 w-3/4 rounded bg-slate-100"></div>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div class="h-20 rounded-2xl bg-slate-100"></div>
+                                            <div class="h-20 rounded-2xl bg-slate-100"></div>
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+                        @else
+                            @php
+                                $articlesList = $this->getArticles();
+                            @endphp
+
+                            @if($articlesList->isEmpty())
+                            <div class="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-4 shadow-sm">
+                                <svg class="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="text-sm font-semibold text-slate-600">Belum ada penyebutan media ditemukan untuk proyek ini.</p>
+                            </div>
+                        @else
+                            <div class="space-y-4">
                                 @foreach($articlesList as $article)
                                     @php
                                         $analysis = $article->aiAnalysisResult;
@@ -2330,7 +2564,7 @@ new class extends Component
 
                         <!-- Infinite Scroll / Load More -->
                         @php
-                            $totalArticlesCount = $this->applyActiveFilters($this->projectArticlesQuery())->count();
+                            $totalArticlesCount = $this->getTotalArticlesCount();
                         @endphp
 
                         @if($articlesList->count() < $totalArticlesCount)
@@ -2347,12 +2581,13 @@ new class extends Component
                                 <p class="text-[10px] text-slate-400 mt-0.5">Tidak ada data tambahan yang tersedia</p>
                             </div>
                         @endif
-                    @endif
+                        @endif
+                        @endif
                     </div>
                 </section>
             @elseif($this->isTab('analisis'))
                 <!-- TAB 2: Analisis (Redesigned matching screenshots) -->
-                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:init="loadAnalysis">
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:init="loadAnalysis" wire:key="dashboard-analysis-section">
                     @if($analysisLoaded)
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
@@ -2650,6 +2885,33 @@ new class extends Component
                         </div>
                     </div>
 
+                    @unless($analysisChartsLoaded)
+                    <div class="space-y-6">
+                        <div class="animate-pulse space-y-4">
+                            <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6">
+                                <div class="flex justify-between items-center pb-3 border-b border-slate-100/85">
+                                    <div class="space-y-2">
+                                        <div class="h-4 w-40 bg-slate-100 rounded"></div>
+                                        <div class="h-3 w-72 bg-slate-100 rounded"></div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div class="h-[100px] rounded-2xl bg-slate-100"></div>
+                                    <div class="h-[100px] rounded-2xl bg-slate-100"></div>
+                                    <div class="h-[100px] rounded-2xl bg-slate-100"></div>
+                                </div>
+                                <div class="grid grid-cols-4 gap-4">
+                                    <div class="h-[155px] rounded-2xl bg-slate-100"></div>
+                                    <div class="h-[155px] rounded-2xl bg-slate-100"></div>
+                                    <div class="h-[155px] rounded-2xl bg-slate-100"></div>
+                                    <div class="h-[155px] rounded-2xl bg-slate-100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endunless
+
+                    @if($analysisChartsLoaded)
                     <!-- SVGs Line Chart (Daily trend) -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-4" x-data="{ trendMode: 'harian', activePoint: null }">
                             <div class="flex justify-between items-center pb-2 border-b border-slate-100/85">
@@ -3577,21 +3839,6 @@ new class extends Component
                             </div>
                         </div>
                     </div>
-                    @else
-                        <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm animate-pulse">
-                            <div class="h-5 w-48 rounded bg-slate-100 mb-2"></div>
-                            <div class="h-3 w-80 rounded bg-slate-100"></div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            @for($i = 0; $i < 3; $i++)
-                                <div class="h-28 rounded-2xl bg-white border border-slate-200 shadow-sm animate-pulse"></div>
-                            @endfor
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            @for($i = 0; $i < 4; $i++)
-                                <div class="h-36 rounded-2xl bg-white border border-slate-200 shadow-sm animate-pulse"></div>
-                            @endfor
-                        </div>
                     @endif
                 </section>
             @elseif($this->isTab('katakunci'))
@@ -4015,12 +4262,13 @@ new class extends Component
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                    @endif
+                            </div>
+                        @endif
                     </div>
                 </section>
             @elseif($this->isTab('wawasan'))
                 @php
+                    $w = $this->getWawasan();
                     $project = $this->resolveProjectOrFail($this->projectId);
                     
                     // Resolve crisis color classes statically to prevent compilation issues
@@ -4130,11 +4378,11 @@ new class extends Component
                         >
                             <div class="space-y-1.5 text-left">
                                 <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block group-hover:text-indigo-650 transition-colors">Kondisi Viral</span>
-                                <h3 class="text-3xl font-black tracking-tight leading-none text-{{ $w['viral_color'] }}-600">{{ $w['viral_status'] }}</h3>
-                                <p class="text-[11px] font-semibold text-slate-400 truncate max-w-[170px]" title="{{ $w['viral_desc'] }}">{{ $w['viral_desc'] }}</p>
+                                <h3 class="text-3xl font-black tracking-tight leading-none text-{{ $viralMeta['viral_color'] }}-600">{{ $viralMeta['viral_status'] }}</h3>
+                                <p class="text-[11px] font-semibold text-slate-400 truncate max-w-[170px]" title="{{ $viralMeta['viral_desc'] }}">{{ $viralMeta['viral_desc'] }}</p>
                             </div>
-                            <div class="w-10 h-10 rounded-full bg-{{ $w['viral_color'] }}-50 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
-                                <svg class="w-5 h-5 text-{{ $w['viral_color'] }}-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                            <div class="w-10 h-10 rounded-full bg-{{ $viralMeta['viral_color'] }}-50 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+                                <svg class="w-5 h-5 text-{{ $viralMeta['viral_color'] }}-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                             </div>
                         </div>
                     </div>
@@ -4962,7 +5210,7 @@ new class extends Component
 
                     <!-- Infinite Scroll / Load More -->
                     @php
-                        $totalArticlesCount = $this->applyActiveFilters($this->projectArticlesQuery())->count();
+                        $totalArticlesCount = $this->getTotalArticlesCount();
                     @endphp
 
                     @if($articlesList->count() < $totalArticlesCount)
@@ -5165,11 +5413,6 @@ new class extends Component
                 <span class="material-symbols-outlined text-2xl" x-text="mobileFilterOpen ? 'close' : 'tune'">tune</span>
             </button>
 
-            <aside class="hidden lg:block desktop-filter-panel lg:w-80 lg:shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] lg:border lg:border-slate-200 lg:rounded-2xl lg:p-6 lg:bg-white flex-shrink-0">
-                <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3 flex-shrink-0">Filter Panel</h4>
-                @include('components.⚡filter-items')
-            </aside>
-
             <!-- MOBILE FILTER PANEL DRAWER -->
             <aside 
                 x-show="mobileFilterOpen"
@@ -5211,6 +5454,7 @@ new class extends Component
                 Kembali ke atas
             </button>
         </div>
+
     </div>
 
     <!-- Date Range Picker Modal -->
@@ -5447,6 +5691,7 @@ new class extends Component
                 </div>
             </div>
         @endif
+        @endif
 
     <!-- Viral Articles Modal (Alpine.js) -->
     <div 
@@ -5476,8 +5721,8 @@ new class extends Component
             <div class="flex items-center justify-between pb-4 border-b border-slate-200 flex-shrink-0">
                 <div>
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-{{ $w['viral_color'] }}-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        Penyebab Kondisi: <span class="text-{{ $w['viral_color'] }}-600 font-extrabold">{{ $w['viral_status'] }}</span>
+                        <svg class="w-5 h-5 text-{{ $viralMeta['viral_color'] }}-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        Penyebab Kondisi: <span class="text-{{ $viralMeta['viral_color'] }}-600 font-extrabold">{{ $viralMeta['viral_status'] }}</span>
                     </h3>
                 </div>
                 <button 

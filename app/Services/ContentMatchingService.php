@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\Project;
 use App\Models\SocialMediaItem;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ContentMatchingService
@@ -23,56 +24,65 @@ class ContentMatchingService
             return ['articles' => 0, 'social' => 0];
         }
 
-        $primaryKeywords = $project->scrapeKeywordVariants();
-        $contextKeywords = $project->scrapeContextKeywordVariants();
-        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
-        $excludeKeywords = $project->scrapeExcludeKeywords();
+        $cacheKey = 'content_match_counts:' . $project->id . ':' . md5(json_encode([
+            'updated_at' => optional($project->updated_at)->timestamp,
+            'topics' => $project->topics ?? [],
+            'context' => $project->context_keywords ?? [],
+            'exclude' => $project->exclude_keywords ?? [],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
-        if ($matchKeywords === []) {
-            return ['articles' => 0, 'social' => 0];
-        }
+        return Cache::remember($cacheKey, 300, function () use ($project) {
+            $primaryKeywords = $project->scrapeKeywordVariants();
+            $contextKeywords = $project->scrapeContextKeywordVariants();
+            $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+            $excludeKeywords = $project->scrapeExcludeKeywords();
 
-        $articleCount = 0;
-        Article::query()
-            ->select(['id', 'title', 'content'])
-            ->chunkById(250, function ($articles) use ($matchKeywords, $excludeKeywords, &$articleCount) {
-                foreach ($articles as $article) {
-                    $content = ($article->title ?? '') . "\n" . ($article->content ?? '');
+            if ($matchKeywords === []) {
+                return ['articles' => 0, 'social' => 0];
+            }
 
-                    if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
-                        continue;
+            $articleCount = 0;
+            Article::query()
+                ->select(['id', 'title', 'content'])
+                ->chunkById(250, function ($articles) use ($matchKeywords, $excludeKeywords, &$articleCount) {
+                    foreach ($articles as $article) {
+                        $content = ($article->title ?? '') . "\n" . ($article->content ?? '');
+
+                        if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
+                            continue;
+                        }
+
+                        if ($this->matchesAnyKeyword($matchKeywords, $content)) {
+                            $articleCount++;
+                        }
                     }
+                });
 
-                    if ($this->matchesAnyKeyword($matchKeywords, $content)) {
-                        $articleCount++;
+            $socialCount = 0;
+            SocialMediaItem::query()
+                ->select(['id', 'author_name', 'content', 'raw_json'])
+                ->chunkById(250, function ($items) use ($matchKeywords, $excludeKeywords, &$socialCount) {
+                    foreach ($items as $item) {
+                        $content = $this->buildSocialMatchText(
+                            $item->content ?? null,
+                            $item->raw_json ?? null,
+                        );
+
+                        if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
+                            continue;
+                        }
+
+                        if ($this->matchesAnyKeyword($matchKeywords, $content)) {
+                            $socialCount++;
+                        }
                     }
-                }
-            });
+                });
 
-        $socialCount = 0;
-        SocialMediaItem::query()
-            ->select(['id', 'author_name', 'content', 'raw_json'])
-            ->chunkById(250, function ($items) use ($matchKeywords, $excludeKeywords, &$socialCount) {
-                foreach ($items as $item) {
-                    $content = $this->buildSocialMatchText(
-                        $item->content ?? null,
-                        $item->raw_json ?? null,
-                    );
-
-                    if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
-                        continue;
-                    }
-
-                    if ($this->matchesAnyKeyword($matchKeywords, $content)) {
-                        $socialCount++;
-                    }
-                }
-            });
-
-        return [
-            'articles' => $articleCount,
-            'social' => $socialCount,
-        ];
+            return [
+                'articles' => $articleCount,
+                'social' => $socialCount,
+            ];
+        });
     }
 
     /**
