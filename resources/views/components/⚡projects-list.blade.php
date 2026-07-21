@@ -53,6 +53,14 @@ new class extends Component
     protected ?array $portalRunningProjectIds = null;
     protected ?array $socialActiveProjects = null;
 
+    protected function parseOptionalKeywordString(string $value): array
+    {
+        $items = array_map('trim', explode(',', $value));
+        $items = array_filter($items);
+
+        return array_values(array_unique($items));
+    }
+
     protected function normalizeKeywordToHashtag(string $keyword): string
     {
         $keyword = trim($keyword);
@@ -447,6 +455,8 @@ new class extends Component
         $project = Project::create([
             'name' => $this->name,
             'topics' => array_values($topics),
+            'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
+            'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
         ]);
 
         // Auto-assign project to the creator if they are a regular user
@@ -481,6 +491,8 @@ new class extends Component
         $this->editProjectId = $project->id;
         $this->editName = $project->name;
         $this->editTopicsString = implode(', ', $project->topics ?? []);
+        $this->contextKeywords = implode(', ', $project->context_keywords ?? []);
+        $this->excludeKeywords = implode(', ', $project->exclude_keywords ?? []);
         $this->showEditModal = true;
     }
 
@@ -512,8 +524,10 @@ new class extends Component
         }
 
         $project->update([
-            'name'   => $this->editName,
+            'name' => $this->editName,
             'topics' => $topics,
+            'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
+            'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
         ]);
 
         $matchingService = app(ContentMatchingService::class);

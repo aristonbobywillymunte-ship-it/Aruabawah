@@ -16,11 +16,15 @@ class Project extends Model
         'name',
         'description',
         'topics',
+        'context_keywords',
+        'exclude_keywords',
         'is_active',
     ];
 
     protected $casts = [
         'topics' => 'array',
+        'context_keywords' => 'array',
+        'exclude_keywords' => 'array',
         'is_active' => 'boolean',
         'first_news_scrape_attempt_at' => 'datetime',
     ];
@@ -73,7 +77,7 @@ class Project extends Model
 
     public function scrapeKeywords(): array
     {
-        $raw = Arr::wrap($this->topics ?? []);
+        $raw = $this->normalizeKeywordList($this->topics ?? []);
         $seen = [];
         $result = [];
         
@@ -91,6 +95,16 @@ class Project extends Model
         return $result;
     }
 
+    public function scrapeContextKeywords(): array
+    {
+        return $this->normalizeKeywordList($this->context_keywords ?? []);
+    }
+
+    public function scrapeExcludeKeywords(): array
+    {
+        return $this->normalizeKeywordList($this->exclude_keywords ?? []);
+    }
+
     public function scrapeKeywordVariants(): array
     {
         $variants = [];
@@ -105,6 +119,44 @@ class Project extends Model
         }
 
         return array_values(array_unique(array_filter($variants)));
+    }
+
+    public function scrapeContextKeywordVariants(): array
+    {
+        $variants = [];
+
+        foreach ($this->scrapeContextKeywords() as $keyword) {
+            $variants[] = $keyword;
+
+            $hashtag = $this->toHashtagVariant($keyword);
+            if ($hashtag !== '') {
+                $variants[] = $hashtag;
+            }
+        }
+
+        return array_values(array_unique(array_filter($variants)));
+    }
+
+    protected function normalizeKeywordList(mixed $raw): array
+    {
+        $raw = Arr::wrap($raw);
+        $seen = [];
+        $result = [];
+
+        foreach ($raw as $keyword) {
+            $trimmed = trim((string) $keyword);
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $lower = strtolower($trimmed);
+            if (! isset($seen[$lower])) {
+                $seen[$lower] = true;
+                $result[] = $trimmed;
+            }
+        }
+
+        return $result;
     }
 
     protected function toHashtagVariant(string $keyword): string

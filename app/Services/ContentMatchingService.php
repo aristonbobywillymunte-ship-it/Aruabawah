@@ -44,11 +44,27 @@ class ContentMatchingService
         $projectKeywordMap = [];
 
         foreach ($allProjects as $project) {
-            $projectKeywordMap[$project->id] = $project->scrapeKeywordVariants();
+            $projectKeywordMap[$project->id] = [
+                'primary' => $project->scrapeKeywordVariants(),
+                'context' => $project->scrapeContextKeywordVariants(),
+                'exclude' => $project->scrapeExcludeKeywords(),
+            ];
         }
 
-        foreach ($projectKeywordMap as $projectId => $keywords) {
-            foreach ($keywords as $kw) {
+        foreach ($projectKeywordMap as $projectId => $keywordSets) {
+            if ($this->matchesExcludeKeywords($keywordSets['exclude'], $contentToMatch)) {
+                continue;
+            }
+
+            if (! $this->matchesAnyKeyword($keywordSets['primary'], $contentToMatch)) {
+                continue;
+            }
+
+            if (! $this->matchesAllKeywords($keywordSets['context'], $contentToMatch)) {
+                continue;
+            }
+
+            foreach ($keywordSets['primary'] as $kw) {
                 if ($this->isStrictMatch($kw, $contentToMatch)) {
                     $matchedProjectIds[] = $projectId;
                     break;
@@ -111,8 +127,11 @@ class ContentMatchingService
             ];
         }
 
-        $keywords = $project->scrapeKeywordVariants();
-        if ($keywords === []) {
+        $primaryKeywords = $project->scrapeKeywordVariants();
+        $contextKeywords = $project->scrapeContextKeywordVariants();
+        $excludeKeywords = $project->scrapeExcludeKeywords();
+
+        if ($primaryKeywords === []) {
             return [
                 'articles_linked' => 0,
                 'social_linked' => 0,
@@ -125,7 +144,7 @@ class ContentMatchingService
         $articleKeywordMap = [];
         Article::query()
             ->select(['id', 'title', 'content'])
-            ->chunkById(250, function ($articles) use ($project, $keywords, &$articlesLinked, &$articleKeywordMap) {
+            ->chunkById(250, function ($articles) use ($project, $primaryKeywords, $contextKeywords, $excludeKeywords, &$articlesLinked, &$articleKeywordMap) {
                 foreach ($articles as $article) {
                     if ($project->articles()->where('articles.id', $article->id)->exists()) {
                         continue;
@@ -136,12 +155,17 @@ class ContentMatchingService
                         continue;
                     }
 
-                    foreach ($keywords as $keyword) {
-                        if ($this->isStrictMatch($keyword, $content)) {
-                            $articleKeywordMap[] = $article->id;
-                            $articlesLinked++;
-                            break;
-                        }
+                    if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
+                        continue;
+                    }
+
+                    if (! $this->matchesAllKeywords($contextKeywords, $content)) {
+                        continue;
+                    }
+
+                    if ($this->matchesAnyKeyword($primaryKeywords, $content)) {
+                        $articleKeywordMap[] = $article->id;
+                        $articlesLinked++;
                     }
                 }
             });
@@ -154,7 +178,7 @@ class ContentMatchingService
         $socialMatchedIds = [];
         SocialMediaItem::query()
             ->select(['id', 'author_name', 'content', 'raw_json'])
-            ->chunkById(250, function ($items) use ($project, $keywords, &$socialLinked, &$socialMatchedIds) {
+            ->chunkById(250, function ($items) use ($project, $primaryKeywords, $contextKeywords, $excludeKeywords, &$socialLinked, &$socialMatchedIds) {
                 foreach ($items as $item) {
                     if ($project->socialMediaItems()->where('social_media_items.id', $item->id)->exists()) {
                         continue;
@@ -164,12 +188,17 @@ class ContentMatchingService
                         $item->content ?? null,
                         $item->raw_json ?? null,
                     );
-                    foreach ($keywords as $keyword) {
-                        if ($this->isStrictMatch($keyword, $content)) {
-                            $socialMatchedIds[] = $item->id;
-                            $socialLinked++;
-                            break;
-                        }
+                    if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
+                        continue;
+                    }
+
+                    if (! $this->matchesAllKeywords($contextKeywords, $content)) {
+                        continue;
+                    }
+
+                    if ($this->matchesAnyKeyword($primaryKeywords, $content)) {
+                        $socialMatchedIds[] = $item->id;
+                        $socialLinked++;
                     }
                 }
             });
@@ -211,8 +240,11 @@ class ContentMatchingService
             ];
         }
 
-        $keywords = $project->scrapeKeywordVariants();
-        if ($keywords === []) {
+        $primaryKeywords = $project->scrapeKeywordVariants();
+        $contextKeywords = $project->scrapeContextKeywordVariants();
+        $excludeKeywords = $project->scrapeExcludeKeywords();
+
+        if ($primaryKeywords === []) {
             $detached = $project->socialMediaItems()->count();
             $project->socialMediaItems()->detach();
 
@@ -227,18 +259,23 @@ class ContentMatchingService
         $matchedIds = [];
         SocialMediaItem::query()
             ->select(['id', 'author_name', 'content', 'raw_json'])
-            ->chunkById(250, function ($items) use ($keywords, &$matchedIds) {
+            ->chunkById(250, function ($items) use ($primaryKeywords, $contextKeywords, $excludeKeywords, &$matchedIds) {
                 foreach ($items as $item) {
                     $content = $this->buildSocialMatchText(
                         $item->content ?? null,
                         $item->raw_json ?? null,
                     );
 
-                    foreach ($keywords as $keyword) {
-                        if ($this->isStrictMatch($keyword, $content)) {
-                            $matchedIds[] = $item->id;
-                            break;
-                        }
+                    if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
+                        continue;
+                    }
+
+                    if (! $this->matchesAllKeywords($contextKeywords, $content)) {
+                        continue;
+                    }
+
+                    if ($this->matchesAnyKeyword($primaryKeywords, $content)) {
+                        $matchedIds[] = $item->id;
                     }
                 }
         });
@@ -343,6 +380,54 @@ class ContentMatchingService
         }
 
         return implode("\n", array_values(array_unique($parts)));
+    }
+
+    protected function matchesAllKeywords(array $keywords, string $text): bool
+    {
+        $keywords = array_values(array_filter(array_map('trim', $keywords)));
+        if ($keywords === []) {
+            return true;
+        }
+
+        foreach ($keywords as $keyword) {
+            if (! $this->isStrictMatch($keyword, $text)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected function matchesAnyKeyword(array $keywords, string $text): bool
+    {
+        $keywords = array_values(array_filter(array_map('trim', $keywords)));
+        if ($keywords === []) {
+            return false;
+        }
+
+        foreach ($keywords as $keyword) {
+            if ($this->isStrictMatch($keyword, $text)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function matchesExcludeKeywords(array $keywords, string $text): bool
+    {
+        $keywords = array_values(array_filter(array_map('trim', $keywords)));
+        if ($keywords === []) {
+            return false;
+        }
+
+        foreach ($keywords as $keyword) {
+            if ($this->isStrictMatch($keyword, $text)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

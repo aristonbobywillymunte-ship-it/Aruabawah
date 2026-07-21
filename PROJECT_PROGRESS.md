@@ -7,6 +7,12 @@
 
 ## Log Aktivitas Terbaru (20 Juli 2026)
 
+### 1. Filter Detail Kata Kunci Proyek Diaktifkan
+* Field `UTAMA`, `Konteks`, dan `Dikecualikan` sekarang dipakai benar-benar oleh backend matching, bukan sekadar tampil di form.
+* `UTAMA` dipakai sebagai keyword utama yang cukup salah satu cocok, `Konteks` harus semuanya muncul, dan `Dikecualikan` langsung menolak item yang mengandung salah satu kata terlarang.
+* Nilai filter ini disimpan di tabel `projects` lewat kolom baru `context_keywords` dan `exclude_keywords`.
+* Validasi syntax PHP dan migration akan dicek setelah patch.
+
 ### 1. Semua Item Apify Sosial Disimpan Dulu
 * Jalur ingest Apify untuk Facebook, Instagram, dan TikTok tidak lagi membuang item hanya karena keyword proyek tidak cocok atau kontennya dinilai terlalu pendek/noisy.
 * Item social sekarang tetap disimpan ke database dulu, lalu penyaringan relevansi proyek dibiarkan terjadi di tahap linking/dashboard.
