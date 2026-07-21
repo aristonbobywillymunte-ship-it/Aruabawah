@@ -370,25 +370,21 @@ class ApifyScrapingJob implements ShouldQueue
                 'status_message' => $statusMessage,
             ]);
 
-            if (! $limitReached && $limit > 0 && $this->datasetItemCountAtLeast($token, $datasetId, $limit)) {
+            if (! $limitReached && $shouldAbortOnHardLimit && $limit > 0 && $this->datasetItemCountAtLeast($token, $datasetId, $limit)) {
                 $limitReached = true;
-                if ($shouldAbortOnHardLimit) {
-                    Log::info("[Apify] Hard limit reached; stopping run at {$limit} item(s). | {$contextStr}");
+                Log::info("[Apify] Hard limit reached; stopping run at {$limit} item(s). | {$contextStr}");
 
-                    try {
-                        Http::withToken($token)
-                            ->timeout(20)
-                            ->post("https://api.apify.com/v2/actor-runs/{$runId}/abort");
-                    } catch (\Throwable $e) {
-                        Log::warning('[Apify] Failed to request run abort after reaching hard limit.', [
-                            'run_id' => $runId,
-                            'dataset_id' => $datasetId,
-                            'limit' => $limit,
-                            'error' => $e->getMessage(),
-                        ]);
-                    }
-                } else {
-                    Log::info("[Apify] Hard limit reached; waiting actor to finish naturally at {$limit} item(s). | {$contextStr}");
+                try {
+                    Http::withToken($token)
+                        ->timeout(20)
+                        ->post("https://api.apify.com/v2/actor-runs/{$runId}/abort");
+                } catch (\Throwable $e) {
+                    Log::warning('[Apify] Failed to request run abort after reaching hard limit.', [
+                        'run_id' => $runId,
+                        'dataset_id' => $datasetId,
+                        'limit' => $limit,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
             }
         }
@@ -518,7 +514,6 @@ class ApifyScrapingJob implements ShouldQueue
         $datasetResp = Http::withToken($token)
             ->get("https://api.apify.com/v2/datasets/{$datasetId}/items", [
                 'format' => 'json',
-                'limit'  => $limit,
             ]);
 
         if (!$datasetResp->successful()) {
@@ -534,9 +529,6 @@ class ApifyScrapingJob implements ShouldQueue
         }
 
         $items = $datasetResp->json() ?? [];
-        if (in_array($platform, ['Facebook', 'Instagram', 'TikTok'], true) && count($items) > $limit) {
-            $items = array_slice($items, 0, $limit);
-        }
         $saved = 0;
 
         foreach ($items as $item) {

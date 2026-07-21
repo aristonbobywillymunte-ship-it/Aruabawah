@@ -635,3 +635,8 @@
 ### 50. Sinkronisasi Edit Project Dipasang di UI
 * Jalur simpan edit project di komponen UI proyek sekarang langsung memanggil resync social content setelah update topics.
 * Dengan begitu, saat user klik simpan, hashtag lama yang sudah dihapus langsung hilang dari detail project tanpa menunggu proses manual.
+
+### 51. Fetch Hasil Apify Tidak Lagi Dibatasi
+* Worker `ApifyScrapingJob` sekarang mengambil seluruh item dataset dari Apify tanpa `limit` di query fetch.
+* Pembatas yang tersisa hanya dipakai saat mengirim payload ke Apify, bukan saat aplikasi menerima hasil dari dataset.
+* Jalur stop-early untuk social platform juga dimatikan supaya hasil TikTok/Instagram/Facebook yang valid tidak terpotong sebelum disimpan.
