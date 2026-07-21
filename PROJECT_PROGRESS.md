@@ -7,6 +7,11 @@
 
 ## Log Aktivitas Terbaru (20 Juli 2026)
 
+### 1. Semua Item Apify Sosial Disimpan Dulu
+* Jalur ingest Apify untuk Facebook, Instagram, dan TikTok tidak lagi membuang item hanya karena keyword proyek tidak cocok atau kontennya dinilai terlalu pendek/noisy.
+* Item social sekarang tetap disimpan ke database dulu, lalu penyaringan relevansi proyek dibiarkan terjadi di tahap linking/dashboard.
+* Validasi syntax PHP untuk job Apify akan dicek setelah perubahan.
+
 ### 1. Proyek Baru Otomatis Bootstrap Scraping
 * Saat proyek baru dibuat, sistem sekarang langsung mengantrikan job bootstrap yang menjalankan portal/news scraping lalu Apify scraping untuk project tersebut.
 * Bootstrap berjalan di background melalui queue agar proses simpan proyek tetap cepat dan tidak menunggu scraping selesai di request UI.

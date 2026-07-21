@@ -654,7 +654,7 @@ class ApifyScrapingJob implements ShouldQueue
                 in_array($platform, ['Facebook', 'Instagram', 'TikTok'], true)
                 && ! $this->matchesAnyKeywordInContent($keywords, $keywordHaystack)
             ) {
-                Log::info('[Apify] Skipped social item: keyword proyek tidak cocok.', [
+                Log::info('[Apify] Social item stored without project link: keyword proyek tidak cocok.', [
                     'platform' => $platform,
                     'project_id' => $projectId,
                     'keywords' => $keywords,
@@ -662,22 +662,28 @@ class ApifyScrapingJob implements ShouldQueue
                     'author' => $author,
                     'content_excerpt' => Str::limit((string) $content, 120),
                 ]);
-                continue;
             }
             if (
                 in_array($platform, ['Facebook', 'Instagram', 'TikTok'], true)
                 && $this->isInvalidSocialContent($content, $platform)
             ) {
-                Log::info('[Apify] Skipped social item: konten medsos tidak layak simpan.', [
+                Log::info('[Apify] Social item stored even though content is short/noisy.', [
                     'platform' => $platform,
                     'project_id' => $projectId,
                     'post_url' => $postUrl,
                     'author' => $author,
                     'content_excerpt' => Str::limit((string) $content, 120),
                 ]);
-                continue;
             }
-            if ($this->isPlaceholderOrNoiseContent($content)) continue;
+            if ($this->isPlaceholderOrNoiseContent($content)) {
+                Log::info('[Apify] Social item stored even though content looks like placeholder/noise.', [
+                    'platform' => $platform,
+                    'project_id' => $projectId,
+                    'post_url' => $postUrl,
+                    'author' => $author,
+                    'content_excerpt' => Str::limit((string) $content, 120),
+                ]);
+            }
 
             $record = SocialMediaItem::updateOrCreate(
                 ['post_url' => $postUrl ?? ('apify-' . md5($content . $platform))],
