@@ -60,7 +60,7 @@ if ($isActive) {
     // Run Apify / Portal scraping
     if ($apifySchedulerEnabled && $apifyInterval > 0 && $apifyReady) {
         Schedule::command('scraping:run-apify --limit=' . $limitPerRun)
-            ->everyMinute()
+            ->cron($minutesToCron($apifyInterval))
             ->when(function () use ($apifySchedulerEnabled, $settings, $apifySetting) {
                 if (! $apifySchedulerEnabled || ! (bool) ($settings?->is_active ?? false) || ! (bool) ($apifySetting?->isReadyForScraping() ?? false)) {
                     return false;

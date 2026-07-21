@@ -12,6 +12,17 @@
 * Tujuannya agar tampilan IG/TikTok tidak nyangkut di state lama seperti `selectedSources = ['News']` ketika pengguna pindah atau membuka project lain.
 * Validasi syntax Blade untuk file dashboard perlu dicek ulang setelah perubahan.
 
+### 1. Matching Project Dipangkas Query-nya
+* Jalur matching lintas project sekarang meng-cache daftar keyword per project dan menghindari query `Project::find()` berulang untuk setiap item yang cocok.
+* Existing social-content matching juga sekarang mengambil `raw_json` supaya hashtag sosial tetap kebaca penuh dan konsisten dengan aturan hashtag-only.
+* Command audit project aktif ikut diselaraskan ke pembacaan hashtag sosial agar tidak lagi memakai `author_name` sebagai pemicu kecocokan.
+* Validasi syntax PHP untuk file terkait lulus setelah perubahan.
+
+### 1. Scheduler Apify Mengikuti Interval Setting
+* Schedule `scraping:run-apify` sekarang memakai cron dari `portal_crawling_interval` alih-alih dipaksa jalan setiap menit.
+* Ini mengurangi penumpukan job scraping berat yang sebelumnya selalu dipicu scheduler meskipun interval sudah diatur lebih longgar di database.
+* Validasi syntax PHP untuk `routes/console.php` perlu dicek ulang setelah perubahan.
+
 ---
 
 ## Log Aktivitas Terbaru (17 Juli 2026)

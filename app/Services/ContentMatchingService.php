@@ -41,17 +41,16 @@ class ContentMatchingService
         $matchedProjectIds = [];
 
         $allProjects = Project::where('is_active', true)->get();
-        
+        $projectKeywordMap = [];
+
         foreach ($allProjects as $project) {
-            if (in_array($project->id, $matchedProjectIds, true)) {
-                continue;
-            }
-            
-            $keywords = $project->scrapeKeywordVariants();
-            
+            $projectKeywordMap[$project->id] = $project->scrapeKeywordVariants();
+        }
+
+        foreach ($projectKeywordMap as $projectId => $keywords) {
             foreach ($keywords as $kw) {
                 if ($this->isStrictMatch($kw, $contentToMatch)) {
-                    $matchedProjectIds[] = $project->id;
+                    $matchedProjectIds[] = $projectId;
                     break;
                 }
             }
@@ -63,9 +62,18 @@ class ContentMatchingService
         
         $uniqueMatchedIds = array_unique($matchedProjectIds);
         
-        foreach ($uniqueMatchedIds as $pid) {
-            $proj = Project::find($pid);
-            if ($proj) {
+        if ($uniqueMatchedIds !== []) {
+            $projects = Project::query()
+                ->whereIn('id', $uniqueMatchedIds)
+                ->get()
+                ->keyBy('id');
+
+            foreach ($uniqueMatchedIds as $pid) {
+                $proj = $projects->get($pid);
+                if (! $proj) {
+                    continue;
+                }
+
                 if ($isArticle) {
                     $proj->articles()->syncWithoutDetaching([$item->id]);
                 } else {
@@ -114,9 +122,10 @@ class ContentMatchingService
         }
 
         $articlesLinked = 0;
+        $articleKeywordMap = [];
         Article::query()
             ->select(['id', 'title', 'content'])
-            ->chunkById(250, function ($articles) use ($project, $keywords, &$articlesLinked) {
+            ->chunkById(250, function ($articles) use ($project, $keywords, &$articlesLinked, &$articleKeywordMap) {
                 foreach ($articles as $article) {
                     if ($project->articles()->where('articles.id', $article->id)->exists()) {
                         continue;
@@ -126,9 +135,10 @@ class ContentMatchingService
                     if ($this->shouldSkipGovernorArticleMatch($project, $content)) {
                         continue;
                     }
+
                     foreach ($keywords as $keyword) {
                         if ($this->isStrictMatch($keyword, $content)) {
-                            $project->articles()->syncWithoutDetaching([$article->id]);
+                            $articleKeywordMap[] = $article->id;
                             $articlesLinked++;
                             break;
                         }
@@ -136,10 +146,15 @@ class ContentMatchingService
                 }
             });
 
+        if ($articleKeywordMap !== []) {
+            $project->articles()->syncWithoutDetaching($articleKeywordMap);
+        }
+
         $socialLinked = 0;
+        $socialMatchedIds = [];
         SocialMediaItem::query()
-            ->select(['id', 'author_name', 'content'])
-            ->chunkById(250, function ($items) use ($project, $keywords, &$socialLinked) {
+            ->select(['id', 'author_name', 'content', 'raw_json'])
+            ->chunkById(250, function ($items) use ($project, $keywords, &$socialLinked, &$socialMatchedIds) {
                 foreach ($items as $item) {
                     if ($project->socialMediaItems()->where('social_media_items.id', $item->id)->exists()) {
                         continue;
@@ -151,13 +166,17 @@ class ContentMatchingService
                     );
                     foreach ($keywords as $keyword) {
                         if ($this->isStrictMatch($keyword, $content)) {
-                            $project->socialMediaItems()->syncWithoutDetaching([$item->id]);
+                            $socialMatchedIds[] = $item->id;
                             $socialLinked++;
                             break;
                         }
                     }
                 }
             });
+
+        if ($socialMatchedIds !== []) {
+            $project->socialMediaItems()->syncWithoutDetaching(array_values(array_unique($socialMatchedIds)));
+        }
 
         Log::info('[Project Matching] Existing content linked to project.', [
             'project_id' => $project->id,
@@ -222,7 +241,7 @@ class ContentMatchingService
                         }
                     }
                 }
-            });
+        });
 
         $matchedIds = array_values(array_unique($matchedIds));
         $detached = $project->socialMediaItems()->count();

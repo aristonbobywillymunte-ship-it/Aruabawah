@@ -85,7 +85,10 @@ class MatchActiveProjectsCommand extends Command
         
         // Scan Social Media
         foreach ($socials as $item) {
-            $contentToMatch = ($item->author_name ?? '') . "\n" . ($item->content ?? '');
+            $contentToMatch = app(ContentMatchingService::class)->buildSocialMatchText(
+                $item->content ?? null,
+                $item->raw_json ?? null
+            );
             $existingProjectIds = $item->projects()->pluck('projects.id')->toArray();
             
             foreach ($projects as $project) {
