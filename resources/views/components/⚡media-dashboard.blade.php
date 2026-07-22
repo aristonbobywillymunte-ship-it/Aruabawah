@@ -99,7 +99,7 @@ new class extends Component
 
     public $search = '';
     public $selectedSentiment = ['positive', 'neutral', 'negative'];
-    public $selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
+    public $selectedSources = [];
     public $selectedCategory = '';
     public $sortBy = 'newest';
     public int $limit = 5;
@@ -310,7 +310,7 @@ new class extends Component
         $this->endDate = now()->format('Y-m-d');
         $this->search = '';
         $this->selectedSentiment = ['positive', 'neutral', 'negative'];
-        $this->selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
+        $this->selectedSources = [];
         $this->selectedCategory = '';
         $this->sortBy = 'newest';
         $this->limit = 5;
@@ -580,6 +580,141 @@ new class extends Component
         }
 
         return str_contains($cleanName, '.') ? $cleanName : $cleanName . '.com';
+    }
+
+    protected function normalizeSourceLabel(?string $sourceName): string
+    {
+        $cleanName = strtolower(trim((string) $sourceName));
+
+        if ($cleanName === '') {
+            return '';
+        }
+
+        $compact = preg_replace('/[\s_\-]+/', '', $cleanName) ?? $cleanName;
+
+        if (
+            $compact === 'news'
+            || $compact === 'portalnews'
+            || str_contains($compact, 'portalberita')
+            || str_contains($compact, 'newsportal')
+        ) {
+            return 'News';
+        }
+
+        if (
+            str_starts_with($compact, 'instagram')
+            || $compact === 'ig'
+        ) {
+            return 'Instagram';
+        }
+
+        if (
+            str_starts_with($compact, 'tiktok')
+            || $compact === 'tk'
+        ) {
+            return 'TikTok';
+        }
+
+        if (
+            str_starts_with($compact, 'facebook')
+            || $compact === 'fb'
+        ) {
+            return 'Facebook';
+        }
+
+        if (
+            str_starts_with($compact, 'youtube')
+            || $compact === 'yt'
+        ) {
+            return 'Youtube';
+        }
+
+        if (str_starts_with($compact, 'threads')) {
+            return 'Threads';
+        }
+
+        if (
+            str_starts_with($compact, 'twitter')
+            || str_contains($compact, 'twitterx')
+            || str_contains($compact, 'twitter/x')
+            || $compact === 'x'
+            || str_starts_with($compact, 'x.com')
+        ) {
+            return 'Twitter';
+        }
+
+        return ucfirst($cleanName);
+    }
+
+    protected function sourceMatchPatterns(string $sourceLabel): array
+    {
+        return match ($this->normalizeSourceLabel($sourceLabel)) {
+            'Instagram' => ['instagram%'],
+            'TikTok' => ['tiktok%'],
+            'Facebook' => ['facebook%'],
+            'Youtube' => ['youtube%'],
+            'Threads' => ['threads%'],
+            'Twitter' => ['twitter%', 'twitter/x%', 'x.com%', 'x'],
+            default => [strtolower($sourceLabel)],
+        };
+    }
+
+    protected function buildSourceMatchSql(array $patterns, string $column = 'source_name'): array
+    {
+        $sourceExpr = 'lower(coalesce(' . $column . ", ''))";
+        $sqlParts = [];
+        $bindings = [];
+
+        foreach ($patterns as $pattern) {
+            $pattern = strtolower(trim((string) $pattern));
+            if ($pattern === '') {
+                continue;
+            }
+
+            if (str_contains($pattern, '%')) {
+                $sqlParts[] = $sourceExpr . ' like ?';
+            } else {
+                $sqlParts[] = $sourceExpr . ' = ?';
+            }
+
+            $bindings[] = $pattern;
+        }
+
+        if ($sqlParts === []) {
+            return ['sql' => '1 = 0', 'bindings' => []];
+        }
+
+        return [
+            'sql' => '(' . implode(' or ', $sqlParts) . ')',
+            'bindings' => $bindings,
+        ];
+    }
+
+    protected function buildSocialSourceSql(string $column = 'source_name'): array
+    {
+        $patterns = [];
+
+        foreach (['Twitter', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'] as $label) {
+            $patterns = array_merge($patterns, $this->sourceMatchPatterns($label));
+        }
+
+        $patterns = array_values(array_unique($patterns));
+
+        return $this->buildSourceMatchSql($patterns, $column);
+    }
+
+    protected function buildSourceLabelSql(string $sourceLabel, string $column = 'source_name'): array
+    {
+        if ($this->normalizeSourceLabel($sourceLabel) === 'News') {
+            $socialSql = $this->buildSocialSourceSql($column);
+
+            return [
+                'sql' => 'not ' . $socialSql['sql'],
+                'bindings' => $socialSql['bindings'],
+            ];
+        }
+
+        return $this->buildSourceMatchSql($this->sourceMatchPatterns($sourceLabel), $column);
     }
 
     protected function defaultPortalLogoUrl(string $domain): string
@@ -874,28 +1009,14 @@ new class extends Component
 
         if (!in_array('sources', $exclude) && !empty($this->selectedSources)) {
             $query->where(function($q) {
-                $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
-                if (in_array('News', $this->selectedSources)) {
-                    $selectedSocials = array_diff($this->selectedSources, ['News']);
-                    $q->whereRaw('lower(coalesce(source_name, \'\')) not in (?, ?, ?, ?, ?, ?, ?, ?)', [
-                        'twitter',
-                        'twitter/x',
-                        'x.com',
-                        'instagram',
-                        'youtube',
-                        'tiktok',
-                        'facebook',
-                        'threads',
-                    ]);
-                    if (!empty($selectedSocials)) {
-                        $selectedSocials = array_map('strtolower', $selectedSocials);
-                        $q->orWhere(function ($inner) use ($selectedSocials) {
-                            $inner->whereRaw('lower(coalesce(source_name, \'\')) in (' . implode(',', array_fill(0, count($selectedSocials), '?')) . ')', $selectedSocials);
-                        });
+                $selectedSources = array_values(array_unique(array_filter($this->selectedSources)));
+                foreach ($selectedSources as $index => $sourceLabel) {
+                    $sourceSql = $this->buildSourceLabelSql($sourceLabel);
+                    if ($index === 0) {
+                        $q->whereRaw($sourceSql['sql'], $sourceSql['bindings']);
+                    } else {
+                        $q->orWhereRaw($sourceSql['sql'], $sourceSql['bindings']);
                     }
-                } else {
-                    $normalizedSelectedSources = array_map('strtolower', $this->selectedSources);
-                    $q->whereRaw('lower(coalesce(source_name, \'\')) in (' . implode(',', array_fill(0, count($normalizedSelectedSources), '?')) . ')', $normalizedSelectedSources);
                 }
             });
         }
@@ -924,20 +1045,20 @@ new class extends Component
 
         return $this->countsMemo[$cacheKey] = Cache::remember($cacheKey, 120, function () {
             $baseQuery = $this->projectArticlesQuery();
-            $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
-            $normalizedSocials = array_map('strtolower', $socials);
             // Counts for the filter panel should reflect the visible article pool,
             // not disappear just because sentiment AI is still pending.
             $sourceQuery = $this->applyActiveFilters(clone $baseQuery, ['sources', 'sentiment']);
             $sources = ['Twitter', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
             $sourceCounts = [];
             foreach ($sources as $source) {
+                $sourceSql = $this->buildSourceLabelSql($source);
                 $sourceCounts[$source] = (clone $sourceQuery)
-                    ->whereRaw('lower(coalesce(source_name, \'\')) = ?', [strtolower($source)])
+                    ->whereRaw($sourceSql['sql'], $sourceSql['bindings'])
                     ->count();
             }
+            $newsSql = $this->buildSourceLabelSql('News');
             $sourceCounts['News'] = (clone $sourceQuery)
-                ->whereRaw('lower(coalesce(source_name, \'\')) not in (' . implode(',', array_fill(0, count($normalizedSocials), '?')) . ')', $normalizedSocials)
+                ->whereRaw($newsSql['sql'], $newsSql['bindings'])
                 ->count();
 
             $sentimentQuery = $this->applyActiveFilters(clone $baseQuery, ['sentiment']);
@@ -1009,7 +1130,17 @@ new class extends Component
 
             $fetchLimit = max($this->limit * 4, $this->limit);
 
-            $articles = $this->dedupeSocialArticles($query->limit($fetchLimit)->get())
+            $articles = $query->limit($fetchLimit)->get();
+
+            // Jangan dedupe saat filter sumber aktif, supaya hasil IG/TikTok/Facebook
+            // tetap lengkap sesuai pilihan checkbox user. Dedupe hanya dipakai saat
+            // feed campuran tanpa filter sumber, untuk mencegah kartu yang benar-benar
+            // sama muncul berulang di dashboard umum.
+            if (empty($this->selectedSources)) {
+                $articles = $this->dedupeSocialArticles($articles);
+            }
+
+            $articles = $articles
                 ->take($this->limit)
                 ->values();
 
@@ -1355,26 +1486,31 @@ new class extends Component
                 ->orderByDesc('total')
                 ->get();
 
-            return $rawSources->map(function ($row) {
-                $sourceKey = (string) ($row->source_key ?? '');
-                $sourceName = match ($sourceKey) {
-                    'tiktok' => 'TikTok',
-                    'instagram' => 'Instagram',
-                    'facebook' => 'Facebook',
-                    'twitter', 'twitter/x', 'x.com' => 'Twitter',
-                    'youtube' => 'Youtube',
-                    'threads' => 'Threads',
-                    default => $sourceKey !== '' ? $sourceKey : 'Sumber tidak diketahui',
-                };
+            $aggregated = [];
 
-                return (object) [
-                    'source_name' => $sourceName,
-                    'total' => (int) $row->total,
-                    'positive' => (int) ($row->positive ?? 0),
-                    'neutral' => (int) ($row->neutral ?? 0),
-                    'negative' => (int) ($row->negative ?? 0),
-                ];
-            });
+            foreach ($rawSources as $row) {
+                $sourceKey = (string) ($row->source_key ?? '');
+                $sourceName = $this->normalizeSourceLabel($sourceKey) ?: ($sourceKey !== '' ? $sourceKey : 'Sumber tidak diketahui');
+
+                if (!isset($aggregated[$sourceName])) {
+                    $aggregated[$sourceName] = [
+                        'source_name' => $sourceName,
+                        'total' => 0,
+                        'positive' => 0,
+                        'neutral' => 0,
+                        'negative' => 0,
+                    ];
+                }
+
+                $aggregated[$sourceName]['total'] += (int) $row->total;
+                $aggregated[$sourceName]['positive'] += (int) ($row->positive ?? 0);
+                $aggregated[$sourceName]['neutral'] += (int) ($row->neutral ?? 0);
+                $aggregated[$sourceName]['negative'] += (int) ($row->negative ?? 0);
+            }
+
+            return collect(array_values($aggregated))
+                ->sortByDesc('total')
+                ->values();
         });
     }
 
@@ -1695,9 +1831,11 @@ new class extends Component
             right: 24px !important;
             width: 320px !important;
             max-height: calc(100vh - 266px) !important;
-            z-index: 20 !important;
+            z-index: 40 !important;
             align-self: flex-start !important;
             background: #ffffff !important;
+            pointer-events: auto !important;
+            isolation: isolate !important;
         }
     }
     @media (max-width: 899px) {
@@ -1707,6 +1845,14 @@ new class extends Component
     }
     .dashboard-fixed-footer {
         display: none;
+    }
+    .datepicker-modal-container {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    .datepicker-left-panel {
+        width: 100% !important;
+        border-bottom: 1px solid #f1f5f9 !important;
     }
     @media (min-width: 900px) {
         .dashboard-fixed-footer {
@@ -1718,6 +1864,15 @@ new class extends Component
             z-index: 18 !important;
             background: rgba(247, 249, 255, 0.94) !important;
             backdrop-filter: blur(10px) !important;
+        }
+        .datepicker-modal-container {
+            flex-direction: row !important;
+            height: 450px !important;
+        }
+        .datepicker-left-panel {
+            width: 200px !important;
+            border-bottom: none !important;
+            border-right: 1px solid #f1f5f9 !important;
         }
     }
 </style>
@@ -1950,7 +2105,7 @@ new class extends Component
     @endphp
 
     <!-- Desktop filter is fixed outside the lazy workspace so Livewire refreshes cannot remove it. -->
-    <aside class="desktop-filter-panel shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-200 rounded-2xl p-6 bg-white flex-shrink-0" wire:key="desktop-filter-panel-shell" wire:ignore.self>
+    <aside class="desktop-filter-panel shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-200 rounded-2xl p-6 bg-white flex-shrink-0" wire:key="desktop-filter-panel-shell">
         <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3 flex-shrink-0">Filter Panel</h4>
         @include('components.⚡filter-items', ['filterContext' => 'desktop'])
     </aside>
@@ -2026,29 +2181,47 @@ new class extends Component
                     ->sum('project_estimated_readers');
             };
 
+            $sourceArticleIds = function (string $sourceLabel) use ($baseActiveQuery) {
+                $sourceSql = $this->buildSourceLabelSql($sourceLabel);
+
+                return (clone $baseActiveQuery)
+                    ->whereRaw($sourceSql['sql'], $sourceSql['bindings'])
+                    ->select('articles.id');
+            };
+
             $socialReach = $aiReachSum(
                 \App\Models\AiAnalysisResult::query()
-                    ->whereIn('article_id', (clone $baseActiveQuery)->whereIn('source_name', $socials)->select('articles.id'))
+                    ->whereIn('article_id', $sourceArticleIds('Instagram')->union(
+                        $sourceArticleIds('TikTok')
+                    )->union(
+                        $sourceArticleIds('Facebook')
+                    )->union(
+                        $sourceArticleIds('Threads')
+                    )->union(
+                        $sourceArticleIds('Youtube')
+                    )->union(
+                        $sourceArticleIds('Twitter')
+                    ))
             );
 
             $fbReach = $aiReachSum(
                 \App\Models\AiAnalysisResult::query()
-                    ->whereIn('article_id', (clone $baseActiveQuery)->where('source_name', 'Facebook')->select('articles.id'))
+                    ->whereIn('article_id', $sourceArticleIds('Facebook'))
             );
 
             $igReach = $aiReachSum(
                 \App\Models\AiAnalysisResult::query()
-                    ->whereIn('article_id', (clone $baseActiveQuery)->where('source_name', 'Instagram')->select('articles.id'))
+                    ->whereIn('article_id', $sourceArticleIds('Instagram'))
             );
 
             $ttReach = $aiReachSum(
                 \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', (clone $baseActiveQuery)->whereRaw('lower(source_name) = ?', ['tiktok'])->select('articles.id'))
+                    ->whereIn('article_id', $sourceArticleIds('TikTok'))
             );
 
             $newsReach = $aiReachSum(
                 \App\Models\AiAnalysisResult::query()
-                    ->whereIn('article_id', (clone $baseActiveQuery)->whereNotIn('source_name', $socials)->select('articles.id'))
+                    ->whereIn('article_id', $sourceArticleIds('News'))
             );
 
             $totalReach = $socialReach + $newsReach;
@@ -2065,34 +2238,64 @@ new class extends Component
 
             // Social sentiments
             $socPos = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', (clone $baseActiveQuery)->whereIn('source_name', $socials)->select('articles.id'))
+                ->whereIn('article_id', $sourceArticleIds('Instagram')->union(
+                    $sourceArticleIds('TikTok')
+                )->union(
+                    $sourceArticleIds('Facebook')
+                )->union(
+                    $sourceArticleIds('Threads')
+                )->union(
+                    $sourceArticleIds('Youtube')
+                )->union(
+                    $sourceArticleIds('Twitter')
+                ))
                 ->where('sentiment', 'positive')
                 ->where($canonicalAiFilter)
                 ->count();
             $socNeu = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', (clone $baseActiveQuery)->whereIn('source_name', $socials)->select('articles.id'))
+                ->whereIn('article_id', $sourceArticleIds('Instagram')->union(
+                    $sourceArticleIds('TikTok')
+                )->union(
+                    $sourceArticleIds('Facebook')
+                )->union(
+                    $sourceArticleIds('Threads')
+                )->union(
+                    $sourceArticleIds('Youtube')
+                )->union(
+                    $sourceArticleIds('Twitter')
+                ))
                 ->where('sentiment', 'neutral')
                 ->where($canonicalAiFilter)
                 ->count();
             $socNeg = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', (clone $baseActiveQuery)->whereIn('source_name', $socials)->select('articles.id'))
+                ->whereIn('article_id', $sourceArticleIds('Instagram')->union(
+                    $sourceArticleIds('TikTok')
+                )->union(
+                    $sourceArticleIds('Facebook')
+                )->union(
+                    $sourceArticleIds('Threads')
+                )->union(
+                    $sourceArticleIds('Youtube')
+                )->union(
+                    $sourceArticleIds('Twitter')
+                ))
                 ->where('sentiment', 'negative')
                 ->where($canonicalAiFilter)
                 ->count();
 
             // News sentiments
             $newsPos = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', (clone $baseActiveQuery)->whereNotIn('source_name', $socials)->select('articles.id'))
+                ->whereIn('article_id', $sourceArticleIds('News'))
                 ->where('sentiment', 'positive')
                 ->where($canonicalAiFilter)
                 ->count();
             $newsNeu = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', (clone $baseActiveQuery)->whereNotIn('source_name', $socials)->select('articles.id'))
+                ->whereIn('article_id', $sourceArticleIds('News'))
                 ->where('sentiment', 'neutral')
                 ->where($canonicalAiFilter)
                 ->count();
             $newsNeg = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', (clone $baseActiveQuery)->whereNotIn('source_name', $socials)->select('articles.id'))
+                ->whereIn('article_id', $sourceArticleIds('News'))
                 ->where('sentiment', 'negative')
                 ->where($canonicalAiFilter)
                 ->count();
@@ -2246,9 +2449,9 @@ new class extends Component
                     </div>
 
                     <!-- Mentions Cards Feed -->
-                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-4" wire:init="loadMentions">
+                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-4" wire:init="loadMentions" wire:key="mentions-scroll-shell">
                         @if(!$mentionsLoaded)
-                            <div class="space-y-4">
+                            <div class="space-y-4" wire:key="mentions-initial-skeleton">
                                 @for($i = 0; $i < 4; $i++)
                                     <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm animate-pulse space-y-4">
                                         <div class="h-4 w-28 rounded bg-slate-100"></div>
@@ -2263,6 +2466,17 @@ new class extends Component
                         @else
                             @php
                                 $articlesList = $this->getArticles();
+                                $mentionsFilterSignature = md5(json_encode([
+                                    'project' => $projectId,
+                                    'sources' => $selectedSources,
+                                    'sentiment' => $selectedSentiment,
+                                    'search' => $search,
+                                    'start' => $startDate,
+                                    'end' => $endDate,
+                                    'sort' => $sortBy,
+                                    'limit' => $limit,
+                                ]));
+                                $mentionsLoadingTargets = 'selectedSources,selectedSentiment,search,startDate,endDate,sortBy,limit,selectedCategory';
                             @endphp
 
                             @if($articlesList->isEmpty())
@@ -2273,7 +2487,47 @@ new class extends Component
                                 <p class="text-sm font-semibold text-slate-600">Belum ada penyebutan media ditemukan untuk proyek ini.</p>
                             </div>
                         @else
-                            <div class="space-y-4">
+                            <div
+                                class="space-y-4"
+                                wire:loading.block
+                                wire:target="{{ $mentionsLoadingTargets }}"
+                                wire:key="mentions-filter-skeleton-{{ $mentionsFilterSignature }}"
+                            >
+                                @for($i = 0; $i < 4; $i++)
+                                    <div class="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] animate-pulse space-y-4">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-10 h-10 rounded-xl bg-slate-100"></div>
+                                            <div class="space-y-2">
+                                                <div class="h-4 w-28 rounded bg-slate-100"></div>
+                                                <div class="h-3 w-40 rounded bg-slate-100"></div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50/60 rounded-2xl p-3 border border-slate-100">
+                                            <div class="h-14 rounded-2xl bg-slate-100"></div>
+                                            <div class="h-14 rounded-2xl bg-slate-100"></div>
+                                            <div class="h-14 rounded-2xl bg-slate-100"></div>
+                                            <div class="h-14 rounded-2xl bg-slate-100 sm:col-span-1"></div>
+                                            <div class="h-14 rounded-2xl bg-slate-100 sm:col-span-1"></div>
+                                        </div>
+                                        <div class="space-y-3">
+                                            <div class="h-5 w-3/4 rounded bg-slate-100"></div>
+                                            <div class="h-4 w-full rounded bg-slate-100"></div>
+                                            <div class="h-4 w-11/12 rounded bg-slate-100"></div>
+                                        </div>
+                                        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                                            <div class="h-8 w-28 rounded-xl bg-slate-100"></div>
+                                            <div class="h-8 w-36 rounded-xl bg-slate-100"></div>
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+
+                            <div
+                                class="space-y-4"
+                                wire:loading.remove
+                                wire:target="{{ $mentionsLoadingTargets }}"
+                                wire:key="mentions-feed-{{ $mentionsFilterSignature }}"
+                            >
                                 @foreach($articlesList as $article)
                                     @php
                                         $analysis = $article->aiAnalysisResult;
@@ -2297,6 +2551,7 @@ new class extends Component
                                     }
                                 @endphp
                                 <article 
+                                    wire:key="mention-card-{{ $article->id }}-{{ md5((string) $article->source_name) }}"
                                     class="bg-white rounded-3xl border border-slate-200/80 p-4 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 border-l-4"
                                     style="border-left-color: {{ $sentimentColor }}"
                                 >
@@ -2568,7 +2823,12 @@ new class extends Component
                         @endphp
 
                         @if($articlesList->count() < $totalArticlesCount)
-                            <div x-intersect="$wire.loadMore()" class="py-6 text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-2">
+                            <div
+                                wire:key="mentions-load-more-{{ $mentionsFilterSignature }}-{{ $articlesList->count() }}"
+                                x-data="{ loadingMore: false }"
+                                x-intersect.margin.200px="if (!loadingMore) { loadingMore = true; $wire.loadMore().then(() => loadingMore = false).catch(() => loadingMore = false) }"
+                                class="py-6 text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-2"
+                            >
                                 <svg class="animate-spin h-4 w-4 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -3839,6 +4099,7 @@ new class extends Component
                             </div>
                         </div>
                     </div>
+                    @endif
                     @endif
                 </section>
             @elseif($this->isTab('katakunci'))
@@ -5559,10 +5820,10 @@ new class extends Component
     >
         <div 
             @click.away="$wire.set('showDatePicker', false)" 
-            class="bg-white w-full max-w-[700px] h-[720px] max-h-[calc(100vh-2rem)] rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-slate-200"
+            class="datepicker-modal-container bg-white w-full max-w-[700px] rounded-3xl overflow-hidden shadow-2xl border border-slate-200"
         >
             <!-- Left Panel (PERIODE Presets) -->
-            <div class="w-full md:w-[200px] border-r border-slate-100 bg-[#FAFBFD] p-6 text-left space-y-4 flex-shrink-0">
+            <div class="datepicker-left-panel bg-[#FAFBFD] p-6 text-left space-y-4 flex-shrink-0">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">PERIODE</span>
                 <div class="flex flex-col gap-2.5">
                     <button type="button" @click="setPeriod(1)" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold">Hari ini</button>
@@ -5571,6 +5832,14 @@ new class extends Component
                     <button type="button" @click="setPeriod(30)" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-[#1fa387] hover:font-bold text-left font-semibold">30 hari terakhir</button>
                     <button type="button" @click="setPeriod(90)" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold">3 bulan terakhir</button>
                     <button type="button" @click="setPeriod('year')" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold">Tahun lalu</button>
+                    
+                    <button 
+                        type="button" 
+                        @click="localStart = null; localEnd = null;" 
+                        class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold pt-2 border-t border-slate-200 mt-1"
+                    >
+                        Semua Waktu
+                    </button>
                 </div>
             </div>
 
@@ -5629,30 +5898,21 @@ new class extends Component
                 </div>
 
                 <!-- Footer Action Controls -->
-                <div class="flex justify-between items-center gap-3 pt-6 border-t border-slate-100 flex-shrink-0">
+                <div class="flex justify-end items-center gap-3 pt-6 border-t border-slate-100 flex-shrink-0">
                     <button 
                         type="button" 
-                        @click="localStart = null; localEnd = null;" 
-                        class="px-4 py-2 text-slate-500 hover:text-[#1fa387] font-bold text-xs transition underline-offset-2 hover:underline"
+                        @click="$wire.set('showDatePicker', false)" 
+                        class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs transition"
                     >
-                        Semua Waktu
+                        Batal
                     </button>
-                    <div class="flex gap-3">
-                        <button 
-                            type="button" 
-                            @click="$wire.set('showDatePicker', false)" 
-                            class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs transition"
-                        >
-                            Batal
-                        </button>
-                        <button 
-                            type="button" 
-                            @click="applyFilter()" 
-                            class="px-5 py-2 bg-[#1fa387] hover:bg-[#1a8b73] text-white font-bold rounded-full text-xs transition"
-                        >
-                            Terapkan
-                        </button>
-                    </div>
+                    <button 
+                        type="button" 
+                        @click="applyFilter()" 
+                        class="px-5 py-2 bg-[#1fa387] hover:bg-[#1a8b73] text-white font-bold rounded-full text-xs transition"
+                    >
+                        Terapkan
+                    </button>
                 </div>
             </div>
         </div>
@@ -5690,7 +5950,6 @@ new class extends Component
                     </div>
                 </div>
             </div>
-        @endif
         @endif
 
     <!-- Viral Articles Modal (Alpine.js) -->
