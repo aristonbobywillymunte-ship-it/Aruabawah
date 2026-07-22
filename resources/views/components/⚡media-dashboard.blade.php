@@ -1952,7 +1952,7 @@ new class extends Component
     <!-- Desktop filter is fixed outside the lazy workspace so Livewire refreshes cannot remove it. -->
     <aside class="desktop-filter-panel shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-200 rounded-2xl p-6 bg-white flex-shrink-0" wire:key="desktop-filter-panel-shell" wire:ignore.self>
         <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3 flex-shrink-0">Filter Panel</h4>
-        @include('components.⚡filter-items')
+        @include('components.⚡filter-items', ['filterContext' => 'desktop'])
     </aside>
 
     <!-- Main Workspace Layout with Real Full-Height Left Sidebar -->
@@ -5436,7 +5436,7 @@ new class extends Component
                         <span class="material-symbols-outlined text-xl">close</span>
                     </button>
                 </div>
-                @include('components.⚡filter-items')
+                @include('components.⚡filter-items', ['filterContext' => 'mobile'])
             </aside>
 
             <button
