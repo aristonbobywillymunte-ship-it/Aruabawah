@@ -98,7 +98,7 @@ new class extends Component
     }
 
     public $search = '';
-    public $selectedSentiment = ['positive', 'neutral', 'negative'];
+    public $selectedSentiment = [];
     public $selectedSources = [];
     public $selectedCategory = '';
     public $sortBy = 'newest';
@@ -274,11 +274,9 @@ new class extends Component
                 $contentQuery->{$groupMethod}(function ($groupQuery) use ($keywords) {
                     foreach ($keywords as $index => $keyword) {
                         $method = $index === 0 ? 'where' : 'orWhere';
-                        $groupQuery->{$method}(function ($q) use ($keyword) {
-                            $q->where('title', 'ilike', '%' . $keyword . '%')
-                              ->orWhere('content', 'ilike', '%' . $keyword . '%')
-                              ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
-                              ->orWhere('articles.summary', 'ilike', '%' . $keyword . '%');
+                        $matchSql = $this->buildSourceAwareSearchSql($keyword);
+                        $groupQuery->{$method}(function ($q) use ($matchSql) {
+                            $q->whereRaw($matchSql['sql'], $matchSql['bindings']);
                         });
                     }
                 });
@@ -309,7 +307,7 @@ new class extends Component
         $this->startDate = now()->startOfMonth()->format('Y-m-d');
         $this->endDate = now()->format('Y-m-d');
         $this->search = '';
-        $this->selectedSentiment = ['positive', 'neutral', 'negative'];
+        $this->selectedSentiment = [];
         $this->selectedSources = [];
         $this->selectedCategory = '';
         $this->sortBy = 'newest';
@@ -700,7 +698,12 @@ new class extends Component
 
         $patterns = array_values(array_unique($patterns));
 
-        return $this->buildSourceMatchSql($patterns, $column);
+        $sourceSql = $this->buildSourceMatchSql($patterns, $column);
+
+        return [
+            'sql' => '(lower(coalesce(category, \'\')) = ? or ' . $sourceSql['sql'] . ')',
+            'bindings' => array_merge(['social'], $sourceSql['bindings']),
+        ];
     }
 
     protected function buildSourceLabelSql(string $sourceLabel, string $column = 'source_name'): array
@@ -715,6 +718,41 @@ new class extends Component
         }
 
         return $this->buildSourceMatchSql($this->sourceMatchPatterns($sourceLabel), $column);
+    }
+
+    protected function buildNewsSourceSql(string $column = 'source_name'): array
+    {
+        $socialSql = $this->buildSocialSourceSql($column);
+
+        return [
+            'sql' => '(lower(coalesce(category, \'\')) <> ? and not ' . $socialSql['sql'] . ')',
+            'bindings' => array_merge(['social'], $socialSql['bindings']),
+        ];
+    }
+
+    protected function buildSourceAwareSearchSql(string $keyword): array
+    {
+        $term = $this->normalizeKeywordSearchTerm($keyword);
+
+        if ($term === '') {
+            return ['sql' => '1 = 0', 'bindings' => []];
+        }
+
+        $needle = mb_strtolower($term, 'UTF-8');
+        $hashNeedle = mb_strtolower('#' . $term, 'UTF-8');
+
+        $newsSourceSql = $this->buildNewsSourceSql();
+        $socialSourceSql = $this->buildSocialSourceSql();
+
+        return [
+            'sql' => '(((' . $newsSourceSql['sql'] . ') and (lower(coalesce(title, \'\')) like ? or lower(coalesce(content, excerpt, \'\')) like ? or lower(coalesce(title, \'\')) like ? or lower(coalesce(content, excerpt, \'\')) like ?)) or ((' . $socialSourceSql['sql'] . ') and (lower(coalesce(content, excerpt, \'\')) like ? or lower(coalesce(content, excerpt, \'\')) like ?)))',
+            'bindings' => array_merge(
+                $newsSourceSql['bindings'],
+                ['%' . $needle . '%', '%' . $needle . '%', '%' . $hashNeedle . '%', '%' . $hashNeedle . '%'],
+                $socialSourceSql['bindings'],
+                ['%' . $needle . '%', '%' . $hashNeedle . '%']
+            ),
+        ];
     }
 
     protected function defaultPortalLogoUrl(string $domain): string
@@ -991,13 +1029,10 @@ new class extends Component
     public function applyActiveFilters($query, $exclude = [])
     {
         if ($this->search) {
-            $query->where(function($q) {
-                $q->where('title', 'like', '%' . $this->search . '%')
-                  ->orWhere('content', 'like', '%' . $this->search . '%')
-                  ->orWhere('excerpt', 'like', '%' . $this->search . '%')
-                  ->orWhere('articles.summary', 'like', '%' . $this->search . '%')
-                  ->orWhere('author', 'like', '%' . $this->search . '%')
-                  ->orWhere('source_name', 'like', '%' . $this->search . '%');
+            $matchSql = $this->buildSourceAwareSearchSql($this->search);
+
+            $query->where(function($q) use ($matchSql) {
+                $q->whereRaw($matchSql['sql'], $matchSql['bindings']);
             });
         }
 
@@ -1248,20 +1283,14 @@ new class extends Component
 
     protected function applyKeywordSearch($query, string $keyword): void
     {
-        $term = $this->normalizeKeywordSearchTerm($keyword);
+        $matchSql = $this->buildSourceAwareSearchSql($keyword);
 
-        if ($term === '') {
+        if ($matchSql['sql'] === '1 = 0') {
             return;
         }
 
-        $needle = mb_strtolower($term, 'UTF-8');
-        $hashNeedle = mb_strtolower('#' . $term, 'UTF-8');
-
-        $query->where(function ($q) use ($needle, $hashNeedle) {
-            $q->whereRaw('lower(coalesce(title, \'\')) like ?', ['%' . $needle . '%'])
-              ->orWhereRaw('lower(coalesce(content, \'\')) like ?', ['%' . $needle . '%'])
-              ->orWhereRaw('lower(coalesce(title, \'\')) like ?', ['%' . $hashNeedle . '%'])
-              ->orWhereRaw('lower(coalesce(content, \'\')) like ?', ['%' . $hashNeedle . '%']);
+        $query->where(function ($q) use ($matchSql) {
+            $q->whereRaw($matchSql['sql'], $matchSql['bindings']);
         });
     }
 
@@ -2559,8 +2588,8 @@ new class extends Component
                                         $projectReachDisplay = $this->getProjectReachDisplayData($article);
                                     @endphp
                                     <!-- Platform & Category Header Row -->
-                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                                        <div class="flex items-center gap-2.5">
+                                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
+                                        <div class="flex items-center gap-2.5 min-w-0">
                                             @php
                                                 $srcLowerMain = strtolower($article->source_name);
                                                 
@@ -2609,6 +2638,12 @@ new class extends Component
                                                 </h4>
                                                 <p class="text-[10px] font-semibold text-slate-400 mt-0.5">{{ $article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d M Y, H:i') . ' (' . \Carbon\Carbon::parse($article->published_at)->diffForHumans() . ')' : 'Baru saja' }}</p>
                                             </div>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-extrabold uppercase tracking-wider {{ $sentimentBg }}">
+                                                <span class="w-2 h-2 rounded-full {{ $this->getValidAiResult($article)?->sentiment === 'positive' ? 'bg-emerald-500' : ($this->getValidAiResult($article)?->sentiment === 'negative' ? 'bg-rose-500' : 'bg-slate-400') }}"></span>
+                                                {{ $sentimentLabel === 'Belum dianalisis AI' ? 'Netral' : $sentimentLabel }}
+                                            </span>
                                         </div>
                                     @php
                                         $isSocial = $article->category === 'social' || $isFacebook || strtolower($article->source_name) == 'tiktok' || strtolower($article->source_name) == 'instagram' || strtolower($article->source_name) == 'twitter';

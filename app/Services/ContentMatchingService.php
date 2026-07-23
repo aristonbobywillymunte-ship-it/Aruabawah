@@ -361,12 +361,21 @@ class ContentMatchingService
 
     /**
      * Build a conservative matching text for social items.
-     * Keep only identity fields and explicit keyword-like fields so narrative
-     * captions do not trigger project links just because they mention a region.
+     * Use the post/caption text as the primary source, then add explicit
+     * keyword-like fields from the payload so the project matcher follows the
+     * same rule as the dashboard: social sources match from caption/post text,
+     * while hashtags remain a supporting signal.
      */
     protected function buildSocialMatchText(?string $content, mixed $rawJson): string
     {
         $parts = [];
+
+        if (is_string($content)) {
+            $caption = trim($content);
+            if ($caption !== '') {
+                $parts[] = $caption;
+            }
+        }
 
         $decoded = null;
         if (is_string($rawJson)) {
