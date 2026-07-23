@@ -13,6 +13,7 @@ class NewsSourceSuggestion extends Model
         'source_name',
         'domain',
         'base_url',
+        'crawling_type',
         'search_url',
         'feed_url',
         'sitemap_url',

@@ -3,6 +3,13 @@
 ## Status Proyek Saat Ini:
 * **Seluruh Portal Utama:** 13 portal berita aktif di Kalimantan Timur telah dibersihkan dari duplikasi data, server mati (`samarindatv.com` dihapus), dan statusnya berhasil diverifikasi (**`verified`** / Lolos Uji).
 
+## Log Aktivitas Terbaru (23 Juli 2026)
+* Tampilan `AI Prompt Templates` disederhanakan menjadi status `Aktif / Nonaktif` saja.
+* Kolom dan tombol `Default / Set Default` di UI dihapus supaya admin tidak bingung.
+* Logika template utama tetap aktif di belakang layar, jadi sistem masih bisa memilih template otomatis tanpa perlu diatur manual dari halaman ini.
+* Label dan teks modal juga diringkas agar lebih mudah dipahami.
+* Form prompt sekarang cuma menampilkan satu `Prompt Utama`; `User Prompt Template` dan `Output JSON Schema` dibentuk otomatis oleh sistem sesuai `source_type`.
+
 ## Catatan Audit Terbaru (21 Juli 2026)
 * Repo ini memang dijalankan lewat Docker Compose; hostname database `postgres` hanya valid dari container, bukan dari host lokal langsung.
 * Perintah artisan untuk migrasi, tinker, queue, dan scheduler sebaiknya dijalankan lewat `docker exec` ke container `media_intelligent_container`.

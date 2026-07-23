@@ -3,6 +3,8 @@
 namespace App\Livewire\Admin;
 
 use App\Models\NewsSource;
+use App\Models\AiPromptTemplate;
+use App\Services\AiProviderClient;
 use App\Services\NewsSourceIconResolver;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -42,6 +44,7 @@ class NewsSources extends Component
     // UI state
     public bool $showFormModal = false;
     public bool $isEditing = false;
+    public int $formVersion = 0;
     public bool $confirmingDelete = false;
     public ?string $flashMessage = null;
     public ?string $flashType = null;
@@ -52,12 +55,15 @@ class NewsSources extends Component
     public ?array $testResult = null;
     public ?string $testStatus = null;
     public ?int $testingSuggestionId = null;
-    public string $suggSourceName = '';
-    public string $suggDomain = '';
+    public ?int $testingSourceId = null;
+    public ?NewsSource $testingSource = null;
+    public ?string $testingSearchUrl = null;
     public bool $showSuggestInputModal = false;
     public bool $isViewingResultOnly = false;
     public string $testKeyword = 'politik';
-    public string $manualArticleUrl = '';
+    public string $manualHtmlInput = '';
+    public ?int $suggestInputSourceId = null;
+    public ?string $suggestInputSourceLabel = null;
 
     protected function adminOnly(): void
     {
@@ -68,10 +74,17 @@ class NewsSources extends Component
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'domain' => ['required', 'string', 'max:255', \Illuminate\Validation\Rule::unique('news_sources', 'domain')->ignore($this->selected_id)],
+            'domain' => [
+                'required',
+                'string',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('news_sources', 'domain')
+                    ->ignore($this->selected_id)
+                    ->whereNull('deleted_at'),
+            ],
             'base_url' => ['nullable', 'url'],
             'feed_url' => ['nullable', 'url'],
-            'search_url' => ['nullable', 'string', 'max:500'],
+            'search_url' => ['required', 'string', 'max:500'],
             'sitemap_url' => ['nullable', 'url'],
             'search_result_selector' => ['nullable', 'string', 'max:255'],
             'article_link_selector' => ['nullable', 'string', 'max:255'],
@@ -87,6 +100,46 @@ class NewsSources extends Component
             'timeout_seconds' => ['nullable', 'integer', 'min:1', 'max:300'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'is_active' => ['boolean'],
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'name.required' => 'Nama portal wajib diisi.',
+            'name.string' => 'Nama portal harus berupa teks.',
+            'name.max' => 'Nama portal maksimal 255 karakter.',
+            'domain.required' => 'Domain portal wajib diisi.',
+            'domain.string' => 'Domain portal harus berupa teks.',
+            'domain.max' => 'Domain portal maksimal 255 karakter.',
+            'domain.unique' => 'Domain portal sudah digunakan.',
+            'base_url.url' => 'Base URL harus berupa URL yang valid.',
+            'feed_url.url' => 'Feed URL harus berupa URL yang valid.',
+            'search_url.string' => 'Search URL Template harus berupa teks.',
+            'search_url.required' => 'Search URL Template wajib diisi untuk portal manual.',
+            'search_url.max' => 'Search URL Template maksimal 500 karakter.',
+            'sitemap_url.url' => 'Sitemap URL harus berupa URL yang valid.',
+            'search_result_selector.string' => 'Search Result Selector harus berupa teks.',
+            'search_result_selector.max' => 'Search Result Selector maksimal 255 karakter.',
+            'article_link_selector.string' => 'Article Link Selector harus berupa teks.',
+            'article_link_selector.max' => 'Article Link Selector maksimal 255 karakter.',
+            'article_content_selector.string' => 'Article Content Selector harus berupa teks.',
+            'article_content_selector.max' => 'Article Content Selector maksimal 255 karakter.',
+            'article_author_selector.string' => 'Article Author Selector harus berupa teks.',
+            'article_author_selector.max' => 'Article Author Selector maksimal 255 karakter.',
+            'article_date_selector.string' => 'Article Date Selector harus berupa teks.',
+            'article_date_selector.max' => 'Article Date Selector maksimal 255 karakter.',
+            'article_noise_selector.string' => 'Article Noise Selector harus berupa teks.',
+            'article_noise_selector.max' => 'Article Noise Selector maksimal 255 karakter.',
+            'crawling_type.required' => 'Tipe crawling wajib dipilih.',
+            'crawling_type.in' => 'Tipe crawling tidak valid.',
+            'selector.string' => 'Selector Legacy harus berupa teks.',
+            'selector.max' => 'Selector Legacy maksimal 255 karakter.',
+            'timeout_seconds.integer' => 'Timeout harus berupa angka.',
+            'timeout_seconds.min' => 'Timeout minimal 1 detik.',
+            'timeout_seconds.max' => 'Timeout maksimal 300 detik.',
+            'notes.string' => 'Catatan harus berupa teks.',
+            'notes.max' => 'Catatan maksimal 1000 karakter.',
         ];
     }
 
@@ -126,21 +179,11 @@ class NewsSources extends Component
             ->orderBy('name')
             ->paginate(10, ['*'], 'sourcesPage');
 
-        $suggestions = \App\Models\NewsSourceSuggestion::with('newsSource')
-            ->whereIn('id', function ($query) {
-                $query->select(\Illuminate\Support\Facades\DB::raw('MAX(id)'))
-                    ->from('news_source_suggestions')
-                    ->groupBy('domain');
-            })
-            ->orderBy('id', 'desc')
-            ->paginate(10, ['*'], 'suggestionsPage');
-
         $suggestionSourceIds = $this->getSuggestionSourceIds();
         $suggestionDomains = $this->getSuggestionDomains();
 
         return view('livewire.admin.news-sources', [
             'sources' => $sources,
-            'suggestions' => $suggestions,
             'suggestionSourceIds' => $suggestionSourceIds,
             'suggestionDomains' => $suggestionDomains,
         ]);
@@ -170,7 +213,9 @@ class NewsSources extends Component
         $this->notes = '';
         $this->is_active = true;
         $this->isEditing = false;
-        $this->manualArticleUrl = '';
+        $this->manualHtmlInput = '';
+        $this->suggestInputSourceId = null;
+        $this->suggestInputSourceLabel = null;
         $this->resetErrorBag();
     }
 
@@ -178,6 +223,7 @@ class NewsSources extends Component
     {
         $this->adminOnly();
         $this->resetForm();
+        $this->formVersion++;
         $this->showFormModal = true;
     }
 
@@ -210,6 +256,7 @@ class NewsSources extends Component
         $this->is_active = $source->is_active;
 
         $this->isEditing = true;
+        $this->formVersion++;
         $this->showFormModal = true;
     }
 
@@ -312,11 +359,15 @@ class NewsSources extends Component
     }
 
     // AI Suggestion & Testing Methods
-    public function openSuggestInput(): void
+    public function openSuggestInput(?int $sourceId = null): void
     {
-        $this->suggSourceName = '';
-        $this->suggDomain = '';
-        $this->manualArticleUrl = '';
+        $this->suggestInputSourceId = $sourceId;
+        $this->manualHtmlInput = '';
+        $this->suggestInputSourceLabel = null;
+        if ($sourceId) {
+            $source = NewsSource::find($sourceId);
+            $this->suggestInputSourceLabel = $source?->name ?: $source?->domain ?: 'Portal';
+        }
         $this->showSuggestInputModal = true;
     }
 
@@ -324,32 +375,64 @@ class NewsSources extends Component
     {
         $this->adminOnly();
         $this->validate([
-            'suggSourceName' => ['required', 'string', 'max:255'],
-            'suggDomain' => ['required', 'string', 'max:255'],
+            'manualHtmlInput' => ['required', 'string', 'max:200000'],
         ]);
 
-        $this->generateSuggestionLogic($this->suggSourceName, $this->suggDomain, null);
+        $htmlInput = trim($this->manualHtmlInput);
+        $context = $this->extractPortalContextFromHtml($htmlInput);
+        $name = $context['name'] ?? '';
+        $domain = $context['domain'] ?? '';
+        $suggestion = $this->generateSuggestionLogic($name, $domain, null, $htmlInput);
         $this->showSuggestInputModal = false;
+        $this->suggestInputSourceId = null;
+        $this->suggestInputSourceLabel = null;
+
+        if ($suggestion) {
+            $this->applySuggestionToForm($suggestion);
+        }
     }
 
     public function generateSuggestionForExisting(int $id): void
     {
         $this->adminOnly();
         $source = NewsSource::findOrFail($id);
-        $this->generateSuggestionLogic($source->name, $source->domain, $source->id);
-    }
-
-    private function generateSuggestionLogic(string $name, string $domain, ?int $sourceId): void
-    {
-        $normalizedDomain = $this->normalizeDomain($domain);
-        if ($normalizedDomain === '') {
-            $this->notify('error', 'Domain portal tidak valid.');
+        $htmlInput = trim($this->manualHtmlInput);
+        if ($htmlInput === '') {
+            $this->notify('error', 'HTML mentah wajib diisi untuk saran AI portal yang sedang diedit.');
+            $this->showSuggestInputModal = true;
+            $this->suggestInputSourceId = $source->id;
             return;
         }
 
-        if ($this->hasActiveDuplicateSuggestion($normalizedDomain, $sourceId)) {
+        $this->generateSuggestionLogic($source->name, $source->domain, $source->id, $htmlInput);
+        $this->showSuggestInputModal = false;
+        $this->suggestInputSourceId = null;
+        $this->suggestInputSourceLabel = null;
+    }
+
+    private function generateSuggestionLogic(string $name, string $domain, ?int $sourceId, ?string $htmlInput = null): ?\App\Models\NewsSourceSuggestion
+    {
+        $normalizedDomain = $this->normalizeDomain($domain);
+        $duplicateDomain = $normalizedDomain !== '' ? $normalizedDomain : trim($domain);
+
+        if ($duplicateDomain !== '' && $this->hasActiveDuplicateSuggestion($duplicateDomain, $sourceId)) {
+            $existingSuggestion = \App\Models\NewsSourceSuggestion::query()
+                ->when($sourceId, fn ($query) => $query->where(function ($q) use ($sourceId) {
+                    $q->whereNull('news_source_id')
+                        ->orWhere('news_source_id', $sourceId);
+                }))
+                ->whereRaw('LOWER(TRIM(domain)) = ?', [$duplicateDomain])
+                ->whereNotIn('status', ['rejected', 'failed'])
+                ->orderByDesc('id')
+                ->first();
+
+            if ($existingSuggestion) {
+                $this->notify('info', 'Saran tersedia, form akan diisi otomatis.');
+                return $existingSuggestion;
+            }
+
             $this->notify('info', 'Saran tersedia.');
-            return;
+            return null;
         }
 
         $provider = \App\Models\AiProvider::where('is_active', true)
@@ -359,112 +442,69 @@ class NewsSources extends Component
 
         if (!$provider) {
             $this->notify('error', 'AI Provider belum siap.');
-            return;
+            return null;
         }
 
         try {
-            $prompt = "Berikan saran konfigurasi metadata scraping untuk portal berita dengan nama '{$name}' dan domain '{$domain}'.
+            $template = AiPromptTemplate::resolveActiveDefaultForSourceType('Saran Portal Manual', 'article');
 
-            ATURAN WAJIB:
-            - `search_url` adalah prioritas pertama dan harus diidentifikasi dulu sebelum field lain.
-            - Untuk portal manual, jalur pencarian internal WAJIB dipakai. Jangan jadikan `base_url` atau beranda sebagai pengganti `search_url`.
-            - Jangan menebak URL pencarian secara acak. Cari dari HTML, form search, parameter query, sitemap, atau JSON-LD SearchAction.
-            - Jika ada beberapa kemungkinan, pilih URL pencarian yang paling langsung menghasilkan daftar artikel.
-            - Setelah `search_url` jelas, barulah isi selector dan metadata artikel.
-
-            Urutan analisis yang wajib diikuti:
-            1. Temukan `search_url` internal yang benar dengan placeholder `{keyword}`.
-            2. Temukan `search_result_selector` yang membungkus hasil pencarian.
-            3. Temukan `article_link_selector` yang hanya mengarah ke link artikel.
-            4. Temukan `article_content_selector` untuk isi artikel penuh.
-            5. Temukan `article_author_selector` bila ada.
-            6. Temukan `article_date_selector` bila ada.
-            7. Baru isi `feed_url`, `sitemap_url`, dan penjelasan AI.
-
-            Rincian output yang harus Anda sarankan:
-            1. base_url (URL dasar portal berita, diawali http:// atau https://)
-            2. search_url (URL pencarian kustom dengan placeholder {keyword}, wajib internal site search yang benar)
-            3. feed_url (URL Feed RSS jika ada, nullable)
-            4. sitemap_url (URL XML Sitemap jika ada, nullable)
-            5. search_result_selector (Selector HTML/CSS untuk membungkus list hasil pencarian)
-            6. article_link_selector (Selector HTML/CSS untuk mendapatkan link artikel langsung dari list pencarian)
-            7. article_content_selector (Selector HTML/CSS untuk mengambil isi konten artikel penuh dari halaman artikel)
-            8. article_noise_selector (Opsional. Selector HTML/CSS untuk elemen sampah di dalam konten seperti .ads, .related-post, .baca-juga, dll yang harus dibuang, pisahkan dengan koma jika lebih dari satu)
-            9. article_author_selector (Opsional. Selector HTML/CSS untuk mengambil nama penulis/author artikel)
-            10. article_date_selector (Opsional. Selector HTML/CSS untuk mengambil tanggal publikasi artikel)
-            11. ai_reason (Alasan singkat Anda menyarankan konfigurasi ini)
-            12. confidence (Tingkat kepercayaan Anda terhadap saran ini antara 0.0 sampai 1.0)
-
-            Balas HANYA dengan format JSON valid sebagai berikut:
-            {
-              \"base_url\": \"...\",
-              \"search_url\": \"...\",
-              \"feed_url\": \"...\",
-              \"sitemap_url\": \"...\",
-              \"search_result_selector\": \"...\",
-              \"article_link_selector\": \"...\",
-              \"article_content_selector\": \"...\",
-              \"article_noise_selector\": \"...\",
-              \"article_author_selector\": \"...\",
-              \"article_date_selector\": \"...\",
-              \"ai_reason\": \"...\",
-              \"confidence\": 0.85
-            }";
-
-            $rawText = '';
-            if ($provider->provider_type === 'Gemini') {
-                $baseUrl = rtrim((string) $provider->base_url, '/');
-                $model = trim((string) $provider->model_name);
-                $apiKey = trim((string) $provider->api_key);
-                $endpoint = str_contains($baseUrl, '/models/') ? $baseUrl : $baseUrl . '/models/' . $model . ':generateContent';
-
-                $response = Http::timeout(30)->post($endpoint . '?key=' . urlencode($apiKey), [
-                    'generationConfig' => [
-                        'temperature' => 0.2,
-                        'maxOutputTokens' => 1000,
-                    ],
-                    'contents' => [[
-                        'parts' => [[
-                            'text' => $prompt,
-                        ]],
-                    ]],
-                ]);
-                $rawText = data_get($response->json(), 'candidates.0.content.parts.0.text');
-            } else {
-                $baseUrl = rtrim((string) $provider->base_url, '/');
-                $apiKey = trim((string) $provider->api_key);
-                $model = trim((string) $provider->model_name);
-                $response = Http::withToken($apiKey)->timeout(30)->post($baseUrl . '/chat/completions', [
-                    'model' => $model,
-                    'temperature' => 0.2,
-                    'max_tokens' => 1000,
-                    'messages' => [
-                        ['role' => 'system', 'content' => 'You are a metadata extraction expert for web scraping.'],
-                        ['role' => 'user', 'content' => $prompt],
-                    ],
-                ]);
-                $rawText = data_get($response->json(), 'choices.0.message.content');
+            if (! $template || blank($template->system_prompt) || blank($template->user_prompt_template)) {
+                $this->notify('error', 'Template Saran Portal Manual belum tersedia atau belum lengkap di AI Prompt Templates.');
+                return null;
             }
 
+            $systemPrompt = $template->system_prompt;
+            $userPrompt = trim($template->user_prompt_template);
+            $renderedUserPrompt = strtr($userPrompt, [
+                '{name}' => $name,
+                '{domain}' => $domain,
+                '{html}' => $htmlInput ?: '',
+                '{article_url}' => $htmlInput ?: '',
+                '{url}' => $htmlInput ?: '',
+            ]);
+
+            $schemaPrompt = trim((string) ($template->output_schema ?? ''));
+            if ($schemaPrompt !== '') {
+                $renderedUserPrompt .= "\n\nWAJIB IKUTI SCHEMA OUTPUT INI TANPA MENAMBAH KEY LAIN:\n" . $schemaPrompt;
+            }
+
+            $client = app(AiProviderClient::class);
+            $requestOptions = ['temperature' => 0.0];
+            if (!str_contains(strtolower($provider->provider_type ?? ''), 'gemini') && !str_contains(strtolower($provider->name ?? ''), 'gemini')) {
+                $requestOptions['response_format'] = 'json_object';
+            }
+
+            $response = $client->sendRequest($provider, trim($systemPrompt), $renderedUserPrompt, $requestOptions);
+
+            if (!$response->successful()) {
+                throw new \RuntimeException(
+                    'AI provider mengembalikan HTTP ' . $response->status() . ': ' . $response->body()
+                );
+            }
+
+            $rawText = $client->parseResponse($provider, $response);
             if (blank($rawText)) {
-                throw new \RuntimeException('Response dari AI kosong.');
+                throw new \RuntimeException(
+                    'Response dari AI kosong atau format respons tidak dikenali. HTTP ' .
+                    $response->status() . ': ' . $response->body()
+                );
             }
 
-            if (preg_match('/\{.*\}/s', $rawText, $matches)) {
-                $rawText = $matches[0];
-            }
-            $result = json_decode($rawText, true);
+            $result = $this->decodeSuggestionJson($rawText);
             if (!$result) {
-                throw new \RuntimeException('Gagal mengurai JSON dari respons AI.');
+                throw new \RuntimeException('Gagal mengurai JSON dari respons AI. Respons mentah: ' . mb_strimwidth($rawText, 0, 500, '...'));
             }
 
-            \App\Models\NewsSourceSuggestion::create([
+            $validationWarnings = $this->validateSuggestionResult($result, $domain);
+
+            $suggestion = \App\Models\NewsSourceSuggestion::create([
                 'news_source_id' => $sourceId,
                 'suggested_by' => 'ai',
                 'source_name' => $name,
                 'domain' => $domain,
                 'base_url' => $result['base_url'] ?? ('https://' . $domain),
-                'search_url' => $result['search_url'] ?? null,
+                'crawling_type' => $this->normalizeSuggestionCrawlingType($result['crawling_type'] ?? null),
+                'search_url' => $this->normalizeSuggestionSearchUrl($result),
                 'feed_url' => $result['feed_url'] ?? null,
                 'sitemap_url' => $result['sitemap_url'] ?? null,
                 'search_result_selector' => $result['search_result_selector'] ?? null,
@@ -473,15 +513,154 @@ class NewsSources extends Component
                 'article_noise_selector' => $result['article_noise_selector'] ?? null,
                 'article_author_selector' => $result['article_author_selector'] ?? null,
                 'article_date_selector' => $result['article_date_selector'] ?? null,
-                'confidence' => $result['confidence'] ?? 0.5,
-                'ai_reason' => $result['ai_reason'] ?? null,
+                'confidence' => $this->normalizeSuggestionConfidence($result, $validationWarnings),
+                'ai_reason' => $this->mergeSuggestionReason(
+                    (string) ($result['ai_reason'] ?? ''),
+                    $validationWarnings
+                ),
                 'status' => 'draft_ai',
             ]);
 
             $this->notify('success', 'Saran AI berhasil dibuat.');
+            return $suggestion;
         } catch (\Throwable $e) {
             $this->notify('error', 'Gagal memanggil AI: ' . $e->getMessage());
+            return null;
         }
+    }
+
+    private function applySuggestionToForm(\App\Models\NewsSourceSuggestion $suggestion): void
+    {
+        $this->resetForm();
+        $this->selected_id = null;
+        $this->name = $suggestion->source_name ?: $suggestion->domain;
+        $this->domain = $suggestion->domain ?: '';
+        $this->base_url = $suggestion->base_url ?: '';
+        $this->crawling_type = $suggestion->crawling_type ?: 'html';
+        $this->search_url = $suggestion->search_url ?: '';
+        $this->search_result_selector = $suggestion->search_result_selector ?: '';
+        $this->article_link_selector = $suggestion->article_link_selector ?: '';
+        $this->article_content_selector = $suggestion->article_content_selector ?: '';
+        $this->article_author_selector = $suggestion->article_author_selector ?: '';
+        $this->article_date_selector = $suggestion->article_date_selector ?: '';
+        $this->article_noise_selector = $suggestion->article_noise_selector ?: '';
+        $this->formVersion++;
+        $this->showFormModal = false;
+        $this->showFormModal = true;
+        $this->isEditing = false;
+    }
+
+    private function validateSuggestionResult(array $result, string $domain): array
+    {
+        $warnings = [];
+        $searchUrl = trim((string) ($result['search_url'] ?? ($result['search_url_template'] ?? '')));
+        $baseUrl = trim((string) ($result['base_url'] ?? ''));
+        $normalizedDomain = $this->normalizeDomain($domain);
+
+        if ($searchUrl === '') {
+            $warnings[] = 'AI tidak mengembalikan search_url, jadi hasil dianggap belum valid penuh untuk portal manual.';
+            return $warnings;
+        }
+
+        $searchUrlLower = strtolower($searchUrl);
+        if (str_contains($searchUrlLower, 'google.com') || str_contains($searchUrlLower, 'news.google')) {
+            $warnings[] = 'AI mengembalikan search_url Google News atau Google, bukan search internal portal manual.';
+        }
+
+        if (! str_contains($searchUrlLower, $normalizedDomain)) {
+            $searchHost = $this->normalizeDomain((string) parse_url($searchUrl, PHP_URL_HOST));
+            if ($searchHost !== $normalizedDomain) {
+                $warnings[] = 'AI search_url tidak sesuai domain target.';
+            }
+        }
+
+        if ($baseUrl !== '') {
+            $baseHost = $this->normalizeDomain((string) parse_url($baseUrl, PHP_URL_HOST));
+            if ($baseHost !== '' && $baseHost !== $normalizedDomain) {
+                $warnings[] = 'AI base_url tidak sesuai domain target.';
+            }
+        }
+
+        if (! filled($result['article_link_selector'] ?? null) || ! filled($result['article_content_selector'] ?? null)) {
+            $warnings[] = 'AI belum mengembalikan selector artikel minimum.';
+        }
+
+        return $warnings;
+    }
+
+    private function normalizeSuggestionSearchUrl(array $result): ?string
+    {
+        $searchUrl = trim((string) ($result['search_url'] ?? ($result['search_url_template'] ?? '')));
+        return $searchUrl !== '' ? $searchUrl : null;
+    }
+
+    private function normalizeSuggestionConfidence(array $result, array $warnings): float
+    {
+        $confidence = (float) ($result['confidence'] ?? 0.35);
+
+        if (count($warnings) > 0) {
+            $confidence = min($confidence, 0.35);
+        }
+
+        if ($confidence <= 0) {
+            $confidence = 0.2;
+        }
+
+        return round($confidence, 2);
+    }
+
+    private function normalizeSuggestionCrawlingType(mixed $value): string
+    {
+        $value = strtolower(trim((string) $value));
+        return in_array($value, ['html', 'rss', 'api'], true) ? $value : 'html';
+    }
+
+    private function decodeSuggestionJson(string $rawText): ?array
+    {
+        $trimmed = trim(html_entity_decode($rawText, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($trimmed === '') {
+            return null;
+        }
+
+        $direct = json_decode($trimmed, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($direct)) {
+            return $direct;
+        }
+
+        if (preg_match('/```(?:json)?\s*(\{.*?\})\s*```/s', $trimmed, $matches)) {
+            $fenced = json_decode($matches[1], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($fenced)) {
+                return $fenced;
+            }
+        }
+
+        if (preg_match('/\{(?:[^{}]|(?R))*\}/s', $trimmed, $matches)) {
+            $nested = json_decode($matches[0], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($nested)) {
+                return $nested;
+            }
+        }
+
+        return null;
+    }
+
+    private function mergeSuggestionReason(string $reason, array $warnings): string
+    {
+        $parts = [];
+        $reason = trim($reason);
+
+        if ($reason !== '') {
+            $parts[] = $reason;
+        }
+
+        foreach ($warnings as $warning) {
+            $warning = trim((string) $warning);
+            if ($warning !== '') {
+                $parts[] = $warning;
+            }
+        }
+
+        return implode(' ', array_unique($parts));
     }
 
     public function testSuggestion(int $id): void
@@ -490,6 +669,8 @@ class NewsSources extends Component
         $this->isViewingResultOnly = false;
         $suggestion = \App\Models\NewsSourceSuggestion::findOrFail($id);
         $this->testingSuggestionId = $id;
+        $this->testingSourceId = null;
+        $this->testingSource = null;
 
         $suggestion->status = 'testing';
         $suggestion->save();
@@ -523,12 +704,14 @@ class NewsSources extends Component
         $this->isViewingResultOnly = false;
         $suggestion = \App\Models\NewsSourceSuggestion::findOrFail($id);
         $this->testingSuggestionId = $id;
+        $this->testingSourceId = null;
+        $this->testingSource = null;
 
         $suggestion->status = 'testing';
         $suggestion->save();
 
         try {
-            $result = \App\Services\NewsSourceSuggestionTester::testManualUrl($suggestion, $this->manualArticleUrl);
+            $result = \App\Services\NewsSourceSuggestionTester::testManualUrl($suggestion, $this->manualHtmlInput);
 
             $nextStatus = ($result['status'] === 'verified')
                 ? 'lolos'
@@ -556,10 +739,13 @@ class NewsSources extends Component
         $this->isViewingResultOnly = true;
         $suggestion = \App\Models\NewsSourceSuggestion::findOrFail($id);
         $this->selectedSuggestionId = $suggestion->id;
+        $this->testingSourceId = null;
+        $this->testingSource = null;
+        $this->testingSearchUrl = null;
         $this->testResult = $suggestion->test_result_json;
         $this->testStatus = $suggestion->status;
         $this->testKeyword = (string) (data_get($suggestion->test_result_json, 'keyword') ?: 'politik');
-        $this->manualArticleUrl = '';
+        $this->manualHtmlInput = '';
 
         $this->showTestModal = true;
     }
@@ -569,9 +755,43 @@ class NewsSources extends Component
         $this->showTestResult($id);
     }
 
-    public function updatedManualArticleUrl(): void
+    public function testSource(int $id): void
     {
-        $this->manualArticleUrl = trim($this->manualArticleUrl);
+        $this->adminOnly();
+        $this->isViewingResultOnly = false;
+        $source = NewsSource::findOrFail($id);
+        $this->testingSourceId = $source->id;
+        $this->testingSource = $source;
+        $this->testingSearchUrl = $this->renderSearchUrlTemplate((string) ($source->search_url ?: ''), $this->testKeyword);
+        $this->selectedSuggestionId = null;
+        $this->testingSuggestionId = null;
+
+        $suggestion = new \App\Models\NewsSourceSuggestion();
+        $suggestion->news_source_id = $source->id;
+        $suggestion->suggested_by = 'ai';
+        $suggestion->source_name = $source->name;
+        $suggestion->domain = $source->domain;
+        $suggestion->base_url = $source->base_url;
+        $suggestion->search_url = $source->search_url;
+        $suggestion->feed_url = $source->feed_url;
+        $suggestion->sitemap_url = $source->sitemap_url;
+        $suggestion->search_result_selector = $source->search_result_selector;
+        $suggestion->article_link_selector = $source->article_link_selector;
+        $suggestion->article_content_selector = $source->article_content_selector;
+        $suggestion->article_author_selector = $source->article_author_selector;
+        $suggestion->article_date_selector = $source->article_date_selector;
+        $suggestion->article_noise_selector = $source->article_noise_selector;
+        $suggestion->crawling_type = $source->crawling_type;
+
+        $this->testingSuggestionId = $source->id;
+        $this->testResult = \App\Services\NewsSourceSuggestionTester::test($suggestion, $this->testKeyword);
+        $this->testStatus = data_get($this->testResult, 'status', 'failed');
+        $this->showTestModal = true;
+    }
+
+    public function updatedManualHtmlInput(): void
+    {
+        $this->manualHtmlInput = trim($this->manualHtmlInput);
     }
 
     public function approveSuggestion(int $id): void
@@ -694,7 +914,7 @@ class NewsSources extends Component
             $this->testResult = null;
             $this->testStatus = null;
             $this->showTestModal = false;
-            $this->manualArticleUrl = '';
+            $this->manualHtmlInput = '';
         }
 
         $this->notify('success', 'Saran berhasil dihapus.');
@@ -703,6 +923,18 @@ class NewsSources extends Component
     public function cancelTesting(): void
     {
         $this->testingSuggestionId = null;
+        $this->testingSearchUrl = null;
+    }
+
+    private function renderSearchUrlTemplate(string $template, string $keyword): string
+    {
+        $keyword = trim($keyword) !== '' ? trim($keyword) : 'politik';
+
+        return str_replace(
+            ['{keyword}', '{query}', '{search}'],
+            rawurlencode($keyword),
+            $template
+        );
     }
 
     private function normalizeDomain(string $domain): string
@@ -713,6 +945,84 @@ class NewsSources extends Component
         $domain = preg_replace('~/.*$~', '', $domain) ?? $domain;
 
         return trim($domain);
+    }
+
+    private function extractPortalContextFromHtml(string $html): array
+    {
+        $name = '';
+        $domain = '';
+
+        if ($html === '') {
+            return compact('name', 'domain');
+        }
+
+        if (preg_match('/<meta[^>]+property=["\']og:site_name["\'][^>]+content=["\']([^"\']+)["\']/i', $html, $matches)) {
+            $name = trim(html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        }
+
+        if ($name === '' && preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $matches)) {
+            $title = trim(html_entity_decode(strip_tags($matches[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            if ($title !== '') {
+                $parts = preg_split('/\s*[\|\-–]\s*/u', $title);
+                $name = trim((string) ($parts[0] ?? $title));
+            }
+        }
+
+        $domain = $this->extractDominantLinkDomain($html) ?: $domain;
+
+        if ($domain === '' && preg_match('/<link[^>]+rel=["\']canonical["\'][^>]+href=["\']([^"\']+)["\']/i', $html, $matches)) {
+            $domain = $this->normalizeDomain((string) parse_url(trim($matches[1]), PHP_URL_HOST));
+        }
+
+        if ($domain === '' && preg_match('/<meta[^>]+property=["\']og:url["\'][^>]+content=["\']([^"\']+)["\']/i', $html, $matches)) {
+            $domain = $this->normalizeDomain((string) parse_url(trim($matches[1]), PHP_URL_HOST));
+        }
+
+        if ($domain === '' && preg_match('/<base[^>]+href=["\']([^"\']+)["\']/i', $html, $matches)) {
+            $domain = $this->normalizeDomain((string) parse_url(trim($matches[1]), PHP_URL_HOST));
+        }
+
+        return compact('name', 'domain');
+    }
+
+    private function extractDominantLinkDomain(string $html): string
+    {
+        $matches = [];
+        preg_match_all('/<a\b[^>]+href=["\']([^"\']+)["\'][^>]*>/i', $html, $matches);
+        $hrefs = $matches[1] ?? [];
+
+        if (empty($hrefs)) {
+            return '';
+        }
+
+        $counts = [];
+        foreach ($hrefs as $href) {
+            $href = trim(html_entity_decode((string) $href, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            if ($href === '' || str_starts_with($href, '#') || str_starts_with($href, 'mailto:') || str_starts_with($href, 'javascript:')) {
+                continue;
+            }
+
+            $host = '';
+            if (str_starts_with($href, 'http://') || str_starts_with($href, 'https://')) {
+                $host = (string) parse_url($href, PHP_URL_HOST);
+            } elseif (str_starts_with($href, '//')) {
+                $host = (string) parse_url('https:' . $href, PHP_URL_HOST);
+            }
+
+            $host = $this->normalizeDomain($host);
+            if ($host === '') {
+                continue;
+            }
+
+            $counts[$host] = ($counts[$host] ?? 0) + 1;
+        }
+
+        if (empty($counts)) {
+            return '';
+        }
+
+        arsort($counts);
+        return (string) array_key_first($counts);
     }
 
     private function hasExistingActiveSource(string $domain, ?int $ignoreSourceId = null): bool

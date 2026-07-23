@@ -193,12 +193,12 @@ class DatabaseSeeder extends Seeder
             [
                 'domain' => 'busam.id',
                 'name' => 'Busam.id',
-                'source_type' => 'social_video',
-                'media_scope' => 'niche_community',
+                'source_type' => 'local_media',
+                'media_scope' => 'local_kaltim',
                 'dewan_pers_status' => null,
-                'local_reach_weight' => 9.0,
-                'scrape_priority' => null,
-                'reach_notes' => 'Sumber social/video; jangan diprioritaskan untuk scraping artikel tahap awal.',
+                'local_reach_weight' => 8.5,
+                'scrape_priority' => 10,
+                'reach_notes' => 'Portal berita lokal yang diproses sebagai sumber artikel HTML/manual.',
             ],
             [
                 'domain' => 'samarindatv.com',
@@ -242,6 +242,17 @@ class DatabaseSeeder extends Seeder
                 'system_prompt' => 'Anda adalah AI analis media sosial. Analisis postingan medsos yang diberikan dan berikan respon dalam format JSON yang valid. Prioritaskan link, jenis media, caption, dan engagement untuk menentukan nilai konten.',
                 'user_prompt_template' => 'Analisis postingan medsos berikut:\nPlatform: {platform}\nURL: {url}\nMedia Type: {media_type}\nMedia URL: {media_url}\nThumbnail URL: {thumbnail_url}\nAuthor: {author_name}\nKonten: {content}\nEngagement: {engagement_context}\nMedia Context: {media_context}\nKonteks Project: {project_context}',
                 'output_schema' => '{"type": "object", "properties": {"summary": {"type": "string"}, "sentiment": {"type": "string"}, "sentiment_score": {"type": "number"}, "main_issue": {"type": "string"}, "entities": {"type": "array"}, "risk_level": {"type": "string"}, "risk_reason": {"type": "string"}, "reach_estimate": {"type": "integer"}, "reach_score_10": {"type": "integer"}, "reach_level": {"type": "string"}, "reach_trend": {"type": "string"}, "reach_source": {"type": "string"}, "reach_confidence": {"type": "string"}, "reach_reason": {"type": "string"}, "content_type": {"type": "string"}, "media_type": {"type": "string"}, "media_link_used": {"type": "string"}, "media_signal": {"type": "string"}, "local_relevance_score": {"type": "integer"}, "confidence_score": {"type": "integer"}, "confidence_level": {"type": "string"}, "signals_used": {"type": "array"}, "reasoning_summary": {"type": "string"}, "limitations": {"type": "string"}, "recommendation": {"type": "string"}}}',
+                'is_active' => true,
+                'is_default' => true,
+            ]
+        );
+
+        \App\Models\AiPromptTemplate::updateOrCreate(
+            ['name' => 'Saran Portal Manual'],
+            [
+                'source_type' => 'article',
+                'system_prompt' => 'Anda adalah sistem ahli Reverse Engineering & HTML Anatomy Analysis untuk Web Scraping. Tugas Anda adalah membedah arsitektur DOM portal berita dan menghasilkan konfigurasi ekstraksi data (scraping JSON configuration) yang akurat.',
+                'user_prompt_template' => "INFO PORTAL TARGET:\n- Nama Portal: {name}\n- Domain: {domain}\n- HTML Mentah: {html}\n\nATURAN MUTLAK:\n1. Nama portal dan domain WAJIB dipakai sebagai identitas utama portal.\n2. Input utama WAJIB adalah HTML mentah yang diberikan user.\n3. AI WAJIB membaca dan membedah HTML mentah tersebut terlebih dahulu.\n4. Prioritas pertama adalah menemukan Search URL internal yang benar dengan membaca anatomi website dari HTML itu.\n5. Setelah search URL dan selector konten utama ditemukan, lanjutkan ke selector penulis, lalu selector tanggal.\n6. Variabel pencarian WAJIB menggunakan placeholder exact: {query} (contoh: /search?key={query} atau /?s={query}).\n7. DILARANG mengasumsikan parameter bawaan WordPress (/?s=) jika situs menggunakan route custom seperti /search?key={query}.\n8. Jika domain adalah \"arusbawah.co\", search_url WAJIB: \"https://arusbawah.co/search?key={query}\".\n9. Tipe crawling WAJIB ditentukan otomatis oleh AI dan harus dipilih dari: html, rss, api.\n10. Jangan meminta user mengirim HTML atau URL lain. Gunakan HTML yang sudah ada di input.\n11. Output harus JSON murni. Jangan tambahkan salam, penjelasan, markdown, atau code fence.\n\nMETODOLOGI:\n- Cari form pencarian di HTML.\n- Ekstrak action dan name dari input.\n- Bentuk template search URL dengan {query}.\n- Tentukan crawling_type berdasarkan struktur halaman: html, rss, atau api.\n- Ambil selector artikel, link, konten, noise, penulis, dan tanggal.\n\nKELUARAN:\n- Balas hanya JSON valid sesuai schema.\n",\n+                'output_schema' => '{"type":"object","properties":{"base_url":{"type":"string"},"crawling_type":{"type":"string"},"search_url":{"type":"string"},"feed_url":{"type":"string"},"sitemap_url":{"type":"string"},"search_result_selector":{"type":"string"},"article_link_selector":{"type":"string"},"article_content_selector":{"type":"string"},"article_noise_selector":{"type":"string"},"article_author_selector":{"type":"string"},"article_date_selector":{"type":"string"},"ai_reason":{"type":"string"},"confidence":{"type":"number"}},"required":["base_url","crawling_type","search_url","search_result_selector","article_link_selector","article_content_selector","ai_reason","confidence"]}',
                 'is_active' => true,
                 'is_default' => true,
             ]
