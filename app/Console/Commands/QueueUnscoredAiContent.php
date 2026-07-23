@@ -8,6 +8,7 @@ use App\Models\Article;
 use App\Models\Project;
 use App\Services\ContentMatchingService;
 use App\Services\AiAnalysisDispatchStateService;
+use App\Services\SchedulerQueueGuard;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Queue;
 
@@ -19,8 +20,17 @@ class QueueUnscoredAiContent extends Command
 
     protected $description = 'Queue content that matches active project filters but has no AI result yet.';
 
-    public function handle(ContentMatchingService $matchingService, AiAnalysisDispatchStateService $dispatchStateService): int
+    public function handle(
+        ContentMatchingService $matchingService,
+        AiAnalysisDispatchStateService $dispatchStateService,
+        SchedulerQueueGuard $schedulerQueueGuard
+    ): int
     {
+        if ($schedulerQueueGuard->aiBusyReason() !== null) {
+            $this->warn('AI queue masih sibuk. Queue unscored ditunda sampai worker idle.');
+            return self::SUCCESS;
+        }
+
         $limit = max(1, (int) $this->option('limit'));
         $hours = max(1, (int) $this->option('hours'));
         $cutoff = now()->subHours($hours);
@@ -49,6 +59,10 @@ class QueueUnscoredAiContent extends Command
             ->chunkById(100, function ($articles) use ($activeProjects, $matchingService, $dispatchStateService, $limit, &$queued, &$skipped) {
                 foreach ($articles as $article) {
                     if ($queued >= $limit) {
+                        return false;
+                    }
+
+                    if ($schedulerQueueGuard->aiBusyReason() !== null) {
                         return false;
                     }
 

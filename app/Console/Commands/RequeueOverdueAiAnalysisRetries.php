@@ -5,17 +5,26 @@ namespace App\Console\Commands;
 use App\Jobs\AiAnalysisJob;
 use App\Models\AiAnalysisDispatchState;
 use App\Services\AiAnalysisDispatchStateService;
+use App\Services\SchedulerQueueGuard;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Queue;
 
 class RequeueOverdueAiAnalysisRetries extends Command
 {
-    protected $signature = 'ai:requeue-overdue-retries {--limit=1 : Maximum retry_wait states to requeue per run}';
+    protected $signature = 'ai:requeue-overdue-retries {--limit=10 : Maximum retry_wait states to requeue per run}';
 
     protected $description = 'Requeue overdue AI retry_wait states selectively.';
 
-    public function handle(AiAnalysisDispatchStateService $dispatchStateService): int
+    public function handle(
+        AiAnalysisDispatchStateService $dispatchStateService,
+        SchedulerQueueGuard $schedulerQueueGuard
+    ): int
     {
+        if ($schedulerQueueGuard->aiBusyReason() !== null) {
+            $this->warn('AI queue masih sibuk. Requeue retry_wait ditunda sampai worker idle.');
+            return self::SUCCESS;
+        }
+
         $limit = max(1, (int) $this->option('limit'));
         $now = now();
         $count = 0;
@@ -30,6 +39,10 @@ class RequeueOverdueAiAnalysisRetries extends Command
             ->get();
 
         foreach ($states as $state) {
+            if ($schedulerQueueGuard->aiBusyReason() !== null) {
+                break;
+            }
+
             $payload = [
                 'type' => $state->analyzable_type === 'social' ? 'social' : 'article',
                 'id' => $state->analyzable_id,

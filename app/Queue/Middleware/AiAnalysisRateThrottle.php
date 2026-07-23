@@ -19,8 +19,7 @@ class AiAnalysisRateThrottle
         if (is_numeric($lastDispatchAt)) {
             $elapsed = now()->timestamp - (int) $lastDispatchAt;
             if ($elapsed < $this->delaySeconds) {
-                $job->release(max(1, $this->delaySeconds - $elapsed));
-                return null;
+                sleep(max(1, $this->delaySeconds - $elapsed));
             }
         }
 

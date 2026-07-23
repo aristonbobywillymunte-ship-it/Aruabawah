@@ -126,7 +126,7 @@ if ($isActive) {
 
     $aiGuard = app(SchedulerQueueGuard::class);
 
-    Schedule::command('ai:requeue-overdue-retries --limit=1')
+    Schedule::command('ai:requeue-overdue-retries --limit=10')
         ->everyMinute()
         ->when(function () use ($isActive) {
             if (! $isActive) {
@@ -176,7 +176,7 @@ if ($isActive) {
         ->runInBackground()
         ->appendOutputTo(storage_path('logs/ai-queue-unscored.log'));
 
-    Schedule::command('ai:requeue-orphan-queued-states --limit=1 --apply')
+    Schedule::command('ai:requeue-orphan-queued-states --limit=5 --apply')
         ->everyMinute()
         ->when(function () use ($isActive) {
             if (! $isActive) {

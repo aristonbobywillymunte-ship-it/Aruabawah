@@ -10,11 +10,17 @@
 * `ai:queue-unscored-content` sempat berhenti karena closure chunk tidak membawa `AiAnalysisDispatchStateService`; variabel itu sudah dimasukkan ke `use (...)` agar requeue bisa lanjut normal.
 * Dari audit state AI terakhir, 25 baris `queued` tipe `article` ternyata sudah punya `ai_analysis_results` sukses dan sudah dibersihkan dari `ai_analysis_dispatch_states`; sisa `queued` sekarang hanya 32 baris tipe `social` yang masih belum punya hasil sukses.
 * `ai:requeue-orphan-queued-states` sempat hanya memeriksa baris queued pertama dan terhenti di `empty_content`; limit sekarang dihitung dari jumlah state yang benar-benar eligible, sehingga item sosial valid bisa lanjut dipompa.
+* Throughput recovery `ai:requeue-orphan-queued-states` dinaikkan dari `1` menjadi `5` per siklus scheduler agar backlog `queued` orphan lebih cepat terkuras tanpa membuat worker melonjak terlalu agresif.
+* Recovery orphan AI tidak lagi dibatasi `attempts = 0`; selama status dispatch masih `queued` dan payload tetap valid, state orphan tetap boleh dipompa ulang.
+* Middleware `AiAnalysisRateThrottle` tidak lagi memakai `$job->release()` untuk jeda antar job. Sekarang worker menunggu singkat di middleware, agar throttle tidak menghabiskan `attempts` queue dan memicu error `attempted too many times`.
+* Recovery orphan AI sekarang memberi `lease` singkat lewat `last_attempt_at` saat state dipompa ulang. Ini mencegah state `queued` yang sama didispatch berulang sebelum worker sempat `claimProcessing`, yang sebelumnya memicu job duplikat dan error `attempted too many times`.
+* Worker AI di `docker-compose.yml` diturunkan dari `--tries=25` ke `--tries=1` agar retry sepenuhnya dikendalikan oleh dispatch state + scheduler aplikasi, bukan oleh retry liar dari runtime queue worker.
 * Enam baris `queued` sosial yang benar-benar `empty_content` sudah dibersihkan dari `ai_analysis_dispatch_states`, sehingga sisa queued sosial sekarang hanya 26 baris yang masih punya konten.
 * Retry dasar AI dipersingkat dari 15 menit menjadi 5 menit agar kasus `retry_wait` tidak terlalu lama menunggu sebelum dicoba lagi.
 * Tab Analisis di `media-dashboard` sekarang tidak lagi menghitung wawasan berat di level render awal; data `getWawasan()` dipanggil hanya saat tab analisis aktif dan hasilnya ikut di-cache singkat.
 * Breakdown sumber proyek (`getProjectSources()`) juga diberi cache singkat agar buka tab analisis tidak mengulang query agregasi yang sama berkali-kali.
 * Setelah caching dipindahkan, pembacaan wawasan dikembalikan ke satu sumber render supaya isi kartu analisis tetap muncul dan tidak kosong.
+* Filter sumber penyebutan sekarang dinormalisasi agar checkbox `Instagram`, `TikTok`, `Facebook`, `Youtube`, `Threads`, `Twitter`, dan `News` cocok dengan variasi `source_name` seperti domain (`instagram.com`, `tiktok.com`, `facebook.com`, `x.com`) maupun label teks lain yang masih satu keluarga.
 * Dedupe dispatch AI sekarang memasukkan `project_id` ke `dispatch_key`, jadi artikel yang sama bisa dianalisis per project tanpa saling menimpa state project lain.
 * Retry AI untuk item sosial yang terkena rate limit kini dilindungi dari cleanup massal di Pipeline Monitor.
 * Aksi `clearAllPendingAiStates()` tidak lagi menghapus state `retry_wait` yang masih punya `next_retry_at` di masa depan.
@@ -27,6 +33,16 @@
 * Panel konfigurasi Apify tidak lagi melakukan `syncManagedActors()` di setiap `render()`, supaya buka modal edit tidak ikut kena sinkronisasi berat berulang.
 * Halaman daftar proyek sekarang menunda hitung data proyek sampai setelah render awal lewat `wire:init`, supaya paint pertama lebih ringan.
 * Klik edit proyek sekarang memakai cache daftar proyek yang sudah dimuat, jadi modal edit tidak memicu hitung ulang statistik proyek yang berat.
+* Retry AI transient sekarang tidak lagi memakai `release()` pada job yang sama; job ditutup bersih ke status `retry_wait`, lalu scheduler yang membuat job baru saat sudah due agar attempts worker tidak habis sia-sia.
+* Throughput pemulihan backlog `retry_wait` dinaikkan dari `1` menjadi `10` state per menit supaya antrean AI lebih cepat pulih setelah provider aktif kembali.
+* Guard scheduler AI diperketat lagi: worker `redis-ai` sekarang menulis heartbeat aktivitas singkat saat mulai/selesai/gagal memproses job, dan command scheduler AI (`queue-unscored`, `requeue-overdue`, `requeue-orphan`) hanya akan membuat job baru saat heartbeat worker sudah idle. Ini menyelaraskan perilaku dengan aturan “jangan buat jadwal baru selama worker masih bekerja”.
+* Service dispatch AI sekarang membedakan gagal permanen vs gagal sementara langsung di `markFailed()`: error seperti `empty_content`, `invalid_json`, `missing_configuration`, dan `invalid_ai_reach` dikunci ke status `failed` agar tidak dijadwalkan ulang, sedangkan error transient seperti `all_providers_failed`, `rate_limit`, `timeout`, atau gangguan provider akan otomatis dipindah ke `retry_wait` supaya scheduler bisa mencoba lagi nanti.
+* Ringkasan alur AI terbaru:
+  1. Scheduler berjalan cek per menit.
+  2. Scheduler membaca heartbeat worker AI + isi antrean `ai-analysis` dan `ai-backfill`.
+  3. Jika worker masih aktif atau antrean masih berisi, scheduler skip dan tidak membuat job baru.
+  4. Jika worker sudah idle, scheduler baru boleh mendorong batch kecil (`retry_wait`, `orphan queued`, atau `unscored content`) ke worker.
+  5. Worker menyelesaikan batch dulu, lalu scheduler menunggu siklus berikutnya untuk memutuskan apakah perlu mendorong batch baru lagi.
 
 ---
 
@@ -854,3 +870,194 @@
 * Lebar footer desktop dibatasi agar berhenti sebelum panel filter kanan, sehingga keduanya tidak saling menumpuk.
 * Tinggi maksimal panel filter dikurangi sedikit dari bawah viewport agar tidak memotong atau menimpa area footer fixed.
 * Verifikasi DOM menunjukkan panel dan footer sama-sama tampil dengan status overlap `false`.
+
+### 91. Footer Dashboard Dikembalikan Full Width
+* Footer dashboard dikembalikan melebar penuh sampai kanan viewport aplikasi, tidak lagi dipotong sebelum panel filter.
+* Panel filter diberi ruang bawah lebih aman melalui pengurangan `max-height`, sehingga footer tetap penuh tetapi tidak tertindih.
+* Verifikasi DOM menunjukkan footer full-width dan overlap panel tetap `false`.
+
+### 92. Footer Dashboard Full Width Dari Sisi Kiri Viewport
+* Footer fixed sekarang dimulai dari `left: 0`, bukan lagi dari setelah sidebar 64px.
+* Verifikasi DOM menunjukkan footer `x: 0` dan lebarnya sama dengan viewport, sementara overlap panel tetap `false`.
+
+### 93. Header Dan Navigasi Dashboard Dibuat Fixed
+* Header utama dibuat fixed di bagian atas viewport, sehingga logo, navigasi tab desktop, notifikasi, dan profil tidak bergerak saat konten discroll.
+* Sub-header proyek/filter aktif juga dibuat fixed tepat di bawah header utama.
+* Root dashboard diberi padding atas sesuai tinggi header agar konten tidak tertutup oleh header fixed.
+
+### 94. Load More Penyebutan Dan Konten Dibuat Stabil
+* `loadMore()` sekarang punya guard agar tidak memanggil data tambahan ketika semua item sudah dimuat.
+* Trigger load-more dipindahkan ke container scroll internal pada tab Penyebutan dan Konten, karena daftar card memakai `overflow-y-auto`, bukan scroll halaman utama.
+* Indikator loading tidak lagi bergantung pada `wire:loading` yang bisa terlihat menggantung; sekarang memakai state lokal `loadingMore`.
+* Sentinel load-more diberi fallback tombol native Livewire `wire:click="loadMore"` dengan label `Gulir atau klik untuk memuat data lainnya`, supaya user tetap bisa memuat batch berikutnya walau event scroll browser tidak terpanggil.
+
+### 95. Shell Tab Analisis Tidak Lagi Ikut Hilang Saat Lazy Load
+* Header `Analisis` dipindahkan keluar dari kondisi `analysisLoaded`, jadi judul dan deskripsi tab selalu tampil.
+* Card `Gambaran Umum` sekarang selalu dirender; saat lazy load belum selesai, isi card diganti skeleton, bukan membuat area kiri kosong total.
+* Panel skeleton tambahan disediakan untuk blok analisis awal agar transisi dari loading ke data final terasa stabil dan tidak tampak seperti halaman rusak.
+
+### 96. Blade Dashboard Dibersihkan Dari Blok `@else` Liar
+* Ditemukan blok skeleton analisis yang nyasar ke tab `Konten`, sehingga pasangan `@if/@else/@endif` Blade menjadi rusak dan memicu `ParseError` saat pindah tab.
+* Blok `@else` duplikat itu dihapus agar struktur tab `Penyebutan`, `Analisis`, dan `Konten` kembali seimbang.
+* Cache view terkompilasi dibersihkan lalu dibangun ulang supaya Laravel tidak lagi memakai hasil compile lama yang sudah korup.
+
+### 97. Tab Analisis Kini Menampilkan Skeleton Saat Lazy Loading
+* Tab `Analisis` sekarang memiliki fallback `@else` yang valid untuk kondisi `analysisLoaded === false`, sehingga area kiri tidak lagi kosong saat data belum selesai dimuat.
+* Shell judul `Analisis` dan panel filter tetap tampil stabil, sementara isi metrik diganti skeleton card sampai data final siap.
+* View cache Blade dibangun ulang setelah patch agar browser langsung membaca struktur lazy-load yang baru.
+
+### 98. Skeleton Analisis Diikat Langsung Ke Request Lazy Livewire
+* Ditambahkan blok `wire:loading` dengan target `loadAnalysis`, sehingga selama request lazy tab `Analisis` berjalan user langsung melihat skeleton, bukan area kosong.
+* Konten analisis utama dibungkus `wire:loading.remove` agar baru tampil setelah response `loadAnalysis` benar-benar selesai.
+* Pendekatan ini membuat loading state tidak lagi bergantung penuh pada timing perubahan properti `analysisLoaded`.
+
+### 99. Recovery AI Orphan Tidak Lagi Dibekukan Provider Cadangan Yang Cooldown
+* Guard AI di `app/Services/SchedulerQueueGuard.php` diselaraskan dengan `AiProviderRouter`, sehingga scheduler hanya dianggap buntu bila memang tidak ada provider aktif yang siap dipakai.
+* Satu provider backup yang sedang cooldown tidak lagi memblokir seluruh antrean pemulihan AI bila provider utama masih sehat.
+* Ini menutup kasus backlog `queued` yang berhenti total hanya karena provider cadangan masih punya `cooldown_until`.
+
+### 100. Recovery AI Orphan Kini Bisa Memilah Dan Menutup State Buntu Otomatis
+* `app/Console/Commands/RequeueOrphanQueuedAiStates.php` sekarang otomatis menutup state orphan yang memang tidak layak diproses ulang.
+* Jika hasil AI sebenarnya sudah ada, state orphan ditutup sebagai `success`.
+* Jika sumber hilang atau konten kosong, state orphan ditutup sebagai `failed` dengan alasan final yang jelas.
+* Dispatch di tengah batch tidak lagi berhenti setelah job pertama yang dikirim sendiri membuat queue terisi; saat worker idle, command kini bisa mengirim batch recovery sesuai limit yang diminta.
+
+### 101. Filter Panel Kini Punya Loading State Yang Jelas Saat Query Ulang
+* Di dashboard user, filter `search`, `sources`, `sentiment`, dan `date range` sekarang memakai target loading yang sama sehingga status request Livewire lebih mudah dipantau.
+* Panel filter desktop sekarang menampilkan indikator `Menerapkan filter...` saat filter sedang memicu query ulang ke database.
+* Area hasil tab `Penyebutan` sekarang menampilkan skeleton card saat filter berubah, jadi daftar hasil tidak lagi terasa blank saat data sedang diproses.
+* Tab `Analisis` juga diselaraskan agar skeleton muncul bukan hanya saat `loadAnalysis`, tetapi juga saat filter aktif sedang memperbarui data metrik.
+
+### 102. Indikator Teks Loading Filter Dihapus Dari Penyebutan
+* Setelah QA, indikator teks `Menerapkan filter...` dan `Memuat hasil filter...` terasa seperti stuck walau request Livewire masih berjalan normal.
+* Loading state untuk filter kini difokuskan hanya pada skeleton area hasil, supaya panel filter tetap tenang dan tidak memberi kesan proses macet.
+* Ini menjaga feedback visual tetap ada saat query ke database berlangsung, tetapi tanpa spinner teks yang mengganggu di sisi kanan dan atas feed.
+
+### 103. Skeleton Penyebutan Diubah Menjadi Overlay Agar Tidak Menimpa Card
+* Saat filter aktif, skeleton penyebutan tidak lagi dirender sebagai blok baru di atas daftar hasil.
+* Skeleton sekarang tampil sebagai overlay pada area feed yang sama, sementara daftar hasil lama dibuat transparan sementara selama request filter berjalan.
+* Perubahan ini mencegah efek layout bertumpuk seperti card skeleton muncul lalu card lama tetap terlihat di bawahnya.
+
+### 104. Loading Filter Hanya Aktif Setelah User Mengubah Filter
+* Ditambahkan guard `filterInteractionStarted` di komponen dashboard user agar loading filter tidak ikut aktif saat halaman pertama kali dibuka.
+* State ini baru menyala setelah user benar-benar mengubah `search`, `sources`, `sentiment`, `date range`, atau kategori.
+* Dengan begitu skeleton filter di tab `Penyebutan` sekarang merepresentasikan interaksi user, bukan initial render halaman.
+
+### 105. Filter Sumber Data Dipaksa Render Ulang Feed Secara Bersih
+* Saat filter berubah, `limit` feed penyebutan sekarang di-reset ke batch awal agar hasil tidak mewarisi jumlah item dari state sebelum filter.
+* Wrapper hasil penyebutan sekarang memakai `wire:key` berbasis signature filter aktif, sehingga Livewire membangun ulang DOM hasil saat `selectedSources` atau filter lain berubah.
+* Skeleton overlay penyebutan juga tidak lagi mengandalkan `wire:target` spesifik array checkbox, karena target itu terlalu rapuh untuk kasus `selectedSources`; sekarang loading mengikuti request filter aktif dengan lebih stabil.
+
+### 106. Skeleton Penyebutan Sekarang Mengganti Hasil Lama, Bukan Menumpuk
+* Setelah QA, mode overlay masih membuat hasil lama samar terlihat di belakang skeleton saat filter berjalan.
+* Pola loading di tab `Penyebutan` diubah menjadi render bergantian: ketika request filter aktif, blok hasil lama di-hide penuh dengan `wire:loading.remove`, dan yang tampil hanya blok skeleton.
+* Ini memastikan user tidak lagi melihat card hasil dan skeleton bercampur pada saat yang sama.
+
+### 107. Skeleton Filter Penyebutan Kini Menggantikan Feed Lama, Bukan Menimpanya
+* Setelah pengujian lanjut, pola overlay penuh ternyata masih memberi efek visual seperti skeleton menutupi card lama, sehingga terasa bertumpuk.
+* Skeleton filter di tab `Penyebutan` sekarang dirender sebagai blok biasa hanya saat target filter aktif (`search`, `sources`, `sentiment`, `date range`, `category`).
+* Pada saat yang sama, feed hasil lama diberi `wire:loading.class="hidden"` untuk target yang sama, sehingga yang terlihat hanya skeleton sampai hasil baru selesai dirender.
+
+### 108. Filter Sumber Data Tidak Lagi Mengandalkan `wire:model.live` Array
+* Setelah audit, checkbox `Sumber Data` bisa berubah di UI tetapi hasil feed tidak selalu ikut refresh konsisten.
+* Wiring filter sumber diubah ke method eksplisit `toggleSourceSelection()` dan `selectAllSources()` agar setiap centang/lepas centang langsung memperbarui array `selectedSources`, mereset feed, dan membersihkan memo runtime dashboard.
+* Perubahan ini dibuat supaya kasus seperti `Instagram` tidak bisa di-uncheck atau hasil portal tetap tampil saat hanya `Instagram` yang aktif tidak terulang lagi.
+
+### 109. Event Filter Sumber Dipindah ke `wire:click` Toggle Langsung
+* Setelah audit lanjutan, jalur `wire:change` dengan boolean dari browser masih berpotensi tidak sinkron dengan state Livewire pada checkbox sumber.
+* Event sumber sekarang dipindah ke `wire:click.stop` yang langsung memanggil `toggleSourceSelection('NamaSumber')`, lalu server yang menentukan apakah item itu ditambah atau dilepas dari `selectedSources`.
+* Dengan cara ini, kontrol sumber tidak lagi bergantung pada payload checked/unchecked dari browser, sehingga lebih aman untuk kasus centang-lepas centang cepat di tab `Penyebutan`.
+
+### 110. Filter Sumber Penyebutan Kini Pakai Pattern Matching Dan Target Loading Yang Benar
+* Audit terbaru menemukan dua akar masalah yang membuat filter sumber terasa macet: query sumber masih terlalu literal (`Instagram` tidak otomatis cocok ke `instagram.com`) dan blok loading masih menargetkan `selectedSources` padahal checkbox sekarang dikendalikan lewat method `toggleSourceSelection()`.
+* Komponen dashboard user sekarang memakai helper pattern sumber (`%instagram%`, `%facebook%`, `%tiktok%`, dan seterusnya) untuk filter query serta hitung angka panel sumber, sehingga data sosial dan portal tidak lagi lolos/tertahan hanya karena format `source_name` berbeda.
+* Target loading filter juga diperluas agar request `toggleSourceSelection` dan `selectAllSources` ikut memicu state loading yang sama, sehingga perubahan sumber tidak lagi terlihat seperti “tidak ada reaksi” atau berulang tanpa perubahan hasil.
+
+### 111. Semua Sumber Bisa Dilepas Dan Sekarang Tidak Lagi Jatuh Balik Ke Semua Data
+* Audit lanjutan menemukan bahwa saat semua sumber dilepas, query `Penyebutan` justru menganggap kondisi itu sebagai “tanpa filter sumber”, sehingga seluruh feed tampil lagi dan memberi kesan seolah checkbox terakhir, terutama `Instagram`, tidak bisa di-uncheck.
+* Logika filter sumber di dashboard sekarang diubah: jika `selectedSources` kosong, query hasil langsung dipaksa kosong dengan guard `1 = 0`.
+* Dengan begitu, perilaku UI menjadi konsisten: semua sumber bisa di-uncheck, dan saat tidak ada sumber aktif, hasil feed memang kosong sampai user memilih sumber lagi.
+
+### 112. Toggle Sumber Dashboard Tidak Lagi Bergantung Pada Checkbox Native
+* Audit mendalam menemukan bahwa perilaku uncheck `Instagram` di panel sumber masih rawan macet karena kontrol UI tetap bergantung pada checkbox native browser, sementara filter ulang feed dijalankan oleh Livewire.
+* Semua item `Sumber Data` di dashboard user sekarang diubah menjadi tombol toggle penuh dengan state visual checkbox buatan, sehingga klik selalu masuk ke method `toggleSourceSelection()` dan langsung memicu filter ulang hanya di dashboard.
+* Dengan pola ini, `Instagram`, `Facebook`, `TikTok`, dan `Portal News` memakai jalur interaksi yang sama persis, sehingga kasus satu sumber bandel sendiri tidak lagi bergantung pada perilaku default browser.
+### 113. Stabilkan Filter Sumber Penyebutan dan Skeleton Dashboard
+- Memperbaiki pemanggilan `openDetail(...)` di daftar viral `media-dashboard` agar memakai `Js::from(...)`, bukan interpolasi string mentah Blade.
+- Tujuannya menghilangkan error Alpine `Invalid or unexpected token` yang bisa mematikan interaksi Livewire seperti toggle sumber di panel filter.
+- Mengganti hasil feed `Penyebutan` dari `wire:loading.class="hidden"` menjadi `wire:loading.remove` saat filter sedang berjalan.
+- Dengan ini feed lama benar-benar dilepas sementara skeleton filter tampil, jadi tidak lagi saling menimpa saat user mengubah sumber data.
+
+### 114. Hapus Cleanup Alpine Yang Tidak Valid di Root Projects List
+- Menghapus pemakaian `$cleanup(...)` dari `projects-list` karena runtime Alpine/Livewire yang aktif di halaman ini tidak menyediakan helper tersebut.
+- Error ini sebelumnya memicu `ReferenceError: $cleanup is not defined` di root halaman dan berpotensi mengganggu interaksi komponen dashboard, termasuk filter sumber pada tab `Penyebutan`.
+
+### 115. Sumber Data Penyebutan Dikembalikan ke Checkbox Livewire Standar
+- Mengganti kontrol sumber data di [resources/views/components/⚡filter-items.blade.php](/Users/unity/Documents/proyek baru/resources/views/components/⚡filter-items.blade.php) dari tombol toggle kustom ke checkbox `wire:model.live="selectedSources"`.
+- Fokus perbaikan tahap ini hanya agar Instagram, TikTok, Facebook, dan Portal News bisa dicentang dan dilepas dengan perilaku native yang konsisten.
+
+### 116. Checkbox Sumber Instagram Dipertegas Dengan Label Association
+- Menambahkan pasangan `for` dan `id` pada checkbox sumber data di `/Users/unity/Documents/proyek baru/resources/views/components/⚡filter-items.blade.php` untuk Instagram, TikTok, Facebook, dan Portal News.
+- Tujuannya agar klik pada baris/label selalu mengarah ke checkbox yang tepat dan perilaku uncheck konsisten saat dipakai manual di dashboard.
+
+### 117. Filter Sumber Dashboard Dipindah ke Boolean Per Checkbox
+- Mengubah sumber filter Penyebutan dari array checkbox langsung menjadi flag boolean `sourceInstagram`, `sourceTikTok`, `sourceFacebook`, dan `sourceNews` di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php`.
+- Tujuannya menutup kasus Livewire saat sumber terakhir dilepas sehingga array kosong tidak tersinkron stabil, yang sebelumnya membuat Instagram tampak tidak bisa di-uncheck.
+- Checkbox di `/Users/unity/Documents/proyek baru/resources/views/components/⚡filter-items.blade.php` sekarang mengikat langsung ke flag boolean per sumber.
+
+### 118. Panel Filter Fullscreen Dashboard Ditinggikan Prioritas Kliknya
+- Menyesuaikan CSS di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php` agar `.desktop-filter-panel` memiliki `z-index` lebih tinggi, `pointer-events: auto`, dan area workspace dibatasi dengan `width/max-width: calc(100% - 360px)`.
+- Tujuannya mencegah feed atau workspace fullscreen menimpa area klik filter panel pada browser lebar penuh.
+
+### 118. Panel Filter Fullscreen Dashboard Ditinggikan Prioritas Kliknya
+- Menyesuaikan CSS di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php` agar `.desktop-filter-panel` memiliki `z-index` lebih tinggi, `pointer-events: auto`, dan area workspace dibatasi dengan `width/max-width: calc(100
+
+### 119. Gap Workspace Fullscreen Dihilangkan Tanpa Menurunkan Prioritas Panel Filter
+- Menghapus pembatas `width/max-width` tambahan pada `.desktop-workspace-area` di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php`.
+- Layout tetap menjaga `padding-right` untuk ruang panel kanan, tetapi tidak lagi menyusut ganda sehingga gap besar di tengah hilang.
+- Proteksi panel filter tetap dipertahankan lewat `z-index` dan `pointer-events`.
+
+### 120. Skeleton Penyebutan Kini Menutup Feed Lama Saat Filter Berjalan
+- Menyesuaikan wrapper hasil feed di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php` dari `wire:loading.remove` menjadi `wire:loading.class="hidden"` untuk target filter dashboard.
+- Tujuannya agar saat user mengubah filter, hasil lama benar-benar disembunyikan selama request berlangsung dan yang tampil hanya skeleton loading.
+- Setelah request selesai, skeleton hilang dan feed hasil baru tampil utuh tanpa menimpa state sebelumnya.
+
+### 121. Panel Filter Desktop Dipindah Menjadi Kolom Workspace Sejajar Feed
+- Memindahkan `desktop-filter-panel` di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php` dari shell fixed di luar workspace menjadi kolom kanan di dalam `desktop-workspace-area`.
+- CSS desktop juga diubah dari `position: fixed` menjadi `position: sticky` agar panel tetap terlihat saat scroll tetapi tetap satu level layout dengan feed.
+- Tujuannya menghilangkan tabrakan antara modal detail, feed, dan panel filter, sekaligus memastikan panel kanan tidak lagi menjadi overlay yang menimpa konten utama.
+
+### 122. Kolom Feed Desktop Dipaksa Menyisakan Slot Tetap Untuk Filter Panel
+- Menambahkan class `desktop-main-column` di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php` untuk membatasi lebar kolom utama desktop menjadi `calc(100% - 344px)`.
+- Shell `desktop-filter-panel` juga dilepas dari dependensi `hidden lg:flex`, sehingga tampilan desktop/mobile kini dikontrol langsung oleh media query CSS komponen.
+- Tujuannya memastikan panel filter desktop tidak lagi hilang saat render ulang Livewire dan feed utama selalu menyisakan ruang stabil di sisi kanan.
+
+### 123. Workspace Desktop Diganti Menjadi Grid Tetap Untuk Menjaga Panel Filter
+- Mengubah `desktop-workspace-area` di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php` dari layout flex menjadi grid dua kolom tetap: `minmax(0, 1fr)` untuk feed dan `320px` untuk panel filter.
+- `desktop-main-column` sekarang dipaksa selalu berada di kolom pertama, sedangkan `desktop-filter-panel` selalu berada di kolom kedua agar panel tidak hilang saat rerender Livewire.
+- Tujuannya memastikan filter panel desktop selalu muncul di sisi kanan dan tidak lagi amblas ketika feed mengambil lebar penuh.
+
+### 124. Workspace Desktop Dipisah Menjadi Shell Feed dan Shell Filter
+- Merapikan ulang `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php` dengan memisahkan area desktop menjadi `desktop-main-column-shell` di kiri dan `desktop-filter-panel` sticky di kanan.
+- Layout desktop dikembalikan ke flex dua kolom yang eksplisit, lalu utility class `flex/lg:flex-row` yang bentrok di wrapper utama dibersihkan agar Livewire tidak lagi merender slot kosong tanpa isi panel.
+- Tujuannya memastikan panel filter kanan tetap ikut dalam alur layout desktop, tidak hilang setelah rerender, dan tidak lagi tertukar dengan area kosong feed.
+
+### 125. Lebar Kolom Kiri Diperkecil Agar Panel Filter Tidak Terdorong Keluar Layar
+- Menghapus `width: 100%` yang membuat `desktop-main-column-shell` terlalu lebar di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php`.
+- Shell feed sekarang memakai `flex: 1 1 0` supaya kolom kiri fleksibel, sedangkan `desktop-filter-panel` tetap punya lebar tetap 320px dan tidak ikut ketarik keluar viewport.
+- Tujuannya mencegah panel filter desktop hilang karena kolom feed mengambil seluruh lebar baris saat render Livewire.
+
+### 126. Workspace Desktop Dikunci Kembali Ke Grid Agar Sidebar Tidak Keluar Viewport
+- Mengubah ulang `.desktop-workspace-area` di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php` menjadi grid dua kolom tetap setelah flex layout masih membuat panel filter terdorong keluar layar.
+- `desktop-main-column-shell` kini diposisikan di kolom pertama grid dan `desktop-filter-panel` di kolom kedua dengan lebar tetap 320px.
+- Tujuannya memastikan filter kanan benar-benar punya slot layout sendiri dan tidak lagi lenyap ketika konten feed memanjang di desktop fullscreen.
+
+### 127. Default Sumber Penyebutan Dikembalikan Kosong
+- Mengubah default state `selectedSources` di `/Users/unity/Documents/proyek baru/resources/views/components/⚡media-dashboard.blade.php` dari semua sumber aktif menjadi array kosong.
+- Reset state di `mount()` juga disamakan supaya halaman `Penyebutan` tidak langsung menampilkan checkbox sumber dalam keadaan tercentang saat dibuka ulang.
+- Perubahan ini hanya menargetkan state default filter sumber, tanpa menyentuh logika filter lain.
+
+### 1. IG Source Filter Tidak Lagi Kehilangan Hasil
+* Saat filter sumber aktif, dedupe sosial di feed penyebutan sekarang dilewati supaya hasil Instagram/TikTok/Facebook tetap utuh sesuai jumlah yang dipilih user.
+* Infinite scroll tetap memakai pagination normal, jadi feed tidak lagi berhenti di 3 kartu ketika counter sumber menunjukkan 7.
+* Validasi syntax Blade untuk file terkait lulus.

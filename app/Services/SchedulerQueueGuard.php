@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ApifyDispatchState;
+use App\Models\AiProvider;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
@@ -10,9 +11,15 @@ use Illuminate\Support\Facades\Queue;
 class SchedulerQueueGuard
 {
     private const STALE_APIFY_STATE_MINUTES = 45;
+    private const AI_WORKER_ACTIVE_CACHE_KEY = 'ai-worker:active';
+    private const AI_WORKER_ACTIVE_STALE_SECONDS = 30;
 
     public function aiBusyReason(): ?string
     {
+        if ($this->aiWorkerRecentlyActive()) {
+            return 'Worker AI masih aktif memproses job sebelumnya.';
+        }
+
         if ($this->queueHasJobs('redis-ai', ['ai-analysis', 'ai-backfill'])) {
             return 'Masih ada job AI menunggu di antrean redis-ai.';
         }
@@ -25,17 +32,50 @@ class SchedulerQueueGuard
             return 'Masih ada job AI yang sedang diproses worker.';
         }
 
-        $activeCooldownProvider = \App\Models\AiProvider::query()
+        $activeProviderCount = AiProvider::query()
             ->where('is_active', true)
-            ->whereNotNull('cooldown_until')
-            ->where('cooldown_until', '>', now())
-            ->first();
+            ->count();
 
-        if ($activeCooldownProvider) {
-            return "Provider AI {$activeCooldownProvider->name} masih cooldown sampai {$activeCooldownProvider->cooldown_until}.";
+        if ($activeProviderCount <= 0) {
+            return 'Tidak ada provider AI aktif.';
+        }
+
+        $availableProviderCount = app(AiProviderRouter::class)
+            ->getAvailableProviders('article_analysis')
+            ->count();
+
+        if ($availableProviderCount <= 0) {
+            $nextReadyProvider = AiProvider::query()
+                ->where('is_active', true)
+                ->whereNotNull('cooldown_until')
+                ->orderBy('cooldown_until')
+                ->first();
+
+            if ($nextReadyProvider?->cooldown_until) {
+                return "Semua provider AI aktif sedang cooldown. Provider terdekat siap lagi pada {$nextReadyProvider->cooldown_until}.";
+            }
+
+            return 'Tidak ada provider AI aktif yang siap dipakai.';
         }
 
         return null;
+    }
+
+    public function aiWorkerRecentlyActive(): bool
+    {
+        try {
+            $lastActivity = Cache::get(self::AI_WORKER_ACTIVE_CACHE_KEY);
+            if (! is_numeric($lastActivity)) {
+                return false;
+            }
+
+            return ((int) $lastActivity) >= now()->subSeconds(self::AI_WORKER_ACTIVE_STALE_SECONDS)->timestamp;
+        } catch (\Throwable $e) {
+            Log::warning('[SchedulerGuard] Gagal membaca status aktivitas worker AI.', [
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     public function aiIsIdle(): bool

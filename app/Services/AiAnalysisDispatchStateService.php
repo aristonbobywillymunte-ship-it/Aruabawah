@@ -291,6 +291,12 @@ class AiAnalysisDispatchStateService
         }
         $classification = app(AiFailureClassifier::class)->classify($errorCode, $errorMessage, $exception);
 
+        if ((bool) ($classification['retryable'] ?? false)) {
+            $nextRetryAt = now()->addMinutes($this->backoffMinutes((int) ($context['attempts_hint'] ?? 1)));
+
+            return $this->persistFailureState($context, 'retry_wait', $classification, $nextRetryAt);
+        }
+
         return $this->persistFailureState($context, 'failed', $classification, null);
     }
 

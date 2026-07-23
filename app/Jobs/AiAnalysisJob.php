@@ -31,6 +31,10 @@ class AiAnalysisJob implements ShouldQueue
 
     private const MIN_ANALYSIS_LENGTH = 500;
 
+    // Retry terjadwal dikelola lewat dispatch state + scheduler, bukan release job
+    // yang sama berulang-ulang sampai attempts worker habis.
+    public int $tries = 1;
+
     public array $payload;
 
     public function __construct(array $payload)
@@ -155,9 +159,13 @@ class AiAnalysisJob implements ShouldQueue
             $lastErrorCategory = $result['last_error_category'] ?? null;
             
         } catch (RateLimitRetryException $e) {
-            // RateLimit for current provider - backoff and retry without exhausting all providers
-            Log::warning("[Pipeline] Transient rate limit hit. Releasing job in {$e->delaySeconds}s.");
-            $state = $dispatchStateService->markRetryWait(
+            Log::warning('[Pipeline] Transient rate limit hit. Deferring retry to scheduler.', [
+                'delay_seconds' => $e->delaySeconds,
+                'analyzable_type' => $type,
+                'analyzable_id' => $this->payload['id'] ?? $this->payload['item_id'] ?? null,
+                'project_id' => $this->payload['project_id'] ?? null,
+            ]);
+            $dispatchStateService->markRetryWait(
                 $this->payload,
                 'rate_limit_wait',
                 $e->getMessage(),
@@ -165,7 +173,6 @@ class AiAnalysisJob implements ShouldQueue
                 $providerContextHash,
                 $e
             );
-            $this->release($e->delaySeconds);
             return;
         } catch (AllProvidersFailedException $e) {
             $msg = '[Pipeline] All active AI providers failed.';
@@ -181,6 +188,12 @@ class AiAnalysisJob implements ShouldQueue
             );
             return;
         } catch (AllProvidersCoolingDownException $e) {
+            Log::warning('[Pipeline] All providers cooling down. Deferring retry to scheduler.', [
+                'delay_seconds' => max(30, $e->delaySeconds),
+                'analyzable_type' => $type,
+                'analyzable_id' => $this->payload['id'] ?? $this->payload['item_id'] ?? null,
+                'project_id' => $this->payload['project_id'] ?? null,
+            ]);
             $dispatchStateService->markRetryWait(
                 $this->payload,
                 'rate_limit',
@@ -189,7 +202,6 @@ class AiAnalysisJob implements ShouldQueue
                 $providerContextHash,
                 $e
             );
-            $this->release(max(30, $e->delaySeconds));
             return;
         } catch (\Throwable $e) {
             // Unknown unexpected error
@@ -320,8 +332,13 @@ class AiAnalysisJob implements ShouldQueue
                     $providerContextHash,
                     $e
                 );
-                $delay = $state && $state->next_retry_at ? now()->diffInSeconds($state->next_retry_at) : 60;
-                $this->release($delay);
+                Log::warning('[Pipeline] Transient AI failure moved to retry_wait and will be picked by scheduler.', [
+                    'dispatch_state_id' => $state?->id,
+                    'error_code' => $failure['code'] ?? class_basename($e),
+                    'project_id' => $this->payload['project_id'] ?? null,
+                    'analyzable_id' => $this->payload['id'] ?? $this->payload['item_id'] ?? null,
+                    'next_retry_at' => optional($state?->next_retry_at)?->toDateTimeString(),
+                ]);
             } else {
                 $dispatchStateService->markFailed(
                     $this->payload,

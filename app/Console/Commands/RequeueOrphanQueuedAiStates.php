@@ -7,6 +7,7 @@ use App\Models\AiAnalysisDispatchState;
 use App\Models\Article;
 use App\Models\SocialMediaItem;
 use App\Services\AiAnalysisDispatchStateService;
+use App\Services\SchedulerQueueGuard;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\Log;
 
 class RequeueOrphanQueuedAiStates extends Command
 {
+    private const REQUEUE_LEASE_SECONDS = 120;
+
     protected $signature = 'ai:requeue-orphan-queued-states
                             {--limit=5 : Maximum eligible states to requeue per run}
                             {--apply : Actually dispatch jobs instead of dry-run}
@@ -24,8 +27,19 @@ class RequeueOrphanQueuedAiStates extends Command
 
     protected $description = 'Globally requeue orphan queued AI states selectively with safety checks.';
 
+    public function __construct(
+        private readonly SchedulerQueueGuard $schedulerQueueGuard
+    ) {
+        parent::__construct();
+    }
+
     public function handle(): int
     {
+        if ($this->option('apply') && $this->schedulerQueueGuard->aiBusyReason() !== null) {
+            $this->warn('AI queue masih sibuk. Requeue orphan queued ditunda sampai worker idle.');
+            return self::SUCCESS;
+        }
+
         $limit = max(1, (int) $this->option('limit'));
         $apply = (bool) $this->option('apply');
         $autoDrain = (bool) $this->option('auto-drain');
@@ -132,10 +146,14 @@ class RequeueOrphanQueuedAiStates extends Command
     private function runSingleBatch(int $limit, bool $apply, bool $silentSummary = false, array &$dispatchedStateIds = []): array
     {
         $now = now();
+        $resolvedWithoutDispatch = 0;
 
         $states = AiAnalysisDispatchState::query()
             ->where('status', 'queued')
-            ->where('attempts', 0)
+            ->where(function ($query) {
+                $query->whereNull('last_attempt_at')
+                    ->orWhere('last_attempt_at', '<=', now()->subSeconds(self::REQUEUE_LEASE_SECONDS));
+            })
             ->when($dispatchedStateIds !== [], function ($query) use (&$dispatchedStateIds) {
                 $query->whereNotIn('id', $dispatchedStateIds);
             })
@@ -162,11 +180,22 @@ class RequeueOrphanQueuedAiStates extends Command
                 $reason
             ));
 
-            if (! $canDispatch || ! $apply) {
+            if (! $canDispatch) {
+                if ($apply && $this->resolveNonDispatchableState($state, $reason, $details, $now)) {
+                    $resolvedWithoutDispatch++;
+                }
+                continue;
+            }
+
+            if (! $apply) {
                 continue;
             }
 
             try {
+                $state->forceFill([
+                    'last_attempt_at' => $now,
+                ])->save();
+
                 AiAnalysisJob::dispatch(array_merge($payload, [
                     'no_telegram' => true,
                     'prompt_template_id' => $state->prompt_template_id ? (int) $state->prompt_template_id : null,
@@ -195,12 +224,13 @@ class RequeueOrphanQueuedAiStates extends Command
 
         if (! $silentSummary) {
             $this->info($apply
-                ? "Applied {$eligible} orphan queued state(s)."
+                ? "Applied {$eligible} orphan queued state(s); resolved {$resolvedWithoutDispatch} non-dispatchable state(s)."
                 : 'Dry-run selesai.');
         }
 
         return [
             'success_count' => $eligible,
+            'resolved_count' => $resolvedWithoutDispatch,
         ];
     }
 
@@ -252,10 +282,6 @@ class RequeueOrphanQueuedAiStates extends Command
     {
         if ($state->status !== 'queued') {
             return [false, 'not_queued', [], []];
-        }
-
-        if ((int) $state->attempts !== 0) {
-            return [false, 'attempts_not_zero', [], []];
         }
 
         $article = Article::query()->find($state->analyzable_id);
@@ -337,5 +363,63 @@ class RequeueOrphanQueuedAiStates extends Command
                 'source' => $article->source_name ?: 'article',
             ],
         ];
+    }
+
+    private function resolveNonDispatchableState(AiAnalysisDispatchState $state, string $reason, array $details, $now): bool
+    {
+        if ($reason === 'ai_result_exists') {
+            $meta = is_array($state->meta_json) ? $state->meta_json : [];
+
+            $state->forceFill([
+                'status' => 'success',
+                'failure_category' => null,
+                'last_error_code' => null,
+                'error_message' => null,
+                'last_failed_at' => null,
+                'next_retry_at' => null,
+                'completed_at' => $now,
+                'meta_json' => array_merge($meta, [
+                    'orphan_resolution' => 'existing_ai_result',
+                    'orphan_resolved_at' => $now->toIso8601String(),
+                ]),
+            ])->save();
+
+            return true;
+        }
+
+        if (in_array($reason, ['missing_analyzable', 'missing_social_item', 'empty_content'], true)) {
+            $state->forceFill([
+                'status' => 'failed',
+                'failure_category' => $this->failureCategoryForReason($reason),
+                'last_error_code' => $reason,
+                'error_message' => $this->failureMessageForReason($reason, $details),
+                'last_failed_at' => $now,
+                'next_retry_at' => null,
+                'completed_at' => $now,
+            ])->save();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private function failureCategoryForReason(string $reason): string
+    {
+        return match ($reason) {
+            'empty_content' => 'invalid_content',
+            'missing_analyzable', 'missing_social_item' => 'missing_dependency',
+            default => 'unknown_error',
+        };
+    }
+
+    private function failureMessageForReason(string $reason, array $details): string
+    {
+        return match ($reason) {
+            'empty_content' => 'Konten sumber kosong sehingga tidak layak dikirim ulang ke AI.',
+            'missing_analyzable' => 'Artikel sumber untuk state AI orphan tidak ditemukan.',
+            'missing_social_item' => 'Item sosial sumber untuk state AI orphan tidak ditemukan.',
+            default => 'State AI orphan tidak bisa dipulihkan otomatis.',
+        };
     }
 }
