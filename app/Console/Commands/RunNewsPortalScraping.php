@@ -288,6 +288,23 @@ class RunNewsPortalScraping extends Command
                             break 2;
                         }
 
+                        $this->runCandidateLogs[] = [
+                            'index' => $index,
+                            'original_url' => $discoveryUrl,
+                            'resolved_url' => $candidateUrl,
+                            'candidate_link_id' => DB::table('candidate_links')->where('canonical_url', $candidateUrl)->value('id'),
+                            'scraping_item_id' => DB::table('candidate_links')->where('canonical_url', $candidateUrl)->value('id')
+                                ? ScrapingItem::where('candidate_link_id', DB::table('candidate_links')->where('canonical_url', $candidateUrl)->value('id'))->value('id')
+                                : null,
+                            'article_id' => null,
+                            'final_status' => 'candidate',
+                            'reason' => 'Search page candidate detected',
+                            'title_final' => '',
+                            'canonical_url_final' => $candidateUrl,
+                            'source_name_final' => $source->name,
+                            'content_length' => null,
+                        ];
+
                         $outcome = $this->processPortalCandidate(
                             project: $project,
                             candidateUrl: $candidateUrl,
@@ -1339,14 +1356,6 @@ class RunNewsPortalScraping extends Command
                     $query->where('is_search_enabled', true)
                         ->whereNotNull('search_url')
                         ->where('search_url', '<>', '');
-                })->orWhere(function ($query) {
-                    $query->where('is_feed_enabled', true)
-                        ->whereNotNull('feed_url')
-                        ->where('feed_url', '<>', '');
-                })->orWhere(function ($query) {
-                    $query->where('is_sitemap_enabled', true)
-                        ->whereNotNull('sitemap_url')
-                        ->where('sitemap_url', '<>', '');
                 });
             })
             ->orderByRaw('CASE WHEN scrape_priority IS NULL THEN 1 ELSE 0 END')
@@ -1723,14 +1732,6 @@ class RunNewsPortalScraping extends Command
             return str_replace('{keyword}', rawurlencode($keyword), $source->search_url);
         }
 
-        if ($source->is_feed_enabled && filled($source->feed_url)) {
-            return str_replace('{keyword}', rawurlencode($keyword), $source->feed_url);
-        }
-
-        if ($source->is_sitemap_enabled && filled($source->sitemap_url)) {
-            return $source->sitemap_url;
-        }
-
         return null;
     }
 
@@ -1740,6 +1741,24 @@ class RunNewsPortalScraping extends Command
         $selectors = array_values(array_filter([
             $source->article_link_selector,
             $source->search_result_selector,
+            '.recent-title.heading-text',
+            '.recent-title',
+            '.heading-text a',
+            '.heading-text',
+            '[target-container="search"] a.title',
+            '[target-container="search"] a.entry-title',
+            '[target-container="search"] a.post-title',
+            '.block-black-white a.title',
+            '.search-result a.title',
+            '.result-card a.title',
+            '.result-item a.title',
+            'article a.title',
+            'article a.entry-title',
+            'article a.post-title',
+            'h1 a',
+            'h2 a',
+            'h3 a',
+            'h4 a',
         ]));
 
         $baseUrl = $source->base_url ?: ('https://' . $source->domain);
@@ -1754,53 +1773,12 @@ class RunNewsPortalScraping extends Command
                 foreach ($nodes as $node) {
                     $href = trim((string) $node->getAttribute('href'));
                     $resolved = $this->normalizeUrl($href, $baseUrl);
-                    if ($resolved && $this->isLikelyArticleUrl($resolved, $source)) {
+                    if ($resolved && $this->isLikelyArticleUrl($resolved, $source) && $this->isSameNewsDomain($resolved, $source->domain)) {
                         $results[] = $resolved;
                         if (count($results) >= $limit) {
                             return array_values(array_unique($results));
                         }
                     }
-                }
-            }
-        }
-
-        if ($source->is_feed_enabled && str_contains($body, '<item>')) {
-            $xml = @simplexml_load_string($body, 'SimpleXMLElement', LIBXML_NOCDATA);
-            if ($xml && isset($xml->channel->item)) {
-                foreach ($xml->channel->item as $item) {
-                    $link = trim((string) ($item->link ?? ''));
-                    $resolved = $this->normalizeUrl($link, $baseUrl);
-                    if ($resolved && $this->isLikelyArticleUrl($resolved, $source)) {
-                        $results[] = $resolved;
-                        if (count($results) >= $limit) {
-                            return array_values(array_unique($results));
-                        }
-                    }
-                }
-            }
-        }
-
-        // Try sitemap loc links if sitemap_url is used
-        if ($source->is_sitemap_enabled && (str_contains($body, '<sitemap') || str_contains($body, '<urlset') || str_contains($body, '<loc>'))) {
-            preg_match_all('~<loc>(.*?)</loc>~is', $body, $locMatches);
-            foreach ($locMatches[1] as $loc) {
-                $resolved = $this->normalizeUrl(trim($loc), $baseUrl);
-                if ($resolved && $this->isLikelyArticleUrl($resolved, $source)) {
-                    $results[] = $resolved;
-                    if (count($results) >= $limit) {
-                        return array_values(array_unique($results));
-                    }
-                }
-            }
-        }
-
-        preg_match_all('~href=["\']([^"\']+)["\']~i', $body, $matches);
-        foreach ($matches[1] as $href) {
-            $resolved = $this->normalizeUrl($href, $baseUrl);
-            if ($resolved && $this->isLikelyArticleUrl($resolved, $source)) {
-                $results[] = $resolved;
-                if (count($results) >= $limit) {
-                    return array_values(array_unique($results));
                 }
             }
         }
@@ -1829,6 +1807,11 @@ class RunNewsPortalScraping extends Command
         $domain = preg_replace('/^www\./', '', strtolower($domain));
 
         return $host !== '' && ($host === $domain || str_ends_with($host, '.' . $domain));
+    }
+
+    private function isSameNewsDomain(string $url, string $domain): bool
+    {
+        return $this->belongsToDomain($url, $domain);
     }
 
     private function isLikelyArticleUrl(string $url, NewsSource $source): bool
@@ -1920,6 +1903,10 @@ class RunNewsPortalScraping extends Command
         $segments = array_values(array_filter(explode('/', $path)));
         if (count($segments) < 1) {
             return false;
+        }
+
+        if (count($segments) === 1 && mb_strlen($segments[0]) >= 25) {
+            return true;
         }
 
         $articleHints = ['berita', 'news', 'read', 'detail', 'artikel', 'article', 'story', 'news'];
