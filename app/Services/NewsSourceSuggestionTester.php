@@ -991,6 +991,10 @@ class NewsSourceSuggestionTester
             return false;
         }
 
+        if (!str_contains($domain, '.')) {
+            return str_contains($host, $domain);
+        }
+
         return $host === $domain || str_ends_with($host, '.' . $domain);
     }
 
@@ -1008,8 +1012,14 @@ class NewsSourceSuggestionTester
             $host = parse_url($url, PHP_URL_HOST) ?: '';
             $host = preg_replace('/^www\./', '', strtolower($host));
             $cleanDomain = preg_replace('/^www\./', '', strtolower($domain));
-            if ($host !== $cleanDomain && !str_ends_with($host, '.' . $cleanDomain)) {
-                return "Domain tidak cocok dengan: {$domain}";
+            if (str_contains($cleanDomain, '.')) {
+                if ($host !== $cleanDomain && !str_ends_with($host, '.' . $cleanDomain)) {
+                    return "Domain tidak cocok dengan: {$domain}";
+                }
+            } else {
+                if (!str_contains($host, $cleanDomain)) {
+                    return "Domain tidak cocok dengan: {$domain}";
+                }
             }
         }
 
