@@ -445,7 +445,8 @@
                                     <tr>
                                         <th class="px-5 py-4 w-12 text-left font-bold">No</th>
                                         <th class="px-5 py-4 font-bold">Nama Portal</th>
-                                        <th class="px-5 py-4 font-bold">Domain</th>
+                                        <th class="px-5 py-4 font-bold">Domain & Base URL</th>
+                                        <th class="px-5 py-4 font-bold">Tipe Crawling</th>
                                         <th class="px-5 py-4 font-bold">Waktu Dihapus</th>
                                         <th class="px-5 py-4 text-right w-64 font-bold">Aksi Pengembalian / Hapus</th>
                                     </tr>
@@ -454,11 +455,37 @@
                                     @foreach($trashSources as $trashSource)
                                         <tr wire:key="trash-source-row-{{ $trashSource->id }}" class="hover:bg-slate-50/30 transition">
                                             <td class="px-5 py-3.5 font-bold text-slate-400">{{ $loop->iteration }}</td>
-                                            <td class="px-5 py-3.5 font-black text-slate-800 text-[13px]">{{ $trashSource->name }}</td>
-                                            <td class="px-5 py-3.5 font-semibold text-slate-500 break-all">{{ $trashSource->domain }}</td>
+                                            <td class="px-5 py-3.5">
+                                                <div class="flex items-center gap-2.5">
+                                                    @if($trashSource->icon_url)
+                                                        <img src="{{ $trashSource->icon_url }}" class="w-6 h-6 rounded-lg object-cover border border-slate-100 shadow-sm" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23cbd5e1\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'12\' cy=\'12\' r=\'10\'/><line x1=\'2\' y1=\'12\' x2=\'22\' y2=\'12\'/><path d=\'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\'/></svg>'">
+                                                    @else
+                                                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-slate-450 border border-slate-200 shrink-0">
+                                                            <span class="material-symbols-outlined text-[15px]">public</span>
+                                                        </span>
+                                                    @endif
+                                                    <span class="font-black text-slate-800 text-[13px]">{{ $trashSource->name }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-5 py-3.5 font-semibold text-slate-500 break-all">
+                                                <div class="space-y-0.5">
+                                                    <div class="font-bold text-slate-700 flex items-center gap-1">
+                                                        <span class="material-symbols-outlined text-[13px] text-slate-400">link</span>
+                                                        <span>{{ $trashSource->domain }}</span>
+                                                    </div>
+                                                    @if($trashSource->base_url)
+                                                        <div class="text-[10px] text-slate-405 truncate max-w-[180px] font-medium" title="{{ $trashSource->base_url }}">{{ $trashSource->base_url }}</div>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td class="px-5 py-3.5">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border {{ $trashSource->crawling_type === 'rss' ? 'bg-orange-50 text-orange-700 border-orange-100' : ($trashSource->crawling_type === 'api' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-blue-50 text-blue-700 border-blue-100') }}">
+                                                    {{ strtoupper($trashSource->crawling_type) }}
+                                                </span>
+                                            </td>
                                             <td class="px-5 py-3.5 font-semibold text-slate-400">
                                                 <div class="flex items-center gap-1.5">
-                                                    <span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                                                    <span class="material-symbols-outlined text-[14px] text-rose-400">calendar_today</span>
                                                     <span>{{ $trashSource->deleted_at->format('d M Y, H:i') }}</span>
                                                 </div>
                                             </td>
@@ -475,7 +502,7 @@
                                                         <span class="material-symbols-outlined text-[15px] block">restore_from_trash</span>
                                                         <span>Kembalikan</span>
                                                     </button>
-
+ 
                                                     <!-- Permanent Delete Action -->
                                                     <button 
                                                         wire:click="forceDeleteSource({{ $trashSource->id }})" 
