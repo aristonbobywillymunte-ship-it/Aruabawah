@@ -22,7 +22,7 @@
         <label class="text-sm font-bold text-slate-700">Pencarian</label>
         <div class="relative">
             <input 
-                wire:model.live.debounce.300ms="search" 
+                wire:model.live.debounce.600ms="search" 
                 type="text" 
                 placeholder="Cari..."
                 class="w-full bg-[#f8f9fa] border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl pl-3 pr-9 py-2.5 text-xs text-slate-800 placeholder-[#727785] transition"

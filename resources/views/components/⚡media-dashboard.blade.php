@@ -1078,23 +1078,38 @@ new class extends Component
             return $this->countsMemo[$cacheKey];
         }
 
-        return $this->countsMemo[$cacheKey] = Cache::remember($cacheKey, 120, function () {
+        return $this->countsMemo[$cacheKey] = Cache::remember($cacheKey, 300, function () {
             $baseQuery = $this->projectArticlesQuery();
             // Counts for the filter panel should reflect the visible article pool,
             // not disappear just because sentiment AI is still pending.
             $sourceQuery = $this->applyActiveFilters(clone $baseQuery, ['sources', 'sentiment']);
-            $sources = ['Twitter', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
-            $sourceCounts = [];
-            foreach ($sources as $source) {
-                $sourceSql = $this->buildSourceLabelSql($source);
-                $sourceCounts[$source] = (clone $sourceQuery)
-                    ->whereRaw($sourceSql['sql'], $sourceSql['bindings'])
-                    ->count();
-            }
-            $newsSql = $this->buildSourceLabelSql('News');
-            $sourceCounts['News'] = (clone $sourceQuery)
-                ->whereRaw($newsSql['sql'], $newsSql['bindings'])
-                ->count();
+
+            // Single aggregation query instead of 8 separate COUNT queries
+            $socialSql = $this->buildSocialSourceSql();
+            $rawRows = (clone $sourceQuery)
+                ->selectRaw("
+                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'instagram%' THEN 1 ELSE 0 END) as instagram_count,
+                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'tiktok%' THEN 1 ELSE 0 END) as tiktok_count,
+                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'youtube%' THEN 1 ELSE 0 END) as youtube_count,
+                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'facebook%' THEN 1 ELSE 0 END) as facebook_count,
+                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'threads%' THEN 1 ELSE 0 END) as threads_count,
+                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'twitter%' OR lower(coalesce(source_name,'')) like 'x.com%' OR lower(coalesce(source_name,'')) = 'x' THEN 1 ELSE 0 END) as twitter_count
+                ")
+                ->first();
+
+            $sourceCounts = [
+                'Instagram' => (int) ($rawRows->instagram_count ?? 0),
+                'TikTok'    => (int) ($rawRows->tiktok_count ?? 0),
+                'Youtube'   => (int) ($rawRows->youtube_count ?? 0),
+                'Facebook'  => (int) ($rawRows->facebook_count ?? 0),
+                'Threads'   => (int) ($rawRows->threads_count ?? 0),
+                'Twitter'   => (int) ($rawRows->twitter_count ?? 0),
+            ];
+
+            // News = total - social platforms (not in any of above)
+            $totalAll = (clone $sourceQuery)->count();
+            $totalSocial = array_sum($sourceCounts);
+            $sourceCounts['News'] = max(0, $totalAll - $totalSocial);
 
             $sentimentQuery = $this->applyActiveFilters(clone $baseQuery, ['sentiment']);
             $sentimentQueryWithAI = (clone $sentimentQuery)->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
@@ -1102,18 +1117,28 @@ new class extends Component
                 ->whereNotNull('ai.summary')
                 ->whereNotNull('ai.sentiment')
                 ->whereNotNull('ai.risk_level');
-                
+
+            $agg = $sentimentQueryWithAI->selectRaw("
+                SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as pos_count,
+                SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu_count,
+                SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as neg_count,
+                SUM(CASE WHEN ai.risk_level = 'low' THEN 1 ELSE 0 END) as low_count,
+                SUM(CASE WHEN ai.risk_level = 'medium' THEN 1 ELSE 0 END) as med_count,
+                SUM(CASE WHEN ai.risk_level = 'high' THEN 1 ELSE 0 END) as high_count,
+                SUM(CASE WHEN ai.risk_level = 'critical' THEN 1 ELSE 0 END) as crit_count
+            ")->first();
+
             $sentimentCounts = [
-                'positive' => (clone $sentimentQueryWithAI)->where('ai.sentiment', 'positive')->count(),
-                'neutral'  => (clone $sentimentQueryWithAI)->where('ai.sentiment', 'neutral')->count(),
-                'negative' => (clone $sentimentQueryWithAI)->where('ai.sentiment', 'negative')->count(),
+                'positive' => (int) ($agg->pos_count ?? 0),
+                'neutral'  => (int) ($agg->neu_count ?? 0),
+                'negative' => (int) ($agg->neg_count ?? 0),
             ];
 
             $riskCounts = [
-                'low' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'low')->count(),
-                'medium' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'medium')->count(),
-                'high' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'high')->count(),
-                'critical' => (clone $sentimentQueryWithAI)->where('ai.risk_level', 'critical')->count(),
+                'low' => (int) ($agg->low_count ?? 0),
+                'medium' => (int) ($agg->med_count ?? 0),
+                'high' => (int) ($agg->high_count ?? 0),
+                'critical' => (int) ($agg->crit_count ?? 0),
             ];
 
             return [
@@ -1135,32 +1160,21 @@ new class extends Component
             return $this->articlesMemo[$cacheKey];
         }
 
-        $cached = Cache::remember($cacheKey, 60, function () {
+        $cached = Cache::remember($cacheKey, 600, function () {
             // Selalu scoped ke projectId yang sedang aktif
-            $query = $this->projectArticlesQuery()->with('aiAnalysisResult');
+            $query = $this->projectArticlesQuery()->select('articles.id', 'articles.published_at');
             $query = $this->applyActiveFilters($query);
 
             if ($this->sortBy == 'popular') {
-                $reachSubquery = AiAnalysisResult::selectRaw('COALESCE(project_estimated_readers, 0)')
-                    ->whereColumn('article_id', 'articles.id')
-                    ->where('analysis_status', 'success')
-                    ->where('reach_method', 'ai_reader_estimate_v1')
-                    ->limit(1);
-
-                $query->orderByRaw(
-                    '(
-                        COALESCE((
-                            SELECT COALESCE(project_estimated_readers, 0)
-                            FROM ai_analysis_results
-                            WHERE ai_analysis_results.article_id = articles.id
-                              AND analysis_status = \'success\'
-                              AND reach_method = \'ai_reader_estimate_v1\'
-                            LIMIT 1
-                        ), 0) * 100
-                    ) DESC'
-                )->orderByDesc($reachSubquery)->orderBy('published_at', 'desc');
+                $query->leftJoin('ai_analysis_results as ai_pop', function ($join) {
+                    $join->on('articles.id', '=', 'ai_pop.article_id')
+                         ->where('ai_pop.analysis_status', '=', 'success')
+                         ->where('ai_pop.reach_method', '=', 'ai_reader_estimate_v1');
+                })
+                ->orderByRaw('COALESCE(ai_pop.project_estimated_readers, 0) DESC')
+                ->orderBy('articles.published_at', 'desc');
             } else {
-                $query->orderBy('published_at', 'desc');
+                $query->orderBy('articles.published_at', 'desc');
             }
 
             $fetchLimit = max($this->limit * 4, $this->limit);
@@ -1215,7 +1229,7 @@ new class extends Component
             return $this->totalArticlesCountMemo[$cacheKey];
         }
 
-        return $this->totalArticlesCountMemo[$cacheKey] = (int) Cache::remember($cacheKey, 60, function () {
+        return $this->totalArticlesCountMemo[$cacheKey] = (int) Cache::remember($cacheKey, 300, function () {
             return (int) $this->applyActiveFilters($this->projectArticlesQuery())->count();
         });
     }
@@ -2141,9 +2155,8 @@ new class extends Component
 
     <!-- Main Workspace Layout with Real Full-Height Left Sidebar -->
     <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 min-h-0 overflow-visible" wire:init="loadDashboard">
-        @if($dashboardLoaded)
-        
-        <!-- Left Sidebar -->
+
+        <!-- Left Sidebar — always rendered (static, no data needed) -->
         <aside class="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-6 gap-5 flex-shrink-0 h-full">
             <!-- Kembali ke Daftar Proyek (Home) -->
             <a 
@@ -2154,6 +2167,8 @@ new class extends Component
                 <span class="material-symbols-outlined text-lg">arrow_back</span>
             </a>
         </aside>
+
+        @if($dashboardLoaded)
 
         @php
             $counts = $this->getCounts();
@@ -2422,14 +2437,14 @@ new class extends Component
                                 <span class="material-symbols-outlined text-[#1fa387] text-[22px]">forum</span>Penyebutan
                             </h2>
                             <p class="text-xs text-slate-500 flex items-center gap-1">
-                                Pantau percakapan media untuk proyek 
+                                Pantau percakapan media untuk proyek
                                 <span class="font-bold text-[#1fa387]">{{ $projectName }}</span>
                             </p>
                         </div>
                         <div>
                             <!-- Sort Dropdown -->
                             <div class="relative" x-data="{ openSort: false }">
-                                <button 
+                                <button
                                     @click="openSort = !openSort"
                                     class="bg-white border border-slate-200 rounded-full px-4 py-1.5 text-xs font-semibold text-slate-700 flex items-center gap-2 shadow-sm hover:bg-slate-50 transition"
                                 >
@@ -2437,40 +2452,23 @@ new class extends Component
                                     <span>{{ $sortBy == 'newest' ? 'Yang Terbaru' : 'Paling Populer' }}</span>
                                     <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                                 </button>
-
                                 <!-- Dropdown Box -->
-                                <div 
-                                    x-show="openSort" 
-                                    @click.away="openSort = false" 
+                                <div
+                                    x-show="openSort"
+                                    @click.away="openSort = false"
                                     x-transition:enter="transition ease-out duration-100"
                                     x-transition:enter-start="opacity-0 scale-95"
                                     x-transition:enter-end="opacity-100 scale-100"
                                     class="absolute right-0 mt-2 w-44 bg-white rounded-xl border border-slate-200 shadow-lg z-50 py-1.5 text-left"
                                     style="display: none;"
                                 >
-                                    <button 
-                                        wire:click="setSort('newest')" 
-                                        @click="openSort = false"
-                                        class="w-full px-4 py-2.5 text-xs flex justify-between items-center hover:bg-slate-50 transition-colors {{ $sortBy == 'newest' ? 'text-[#1fa387] font-bold' : 'text-slate-700 font-medium' }}"
-                                    >
+                                    <button wire:click="setSort('newest')" @click="openSort = false" class="w-full px-4 py-2.5 text-xs flex justify-between items-center hover:bg-slate-50 transition-colors {{ $sortBy == 'newest' ? 'text-[#1fa387] font-bold' : 'text-slate-700 font-medium' }}">
                                         <span>Yang Terbaru</span>
-                                        @if($sortBy == 'newest')
-                                            <svg class="w-3.5 h-3.5 text-[#1fa387]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
-                                            </svg>
-                                        @endif
+                                        @if($sortBy == 'newest')<svg class="w-3.5 h-3.5 text-[#1fa387]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>@endif
                                     </button>
-                                    <button 
-                                        wire:click="setSort('popular')" 
-                                        @click="openSort = false"
-                                        class="w-full px-4 py-2.5 text-xs flex justify-between items-center hover:bg-slate-50 transition-colors {{ $sortBy == 'popular' ? 'text-[#1fa387] font-bold' : 'text-slate-700 font-medium' }}"
-                                    >
+                                    <button wire:click="setSort('popular')" @click="openSort = false" class="w-full px-4 py-2.5 text-xs flex justify-between items-center hover:bg-slate-50 transition-colors {{ $sortBy == 'popular' ? 'text-[#1fa387] font-bold' : 'text-slate-700 font-medium' }}">
                                         <span>Paling Populer</span>
-                                        @if($sortBy == 'popular')
-                                            <svg class="w-3.5 h-3.5 text-[#1fa387]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
-                                            </svg>
-                                        @endif
+                                        @if($sortBy == 'popular')<svg class="w-3.5 h-3.5 text-[#1fa387]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>@endif
                                     </button>
                                 </div>
                             </div>
@@ -2882,24 +2880,23 @@ new class extends Component
             @elseif($this->isTab('analisis'))
                 <!-- TAB 2: Analisis (Redesigned matching screenshots) -->
                 <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:init="loadAnalysis" wire:key="dashboard-analysis-section">
-                    @if($analysisLoaded)
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
                         <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data yang relevan untuk proyek aktif.</p>
                     </div>
                     <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
-
-                    <!-- Gambaran Umum Card Grid -->
-                    <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-6">
-                        <div class="flex justify-between items-center pb-3 border-b border-slate-100/85 mb-6">
-                            <div class="space-y-0.5 text-left">
-                                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-[18px] text-[#1fa387]">equalizer</span>
-                                    GAMBARAN UMUM
-                                </h3>
-                                <p class="text-[10px] text-slate-400">Kinerja metrik utama dan distribusi penyebutan pada setiap saluran media.</p>
+                        <!-- Gambaran Umum Card Grid -->
+                        <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-6">
+                            <div class="flex justify-between items-center pb-3 border-b border-slate-100/85 mb-6">
+                                <div class="space-y-0.5 text-left">
+                                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[18px] text-[#1fa387]">equalizer</span>
+                                        GAMBARAN UMUM
+                                    </h3>
+                                    <p class="text-[10px] text-slate-400">Kinerja metrik utama dan distribusi penyebutan pada setiap saluran media.</p>
+                                </div>
                             </div>
-                        </div>
+                            @if($analysisLoaded)
                         <div class="grid grid-cols-3 gap-4">
                             <!-- Card 1: Total Artikel Ditemukan -->
                             <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[100px]">
@@ -4132,9 +4129,21 @@ new class extends Component
                                 @endforeach
                             </div>
                         </div>
+                        </div>
+                    @else
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-white rounded-2xl h-24 border border-slate-200 bg-slate-50 animate-pulse"></div>
+                            <div class="bg-white rounded-2xl h-24 border border-slate-200 bg-slate-50 animate-pulse"></div>
+                            <div class="bg-white rounded-2xl h-24 border border-slate-200 bg-slate-50 animate-pulse"></div>
+                        </div>
+                        <div class="bg-white rounded-3xl h-64 border border-slate-200 bg-slate-50 animate-pulse mt-6"></div>
+                        <div class="grid grid-cols-2 gap-6 mt-6">
+                            <div class="bg-white rounded-3xl h-80 border border-slate-200 bg-slate-50 animate-pulse"></div>
+                            <div class="bg-white rounded-3xl h-80 border border-slate-200 bg-slate-50 animate-pulse"></div>
+                        </div>
+                    @endif
                     </div>
-                    @endif
-                    @endif
+                    </div>
                 </section>
             @elseif($this->isTab('katakunci'))
                 <!-- TAB 3: Kata Kunci Configuration Page -->
@@ -5750,7 +5759,7 @@ new class extends Component
                 Kembali ke atas
             </button>
         </div>
-
+        @endif
     </div>
 
     <!-- Date Range Picker Modal -->
@@ -5954,35 +5963,18 @@ new class extends Component
     </div>
 
         @else
-            <div class="flex-1 min-w-0 min-h-0 p-4 sm:p-6">
-                <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6 h-full">
-                    <div class="space-y-4">
-                        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm animate-pulse">
-                            <div class="h-4 w-48 rounded bg-slate-100 mb-4"></div>
-                            <div class="h-8 w-80 rounded bg-slate-100 mb-2"></div>
-                            <div class="h-4 w-96 rounded bg-slate-100"></div>
+            <div class="flex-1 min-w-0 min-h-0 px-4 sm:px-8 py-4">
+                <div class="space-y-4">
+                    @for($i = 0; $i < 4; $i++)
+                        <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm animate-pulse">
+                            <div class="h-4 w-28 rounded bg-slate-100 mb-3"></div>
+                            <div class="h-5 w-3/4 rounded bg-slate-100 mb-4"></div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="h-20 rounded-2xl bg-slate-100"></div>
+                                <div class="h-20 rounded-2xl bg-slate-100"></div>
+                            </div>
                         </div>
-                        <div class="space-y-4">
-                            @for($i = 0; $i < 4; $i++)
-                                <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm animate-pulse">
-                                    <div class="h-4 w-28 rounded bg-slate-100 mb-3"></div>
-                                    <div class="h-5 w-3/4 rounded bg-slate-100 mb-4"></div>
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <div class="h-20 rounded-2xl bg-slate-100"></div>
-                                        <div class="h-20 rounded-2xl bg-slate-100"></div>
-                                    </div>
-                                </div>
-                            @endfor
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm animate-pulse h-fit">
-                        <div class="h-4 w-28 rounded bg-slate-100 mb-4"></div>
-                        <div class="space-y-3">
-                            @for($i = 0; $i < 6; $i++)
-                                <div class="h-10 rounded-xl bg-slate-100"></div>
-                            @endfor
-                        </div>
-                    </div>
+                    @endfor
                 </div>
             </div>
         @endif
