@@ -82,7 +82,18 @@
                     @forelse($sources as $source)
                         <tr wire:key="news-source-row-{{ $source->id }}" class="hover:bg-slate-50/50 transition">
                             <td class="px-4 py-3 font-semibold text-slate-500">{{ ($sources->currentPage() - 1) * $sources->perPage() + $loop->iteration }}</td>
-                            <td class="px-4 py-3 font-bold text-slate-900">{{ $source->name }}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2.5">
+                                    @if($source->icon_url)
+                                        <img src="{{ $source->icon_url }}" class="w-6 h-6 rounded-lg object-cover border border-slate-100 shadow-sm shrink-0" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23cbd5e1\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'12\' cy=\'12\' r=\'10\'/><line x1=\'2\' y1=\'12\' x2=\'22\' y2=\'12\'/><path d=\'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\'/></svg>'">
+                                    @else
+                                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-slate-450 border border-slate-200 shrink-0">
+                                            <span class="material-symbols-outlined text-[15px]">public</span>
+                                        </span>
+                                    @endif
+                                    <span class="font-bold text-slate-900">{{ $source->name }}</span>
+                                </div>
+                            </td>
                             <td class="px-4 py-3 font-semibold text-slate-500">
                                 <div class="space-y-0.5">
                                     <div>{{ $source->domain }}</div>
