@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\AiAnalysisResult;
 use App\Models\Project;
+use App\Models\SocialMediaItem;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;

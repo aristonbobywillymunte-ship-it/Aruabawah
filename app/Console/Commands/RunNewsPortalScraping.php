@@ -1729,7 +1729,11 @@ class RunNewsPortalScraping extends Command
     private function buildDiscoveryUrl(NewsSource $source, string $keyword): ?string
     {
         if ($source->is_search_enabled && filled($source->search_url)) {
-            return str_replace('{keyword}', rawurlencode($keyword), $source->search_url);
+            return strtr($source->search_url, [
+                '{keyword}' => rawurlencode($keyword),
+                '{query}' => rawurlencode($keyword),
+                '{search}' => rawurlencode($keyword),
+            ]);
         }
 
         return null;
@@ -1741,13 +1745,6 @@ class RunNewsPortalScraping extends Command
         $selectors = array_values(array_filter([
             $source->article_link_selector,
             $source->search_result_selector,
-            '.recent-title.heading-text',
-            '.recent-title',
-            '.heading-text a',
-            '.heading-text',
-            '[target-container="search"] a.title',
-            '[target-container="search"] a.entry-title',
-            '[target-container="search"] a.post-title',
             '.block-black-white a.title',
             '.search-result a.title',
             '.result-card a.title',
@@ -1755,6 +1752,9 @@ class RunNewsPortalScraping extends Command
             'article a.title',
             'article a.entry-title',
             'article a.post-title',
+            'article.post h2.entry-title a',
+            'article.post .entry-title a',
+            'article.post a[rel="bookmark"]',
             'h1 a',
             'h2 a',
             'h3 a',
@@ -1836,6 +1836,10 @@ class RunNewsPortalScraping extends Command
             '/tag',
             '/kategori',
             '/category',
+            '/topik',
+            '/topic',
+            '/topics',
+            '/rep/',
             '/ads',
             '/static',
             '/asset',
@@ -2262,35 +2266,62 @@ class RunNewsPortalScraping extends Command
     
     private function convertSelectorToXPath(string $selector): string
     {
-        $parts = explode(' ', trim($selector));
-        $xpathParts = [];
-        
-        foreach ($parts as $part) {
-            if (str_starts_with($part, '.')) {
-                $className = substr($part, 1);
-                $xpathParts[] = "//*[contains(@class, '{$className}')]";
-            } elseif (str_starts_with($part, '#')) {
-                $idName = substr($part, 1);
-                $xpathParts[] = "//*[@id='{$idName}']";
-            } else {
-                if (str_contains($part, '.')) {
-                    $subParts = explode('.', $part);
-                    $tag = $subParts[0] ?: '*';
-                    $className = $subParts[1];
-                    $xpathParts[] = "//{$tag}[contains(@class, '{$className}')]";
-                } else {
-                    $xpathParts[] = "//{$part}";
-                }
+        $selector = trim($selector);
+        if ($selector === '') {
+            return '//*';
+        }
+
+        $parts = preg_split('/\s+/', $selector, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $xpath = '';
+
+        foreach ($parts as $index => $part) {
+            $token = $this->convertSelectorTokenToXPath($part);
+            if ($token === '') {
+                continue;
             }
+
+            $xpath .= $index === 0 ? '//' . $token : '//' . $token;
         }
-        
-        if (count($xpathParts) === 1) {
-            return $xpathParts[0];
+
+        return $xpath !== '' ? $xpath : '//*';
+    }
+
+    private function convertSelectorTokenToXPath(string $part): string
+    {
+        $part = trim($part);
+        if ($part === '') {
+            return '*';
         }
-        
-        $base = str_replace('//', '', $xpathParts[0]);
-        $descendant = str_replace('//', '', $xpathParts[1]);
-        return "//{$base}//{$descendant}";
+
+        if (str_starts_with($part, '.')) {
+            $className = substr($part, 1);
+            return "*[contains(concat(' ', normalize-space(@class), ' '), ' {$className} ')]";
+        }
+
+        if (str_starts_with($part, '#')) {
+            $idName = substr($part, 1);
+            return "*[@id='{$idName}']";
+        }
+
+        if (str_contains($part, '[')) {
+            $tag = preg_replace('/\[.*$/', '', $part);
+            $tag = $tag !== '' ? $tag : '*';
+            if (preg_match('/\[([^=\]]+)=["\']?([^"\']+)["\']?\]/', $part, $m)) {
+                $attr = trim($m[1]);
+                $value = trim($m[2]);
+                return "{$tag}[@{$attr}='{$value}']";
+            }
+            return $tag;
+        }
+
+        if (str_contains($part, '.')) {
+            $subParts = explode('.', $part, 2);
+            $tag = $subParts[0] ?: '*';
+            $className = $subParts[1];
+            return "{$tag}[contains(concat(' ', normalize-space(@class), ' '), ' {$className} ')]";
+        }
+
+        return $part;
     }
 
     /**

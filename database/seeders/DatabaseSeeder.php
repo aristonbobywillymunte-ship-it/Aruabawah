@@ -252,7 +252,37 @@ class DatabaseSeeder extends Seeder
             [
                 'source_type' => 'article',
                 'system_prompt' => 'Anda adalah sistem ahli Reverse Engineering & HTML Anatomy Analysis untuk Web Scraping. Tugas Anda adalah membedah arsitektur DOM portal berita dan menghasilkan konfigurasi ekstraksi data (scraping JSON configuration) yang akurat.',
-                'user_prompt_template' => "INFO PORTAL TARGET:\n- Nama Portal: {name}\n- Domain: {domain}\n- HTML Mentah: {html}\n\nATURAN MUTLAK:\n1. Nama portal dan domain WAJIB dipakai sebagai identitas utama portal.\n2. Input utama WAJIB adalah HTML mentah yang diberikan user.\n3. AI WAJIB membaca dan membedah HTML mentah tersebut terlebih dahulu.\n4. Prioritas pertama adalah menemukan Search URL internal yang benar dengan membaca anatomi website dari HTML itu.\n5. Setelah search URL dan selector konten utama ditemukan, lanjutkan ke selector penulis, lalu selector tanggal.\n6. Variabel pencarian WAJIB menggunakan placeholder exact: {query} (contoh: /search?key={query} atau /?s={query}).\n7. DILARANG mengasumsikan parameter bawaan WordPress (/?s=) jika situs menggunakan route custom seperti /search?key={query}.\n8. Jika domain adalah \"arusbawah.co\", search_url WAJIB: \"https://arusbawah.co/search?key={query}\".\n9. Tipe crawling WAJIB ditentukan otomatis oleh AI dan harus dipilih dari: html, rss, api.\n10. Jangan meminta user mengirim HTML atau URL lain. Gunakan HTML yang sudah ada di input.\n11. Output harus JSON murni. Jangan tambahkan salam, penjelasan, markdown, atau code fence.\n\nMETODOLOGI:\n- Cari form pencarian di HTML.\n- Ekstrak action dan name dari input.\n- Bentuk template search URL dengan {query}.\n- Tentukan crawling_type berdasarkan struktur halaman: html, rss, atau api.\n- Ambil selector artikel, link, konten, noise, penulis, dan tanggal.\n\nKELUARAN:\n- Balas hanya JSON valid sesuai schema.\n",\n+                'output_schema' => '{"type":"object","properties":{"base_url":{"type":"string"},"crawling_type":{"type":"string"},"search_url":{"type":"string"},"feed_url":{"type":"string"},"sitemap_url":{"type":"string"},"search_result_selector":{"type":"string"},"article_link_selector":{"type":"string"},"article_content_selector":{"type":"string"},"article_noise_selector":{"type":"string"},"article_author_selector":{"type":"string"},"article_date_selector":{"type":"string"},"ai_reason":{"type":"string"},"confidence":{"type":"number"}},"required":["base_url","crawling_type","search_url","search_result_selector","article_link_selector","article_content_selector","ai_reason","confidence"]}',
+                'user_prompt_template' => <<<'PROMPT'
+INFO PORTAL TARGET:
+- Nama Portal: {name}
+- Domain: {domain}
+- HTML Mentah: {html}
+
+ATURAN MUTLAK:
+1. Nama portal dan domain WAJIB dipakai sebagai identitas utama portal.
+2. Input utama WAJIB adalah HTML mentah yang diberikan user.
+3. AI WAJIB membaca dan membedah HTML mentah tersebut terlebih dahulu.
+4. Fokus utama adalah selector artikel, isi artikel, penulis, tanggal, dan noise.
+5. Search URL dan Selector Hasil Pencarian boleh kosong jika HTML yang dianalisis adalah halaman artikel.
+6. Jika HTML berisi halaman search/result, ambil search URL dan Selector Hasil Pencarian jika ditemukan.
+7. Variabel pencarian WAJIB menggunakan placeholder exact: {query} (contoh: /search?key={query} atau /?s={query}).
+8. DILARANG mengasumsikan parameter bawaan WordPress (/?s=) jika situs menggunakan route custom seperti /search?key={query}.
+9. Jika domain adalah "arusbawah.co" dan search page ditemukan, search_url yang benar adalah "https://arusbawah.co/search?key={query}".
+10. Tipe crawling WAJIB ditentukan otomatis oleh AI dan harus dipilih dari: html, rss, api.
+11. Jangan meminta user mengirim HTML atau URL lain. Gunakan HTML yang sudah ada di input.
+12. Output harus JSON murni. Jangan tambahkan salam, penjelasan, markdown, atau code fence.
+
+METODOLOGI:
+- Bedah struktur HTML yang diberikan.
+- Jika HTML search/result: ambil search URL dan selector hasil pencarian.
+- Jika HTML artikel: fokus pada selector isi artikel, link artikel, penulis, tanggal, dan noise.
+- Tentukan crawling_type berdasarkan struktur halaman: html, rss, atau api.
+- Jangan memaksakan search_url jika tidak ada di HTML artikel.
+
+KELUARAN:
+- Balas hanya JSON valid sesuai schema.
+PROMPT,
+                'output_schema' => '{"type":"object","properties":{"base_url":{"type":"string"},"crawling_type":{"type":"string"},"search_url":{"type":"string"},"feed_url":{"type":"string"},"sitemap_url":{"type":"string"},"search_result_selector":{"type":"string"},"article_link_selector":{"type":"string"},"article_content_selector":{"type":"string"},"article_noise_selector":{"type":"string"},"article_author_selector":{"type":"string"},"article_date_selector":{"type":"string"},"ai_reason":{"type":"string"},"confidence":{"type":"number"}},"required":["base_url","crawling_type","article_link_selector","article_content_selector","ai_reason","confidence"]}',
                 'is_active' => true,
                 'is_default' => true,
             ]

@@ -92,17 +92,20 @@ class NewsSourceSuggestionTester
             } else {
                 // 2. Discover links
                 $links = self::discoverLinks($html, $suggestion, $discoveryUrl);
+                $searchCandidateLinks = $hasSearchUrl
+                    ? self::extractSearchPageCandidateLinks($html, $suggestion->base_url ?: ('https://' . $suggestion->domain), $suggestion->search_result_selector)
+                    : [];
+
+                foreach ($searchCandidateLinks as $searchCandidateLink) {
+                    $candidateUrls[] = [
+                        'url' => $searchCandidateLink,
+                        'source' => 'search_url',
+                    ];
+                }
                 
                 foreach ($links as $link) {
                     $link = trim($link);
                     if (empty($link)) continue;
-
-                    if ($hasSearchUrl && self::isLikelySearchCandidateLink($link) && self::isSameNewsDomain($link, $suggestion->domain)) {
-                        $candidateUrls[] = [
-                            'url' => $link,
-                            'source' => 'search_url',
-                        ];
-                    }
 
                     // Filter URL
                     $rejectReason = self::checkUrlRejection($link, $suggestion->domain);
@@ -122,8 +125,8 @@ class NewsSourceSuggestionTester
                     ];
                 }
 
-                // Limit test to first 3 discovered URLs
-                $testLinks = array_slice($discoveredUrls, 0, 3);
+                // Limit validation only, not candidate discovery display
+                $testLinks = array_slice($discoveredUrls, 0, 10);
                 
                 foreach ($testLinks as $discoveredInfo) {
                     $articleUrl = $discoveredInfo['url'];
@@ -471,16 +474,15 @@ class NewsSourceSuggestionTester
         $baseUrl = $suggestion->base_url ?: ('https://' . $suggestion->domain);
         $isSearchPage = filled($suggestion->search_url);
 
-        // Try Inertia.js data-page attribute parsing first
+        if ($isSearchPage) {
+            return self::extractSearchPageCandidateLinks($html, $baseUrl, $suggestion->search_result_selector);
+        }
+
+        // Non-manual sources may still use wider discovery heuristics
         $inertiaData = self::extractInertiaPageData($html);
         if ($inertiaData) {
             $inertiaLinks = self::discoverLinksFromInertiaJson($inertiaData, $baseUrl, $suggestion->domain);
             $links = array_merge($links, $inertiaLinks);
-        }
-
-        if ($isSearchPage) {
-            $searchCandidates = self::extractSearchPageCandidateLinks($html, $baseUrl);
-            $links = array_merge($searchCandidates, $links);
         }
 
         // Try RSS item links first if feed_url is used
@@ -633,26 +635,30 @@ class NewsSourceSuggestionTester
         return $links;
     }
 
-    private static function extractSearchPageCandidateLinks(string $html, string $baseUrl): array
+    private static function extractSearchPageCandidateLinks(string $html, string $baseUrl, ?string $selector = null): array
     {
         $links = [];
         $dom = new \DOMDocument();
         @$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
         $xpath = new \DOMXPath($dom);
 
-        $selectors = [
-            '.recent-title.heading-text',
-            '.recent-title',
-            '.heading-text a',
-            '.heading-text',
-            '[target-container="search"] a.title',
-            '[target-container="search"] a.entry-title',
-            '[target-container="search"] a.post-title',
+        $selectors = [];
+        if (filled($selector)) {
+            $selectors[] = $selector;
+        }
+
+        $selectors = array_merge($selectors, [
+            'article.post h2.entry-title a',
+            'article.post .entry-title a',
+            'article.post a[rel="bookmark"]',
             '.block-black-white a.title',
             '.search-result a.title',
             '.result-card a.title',
             '.result-item a.title',
-        ];
+            '.list-news-item a[href]',
+            '.post-item a[href]',
+            '.news-item a[href]',
+        ]);
 
         foreach ($selectors as $selector) {
             $nodes = self::safeXpathQuery($xpath, self::convertSelectorToXPath($selector));
@@ -672,6 +678,32 @@ class NewsSourceSuggestionTester
                 }
 
                 if (self::isLikelySearchCandidateLink($resolved, $node) && self::isSameNewsDomain($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) {
+                    $links[] = $resolved;
+                }
+            }
+        }
+
+        if (empty($links)) {
+            preg_match_all('~<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>~is', $html, $matches, PREG_SET_ORDER);
+            foreach ($matches as $match) {
+                $href = trim((string) ($match[1] ?? ''));
+                $text = trim(preg_replace('/\s+/', ' ', strip_tags((string) ($match[2] ?? ''))));
+                $resolved = self::normalizeUrl($href, $baseUrl);
+
+                if (! $resolved) {
+                    continue;
+                }
+
+                if (! self::isSameNewsDomain($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) {
+                    continue;
+                }
+
+                if (self::isLikelySearchCandidateLink($resolved)) {
+                    $links[] = $resolved;
+                    continue;
+                }
+
+                if ($text !== '' && ! self::isClearlyNonArticleCandidate($resolved)) {
                     $links[] = $resolved;
                 }
             }
@@ -732,9 +764,6 @@ class NewsSourceSuggestionTester
                 return false;
             }
 
-            if ($text !== '' && mb_strlen($text) >= 20 && ! preg_match('~\b(?:author|by|share|kategori|category|tag|comment|komen)\b~i', $text)) {
-                return true;
-            }
         }
 
         return self::looksLikeArticleUrl($url);
@@ -857,7 +886,7 @@ class NewsSourceSuggestionTester
             'pedoman', 'contact', 'privacy', 'redaksi', 'search', 'about',
             'advertise', 'newsletter', 'tag/', 'tags/', 'author/', 'page/',
             'rep/', 'profil/', 'profile/', 'writer/', 'penulis/',
-            'category/', 'kategory/', 'kategori/', 'topic/', 'topics/', 'archive/', 'arsip/',
+            'category/', 'kategory/', 'kategori/', 'topic/', 'topics/', 'topik/', 'archive/', 'arsip/',
         ];
         foreach ($navPrefixes as $prefix) {
             if ($pathLower === rtrim($prefix, '/') || str_starts_with($pathLower, $prefix)) {

@@ -209,7 +209,7 @@
                     </button>
                 </div>
                 
-                <form wire:submit.prevent="save" class="flex flex-col flex-1 overflow-hidden">
+                <form wire:submit.prevent="requestSave" class="flex flex-col flex-1 overflow-hidden">
                     <div class="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
                         
                         <!-- Row 1: Basic Info -->
@@ -246,7 +246,7 @@
                             <h3 class="text-xs font-black text-slate-700 mb-2 border-b border-slate-200 pb-2">Konfigurasi CSS Selectors</h3>
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                <label class="mb-1.5 block text-[11px] font-bold text-slate-600">Selector Hasil Pencarian</label>
+                                <label class="mb-1.5 block text-[11px] font-bold text-slate-600">Selector Hasil Pencarian <span class="text-rose-500">*</span></label>
                                 <input wire:model="search_result_selector" placeholder="Contoh: a[href]" type="text" class="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs font-mono text-slate-800 outline-none focus:border-[#1fa387] transition">
                                 @error('search_result_selector') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                             </div>
@@ -296,13 +296,41 @@
 
                     <!-- Footer Sticky -->
                     <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 flex-none bg-slate-50 rounded-b-[24px]">
-                        <button type="button" wire:click="closeFormModal" wire:loading.attr="disabled" wire:target="save" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer disabled:opacity-50">Batal</button>
-                        <button type="submit" wire:loading.attr="disabled" wire:target="save" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer shadow-md shadow-[#1fa387]/20 disabled:opacity-60 disabled:cursor-wait">
-                            <span wire:loading.remove wire:target="save">Simpan Portal</span>
-                            <span wire:loading wire:target="save">Menyimpan...</span>
+                        <button type="button" wire:click="closeFormModal" wire:loading.attr="disabled" wire:target="requestSave,saveConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer disabled:opacity-50">Batal</button>
+                        <button type="submit" wire:loading.attr="disabled" wire:target="requestSave" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer shadow-md shadow-[#1fa387]/20 disabled:opacity-60 disabled:cursor-wait">
+                            <span wire:loading.remove wire:target="requestSave">Lanjutkan Simpan</span>
+                            <span wire:loading wire:target="requestSave">Memeriksa...</span>
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+        </template>
+    @endif
+
+    @if($confirmingSave)
+        <style>
+            body, html {
+                overflow: hidden !important;
+            }
+        </style>
+        <template x-teleport="body">
+        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6">
+            <div wire:key="news-source-save-confirm-{{ $formVersion }}-{{ $isEditing ? 'edit' : 'create' }}" class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain">
+                <div class="flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                        <span class="material-symbols-outlined text-[20px] block">check_circle</span>
+                    </span>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Konfirmasi Simpan</p>
+                        <h2 class="text-sm font-black text-slate-900 mt-0.5">Simpan perubahan portal?</h2>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">Pastikan nama portal, domain, search URL, dan selector sudah benar sebelum disimpan.</p>
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" wire:click="cancelSaveConfirmation" wire:loading.attr="disabled" wire:target="saveConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
+                    <button type="button" wire:click="saveConfirmed" wire:loading.attr="disabled" wire:target="saveConfirmed" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">Ya, Simpan</button>
+                </div>
             </div>
         </div>
         </template>

@@ -5564,11 +5564,11 @@ new class extends Component
                                 <tbody>
                                     @php
                                         $projectSourcesList = $this->getProjectSources();
-                                        $grandTotal = $projectSourcesList->sum('total');
+                                        $grandTotal = collect($projectSourcesList)->sum('total');
                                     @endphp
                                     @forelse($projectSourcesList as $src)
                                         @php
-                                            $srcName = $src->source_name ?: 'Sumber tidak diketahui';
+                                            $srcName = data_get($src, 'source_name', 'Sumber tidak diketahui') ?: 'Sumber tidak diketahui';
                                             $srcLower = strtolower($srcName);
                                             
                                             // Determine media type
@@ -5584,12 +5584,13 @@ new class extends Component
                                             $typeColor = $isSocial ? 'bg-indigo-50 text-indigo-700 border-indigo-100/60' : 'bg-sky-50 text-sky-700 border-sky-100/60';
                                             
                                             // Share of voice percentage
-                                            $sovPct = $grandTotal > 0 ? round(($src->total / $grandTotal) * 100) : 0;
+                                            $srcTotal = (int) data_get($src, 'total', 0);
+                                            $sovPct = $grandTotal > 0 ? round(($srcTotal / $grandTotal) * 100) : 0;
                                             
                                             // Sentiment percentage
-                                            $sPos = (int) ($src->positive ?? 0);
-                                            $sNeu = (int) ($src->neutral ?? 0);
-                                            $sNeg = (int) ($src->negative ?? 0);
+                                            $sPos = (int) data_get($src, 'positive', 0);
+                                            $sNeu = (int) data_get($src, 'neutral', 0);
+                                            $sNeg = (int) data_get($src, 'negative', 0);
                                             $sTotal = $sPos + $sNeu + $sNeg;
                                             
                                             $posPct = $sTotal > 0 ? round(($sPos / $sTotal) * 100) : 0;
@@ -5647,7 +5648,7 @@ new class extends Component
                                             
                                             <!-- Total mentions -->
                                             <td class="py-3 px-3 text-center border-y border-slate-100/60 group-hover:border-slate-200/80">
-                                                <span class="font-extrabold text-slate-800 text-sm">{{ number_format($src->total, 0, ',', '.') }}</span>
+                                                <span class="font-extrabold text-slate-800 text-sm">{{ number_format((int) data_get($src, 'total', 0), 0, ',', '.') }}</span>
                                                 <span class="text-slate-400 text-[10px] block mt-0.5 font-medium">SOV: {{ $sovPct }}%</span>
                                             </td>
                                             

@@ -45,6 +45,7 @@ class NewsSources extends Component
     public bool $showFormModal = false;
     public bool $isEditing = false;
     public int $formVersion = 0;
+    public bool $confirmingSave = false;
     public bool $confirmingDelete = false;
     public ?string $flashMessage = null;
     public ?string $flashType = null;
@@ -86,7 +87,7 @@ class NewsSources extends Component
             'feed_url' => ['nullable', 'url'],
             'search_url' => ['required', 'string', 'max:500'],
             'sitemap_url' => ['nullable', 'url'],
-            'search_result_selector' => ['nullable', 'string', 'max:255'],
+            'search_result_selector' => ['required', 'string', 'max:255'],
             'article_link_selector' => ['nullable', 'string', 'max:255'],
             'article_content_selector' => ['nullable', 'string', 'max:255'],
             'article_author_selector' => ['nullable', 'string', 'max:255'],
@@ -119,6 +120,7 @@ class NewsSources extends Component
             'search_url.required' => 'Search URL Template wajib diisi untuk portal manual.',
             'search_url.max' => 'Search URL Template maksimal 500 karakter.',
             'sitemap_url.url' => 'Sitemap URL harus berupa URL yang valid.',
+            'search_result_selector.required' => 'Selector Hasil Pencarian wajib diisi.',
             'search_result_selector.string' => 'Search Result Selector harus berupa teks.',
             'search_result_selector.max' => 'Search Result Selector maksimal 255 karakter.',
             'article_link_selector.string' => 'Article Link Selector harus berupa teks.',
@@ -213,6 +215,7 @@ class NewsSources extends Component
         $this->notes = '';
         $this->is_active = true;
         $this->isEditing = false;
+        $this->confirmingSave = false;
         $this->manualHtmlInput = '';
         $this->suggestInputSourceId = null;
         $this->suggestInputSourceLabel = null;
@@ -260,49 +263,69 @@ class NewsSources extends Component
         $this->showFormModal = true;
     }
 
-    public function save(): void
+    public function requestSave(): void
     {
         $this->adminOnly();
-        $validated = $this->validate();
+        $this->validate();
+        $this->confirmingSave = true;
+    }
 
-        $data = [
-            'name' => $this->name,
-            'domain' => $this->domain,
-            'base_url' => $this->base_url ?: null,
-            'feed_url' => $this->feed_url ?: null,
-            'search_url' => $this->search_url ?: null,
-            'sitemap_url' => $this->sitemap_url ?: null,
-            'search_result_selector' => $this->search_result_selector ?: null,
-            'article_link_selector' => $this->article_link_selector ?: null,
-            'article_content_selector' => $validated['article_content_selector'],
-            'article_author_selector' => $validated['article_author_selector'],
-            'article_date_selector' => $validated['article_date_selector'],
-            'article_noise_selector' => $validated['article_noise_selector'],
-            'is_search_enabled' => $this->is_search_enabled,
-            'is_feed_enabled' => $this->is_feed_enabled,
-            'is_sitemap_enabled' => $this->is_sitemap_enabled,
-            'crawling_type' => $this->crawling_type,
-            'selector' => $this->selector ?: null,
-            'timeout_seconds' => $this->timeout_seconds ?: null,
-            'notes' => $this->notes ?: null,
-            'is_active' => $this->is_active,
-        ];
+    public function cancelSaveConfirmation(): void
+    {
+        $this->confirmingSave = false;
+    }
 
-        if ($this->isEditing) {
-            $source = NewsSource::findOrFail($this->selected_id);
-            $data = $this->syncIconUrl($data, $source);
-            $source->update($data);
-            $this->notify('success', 'Portal berita berhasil diperbarui.');
-        } else {
-            $data = $this->syncIconUrl($data);
-            $source = NewsSource::create($data);
-            $this->ensureDraftSuggestionForSource($source);
-            $this->notify('success', 'Portal berita baru berhasil ditambahkan.');
+    public function saveConfirmed(): void
+    {
+        $this->adminOnly();
+        try {
+            $this->confirmingSave = false;
+            $validated = $this->validate();
+
+            $data = [
+                'name' => $this->name,
+                'domain' => $this->domain,
+                'base_url' => $this->base_url ?: null,
+                'feed_url' => $this->feed_url ?: null,
+                'search_url' => $this->search_url ?: null,
+                'sitemap_url' => $this->sitemap_url ?: null,
+                'search_result_selector' => $this->search_result_selector ?: null,
+                'article_link_selector' => $this->article_link_selector ?: null,
+                'article_content_selector' => $validated['article_content_selector'],
+                'article_author_selector' => $validated['article_author_selector'],
+                'article_date_selector' => $validated['article_date_selector'],
+                'article_noise_selector' => $validated['article_noise_selector'],
+                'is_search_enabled' => $this->is_search_enabled,
+                'is_feed_enabled' => $this->is_feed_enabled,
+                'is_sitemap_enabled' => $this->is_sitemap_enabled,
+                'crawling_type' => $this->crawling_type,
+                'selector' => $this->selector ?: null,
+                'timeout_seconds' => $this->timeout_seconds ?: null,
+                'notes' => $this->notes ?: null,
+                'is_active' => $this->is_active,
+            ];
+
+            if ($this->isEditing) {
+                $source = NewsSource::findOrFail($this->selected_id);
+                $data = $this->syncIconUrl($data, $source);
+                $source->update($data);
+                $this->notify('success', 'Portal berita berhasil diperbarui.');
+            } else {
+                $data = $this->syncIconUrl($data);
+                $source = NewsSource::create($data);
+                $this->ensureDraftSuggestionForSource($source);
+                $this->notify('success', 'Portal berita baru berhasil ditambahkan.');
+            }
+
+            $this->flushSuggestionUiCache();
+            $this->showFormModal = false;
+            $this->resetForm();
+        } catch (\Throwable $e) {
+            $this->confirmingSave = false;
+            $this->showFormModal = true;
+            $this->notify('error', 'Gagal menyimpan portal: ' . $e->getMessage());
+            return;
         }
-
-        $this->flushSuggestionUiCache();
-        $this->showFormModal = false;
-        $this->resetForm();
     }
 
     public function toggleStatus(int $id): void
@@ -337,6 +360,7 @@ class NewsSources extends Component
 
     public function closeFormModal(): void
     {
+        $this->confirmingSave = false;
         $this->showFormModal = false;
         $this->resetForm();
     }
@@ -557,20 +581,17 @@ class NewsSources extends Component
         $baseUrl = trim((string) ($result['base_url'] ?? ''));
         $normalizedDomain = $this->normalizeDomain($domain);
 
-        if ($searchUrl === '') {
-            $warnings[] = 'AI tidak mengembalikan search_url, jadi hasil dianggap belum valid penuh untuk portal manual.';
-            return $warnings;
-        }
+        if ($searchUrl !== '') {
+            $searchUrlLower = strtolower($searchUrl);
+            if (str_contains($searchUrlLower, 'google.com') || str_contains($searchUrlLower, 'news.google')) {
+                $warnings[] = 'AI mengembalikan search_url Google News atau Google, bukan search internal portal manual.';
+            }
 
-        $searchUrlLower = strtolower($searchUrl);
-        if (str_contains($searchUrlLower, 'google.com') || str_contains($searchUrlLower, 'news.google')) {
-            $warnings[] = 'AI mengembalikan search_url Google News atau Google, bukan search internal portal manual.';
-        }
-
-        if (! str_contains($searchUrlLower, $normalizedDomain)) {
-            $searchHost = $this->normalizeDomain((string) parse_url($searchUrl, PHP_URL_HOST));
-            if ($searchHost !== $normalizedDomain) {
-                $warnings[] = 'AI search_url tidak sesuai domain target.';
+            if (! str_contains($searchUrlLower, $normalizedDomain)) {
+                $searchHost = $this->normalizeDomain((string) parse_url($searchUrl, PHP_URL_HOST));
+                if ($searchHost !== $normalizedDomain) {
+                    $warnings[] = 'AI search_url tidak sesuai domain target.';
+                }
             }
         }
 
