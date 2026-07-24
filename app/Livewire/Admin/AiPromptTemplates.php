@@ -432,6 +432,27 @@ class AiPromptTemplates extends Component
             return;
         }
 
+        $canonicalSystemPrompt = AiPromptTemplate::saranPortalManualSystemPrompt();
+        $canonicalUserPrompt = AiPromptTemplate::saranPortalManualUserPromptTemplate();
+        $canonicalOutputSchema = AiPromptTemplate::saranPortalManualOutputSchema();
+
+        $dirty = false;
+        if ($template->system_prompt !== $canonicalSystemPrompt) {
+            $template->system_prompt = $canonicalSystemPrompt;
+            $dirty = true;
+        }
+        if ($template->user_prompt_template !== $canonicalUserPrompt) {
+            $template->user_prompt_template = $canonicalUserPrompt;
+            $dirty = true;
+        }
+        if ($template->output_schema !== $canonicalOutputSchema) {
+            $template->output_schema = $canonicalOutputSchema;
+            $dirty = true;
+        }
+        if ($dirty) {
+            $template->save();
+        }
+
         if ($template->is_default) {
             return;
         }

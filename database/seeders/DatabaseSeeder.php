@@ -83,6 +83,14 @@ class DatabaseSeeder extends Seeder
             [
                 'domain' => 'prokal.co',
                 'name' => 'Kaltim Post / Prokal',
+                'base_url' => 'https://prokal.co',
+                'search_url' => 'https://www.prokal.co/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content, .read__content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author, .byline',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published, time',
                 'source_type' => 'local_media',
                 'media_scope' => 'regional_kaltim',
                 'dewan_pers_status' => null,
@@ -93,6 +101,14 @@ class DatabaseSeeder extends Seeder
             [
                 'domain' => 'kaltimtoday.co',
                 'name' => 'Kaltimtoday.co',
+                'base_url' => 'https://kaltimtoday.co',
+                'search_url' => 'https://kaltimtoday.co/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
                 'source_type' => 'local_media',
                 'media_scope' => 'regional_kaltim',
                 'dewan_pers_status' => null,
@@ -103,6 +119,14 @@ class DatabaseSeeder extends Seeder
             [
                 'domain' => 'sapos.co.id',
                 'name' => 'Samarinda Pos / Sapos',
+                'base_url' => 'https://sapos.co.id',
+                'search_url' => 'https://www.sapos.co.id/search?key={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
                 'source_type' => 'local_media',
                 'media_scope' => 'local_samarinda',
                 'dewan_pers_status' => null,
@@ -113,6 +137,14 @@ class DatabaseSeeder extends Seeder
             [
                 'domain' => 'kaltimkece.id',
                 'name' => 'Kaltimkece.id',
+                'base_url' => 'https://kaltimkece.id',
+                'search_url' => 'https://kaltimkece.id/search?terms={query}',
+                'search_result_selector' => 'div.search-results-container article, div.search-results-container article.post, div.search-results-container .post-item, article.post, .post-item',
+                'article_link_selector' => 'article a[href], .entry-title a[href], .post-title a[href], a.article-link[href]',
+                'article_content_selector' => 'div.kandela-html, div.entry-content, article',
+                'article_noise_selector' => 'div[wire\\:id], script, style, svg, .ads, .sidebar, .related-posts, .wp-block-columns, .sharedaddy',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, span.text-article-title',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, div.text-article-meta > div:nth-child(2)',
                 'source_type' => 'local_media',
                 'media_scope' => 'regional_kaltim',
                 'dewan_pers_status' => null,
@@ -123,6 +155,14 @@ class DatabaseSeeder extends Seeder
             [
                 'domain' => 'mediakaltim.com',
                 'name' => 'Media Kaltim',
+                'base_url' => 'https://mediakaltim.com',
+                'search_url' => 'https://mediakaltim.com/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
                 'source_type' => 'local_media',
                 'media_scope' => 'regional_kaltim',
                 'dewan_pers_status' => null,
@@ -133,6 +173,14 @@ class DatabaseSeeder extends Seeder
             [
                 'domain' => 'korankaltim.com',
                 'name' => 'Koran Kaltim',
+                'base_url' => 'https://korankaltim.com',
+                'search_url' => 'https://korankaltim.com/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
                 'source_type' => 'local_media',
                 'media_scope' => 'local_kabupaten',
                 'dewan_pers_status' => null,
@@ -153,6 +201,14 @@ class DatabaseSeeder extends Seeder
             [
                 'domain' => 'niaga.asia',
                 'name' => 'Niaga.Asia',
+                'base_url' => 'https://niaga.asia',
+                'search_url' => 'https://niaga.asia/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
                 'source_type' => 'local_media',
                 'media_scope' => 'regional_kaltim',
                 'dewan_pers_status' => null,
@@ -163,6 +219,14 @@ class DatabaseSeeder extends Seeder
             [
                 'domain' => 'nomorsatukaltim.disway.id',
                 'name' => 'Nomor Satu Kaltim',
+                'base_url' => 'https://nomorsatukaltim.disway.id',
+                'search_url' => 'https://nomorsatukaltim.disway.id/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
                 'source_type' => 'local_media',
                 'media_scope' => 'regional_kaltim',
                 'dewan_pers_status' => null,
@@ -173,6 +237,14 @@ class DatabaseSeeder extends Seeder
             [
                 'domain' => 'editorialkaltim.com',
                 'name' => 'Editorial Kaltim',
+                'base_url' => 'https://editorialkaltim.com',
+                'search_url' => 'https://editorialkaltim.com/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author, .byline',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published, time',
                 'source_type' => 'local_media',
                 'media_scope' => 'regional_kaltim',
                 'dewan_pers_status' => null,
@@ -251,7 +323,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Saran Portal Manual'],
             [
                 'source_type' => 'article',
-                'system_prompt' => 'Anda adalah sistem ahli Reverse Engineering & HTML Anatomy Analysis untuk Web Scraping. Tugas Anda adalah membedah arsitektur DOM portal berita dan menghasilkan konfigurasi ekstraksi data (scraping JSON configuration) yang akurat.',
+                'system_prompt' => 'Anda adalah sistem ahli Reverse Engineering & HTML Anatomy Analysis untuk Web Scraping. Tugas Anda adalah membedah arsitektur DOM portal berita dan menghasilkan konfigurasi ekstraksi data (scraping JSON configuration) yang akurat, lengkap, dan konsisten. Jangan mengosongkan field hanya karena ragu jika masih ada petunjuk HTML yang masuk akal; isi kandidat terbaik yang paling mungkin dan turunkan confidence bila bukti lemah.',
                 'user_prompt_template' => <<<'PROMPT'
 INFO PORTAL TARGET:
 - Nama Portal: {name}
@@ -262,27 +334,29 @@ ATURAN MUTLAK:
 1. Nama portal dan domain WAJIB dipakai sebagai identitas utama portal.
 2. Input utama WAJIB adalah HTML mentah yang diberikan user.
 3. AI WAJIB membaca dan membedah HTML mentah tersebut terlebih dahulu.
-4. Fokus utama adalah selector artikel, isi artikel, penulis, tanggal, dan noise.
-5. Search URL dan Selector Hasil Pencarian boleh kosong jika HTML yang dianalisis adalah halaman artikel.
-6. Jika HTML berisi halaman search/result, ambil search URL dan Selector Hasil Pencarian jika ditemukan.
+4. Fokus utama adalah selector artikel, isi artikel, penulis, tanggal, noise, dan juga search URL.
+5. Search URL dan Selector Hasil Pencarian TIDAK boleh dibiarkan kosong hanya karena halaman yang dianalisis adalah artikel. Jika tidak ditemukan di HTML, isi kandidat terbaik berdasarkan struktur situs dan beri confidence rendah.
+6. Jika HTML berisi halaman search/result, ambil search URL dan Selector Hasil Pencarian secara eksplisit dari struktur tersebut.
 7. Variabel pencarian WAJIB menggunakan placeholder exact: {query} (contoh: /search?key={query} atau /?s={query}).
-8. DILARANG mengasumsikan parameter bawaan WordPress (/?s=) jika situs menggunakan route custom seperti /search?key={query}.
+8. DILARANG mengasumsikan parameter bawaan WordPress (/?s=) jika situs menggunakan route custom seperti /search?key={query}. Jika situs custom, prioritaskan pola custom.
 9. Jika domain adalah "arusbawah.co" dan search page ditemukan, search_url yang benar adalah "https://arusbawah.co/search?key={query}".
 10. Tipe crawling WAJIB ditentukan otomatis oleh AI dan harus dipilih dari: html, rss, api.
 11. Jangan meminta user mengirim HTML atau URL lain. Gunakan HTML yang sudah ada di input.
 12. Output harus JSON murni. Jangan tambahkan salam, penjelasan, markdown, atau code fence.
+13. Jika satu field tidak punya bukti kuat, tetap isi dengan kandidat terbaik yang paling masuk akal dan jelaskan keraguannya di ai_reason.
+14. Jika HTML yang diberikan adalah HTML artikel, tetap upayakan mengisi search_url, search_result_selector, article_link_selector, article_author_selector, dan article_date_selector dari pola situs, sitemap, feed, breadcrumb, atau link internal yang paling dominan.
 
 METODOLOGI:
 - Bedah struktur HTML yang diberikan.
-- Jika HTML search/result: ambil search URL dan selector hasil pencarian.
-- Jika HTML artikel: fokus pada selector isi artikel, link artikel, penulis, tanggal, dan noise.
+- Jika HTML search/result: ambil search URL dan selector hasil pencarian secara eksplisit.
+- Jika HTML artikel: fokus pada selector isi artikel, link artikel, penulis, tanggal, noise, dan tetap cari pola search URL serta selector daftar artikel dari struktur situs yang paling mungkin.
 - Tentukan crawling_type berdasarkan struktur halaman: html, rss, atau api.
-- Jangan memaksakan search_url jika tidak ada di HTML artikel.
+- Jangan mengembalikan field kosong bila masih ada pola yang masuk akal untuk diisi.
 
 KELUARAN:
 - Balas hanya JSON valid sesuai schema.
 PROMPT,
-                'output_schema' => '{"type":"object","properties":{"base_url":{"type":"string"},"crawling_type":{"type":"string"},"search_url":{"type":"string"},"feed_url":{"type":"string"},"sitemap_url":{"type":"string"},"search_result_selector":{"type":"string"},"article_link_selector":{"type":"string"},"article_content_selector":{"type":"string"},"article_noise_selector":{"type":"string"},"article_author_selector":{"type":"string"},"article_date_selector":{"type":"string"},"ai_reason":{"type":"string"},"confidence":{"type":"number"}},"required":["base_url","crawling_type","article_link_selector","article_content_selector","ai_reason","confidence"]}',
+                'output_schema' => '{"type":"object","properties":{"base_url":{"type":"string"},"crawling_type":{"type":"string"},"search_url":{"type":"string"},"feed_url":{"type":"string"},"sitemap_url":{"type":"string"},"search_result_selector":{"type":"string"},"article_link_selector":{"type":"string"},"article_content_selector":{"type":"string"},"article_noise_selector":{"type":"string"},"article_author_selector":{"type":"string"},"article_date_selector":{"type":"string"},"ai_reason":{"type":"string"},"confidence":{"type":"number"}},"required":["base_url","crawling_type","search_url","feed_url","sitemap_url","search_result_selector","article_link_selector","article_content_selector","article_noise_selector","article_author_selector","article_date_selector","ai_reason","confidence"]}',
                 'is_active' => true,
                 'is_default' => true,
             ]

@@ -10,6 +10,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 
 class NewsSources extends Component
 {
@@ -37,6 +38,8 @@ class NewsSources extends Component
     public string $crawling_type = 'html'; // html, rss, api
     public ?string $selector = '';
     public ?string $article_noise_selector = '';
+    public ?string $path_blocklist = '';
+    public ?string $selector_blocklist = '';
     public ?int $timeout_seconds = null;
     public ?string $notes = '';
     public bool $is_active = true;
@@ -206,6 +209,8 @@ class NewsSources extends Component
         $this->article_author_selector = '';
         $this->article_date_selector = '';
         $this->article_noise_selector = '';
+        $this->path_blocklist = '';
+        $this->selector_blocklist = '';
         $this->is_search_enabled = false;
         $this->is_feed_enabled = false;
         $this->is_sitemap_enabled = false;
@@ -249,6 +254,8 @@ class NewsSources extends Component
         $this->article_author_selector = $source->article_author_selector;
         $this->article_date_selector = $source->article_date_selector;
         $this->article_noise_selector = $source->article_noise_selector;
+        $this->path_blocklist = $source->path_blocklist;
+        $this->selector_blocklist = $source->selector_blocklist;
         $this->is_search_enabled = (bool) $source->is_search_enabled;
         $this->is_feed_enabled = (bool) $source->is_feed_enabled;
         $this->is_sitemap_enabled = (bool) $source->is_sitemap_enabled;
@@ -287,7 +294,7 @@ class NewsSources extends Component
                 'domain' => $this->domain,
                 'base_url' => $this->base_url ?: null,
                 'feed_url' => $this->feed_url ?: null,
-                'search_url' => $this->search_url ?: null,
+                'search_url' => $this->normalizeSearchUrlValue($this->search_url),
                 'sitemap_url' => $this->sitemap_url ?: null,
                 'search_result_selector' => $this->search_result_selector ?: null,
                 'article_link_selector' => $this->article_link_selector ?: null,
@@ -304,6 +311,14 @@ class NewsSources extends Component
                 'notes' => $this->notes ?: null,
                 'is_active' => $this->is_active,
             ];
+
+            if (Schema::hasColumn('news_sources', 'path_blocklist')) {
+                $data['path_blocklist'] = $this->path_blocklist ?: null;
+            }
+
+            if (Schema::hasColumn('news_sources', 'selector_blocklist')) {
+                $data['selector_blocklist'] = $this->selector_blocklist ?: null;
+            }
 
             if ($this->isEditing) {
                 $source = NewsSource::findOrFail($this->selected_id);
@@ -428,10 +443,14 @@ class NewsSources extends Component
             return;
         }
 
-        $this->generateSuggestionLogic($source->name, $source->domain, $source->id, $htmlInput);
+        $suggestion = $this->generateSuggestionLogic($source->name, $source->domain, $source->id, $htmlInput);
         $this->showSuggestInputModal = false;
         $this->suggestInputSourceId = null;
         $this->suggestInputSourceLabel = null;
+
+        if ($suggestion) {
+            $this->applySuggestionToForm($suggestion);
+        }
     }
 
     private function generateSuggestionLogic(string $name, string $domain, ?int $sourceId, ?string $htmlInput = null): ?\App\Models\NewsSourceSuggestion
@@ -519,6 +538,7 @@ class NewsSources extends Component
                 throw new \RuntimeException('Gagal mengurai JSON dari respons AI. Respons mentah: ' . mb_strimwidth($rawText, 0, 500, '...'));
             }
 
+            $result = $this->applySuggestionFallbacks($result, $domain);
             $validationWarnings = $this->validateSuggestionResult($result, $domain);
 
             $suggestion = \App\Models\NewsSourceSuggestion::create([
@@ -555,8 +575,11 @@ class NewsSources extends Component
 
     private function applySuggestionToForm(\App\Models\NewsSourceSuggestion $suggestion): void
     {
+        $wasEditing = $this->isEditing;
+        $currentSelectedId = $this->selected_id;
+
         $this->resetForm();
-        $this->selected_id = null;
+        $this->selected_id = $wasEditing ? $currentSelectedId : null;
         $this->name = $suggestion->source_name ?: $suggestion->domain;
         $this->domain = $suggestion->domain ?: '';
         $this->base_url = $suggestion->base_url ?: '';
@@ -569,9 +592,8 @@ class NewsSources extends Component
         $this->article_date_selector = $suggestion->article_date_selector ?: '';
         $this->article_noise_selector = $suggestion->article_noise_selector ?: '';
         $this->formVersion++;
-        $this->showFormModal = false;
         $this->showFormModal = true;
-        $this->isEditing = false;
+        $this->isEditing = $wasEditing;
     }
 
     private function validateSuggestionResult(array $result, string $domain): array
@@ -612,7 +634,25 @@ class NewsSources extends Component
     private function normalizeSuggestionSearchUrl(array $result): ?string
     {
         $searchUrl = trim((string) ($result['search_url'] ?? ($result['search_url_template'] ?? '')));
-        return $searchUrl !== '' ? $searchUrl : null;
+        return $this->normalizeSearchUrlValue($searchUrl);
+    }
+
+    private function normalizeSearchUrlValue(?string $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        if (str_starts_with($value, '//')) {
+            return 'https:' . $value;
+        }
+
+        if (! preg_match('~^https?://~i', $value)) {
+            $value = 'https://' . ltrim($value, '/');
+        }
+
+        return $value;
     }
 
     private function normalizeSuggestionConfidence(array $result, array $warnings): float
@@ -634,6 +674,165 @@ class NewsSources extends Component
     {
         $value = strtolower(trim((string) $value));
         return in_array($value, ['html', 'rss', 'api'], true) ? $value : 'html';
+    }
+
+    private function applySuggestionFallbacks(array $result, string $domain): array
+    {
+        $domain = $this->normalizeDomain($domain);
+        $baseUrl = $this->normalizeSearchUrlValue($result['base_url'] ?? null) ?: ('https://' . $domain);
+        $searchUrl = $this->normalizeSearchUrlValue($result['search_url'] ?? ($result['search_url_template'] ?? null));
+        $domainPresets = [
+            'prokal.co' => [
+                'search_url' => 'https://www.prokal.co/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content, .read__content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author, .byline',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published, time',
+            ],
+            'editorialkaltim.com' => [
+                'search_url' => 'https://editorialkaltim.com/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published, time',
+            ],
+            'kaltimkece.id' => [
+                'search_url' => 'https://kaltimkece.id/search?terms={query}',
+                'search_result_selector' => 'div.search-results-container article, div.search-results-container article.post, div.search-results-container .post-item, article.post, .post-item',
+                'article_link_selector' => 'article a[href], .entry-title a[href], .post-title a[href], a.article-link[href]',
+                'article_content_selector' => 'div.kandela-html, div.entry-content, article',
+                'article_noise_selector' => 'div[wire\\:id], script, style, svg, .ads, .sidebar, .related-posts, .wp-block-columns, .sharedaddy',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, span.text-article-title',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, div.text-article-meta > div:nth-child(2)',
+            ],
+            'kaltimtoday.co' => [
+                'search_url' => 'https://kaltimtoday.co/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
+            ],
+            'korankaltim.com' => [
+                'search_url' => 'https://korankaltim.com/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
+            ],
+            'mediakaltim.com' => [
+                'search_url' => 'https://mediakaltim.com/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
+            ],
+            'niaga.asia' => [
+                'search_url' => 'https://niaga.asia/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
+            ],
+            'nomorsatukaltim.disway.id' => [
+                'search_url' => 'https://nomorsatukaltim.disway.id/search?q={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
+            ],
+            'sapos.co.id' => [
+                'search_url' => 'https://www.sapos.co.id/search?key={query}',
+                'search_result_selector' => 'article, article.post, .post-item, .search-result',
+                'article_link_selector' => 'article a[href], h2.entry-title a[href], .post-title a[href]',
+                'article_content_selector' => 'article .entry-content, .entry-content, .post-content',
+                'article_noise_selector' => '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe',
+                'article_author_selector' => '.author-name, .entry-author, .posted-by, .author',
+                'article_date_selector' => 'time.entry-date, .post-date, .entry-date, .published',
+            ],
+        ];
+
+        if (isset($domainPresets[$domain])) {
+            $preset = $domainPresets[$domain];
+            if (blank($searchUrl) && ! blank($preset['search_url'] ?? null)) {
+                $searchUrl = $this->normalizeSearchUrlValue($preset['search_url']);
+            }
+            foreach ([
+                'search_result_selector',
+                'article_link_selector',
+                'article_content_selector',
+                'article_noise_selector',
+                'article_author_selector',
+                'article_date_selector',
+            ] as $field) {
+                if (blank($result[$field] ?? null) && ! blank($preset[$field] ?? null)) {
+                    $result[$field] = $preset[$field];
+                }
+            }
+        }
+
+        if (blank($result['search_result_selector'] ?? null)) {
+            $result['search_result_selector'] = 'article, article.post, .post-item, .list-news-item, .search-result, .result-item';
+        }
+
+        if (blank($result['article_link_selector'] ?? null)) {
+            $result['article_link_selector'] = 'h1 a, h2 a, h3 a, .entry-title a, .post-title a, article a[rel="bookmark"], article a[href]';
+        }
+
+        if (blank($result['article_content_selector'] ?? null)) {
+            $result['article_content_selector'] = 'article, .entry-content, .post-content, .read__content, .article-content';
+        }
+
+        if (blank($result['article_noise_selector'] ?? null)) {
+            $result['article_noise_selector'] = '.sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, script, style, iframe, .ads, .adsbygoogle, .advertisement, .footer, footer, nav, header';
+        }
+
+        if (blank($result['path_blocklist'] ?? null)) {
+            $result['path_blocklist'] = '/redaksi, /tentang-kami, /kontak, /hubungi-kami, /pedoman-media-siber, /cdn-cgi/l/email-protection';
+        }
+
+        if (blank($result['selector_blocklist'] ?? null)) {
+            $result['selector_blocklist'] = 'nav, header, footer, aside, script, style, .sidebar, .related-posts, .wp-block-columns, .sharedaddy, .baca-juga, .adsbygoogle, .advertisement';
+        }
+
+        if (blank($result['article_author_selector'] ?? null)) {
+            $result['article_author_selector'] = '.author-name, .entry-author, .posted-by, .author, .writer, .byline';
+        }
+
+        if (blank($result['article_date_selector'] ?? null)) {
+            $result['article_date_selector'] = 'time.entry-date, time, .post-date, .entry-date, .published, .date';
+        }
+
+        if (blank($searchUrl)) {
+            $result['search_url'] = 'https://' . $domain . '/search?query={query}';
+        } else {
+            $result['search_url'] = $searchUrl;
+        }
+
+        if (blank($result['base_url'] ?? null)) {
+            $result['base_url'] = $baseUrl;
+        } else {
+            $result['base_url'] = $baseUrl;
+        }
+
+        if (blank($result['crawling_type'] ?? null)) {
+            $result['crawling_type'] = 'html';
+        }
+
+        return $result;
     }
 
     private function decodeSuggestionJson(string $rawText): ?array
@@ -950,6 +1149,7 @@ class NewsSources extends Component
     private function renderSearchUrlTemplate(string $template, string $keyword): string
     {
         $keyword = trim($keyword) !== '' ? trim($keyword) : 'politik';
+        $template = $this->normalizeSearchUrlValue($template) ?? '';
 
         return str_replace(
             ['{keyword}', '{query}', '{search}'],

@@ -193,17 +193,6 @@
                         <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Manajemen Sumber</p>
                         <h2 class="text-base font-black text-slate-900 mt-0.5">{{ $isEditing ? 'Ubah Portal Berita' : 'Tambah Portal Berita Baru' }}</h2>
                     </div>
-                    @if($isEditing && $selected_id)
-                        <button type="button" wire:click="openSuggestInput({{ $selected_id }})" class="inline-flex items-center gap-1.5 rounded-xl border border-[#1fa387] bg-[#1fa387]/10 px-3 py-2 text-[11px] font-bold text-[#1fa387] hover:bg-[#1fa387]/20 transition cursor-pointer">
-                            <span class="material-symbols-outlined text-[16px]">psychology</span>
-                            <span>Cari Saran AI</span>
-                        </button>
-                    @elseif(!$isEditing)
-                        <button type="button" wire:click="openSuggestInput" class="inline-flex items-center gap-1.5 rounded-xl border border-[#1fa387] bg-[#1fa387]/10 px-3 py-2 text-[11px] font-bold text-[#1fa387] hover:bg-[#1fa387]/20 transition cursor-pointer">
-                            <span class="material-symbols-outlined text-[16px]">psychology</span>
-                            <span>Cari Saran AI Baru</span>
-                        </button>
-                    @endif
                     <button type="button" wire:click="closeFormModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer">
                         <span class="material-symbols-outlined text-[20px] block">close</span>
                     </button>
@@ -216,12 +205,14 @@
                         <div class="grid gap-5 sm:grid-cols-2">
                             <div>
                         <label class="mb-1.5 block text-xs font-bold text-slate-700">Nama Portal <span class="text-rose-500">*</span></label>
-                                <input wire:model="name" placeholder="Contoh: Detikcom" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                <input wire:model="name" placeholder="Contoh: Detikcom" type="text" class="h-10 w-full rounded-xl border px-3.5 text-xs font-semibold text-slate-800 outline-none transition {{ $errors->has('name') ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-slate-200 focus:border-[#1fa387]' }}">
+                                <p class="mt-1 text-[10px] text-slate-500">Gunakan nama portal yang mudah dikenali.</p>
                                 @error('name') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
                         <label class="mb-1.5 block text-xs font-bold text-slate-700">Domain / Base URL <span class="text-rose-500">*</span></label>
-                                <input wire:model="domain" placeholder="Contoh: detik.com" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                <input wire:model="domain" placeholder="Contoh: detik.com" type="text" class="h-10 w-full rounded-xl border px-3.5 text-xs font-semibold text-slate-800 outline-none transition {{ $errors->has('domain') ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-slate-200 focus:border-[#1fa387]' }}">
+                                <p class="mt-1 text-[10px] text-slate-500">Isi domain utama tanpa path artikel.</p>
                                 @error('domain') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                             </div>
                         </div>
@@ -230,12 +221,12 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold text-slate-700">Base URL</label>
-                                <input wire:model="base_url" placeholder="Contoh: https://www.kompas.com" type="url" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                <input wire:model="base_url" placeholder="Contoh: https://www.kompas.com" type="url" class="h-10 w-full rounded-xl border px-3.5 text-xs font-semibold text-slate-800 outline-none transition {{ $errors->has('base_url') ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-slate-200 focus:border-[#1fa387]' }}">
                                 @error('base_url') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold text-slate-700">Template URL Pencarian <span class="text-rose-500">*</span></label>
-                                <input wire:model="search_url" placeholder="Contoh: https://www.kompas.com/search?q={keyword}" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                <input wire:model="search_url" placeholder="Contoh: https://www.kompas.com/search?q={keyword}" type="text" class="h-10 w-full rounded-xl border px-3.5 text-xs font-semibold text-slate-800 outline-none transition {{ $errors->has('search_url') ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-slate-200 focus:border-[#1fa387]' }}">
                                 <p class="mt-1 text-[10px] text-slate-500">Wajib untuk portal manual. AI dan user sama-sama boleh isi, tapi ini tetap prioritas pertama.</p>
                                 @error('search_url') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                             </div>
@@ -247,23 +238,44 @@
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
                                 <label class="mb-1.5 block text-[11px] font-bold text-slate-600">Selector Hasil Pencarian <span class="text-rose-500">*</span></label>
-                                <input wire:model="search_result_selector" placeholder="Contoh: a[href]" type="text" class="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs font-mono text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                <input wire:model="search_result_selector" placeholder="Contoh: a[href]" type="text" class="h-9 w-full rounded-lg border px-3 text-xs font-mono text-slate-800 outline-none transition {{ $errors->has('search_result_selector') ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-slate-200 focus:border-[#1fa387]' }}">
                                 @error('search_result_selector') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                     <label class="mb-1.5 block text-[11px] font-bold text-slate-600">Selector Link Artikel</label>
-                                    <input wire:model="article_link_selector" placeholder="Contoh: article a[href]" type="text" class="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs font-mono text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                    <input wire:model="article_link_selector" placeholder="Contoh: article a[href]" type="text" class="h-9 w-full rounded-lg border px-3 text-xs font-mono text-slate-800 outline-none transition {{ $errors->has('article_link_selector') ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-slate-200 focus:border-[#1fa387]' }}">
                                     @error('article_link_selector') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                                 <div>
                                     <label class="mb-1.5 block text-[11px] font-bold text-slate-600">Selector Isi Artikel</label>
-                                    <input wire:model="article_content_selector" placeholder="Contoh: article .detail-text" type="text" class="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs font-mono text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                    <input wire:model="article_content_selector" placeholder="Contoh: article .detail-text" type="text" class="h-9 w-full rounded-lg border px-3 text-xs font-mono text-slate-800 outline-none transition {{ $errors->has('article_content_selector') ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-slate-200 focus:border-[#1fa387]' }}">
                                     @error('article_content_selector') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                                 <div>
                                     <label class="mb-1.5 block text-[11px] font-bold text-slate-600">Selector Noise</label>
-                                    <input wire:model="article_noise_selector" placeholder="Contoh: .ads, .related" type="text" class="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs font-mono text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                    <input wire:model="article_noise_selector" placeholder="Contoh: .ads, .related" type="text" class="h-9 w-full rounded-lg border px-3 text-xs font-mono text-slate-800 outline-none transition {{ $errors->has('article_noise_selector') ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-slate-200 focus:border-[#1fa387]' }}">
                                     @error('article_noise_selector') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-dashed border-slate-200 bg-white p-5 space-y-4">
+                            <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
+                                <h3 class="text-xs font-black text-slate-700">Advanced / Filter Tambahan</h3>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Opsional</span>
+                            </div>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-600">Path Ditolak</label>
+                                    <textarea wire:model="path_blocklist" rows="3" placeholder="/redaksi, /tentang-kami, /kontak, /pedoman-media-siber, /hubungi-kami" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-mono text-slate-800 outline-none focus:border-[#1fa387] transition"></textarea>
+                                    <p class="mt-1 text-[10px] text-slate-500">Daftar path yang ingin dipastikan tidak dibaca sebagai artikel.</p>
+                                    @error('path_blocklist') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-600">Elemen Ditolak</label>
+                                    <textarea wire:model="selector_blocklist" rows="3" placeholder="nav, header, footer, aside, script, style" class="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-mono text-slate-800 outline-none focus:border-[#1fa387] transition"></textarea>
+                                    <p class="mt-1 text-[10px] text-slate-500">Elemen tambahan yang selalu dibuang dari hasil ekstraksi.</p>
+                                    @error('selector_blocklist') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                             </div>
                         </div>
@@ -294,43 +306,66 @@
                         </div>
                     </div>
 
-                    <!-- Footer Sticky -->
-                    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 flex-none bg-slate-50 rounded-b-[24px]">
-                        <button type="button" wire:click="closeFormModal" wire:loading.attr="disabled" wire:target="requestSave,saveConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer disabled:opacity-50">Batal</button>
-                        <button type="submit" wire:loading.attr="disabled" wire:target="requestSave" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer shadow-md shadow-[#1fa387]/20 disabled:opacity-60 disabled:cursor-wait">
-                            <span wire:loading.remove wire:target="requestSave">Lanjutkan Simpan</span>
-                            <span wire:loading wire:target="requestSave">Memeriksa...</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        </template>
-    @endif
+                    @if($confirmingSave)
+                        <div class="mx-6 mb-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4">
+                            <div class="flex items-start gap-3">
+                                <span class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-white text-emerald-600 border border-emerald-100">
+                                    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                </span>
+                                <div class="flex-1">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Konfirmasi Simpan</p>
+                                    <p class="mt-1 text-xs text-slate-600 leading-relaxed">Pastikan nama portal, domain, search URL, dan selector sudah benar sebelum disimpan.</p>
+                                    <div class="mt-4 flex items-center justify-end gap-3">
+                                        <button type="button" wire:click="cancelSaveConfirmation" wire:loading.attr="disabled" wire:target="saveConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
+                                        <button type="button" wire:click="saveConfirmed" wire:loading.attr="disabled" wire:target="saveConfirmed" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">Ya, Simpan</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @elseif(!$showFormModal)
+                        {{-- no-op --}}
+                    @else
+                        <div class="mx-6 mb-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div class="flex items-start gap-3">
+                                    <span class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#1fa387] border border-[#1fa387]/20">
+                                        <span class="material-symbols-outlined text-[18px]">psychology</span>
+                                    </span>
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Saran AI</p>
+                                        <p class="mt-1 text-xs text-slate-600 leading-relaxed">
+                                            {{ $isEditing ? 'Buka analisis AI untuk membaca ulang HTML portal ini dan menyempurnakan selector yang sudah ada.' : 'Buka analisis AI untuk mengisi struktur website dan selector secara otomatis.' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-end">
+                                    @if($isEditing && $selected_id)
+                                        <button type="button" wire:click="openSuggestInput({{ $selected_id }})" class="inline-flex items-center gap-1 rounded-lg border border-[#1fa387] bg-[#1fa387]/10 px-2.5 py-1.5 text-[10px] font-bold text-[#1fa387] hover:bg-[#1fa387]/20 transition cursor-pointer">
+                                            <span class="material-symbols-outlined text-[14px]">psychology</span>
+                                            <span>Cari Saran AI</span>
+                                        </button>
+                                    @elseif(!$isEditing)
+                                        <button type="button" wire:click="openSuggestInput" class="inline-flex items-center gap-1.5 rounded-xl border border-[#1fa387] bg-[#1fa387]/10 px-3 py-2 text-[11px] font-bold text-[#1fa387] hover:bg-[#1fa387]/20 transition cursor-pointer">
+                                            <span class="material-symbols-outlined text-[16px]">psychology</span>
+                                            <span>Cari Saran AI Baru</span>
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
 
-    @if($confirmingSave)
-        <style>
-            body, html {
-                overflow: hidden !important;
-            }
-        </style>
-        <template x-teleport="body">
-        <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6">
-            <div wire:key="news-source-save-confirm-{{ $formVersion }}-{{ $isEditing ? 'edit' : 'create' }}" class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain">
-                <div class="flex items-center gap-3">
-                    <span class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-                        <span class="material-symbols-outlined text-[20px] block">check_circle</span>
-                    </span>
-                    <div>
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Konfirmasi Simpan</p>
-                        <h2 class="text-sm font-black text-slate-900 mt-0.5">Simpan perubahan portal?</h2>
-                    </div>
-                </div>
-                <p class="text-xs text-slate-500 leading-relaxed">Pastikan nama portal, domain, search URL, dan selector sudah benar sebelum disimpan.</p>
-                <div class="flex items-center justify-end gap-3 pt-2">
-                    <button type="button" wire:click="cancelSaveConfirmation" wire:loading.attr="disabled" wire:target="saveConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
-                    <button type="button" wire:click="saveConfirmed" wire:loading.attr="disabled" wire:target="saveConfirmed" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">Ya, Simpan</button>
-                </div>
+                        <!-- Footer Sticky -->
+                        <div class="flex flex-col gap-3 px-6 py-4 border-t border-slate-100 flex-none bg-slate-50 rounded-b-[24px]">
+                            <div class="flex items-center justify-end gap-3">
+                                <button type="button" wire:click="closeFormModal" wire:loading.attr="disabled" wire:target="requestSave,saveConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer disabled:opacity-50">Batal</button>
+                                <button type="submit" wire:loading.attr="disabled" wire:target="requestSave" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer shadow-md shadow-[#1fa387]/20 disabled:opacity-60 disabled:cursor-wait">
+                                    <span wire:loading.remove wire:target="requestSave">Lanjutkan Simpan</span>
+                                    <span wire:loading wire:target="requestSave">Memeriksa...</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endif
+                </form>
             </div>
         </div>
         </template>
@@ -594,6 +629,14 @@
                                     <strong class="text-slate-800 block break-words font-mono text-[10px] bg-slate-100 p-1.5 rounded">{{ $activeSuggestion?->article_noise_selector ?: ($testingSource?->article_noise_selector ?: '-') }}</strong>
                                 </div>
                                 <div>
+                                    <span class="block text-slate-400 mb-1">Path Blocklist</span>
+                                    <strong class="text-slate-800 block break-words font-mono text-[10px] bg-slate-100 p-1.5 rounded">{{ $activeSuggestion?->path_blocklist ?: ($testingSource?->path_blocklist ?: '-') }}</strong>
+                                </div>
+                                <div>
+                                    <span class="block text-slate-400 mb-1">Selector Blocklist</span>
+                                    <strong class="text-slate-800 block break-words font-mono text-[10px] bg-slate-100 p-1.5 rounded">{{ $activeSuggestion?->selector_blocklist ?: ($testingSource?->selector_blocklist ?: '-') }}</strong>
+                                </div>
+                                <div>
                                     <span class="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-1">Selector Penulis</span>
                                     <span class="font-mono text-slate-700 break-all bg-slate-50 px-2 py-1 rounded block">{{ $activeSuggestion?->article_author_selector ?: ($testingSource?->article_author_selector ?: '-') }}</span>
                                 </div>
@@ -624,18 +667,35 @@
                                     {{ count($testResult['candidate_urls'] ?? []) }}
                                 </span>
                             </h3>
+                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[10px] text-slate-600 flex flex-wrap items-center gap-2">
+                                <span class="font-bold text-slate-700">Selector Dipakai:</span>
+                                <span class="font-mono break-all">{{ data_get($testResult, 'candidate_selector_used') ?: ($activeSuggestion?->search_result_selector ?: '-') }}</span>
+                                @if(data_get($testResult, 'candidate_auto_repaired'))
+                                    <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 font-bold text-amber-700">Auto Repair</span>
+                                @endif
+                            </div>
                             <div class="border border-slate-200 rounded-2xl bg-white p-4 max-h-40 overflow-y-auto space-y-2">
                                 @forelse($testResult['candidate_urls'] ?? [] as $candidate)
                                     @php
                                         $candidateUrl = is_array($candidate) ? ($candidate['url'] ?? '') : $candidate;
                                         $candidateSource = is_array($candidate) ? ($candidate['source'] ?? 'search_url') : 'search_url';
+                                        $candidateSelector = is_array($candidate) ? ($candidate['selector'] ?? null) : null;
+                                        $candidateAutoRepaired = is_array($candidate) ? (bool) ($candidate['auto_repaired'] ?? false) : false;
                                     @endphp
                                     <div class="flex items-center justify-between gap-3 text-[11px] border-b border-slate-100/50 pb-1.5 last:border-0 last:pb-0">
                                         <div class="flex items-center gap-2 min-w-0 flex-1">
                                             <span class="material-symbols-outlined text-[14px] text-blue-500 shrink-0">link</span>
                                             <a href="{{ $candidateUrl }}" target="_blank" class="text-slate-600 hover:text-blue-600 hover:underline font-medium truncate break-all">{{ $candidateUrl }}</a>
                                         </div>
-                                        <span class="text-[9px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded uppercase shrink-0">{{ $candidateSource }}</span>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <span class="text-[9px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded uppercase">{{ $candidateSource }}</span>
+                                            @if($candidateSelector)
+                                                <span class="text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded uppercase">{{ $candidateSelector }}</span>
+                                            @endif
+                                            @if($candidateAutoRepaired)
+                                                <span class="text-[9px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded uppercase">AUTO</span>
+                                            @endif
+                                        </div>
                                     </div>
                                 @empty
                                     <div class="text-[11px] text-slate-400 italic">Tidak ada kandidat link yang berhasil dibaca dari search page.</div>

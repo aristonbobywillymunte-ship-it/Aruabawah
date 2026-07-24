@@ -36,31 +36,11 @@ class NewsSourceSuggestionTester
         $discoveryUrl = null;
         $discoverySource = 'search_url';
 
+        $discoveryCandidates = self::buildDiscoveryCandidates($suggestion, $keyword);
         if (! $hasSearchUrl) {
-            return [
-                'mode' => 'discovery',
-                'status' => 'failed',
-                'keyword' => $keyword,
-                'manual_url' => null,
-                'source' => $suggestion->source_name ?: $suggestion->domain,
-                'tested_at' => now()->toDateTimeString(),
-                'warnings' => ['Search URL kosong. Portal manual wajib memakai search page.'],
-                'search_url_used' => false,
-                'search_url_present' => false,
-                'candidate_urls' => [],
-                'discovered_urls' => [],
-                'rejected_urls' => [],
-                'valid_articles' => [],
-                'reasons' => ['Search URL wajib diisi untuk portal manual. Tidak ada fallback yang dipakai.'],
-            ];
+            $warnings[] = 'Search URL kosong. Portal manual wajib memakai search page.';
+            $reasons[] = 'Search URL kosong, discovery akan memakai probe otomatis sebagai fallback audit saja.';
         }
-
-        $discoveryCandidates = [
-            [
-                'url' => self::renderSearchUrl($suggestion->search_url, $keyword),
-                'source' => 'search_url'
-            ],
-        ];
 
         $html = '';
         $discoveryUrl = null;
@@ -92,14 +72,28 @@ class NewsSourceSuggestionTester
             } else {
                 // 2. Discover links
                 $links = self::discoverLinks($html, $suggestion, $discoveryUrl);
-                $searchCandidateLinks = $hasSearchUrl
+                $searchCandidateResult = $hasSearchUrl
                     ? self::extractSearchPageCandidateLinks($html, $suggestion->base_url ?: ('https://' . $suggestion->domain), $suggestion->search_result_selector)
-                    : [];
+                    : ['links' => [], 'selector_used' => null, 'auto_repaired' => false];
+                $searchCandidateLinks = $searchCandidateResult['links'] ?? [];
+                $candidateSelectorUsed = $searchCandidateResult['selector_used'] ?? null;
+                $candidateAutoRepaired = (bool) ($searchCandidateResult['auto_repaired'] ?? false);
 
                 foreach ($searchCandidateLinks as $searchCandidateLink) {
+                    $rejectReason = self::checkUrlRejection($searchCandidateLink, $suggestion->domain);
+                    if ($rejectReason) {
+                        $rejectedUrls[] = [
+                            'url' => $searchCandidateLink,
+                            'reason' => $rejectReason,
+                        ];
+                        continue;
+                    }
+
                     $candidateUrls[] = [
                         'url' => $searchCandidateLink,
                         'source' => 'search_url',
+                        'selector' => $candidateSelectorUsed,
+                        'auto_repaired' => $candidateAutoRepaired,
                     ];
                 }
                 
@@ -227,7 +221,7 @@ class NewsSourceSuggestionTester
                 $reasons[] = "Content kurang dari 500 karakter atau selector tidak menemukan body artikel";
             }
             if (! $hasSearchUrl) {
-                $reasons[] = 'Search URL kosong, hasil fallback tidak cukup untuk dinyatakan berhasil pada portal manual.';
+                $reasons[] = 'Search URL kosong, hasil fallback hanya valid untuk review manual.';
             }
         }
 
@@ -245,8 +239,130 @@ class NewsSourceSuggestionTester
             'discovered_urls' => $discoveredUrls,
             'rejected_urls' => $rejectedUrls,
             'valid_articles' => $validArticles,
+            'candidate_selector_used' => $candidateSelectorUsed ?? null,
+            'candidate_auto_repaired' => $candidateAutoRepaired ?? false,
             'reasons' => $reasons
         ];
+    }
+
+    private static function buildDiscoveryCandidates(NewsSourceSuggestion $suggestion, string $keyword): array
+    {
+        $candidates = [];
+        $seen = [];
+
+        $push = function (?string $template, string $source) use (&$candidates, &$seen, $keyword): void {
+            $template = trim((string) $template);
+            if ($template === '') {
+                return;
+            }
+
+            $normalized = self::renderSearchUrl($template, $keyword);
+            if ($normalized === '') {
+                return;
+            }
+
+            $key = strtolower($normalized);
+            if (isset($seen[$key])) {
+                return;
+            }
+
+            $seen[$key] = true;
+            $candidates[] = [
+                'url' => $normalized,
+                'source' => $source,
+            ];
+        };
+
+        $baseUrl = $suggestion->base_url ?: ('https://' . $suggestion->domain);
+        $baseHost = parse_url($baseUrl, PHP_URL_HOST) ?: $suggestion->domain;
+        $scheme = parse_url($baseUrl, PHP_URL_SCHEME) ?: 'https';
+        $cleanHost = preg_replace('/^www\./', '', strtolower((string) $baseHost));
+        $base = $cleanHost !== '' ? $scheme . '://' . $cleanHost : '';
+
+        $domainKey = strtolower((string) $suggestion->domain);
+        $domainPresets = [
+            'prokal.co' => [
+                'https://www.prokal.co/search?q={query}',
+                'https://prokal.co/search?q={query}',
+                'https://www.prokal.co/search?query={query}',
+                'https://prokal.co/search?query={query}',
+            ],
+            'editorialkaltim.com' => [
+                'https://editorialkaltim.com/search?q={query}',
+                'https://www.editorialkaltim.com/search?q={query}',
+                'https://editorialkaltim.com/search?query={query}',
+                'https://www.editorialkaltim.com/search?query={query}',
+            ],
+            'kaltimkece.id' => [
+                'https://kaltimkece.id/search?terms={query}',
+                'https://kaltimkece.id/search?query={query}',
+                'https://kaltimkece.id/search?q={query}',
+            ],
+            'sapos.co.id' => [
+                'https://www.sapos.co.id/search?key={query}',
+                'https://sapos.co.id/search?key={query}',
+                'https://www.sapos.co.id/search?q={query}',
+                'https://sapos.co.id/search?q={query}',
+            ],
+            'kaltimtoday.co' => [
+                'https://kaltimtoday.co/search?q={query}',
+                'https://kaltimtoday.co/search?query={query}',
+                'https://kaltimtoday.co/search?terms={query}',
+                'https://kaltimtoday.co/?s={query}',
+            ],
+            'korankaltim.com' => [
+                'https://korankaltim.com/search?q={query}',
+                'https://korankaltim.com/search?query={query}',
+                'https://korankaltim.com/search?terms={query}',
+            ],
+            'mediakaltim.com' => [
+                'https://mediakaltim.com/search?q={query}',
+                'https://mediakaltim.com/search?query={query}',
+                'https://mediakaltim.com/search?terms={query}',
+            ],
+            'niaga.asia' => [
+                'https://niaga.asia/search?q={query}',
+                'https://niaga.asia/search?query={query}',
+                'https://niaga.asia/search?terms={query}',
+            ],
+            'nomorsatukaltim.disway.id' => [
+                'https://nomorsatukaltim.disway.id/search?q={query}',
+                'https://nomorsatukaltim.disway.id/search?query={query}',
+                'https://nomorsatukaltim.disway.id/search?terms={query}',
+            ],
+        ];
+
+        $push($suggestion->search_url, 'search_url');
+        foreach ($domainPresets[$domainKey] ?? [] as $presetTemplate) {
+            $push($presetTemplate, 'domain_preset');
+        }
+
+        $pathVariants = [
+            '/search',
+            '/cari',
+            '/pencarian',
+            '/hasil-pencarian',
+            '/',
+        ];
+
+        $queryVariants = [
+            'q',
+            'query',
+            'terms',
+            'term',
+            'keyword',
+            'key',
+            'search',
+            's',
+        ];
+
+        foreach ($pathVariants as $path) {
+            foreach ($queryVariants as $param) {
+                $push(rtrim($base, '/') . $path . '?' . $param . '={query}', 'auto_probe');
+            }
+        }
+
+        return $candidates;
     }
 
     private static function testManualUrlInternal(NewsSourceSuggestion $suggestion, string $manualUrl): array
@@ -402,15 +518,33 @@ class NewsSourceSuggestionTester
 
     private static function fetchHtml(string $url, &$httpStatus = 200): string
     {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+        if (!preg_match('~^https?://~i', $url)) {
+            $url = 'https://' . ltrim($url, '/');
+        }
+
         try {
             // First try via HTTP client (fast)
-            $response = Http::timeout(10)
+            $response = Http::timeout(30)
+                ->withoutVerifying()
                 ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'])
                 ->get($url);
             
             $httpStatus = $response->status();
             if ($response->successful() && mb_strlen($response->body()) > 1000) {
-                return $response->body();
+                $body = $response->body();
+
+                if (self::looksLikeSpaShell($body)) {
+                    $rendered = self::fetchRenderedHtml($url);
+                    if (filled($rendered)) {
+                        return $rendered;
+                    }
+                }
+
+                return $body;
             }
         } catch (\Throwable $e) {
             $httpStatus = 500;
@@ -424,6 +558,11 @@ class NewsSourceSuggestionTester
     private static function renderSearchUrl(string $template, string $keyword): string
     {
         $encodedKeyword = rawurlencode($keyword);
+        $template = trim($template);
+
+        if ($template !== '' && ! preg_match('~^https?://~i', $template)) {
+            $template = 'https://' . ltrim($template, '/');
+        }
 
         return str_replace(
             ['{keyword}', '{query}', '{search}'],
@@ -440,13 +579,28 @@ class NewsSourceSuggestionTester
         }
 
         $command = escapeshellarg($chrome)
-            . ' --headless --disable-gpu --no-first-run --no-default-browser-check'
+            . ' --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --no-first-run --no-default-browser-check'
             . ' --virtual-time-budget=5000 --dump-dom '
             . escapeshellarg($url)
             . ' 2>/dev/null';
 
         $output = shell_exec($command);
         return is_string($output) ? trim($output) : '';
+    }
+
+    private static function looksLikeSpaShell(string $html): bool
+    {
+        $htmlLower = strtolower($html);
+
+        return str_contains($htmlLower, 'inertia')
+            || str_contains($htmlLower, 'data-page=')
+            || str_contains($htmlLower, 'window.__inertia')
+            || str_contains($htmlLower, 'app-cwzi7osv.js')
+            || str_contains($htmlLower, 'indexsearch')
+            || str_contains($htmlLower, 'modulepreload')
+            || str_contains($htmlLower, 'virtual_page_view')
+            || str_contains($htmlLower, 'livewire.js')
+            || str_contains($htmlLower, 'window.livewire');
     }
 
     private static function resolveChromeBinary(): ?string
@@ -475,7 +629,8 @@ class NewsSourceSuggestionTester
         $isSearchPage = filled($suggestion->search_url);
 
         if ($isSearchPage) {
-            return self::extractSearchPageCandidateLinks($html, $baseUrl, $suggestion->search_result_selector);
+            $result = self::extractSearchPageCandidateLinks($html, $baseUrl, $suggestion->search_result_selector);
+            return $result['links'] ?? [];
         }
 
         // Non-manual sources may still use wider discovery heuristics
@@ -555,7 +710,9 @@ class NewsSourceSuggestionTester
                     }
                     $href = trim((string) $node->getAttribute('href'));
                     $resolved = self::normalizeUrl($href, $baseUrl);
-                    if ($resolved && self::isLikelySearchCandidateLink($resolved, $node)) {
+                    if ($resolved
+                        && self::isLikelySearchCandidateLink($resolved, $node)
+                        && ! self::checkUrlRejection($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) {
                         $links[] = $resolved;
                     }
                 }
@@ -596,7 +753,9 @@ class NewsSourceSuggestionTester
                     }
                     $href = trim((string) $node->getAttribute('href'));
                     $resolved = self::normalizeUrl($href, $baseUrl);
-                    if ($resolved && self::isLikelySearchCandidateLink($resolved, $node)) {
+                    if ($resolved
+                        && self::isLikelySearchCandidateLink($resolved, $node)
+                        && ! self::checkUrlRejection($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) {
                         $links[] = $resolved;
                     }
                 }
@@ -607,13 +766,13 @@ class NewsSourceSuggestionTester
         preg_match_all('~(?:data-href|data-url|data-link)=["\']([^"\']+)["\']~i', $html, $dataMatches);
         foreach ($dataMatches[1] as $href) {
             $resolved = self::normalizeUrl($href, $baseUrl);
-            if ($resolved && self::isLikelySearchCandidateLink($resolved)) $links[] = $resolved;
+            if ($resolved && self::isLikelySearchCandidateLink($resolved) && ! self::checkUrlRejection($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) $links[] = $resolved;
         }
 
         preg_match_all('~onclick=["\'][^"\']*(?:location(?:\.href)?|window\.location|window\.open)\s*=\s*["\']([^"\']+)["\']~i', $html, $onclickMatches);
         foreach ($onclickMatches[1] as $href) {
             $resolved = self::normalizeUrl($href, $baseUrl);
-            if ($resolved && self::isLikelySearchCandidateLink($resolved)) $links[] = $resolved;
+            if ($resolved && self::isLikelySearchCandidateLink($resolved) && ! self::checkUrlRejection($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) $links[] = $resolved;
         }
 
         // Fallback regex scan - only collect URLs that look like articles
@@ -641,16 +800,22 @@ class NewsSourceSuggestionTester
         $dom = new \DOMDocument();
         @$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
         $xpath = new \DOMXPath($dom);
+        $selector = is_string($selector) ? trim($selector) : trim((string) $selector);
 
-        $selectors = [];
+        $selectorQueue = [];
         if (filled($selector)) {
-            $selectors[] = $selector;
+            $selectorQueue[] = $selector;
         }
 
-        $selectors = array_merge($selectors, [
+        $selectorQueue = array_merge($selectorQueue, [
             'article.post h2.entry-title a',
             'article.post .entry-title a',
             'article.post a[rel="bookmark"]',
+            'article a[href]',
+            'article h2 a[href]',
+            'article h3 a[href]',
+            'article .title a[href]',
+            'article .entry-title a[href]',
             '.block-black-white a.title',
             '.search-result a.title',
             '.result-card a.title',
@@ -658,28 +823,69 @@ class NewsSourceSuggestionTester
             '.list-news-item a[href]',
             '.post-item a[href]',
             '.news-item a[href]',
+            '.card a[href]',
+            '.article a[href]',
+            '.entry a[href]',
+            '.news a[href]',
+            'a[href*="/warta/"]',
+            'a[href*="/berita/"]',
+            'a[href*="/news/"]',
+            'a[href*="/artikel/"]',
+            'a[href*="/read/"]',
+            'a[href*="/komisi-"]',
         ]);
 
-        foreach ($selectors as $selector) {
-            $nodes = self::safeXpathQuery($xpath, self::convertSelectorToXPath($selector));
+        $selectorUsed = null;
+        $autoRepaired = false;
+
+        foreach ($selectorQueue as $selectorCandidate) {
+            $selectorCandidate = trim((string) $selectorCandidate);
+            if ($selectorCandidate === '') {
+                continue;
+            }
+
+            $nodes = self::safeXpathQuery($xpath, self::convertSelectorToXPath($selectorCandidate));
             if (! $nodes || $nodes->length === 0) {
                 continue;
             }
 
+            $beforeCount = count($links);
             foreach ($nodes as $node) {
                 if (! $node instanceof \DOMElement) {
                     continue;
                 }
 
-                $href = trim((string) $node->getAttribute('href'));
-                $resolved = self::normalizeUrl($href, $baseUrl);
-                if (! $resolved) {
-                    continue;
+                $candidateHrefs = [];
+                if ($node->hasAttribute('href')) {
+                    $candidateHrefs[] = trim((string) $node->getAttribute('href'));
                 }
 
-                if (self::isLikelySearchCandidateLink($resolved, $node) && self::isSameNewsDomain($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) {
-                    $links[] = $resolved;
+                $descendantAnchors = self::safeXpathQuery($xpath, './/a[@href]', $node->hasChildNodes() ? $node : null);
+                if ($descendantAnchors) {
+                    foreach ($descendantAnchors as $anchorNode) {
+                        if ($anchorNode instanceof \DOMElement) {
+                            $candidateHrefs[] = trim((string) $anchorNode->getAttribute('href'));
+                        }
+                    }
                 }
+
+                foreach (array_values(array_unique(array_filter($candidateHrefs))) as $href) {
+                    $resolved = self::normalizeUrl($href, $baseUrl);
+                    if (! $resolved) {
+                        continue;
+                    }
+
+                    $probeNode = $node->hasAttribute('href') ? $node : null;
+                    if (self::isLikelySearchCandidateLink($resolved, $probeNode) && self::isSameNewsDomain($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) {
+                        $links[] = $resolved;
+                    }
+                }
+            }
+
+            if (count($links) > $beforeCount) {
+                $selectorUsed = $selectorCandidate;
+                $autoRepaired = filled($selector) && $selector !== trim($selectorCandidate);
+                break;
             }
         }
 
@@ -698,18 +904,22 @@ class NewsSourceSuggestionTester
                     continue;
                 }
 
-                if (self::isLikelySearchCandidateLink($resolved)) {
+                if (self::isLikelySearchCandidateLink($resolved) && ! self::checkUrlRejection($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) {
                     $links[] = $resolved;
                     continue;
                 }
 
-                if ($text !== '' && ! self::isClearlyNonArticleCandidate($resolved)) {
+                if ($text !== '' && ! self::isClearlyNonArticleCandidate($resolved) && ! self::checkUrlRejection($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) {
                     $links[] = $resolved;
                 }
             }
         }
 
-        return array_values(array_unique($links));
+        return [
+            'links' => array_values(array_unique($links)),
+            'selector_used' => $selectorUsed ?: (filled($selector) ? $selector : null),
+            'auto_repaired' => $autoRepaired,
+        ];
     }
 
     private static function isClearlyNonArticleCandidate(string $url): bool
@@ -722,7 +932,9 @@ class NewsSourceSuggestionTester
         $blocked = [
             'assets/', 'storage/', 'uploads/', 'css/', 'js/', 'fonts/', 'img/', 'images/', 'api/', 'feed', 'sitemap',
             'author/', 'rep/', 'profil/', 'profile/', 'writer/', 'penulis/', 'category/', 'tag/', 'topic/', 'topics/',
-            'archive/', 'arsip/', 'kategori/',
+            'archive/', 'arsip/', 'kategori/', 'redaksi', 'redaksi/', 'kontak', 'kontak/', 'hubungi-kami', 'hubungi-kami/',
+            'tentang-kami', 'tentang-kami/', 'pedoman-media-siber', 'pedoman-media-siber/', 'profil-redaksi',
+            'privacy-policy', 'terms', 'about', 'contact', 'search', 'hasil-pencarian', 'cdn-cgi/', 'cdn-cgi/l/email-protection',
         ];
         foreach ($blocked as $needle) {
             if (str_contains($path, $needle)) {
@@ -832,6 +1044,30 @@ class NewsSourceSuggestionTester
         foreach ($rejectPrefixes as $prefix) {
             if (str_starts_with($pathLower, $prefix)) {
                 return "URL mengandung path terlarang: {$prefix}";
+            }
+        }
+
+        $rejectSegments = [
+            'redaksi',
+            'kontak',
+            'hubungi-kami',
+            'tentang-kami',
+            'pedoman-media-siber',
+            'privacy-policy',
+            'terms',
+            'about',
+            'contact',
+            'search',
+            'hasil-pencarian',
+            'author',
+            'profil',
+            'profile',
+            'writer',
+            'penulis',
+        ];
+        foreach (array_filter(explode('/', trim($pathLower, '/'))) as $segment) {
+            if (in_array($segment, $rejectSegments, true)) {
+                return "URL mengandung path utilitas: /{$segment}";
             }
         }
 

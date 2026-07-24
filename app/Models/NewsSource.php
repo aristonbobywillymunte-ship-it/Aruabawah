@@ -25,6 +25,8 @@ class NewsSource extends Model
         'article_author_selector',
         'article_date_selector',
         'article_noise_selector',
+        'path_blocklist',
+        'selector_blocklist',
         'local_reach_weight',
         'scrape_priority',
         'reach_notes',
