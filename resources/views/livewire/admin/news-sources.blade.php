@@ -414,80 +414,101 @@
         </style>
         <template x-teleport="body">
         <div class="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6">
-            <div class="w-full max-w-4xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left flex flex-col max-h-[92vh] overscroll-contain">
-                <!-- Header -->
-                <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 flex-none">
-                    <div>
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Tempat Sampah</p>
-                        <h2 class="text-base font-black text-slate-900 mt-0.5">Daftar Portal Berita Dihapus</h2>
+            <div class="w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-2xl text-left flex flex-col max-h-[88vh] border border-slate-100/80">
+                <!-- Header with premium brand colors -->
+                <div class="flex items-center justify-between border-b border-slate-100/80 px-8 py-5 flex-none bg-slate-50/50">
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-500 border border-rose-100">
+                            <span class="material-symbols-outlined text-[20px]">delete_sweep</span>
+                        </span>
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-[#1fa387]">Manajemen Arsip</p>
+                            <h2 class="text-base font-black text-slate-800 mt-0.5 flex items-center gap-2">
+                                <span>Portal Berita Dihapus</span>
+                                <span class="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black border border-rose-100/60">
+                                    {{ $trashSources->count() }} Data
+                                </span>
+                            </h2>
+                        </div>
                     </div>
                     <button type="button" wire:click="closeTrashModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer">
                         <span class="material-symbols-outlined text-[20px] block">close</span>
                     </button>
                 </div>
 
-                <!-- Table Content -->
-                <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
-                    <div class="overflow-x-auto border border-slate-150 rounded-2xl">
-                        <table class="w-full border-collapse text-xs text-slate-700">
-                            <thead class="bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">
-                                <tr>
-                                    <th class="px-4 py-3 w-12 text-left font-bold">No</th>
-                                    <th class="px-4 py-3 font-bold">Nama Portal</th>
-                                    <th class="px-4 py-3 font-bold">Domain</th>
-                                    <th class="px-4 py-3 font-bold">Tanggal Dihapus</th>
-                                    <th class="px-4 py-3 text-right w-56 font-bold">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                @forelse($trashSources as $trashSource)
-                                    <tr wire:key="trash-source-row-{{ $trashSource->id }}" class="hover:bg-slate-50/50 transition">
-                                        <td class="px-4 py-3 font-semibold text-slate-500">{{ $loop->iteration }}</td>
-                                        <td class="px-4 py-3 font-bold text-slate-900">{{ $trashSource->name }}</td>
-                                        <td class="px-4 py-3 font-mono text-[11px] text-slate-500">{{ $trashSource->domain }}</td>
-                                        <td class="px-4 py-3 font-semibold text-slate-500">{{ $trashSource->deleted_at->format('d M Y H:i') }}</td>
-                                        <td class="px-4 py-3 text-right">
-                                            <div class="flex items-center gap-2 justify-end">
-                                                <!-- Restore Button -->
-                                                <button 
-                                                    wire:click="restoreSource({{ $trashSource->id }})" 
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="restoreSource({{ $trashSource->id }})"
-                                                    class="inline-flex h-8 items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
-                                                    title="Pulihkan Portal"
-                                                >
-                                                    <span class="material-symbols-outlined text-[14px]">restore</span>
-                                                    <span>Kembalikan</span>
-                                                </button>
-
-                                                <!-- Force Delete Button -->
-                                                <button 
-                                                    wire:click="forceDeleteSource({{ $trashSource->id }})" 
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="forceDeleteSource({{ $trashSource->id }})"
-                                                    onclick="confirm('Hapus permanen portal ini? Tindakan ini tidak dapat dibatalkan.') || event.stopImmediatePropagation()"
-                                                    class="inline-flex h-8 items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
-                                                    title="Hapus Permanen"
-                                                >
-                                                    <span class="material-symbols-outlined text-[14px]">delete_forever</span>
-                                                    <span>Hapus Permanen</span>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
+                <!-- Premium Table Content -->
+                <div class="p-8 overflow-y-auto flex-1 custom-scrollbar">
+                    @if($trashSources->count() > 0)
+                        <div class="overflow-hidden border border-slate-200/60 rounded-[20px] shadow-sm bg-white">
+                            <table class="w-full border-collapse text-xs text-slate-700">
+                                <thead class="bg-slate-50/75 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">
                                     <tr>
-                                        <td colspan="5" class="px-6 py-12 text-center text-slate-400 italic">Tempat sampah kosong.</td>
+                                        <th class="px-5 py-4 w-12 text-left font-bold">No</th>
+                                        <th class="px-5 py-4 font-bold">Nama Portal</th>
+                                        <th class="px-5 py-4 font-bold">Domain</th>
+                                        <th class="px-5 py-4 font-bold">Waktu Dihapus</th>
+                                        <th class="px-5 py-4 text-right w-64 font-bold">Aksi Pengembalian / Hapus</th>
                                     </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @foreach($trashSources as $trashSource)
+                                        <tr wire:key="trash-source-row-{{ $trashSource->id }}" class="hover:bg-slate-50/30 transition">
+                                            <td class="px-5 py-3.5 font-bold text-slate-400">{{ $loop->iteration }}</td>
+                                            <td class="px-5 py-3.5 font-black text-slate-800 text-[13px]">{{ $trashSource->name }}</td>
+                                            <td class="px-5 py-3.5 font-semibold text-slate-500 break-all">{{ $trashSource->domain }}</td>
+                                            <td class="px-5 py-3.5 font-semibold text-slate-400">
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                                                    <span>{{ $trashSource->deleted_at->format('d M Y, H:i') }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-5 py-3.5 text-right">
+                                                <div class="flex items-center gap-2 justify-end whitespace-nowrap">
+                                                    <!-- Restore Action -->
+                                                    <button 
+                                                        wire:click="restoreSource({{ $trashSource->id }})" 
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="restoreSource({{ $trashSource->id }})"
+                                                        class="inline-flex h-8 items-center justify-center gap-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/40 hover:border-emerald-300 px-3.5 text-[11px] font-black transition cursor-pointer disabled:opacity-50"
+                                                        title="Kembalikan Portal ke Daftar Aktif"
+                                                    >
+                                                        <span class="material-symbols-outlined text-[15px] block">restore_from_trash</span>
+                                                        <span>Kembalikan</span>
+                                                    </button>
+
+                                                    <!-- Permanent Delete Action -->
+                                                    <button 
+                                                        wire:click="forceDeleteSource({{ $trashSource->id }})" 
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="forceDeleteSource({{ $trashSource->id }})"
+                                                        class="inline-flex h-8 items-center justify-center gap-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/40 hover:border-rose-300 px-3.5 text-[11px] font-black transition cursor-pointer disabled:opacity-50"
+                                                        title="Hapus Permanen"
+                                                    >
+                                                        <span class="material-symbols-outlined text-[15px] block">delete_forever</span>
+                                                        <span>Hapus Permanen</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <!-- Empty Premium State -->
+                        <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+                            <span class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 border border-slate-100/80 shadow-inner">
+                                <span class="material-symbols-outlined text-[36px] block">archive</span>
+                            </span>
+                            <h3 class="text-sm font-black text-slate-700 mt-4">Tempat Sampah Bersih</h3>
+                            <p class="text-[11px] text-slate-400 mt-1 max-w-xs leading-normal">Tidak ada data portal berita manual yang terdaftar di tempat sampah saat ini.</p>
+                        </div>
+                    @endif
                 </div>
 
-                <!-- Footer -->
-                <div class="flex items-center justify-end px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-[24px]">
-                    <button type="button" wire:click="closeTrashModal" class="h-10 rounded-xl border border-slate-200 bg-white px-5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+                <!-- Footer closing -->
+                <div class="flex items-center justify-end px-8 py-5 border-t border-slate-100/80 bg-slate-50/50 rounded-b-[28px] flex-none">
+                    <button type="button" wire:click="closeTrashModal" class="h-10 rounded-xl border border-slate-200 bg-white px-6 text-xs font-black text-slate-600 hover:bg-slate-50 transition cursor-pointer shadow-sm">
                         Tutup
                     </button>
                 </div>
