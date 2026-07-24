@@ -50,6 +50,7 @@ class NewsSources extends Component
     public int $formVersion = 0;
     public bool $confirmingSave = false;
     public bool $confirmingDelete = false;
+    public bool $showTrashModal = false;
     public ?string $flashMessage = null;
     public ?string $flashType = null;
 
@@ -181,7 +182,8 @@ class NewsSources extends Component
                 $query->where('name', 'like', '%' . $this->search . '%')
                     ->orWhere('domain', 'like', '%' . $this->search . '%');
             })
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate(10, ['*'], 'sourcesPage');
 
         $suggestionSourceIds = $this->getSuggestionSourceIds();
@@ -191,6 +193,7 @@ class NewsSources extends Component
             'sources' => $sources,
             'suggestionSourceIds' => $suggestionSourceIds,
             'suggestionDomains' => $suggestionDomains,
+            'trashSources' => NewsSource::onlyTrashed()->orderByDesc('deleted_at')->get(),
         ]);
     }
 
@@ -371,6 +374,35 @@ class NewsSources extends Component
         $this->flushSuggestionUiCache();
         $this->confirmingDelete = false;
         $this->resetForm();
+    }
+
+    public function openTrashModal(): void
+    {
+        $this->adminOnly();
+        $this->showTrashModal = true;
+    }
+
+    public function closeTrashModal(): void
+    {
+        $this->showTrashModal = false;
+    }
+
+    public function restoreSource(int $id): void
+    {
+        $this->adminOnly();
+        $source = NewsSource::onlyTrashed()->findOrFail($id);
+        $source->restore();
+        $this->notify('success', 'Portal berita berhasil dikembalikan.');
+        $this->flushSuggestionUiCache();
+    }
+
+    public function forceDeleteSource(int $id): void
+    {
+        $this->adminOnly();
+        $source = NewsSource::onlyTrashed()->findOrFail($id);
+        $source->forceDelete();
+        $this->notify('success', 'Portal berita berhasil dihapus secara permanen.');
+        $this->flushSuggestionUiCache();
     }
 
     public function closeFormModal(): void
