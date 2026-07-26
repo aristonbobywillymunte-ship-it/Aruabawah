@@ -2540,20 +2540,17 @@ new class extends Component
                         wire:init="loadMentions"
                         wire:key="mentions-scroll-shell"
                         x-data="{ loadingMore: false }"
-                        x-init="
-                            const feedEl = $el;
-                            const triggerLoadMore = () => {
-                                if (loadingMore) return;
-                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
-                                if ({{ $mentionsArticlesCount }} >= {{ $mentionsTotalArticlesCount }}) return;
+                        x-on:scroll.passive.debounce.100ms="
+                            if (
+                                !loadingMore
+                                && $el.scrollTop + $el.clientHeight >= $el.scrollHeight - 200
+                                && {{ $mentionsArticlesCount }} < {{ $mentionsTotalArticlesCount }}
+                            ) {
                                 loadingMore = true;
                                 Promise.resolve($wire.loadMore())
                                     .catch(() => {})
                                     .finally(() => loadingMore = false);
-                            };
-                            const onScroll = () => requestAnimationFrame(triggerLoadMore);
-                            feedEl.addEventListener('scroll', onScroll, { passive: true });
-                            requestAnimationFrame(triggerLoadMore);
+                            }
                         "
                     >
                         @if(!$mentionsLoaded)
@@ -2968,20 +2965,17 @@ new class extends Component
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-6"
                         x-data="{ loadingMore: false }"
-                        x-init="
-                            const feedEl = $el;
-                            const triggerLoadMore = () => {
-                                if (loadingMore) return;
-                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
-                                if ({{ $analysisArticlesCount }} >= {{ $analysisTotalArticlesCount }}) return;
+                        x-on:scroll.passive.debounce.100ms="
+                            if (
+                                !loadingMore
+                                && $el.scrollTop + $el.clientHeight >= $el.scrollHeight - 200
+                                && {{ $analysisArticlesCount }} < {{ $analysisTotalArticlesCount }}
+                            ) {
                                 loadingMore = true;
                                 Promise.resolve($wire.loadMore())
                                     .catch(() => {})
                                     .finally(() => loadingMore = false);
-                            };
-                            const onScroll = () => requestAnimationFrame(triggerLoadMore);
-                            feedEl.addEventListener('scroll', onScroll, { passive: true });
-                            requestAnimationFrame(triggerLoadMore);
+                            }
                         "
                     >
                         <!-- Gambaran Umum Card Grid -->
@@ -5678,20 +5672,17 @@ new class extends Component
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-6"
                         x-data="{ loadingMore: false }"
-                        x-init="
-                            const feedEl = $el;
-                            const triggerLoadMore = () => {
-                                if (loadingMore) return;
-                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
-                                if ({{ $contentArticlesCount }} >= {{ $contentTotalArticlesCount }}) return;
+                        x-on:scroll.passive.debounce.100ms="
+                            if (
+                                !loadingMore
+                                && $el.scrollTop + $el.clientHeight >= $el.scrollHeight - 200
+                                && {{ $contentArticlesCount }} < {{ $contentTotalArticlesCount }}
+                            ) {
                                 loadingMore = true;
                                 Promise.resolve($wire.loadMore())
                                     .catch(() => {})
                                     .finally(() => loadingMore = false);
-                            };
-                            const onScroll = () => requestAnimationFrame(triggerLoadMore);
-                            feedEl.addEventListener('scroll', onScroll, { passive: true });
-                            requestAnimationFrame(triggerLoadMore);
+                            }
                         "
                     >
 
