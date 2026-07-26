@@ -51,12 +51,12 @@
         </div>
 
         <!-- Scrollable list of items -->
-        <div style="max-height: 400px; overflow-y: auto;" class="w-full divide-y divide-slate-100 bg-white p-4 space-y-3.5">
+        <div style="max-height: 400px; overflow-y: auto;" class="w-full bg-white px-4 py-4 space-y-3">
             @forelse($notifications as $notif)
                 <a 
                     href="{{ $notif['url'] }}" 
                     target="_blank" 
-                    class="block p-4.5 bg-[#F8F9FA] hover:bg-white border border-slate-150/60 hover:border-[#1fa387]/30 hover:shadow-md rounded-2xl transition duration-200 group cursor-pointer"
+                    class="block p-4 bg-[#F8F9FA] hover:bg-white border border-slate-150 hover:border-[#1fa387]/30 hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-2xl transition duration-200 group cursor-pointer"
                 >
                     <div class="flex items-start gap-3.5">
                         <!-- Warning Icon wrapper -->
