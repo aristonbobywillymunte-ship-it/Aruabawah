@@ -811,8 +811,6 @@ new class extends Component
 
                     <!-- User Profile and Actions -->
                     <div class="ml-auto flex shrink-0 items-center gap-4">
-                        <!-- Notifikasi Dropdown Component -->
-                        <livewire:notification-dropdown />
                         <div class="relative" x-data="{ open: false }">
                             <button
                                 type="button"
