@@ -1592,7 +1592,7 @@ new class extends Component
                                     @foreach($trashed as $tp)
                                         <div class="py-5 flex items-center justify-between gap-6 hover:bg-slate-50/30 px-3 -mx-3 rounded-2xl transition duration-150">
                                             <div class="text-left flex-1 min-w-0 space-y-1.5">
-                                                <h4 class="text-sm font-bold text-slate-855 truncate tracking-tight">{{ $tp->name }}</h4>
+                                                <h4 class="text-sm font-bold text-slate-855 truncate tracking-tight uppercase">{{ $tp->name }}</h4>
                                                 
                                                 <div class="flex flex-wrap items-center gap-2">
                                                     <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Kata Kunci:</span>
