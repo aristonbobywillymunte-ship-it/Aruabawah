@@ -565,11 +565,13 @@ class ProjectsList extends Component
     {
         $this->validate([
             'editName'         => 'required|min:3|unique:projects,name,' . $this->editProjectId,
+            'contextKeywords'  => 'required',
             'editTopicsString' => 'required',
         ], [
             'editName.required'         => 'Nama proyek wajib diisi.',
             'editName.min'              => 'Nama proyek minimal 3 karakter.',
             'editName.unique'           => 'Nama proyek sudah digunakan.',
+            'contextKeywords.required'  => 'Kata kunci pencarian tambahan wajib diisi.',
             'editTopicsString.required' => 'Topik/kata kunci wajib diisi.',
         ]);
 
