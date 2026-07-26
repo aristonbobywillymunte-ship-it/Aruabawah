@@ -1167,7 +1167,7 @@ new class extends Component
                                     <div 
                                         wire:click="$set('isCreatingProject', true)"
                                         class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/50 transition-all duration-300 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
-                                        style="height: 100%;"
+                                        style="min-height: 620px; height: 100%;"
                                     >
                                         <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-5 shadow-sm">
                                             <svg class="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1200,6 +1200,7 @@ new class extends Component
                                             }
                                         }"
                                         class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-between shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all h-full"
+                                        style="min-height: 620px;"
                                     >
                                 <!-- Card Header -->
                                 <div class="flex items-start justify-between mb-8">
