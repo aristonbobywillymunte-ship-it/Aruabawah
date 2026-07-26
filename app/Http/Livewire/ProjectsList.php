@@ -740,7 +740,6 @@ class ProjectsList extends Component
         $this->showConfirmModal = false;
         session()->flash('message', 'Proyek berhasil diaktifkan kembali.');
         $this->notifyProjectAction('Proyek aktif kembali dan siap dipantau.');
-        $this->showTrashedModal = false;
         $this->resetConfirmState();
     }
 
@@ -806,7 +805,6 @@ class ProjectsList extends Component
         }
 
         $this->showConfirmModal = false;
-        $this->showTrashedModal = false;
         $this->resetConfirmState();
         session()->flash('message', 'Proyek berhasil dihapus permanen. Data artikel tetap tersimpan.');
         $this->notifyProjectAction('Proyek dihapus permanen. Data artikel tetap aman.');
