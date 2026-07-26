@@ -2434,24 +2434,26 @@ new class extends Component
                         wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
                         id="mentions-feed-scroll"
                         data-total-count="{{ $mentionsTotalArticlesCount }}"
-                        x-data="{ _lmLoading: false }"
+                        x-data="{}"
                         x-init="
                             const el = $el;
+                            let busy = false;
+
                             const tryLoad = () => {
-                                if (_lmLoading) return;
+                                if (busy) return;
                                 const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
                                 if (remaining > 300) return;
                                 const loaded = el.querySelectorAll('[data-mention-card]').length;
                                 const total = parseInt(el.dataset.totalCount || '0');
-                                if (loaded >= total || total === 0) return;
-                                _lmLoading = true;
-                                $wire.loadMore().finally(() => {
-                                    setTimeout(() => { _lmLoading = false; }, 1500);
-                                });
+                                if (total === 0 || loaded >= total) return;
+                                busy = true;
+                                $wire.loadMore();
+                                setTimeout(() => { busy = false; }, 2500);
                             };
+
                             el.addEventListener('scroll', tryLoad, { passive: true });
-                            setInterval(tryLoad, 2000);
-                            setTimeout(tryLoad, 800);
+                            setInterval(tryLoad, 1500);
+                            setTimeout(tryLoad, 1000);
                         "
                     >
                         @php
