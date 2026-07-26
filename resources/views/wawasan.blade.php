@@ -14,9 +14,10 @@
         <!-- Styles & Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
+        @stack('styles')
     </head>
     <body class="antialiased bg-surface-studio text-on-surface font-sans selection:bg-primary/20 selection:text-primary min-h-screen flex flex-col">
-        
+
         <livewire:user-wawasan />
 
         @livewireScripts

@@ -73,7 +73,6 @@ new class extends Component
             'sentiment' => $this->selectedSentiment,
             'category' => $this->selectedCategory,
             'sortBy' => $this->sortBy,
-            'limit' => $this->limit,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
@@ -341,16 +340,6 @@ new class extends Component
         $this->supportKeywords = [];
         $this->excludeKeywords = [];
         $this->dashboardLoaded = true;
-
-        // Jika cache shell dashboard sudah ada, tampilkan isi utama lebih cepat
-        // tanpa menunggu wire:init untuk pertama kali.
-        if (Cache::has($this->projectArticleCountCacheKey()) || Cache::has($this->countsCacheKey())) {
-            $this->dashboardLoaded = true;
-        }
-
-        if ($this->dashboardLoaded && $this->isTab('penyebutan') && Cache::has($this->articlesCacheKey())) {
-            $this->mentionsLoaded = true;
-        }
 
         // Tab Kata Kunci harus tampil segera saat dibuka langsung via URL.
         // Jika hanya mengandalkan wire:init, area utama bisa tetap kosong sebelum
@@ -1214,55 +1203,31 @@ new class extends Component
             return $this->articlesMemo[$cacheKey];
         }
 
-        $cached = Cache::remember($cacheKey, 600, function () {
-            // Selalu scoped ke projectId yang sedang aktif
-            $query = $this->projectArticlesQuery()->select('articles.id', 'articles.published_at');
-            $query = $this->applyActiveFilters($query);
+        // Selalu hitung langsung agar loadMore tidak tertahan snapshot cache lama.
+        $query = $this->projectArticlesQuery()->select('articles.id', 'articles.published_at');
+        $query = $this->applyActiveFilters($query);
 
-            if ($this->sortBy == 'popular') {
-                $query->leftJoin('ai_analysis_results as ai_pop', function ($join) {
-                    $join->on('articles.id', '=', 'ai_pop.article_id')
-                         ->where('ai_pop.analysis_status', '=', 'success')
-                         ->where('ai_pop.reach_method', '=', 'ai_reader_estimate_v1');
-                })
-                ->orderByRaw('COALESCE(ai_pop.project_estimated_readers, 0) DESC')
-                ->orderBy('articles.published_at', 'desc');
-            } else {
-                $query->orderBy('articles.published_at', 'desc');
-            }
-
-            $fetchLimit = max($this->limit * 4, $this->limit);
-
-            $articles = $query->limit($fetchLimit)->get();
-
-            // Jangan dedupe saat filter sumber aktif, supaya hasil IG/TikTok/Facebook
-            // tetap lengkap sesuai pilihan checkbox user. Dedupe hanya dipakai saat
-            // feed campuran tanpa filter sumber, untuk mencegah kartu yang benar-benar
-            // sama muncul berulang di dashboard umum.
-            if (empty($this->selectedSources)) {
-                $articles = $this->dedupeSocialArticles($articles);
-            }
-
-            $articles = $articles
-                ->take($this->limit)
-                ->values();
-
-            return [
-                'ids' => $articles->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
-                'order' => $articles->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
-            ];
-        });
-
-        if ($cached instanceof \Illuminate\Support\Collection) {
-            return $this->articlesMemo[$cacheKey] = $cached;
+        if ($this->sortBy == 'popular') {
+            $query->leftJoin('ai_analysis_results as ai_pop', function ($join) {
+                $join->on('articles.id', '=', 'ai_pop.article_id')
+                    ->where('ai_pop.analysis_status', '=', 'success')
+                    ->where('ai_pop.reach_method', '=', 'ai_reader_estimate_v1');
+            })
+            ->orderByRaw('COALESCE(ai_pop.project_estimated_readers, 0) DESC')
+            ->orderBy('articles.published_at', 'desc');
+        } else {
+            $query->orderBy('articles.published_at', 'desc');
         }
 
-        if (!is_array($cached)) {
-            Cache::forget($cacheKey);
-            return $this->articlesMemo[$cacheKey] = collect();
+        $fetchLimit = max($this->limit * 4, $this->limit);
+        $articles = $query->limit($fetchLimit)->get();
+
+        if (empty($this->selectedSources)) {
+            $articles = $this->dedupeSocialArticles($articles);
         }
 
-        $ids = array_values(array_unique(array_map('intval', $cached['ids'] ?? [])));
+        $articles = $articles->take($this->limit)->values();
+        $ids = array_values(array_unique(array_map('intval', $articles->pluck('id')->all())));
 
         if ($ids === []) {
             return $this->articlesMemo[$cacheKey] = collect();
@@ -1283,9 +1248,7 @@ new class extends Component
             return $this->totalArticlesCountMemo[$cacheKey];
         }
 
-        return $this->totalArticlesCountMemo[$cacheKey] = (int) Cache::remember($cacheKey, 300, function () {
-            return (int) $this->applyActiveFilters($this->projectArticlesQuery())->count();
-        });
+        return $this->totalArticlesCountMemo[$cacheKey] = (int) $this->applyActiveFilters($this->projectArticlesQuery())->count();
     }
 
     protected function dedupeSocialArticles($articles)
@@ -1891,10 +1854,7 @@ new class extends Component
 };
 ?>
 
-<div>
-@php
-    $viralMeta = $this->getViralMeta();
-@endphp
+@push('styles')
 <style>
     html, body {
         min-height: 100% !important;
@@ -1973,6 +1933,11 @@ new class extends Component
         }
     }
 </style>
+@endpush
+<div>
+@php
+    $viralMeta = $this->getViralMeta();
+@endphp
 <div class="h-full min-h-screen bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-x-hidden overflow-y-auto pb-14"
      x-data="{
          detailModalOpen: false,
@@ -2530,15 +2495,24 @@ new class extends Component
 
                     <!-- Mentions Cards Feed -->
                     @php
-                        $mentionsArticlesList = $mentionsLoaded ? $this->getArticles() : collect();
+                        $mentionsArticlesList = $this->getArticles();
                         $mentionsArticlesCount = $mentionsArticlesList->count();
                         $mentionsTotalArticlesCount = $this->getTotalArticlesCount();
+                        $mentionsFeedSignature = md5(json_encode([
+                            'project' => $projectId,
+                            'sources' => $selectedSources,
+                            'sentiment' => $selectedSentiment,
+                            'search' => $search,
+                            'start' => $startDate,
+                            'end' => $endDate,
+                            'sort' => $sortBy,
+                        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                     @endphp
                     <div
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-4"
-                        wire:init="loadMentions"
-                        wire:key="mentions-scroll-shell-{{ $limit }}"
+                        wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
+                        data-total-articles-count="{{ $mentionsTotalArticlesCount }}"
                         x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
                         x-init="
                             const feedEl = $el;
@@ -2557,84 +2531,68 @@ new class extends Component
                             triggerLoadMore();
                         "
                     >
-                        @if(!$mentionsLoaded)
-                            <div class="space-y-4" wire:key="mentions-initial-skeleton">
-                                @for($i = 0; $i < 4; $i++)
-                                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm animate-pulse space-y-4">
-                                        <div class="h-4 w-28 rounded bg-slate-100"></div>
+                        @php
+                            $articlesList = $mentionsArticlesList;
+                            $mentionsFilterSignature = md5(json_encode([
+                                'project' => $projectId,
+                                'sources' => $selectedSources,
+                                'sentiment' => $selectedSentiment,
+                                'search' => $search,
+                                'start' => $startDate,
+                                'end' => $endDate,
+                                'sort' => $sortBy,
+                            ]));
+                        @endphp
+
+                        <div
+                            class="space-y-4 hidden"
+                            wire:loading.block
+                            wire:target="search,selectedSources,selectedSentiment,startDate,endDate,sortBy,selectedCategory,selectedKeyword,setSort"
+                            wire:key="mentions-filter-skeleton-{{ $mentionsFilterSignature }}"
+                        >
+                            @for($i = 0; $i < 4; $i++)
+                                <div class="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] animate-pulse space-y-4">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-10 h-10 rounded-xl bg-slate-100"></div>
+                                        <div class="space-y-2">
+                                            <div class="h-4 w-28 rounded bg-slate-100"></div>
+                                            <div class="h-3 w-40 rounded bg-slate-100"></div>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50/60 rounded-2xl p-3 border border-slate-100">
+                                        <div class="h-14 rounded-2xl bg-slate-100"></div>
+                                        <div class="h-14 rounded-2xl bg-slate-100"></div>
+                                        <div class="h-14 rounded-2xl bg-slate-100"></div>
+                                        <div class="h-14 rounded-2xl bg-slate-100 sm:col-span-1"></div>
+                                        <div class="h-14 rounded-2xl bg-slate-100 sm:col-span-1"></div>
+                                    </div>
+                                    <div class="space-y-3">
                                         <div class="h-5 w-3/4 rounded bg-slate-100"></div>
-                                        <div class="grid grid-cols-2 gap-3">
-                                            <div class="h-20 rounded-2xl bg-slate-100"></div>
-                                            <div class="h-20 rounded-2xl bg-slate-100"></div>
-                                        </div>
+                                        <div class="h-4 w-full rounded bg-slate-100"></div>
+                                        <div class="h-4 w-11/12 rounded bg-slate-100"></div>
                                     </div>
-                                @endfor
-                            </div>
-                        @else
-                            @php
-                                $articlesList = $mentionsArticlesList;
-                                $mentionsFilterSignature = md5(json_encode([
-                                    'project' => $projectId,
-                                    'sources' => $selectedSources,
-                                    'sentiment' => $selectedSentiment,
-                                    'search' => $search,
-                                    'start' => $startDate,
-                                    'end' => $endDate,
-                                    'sort' => $sortBy,
-                                    'limit' => $limit,
-                                ]));
-                            @endphp
-
-                            <div
-                                class="space-y-4 hidden"
-                                wire:loading.block
-                                wire:target="search,selectedSources,selectedSentiment,startDate,endDate,sortBy,selectedCategory,selectedKeyword,limit,setSort"
-                                wire:key="mentions-filter-skeleton-{{ $mentionsFilterSignature }}"
-                            >
-                                @for($i = 0; $i < 4; $i++)
-                                    <div class="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] animate-pulse space-y-4">
-                                        <div class="flex items-center gap-2.5">
-                                            <div class="w-10 h-10 rounded-xl bg-slate-100"></div>
-                                            <div class="space-y-2">
-                                                <div class="h-4 w-28 rounded bg-slate-100"></div>
-                                                <div class="h-3 w-40 rounded bg-slate-100"></div>
-                                            </div>
-                                        </div>
-                                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50/60 rounded-2xl p-3 border border-slate-100">
-                                            <div class="h-14 rounded-2xl bg-slate-100"></div>
-                                            <div class="h-14 rounded-2xl bg-slate-100"></div>
-                                            <div class="h-14 rounded-2xl bg-slate-100"></div>
-                                            <div class="h-14 rounded-2xl bg-slate-100 sm:col-span-1"></div>
-                                            <div class="h-14 rounded-2xl bg-slate-100 sm:col-span-1"></div>
-                                        </div>
-                                        <div class="space-y-3">
-                                            <div class="h-5 w-3/4 rounded bg-slate-100"></div>
-                                            <div class="h-4 w-full rounded bg-slate-100"></div>
-                                            <div class="h-4 w-11/12 rounded bg-slate-100"></div>
-                                        </div>
-                                        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                                            <div class="h-8 w-28 rounded-xl bg-slate-100"></div>
-                                            <div class="h-8 w-36 rounded-xl bg-slate-100"></div>
-                                        </div>
+                                    <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                                        <div class="h-8 w-28 rounded-xl bg-slate-100"></div>
+                                        <div class="h-8 w-36 rounded-xl bg-slate-100"></div>
                                     </div>
-                                @endfor
-                            </div>
-
-                            <div
-                                class="space-y-4"
-                                wire:loading.remove
-                                wire:target="search,selectedSources,selectedSentiment,startDate,endDate,sortBy,selectedCategory,selectedKeyword,limit,setSort"
-                                wire:key="mentions-feed-{{ $mentionsFilterSignature }}"
-                            >
-                                @if($articlesList->isEmpty())
-                                <div class="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-4 shadow-sm">
-                                    <svg class="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <p class="text-sm font-semibold text-slate-600">Belum ada penyebutan media ditemukan untuk proyek ini.</p>
                                 </div>
-                                @else
-                                @foreach($articlesList as $article)
+                            @endfor
+                        </div>
+
+                        <div
+                            class="space-y-4"
+                            wire:target="search,selectedSources,selectedSentiment,startDate,endDate,sortBy,selectedCategory,selectedKeyword,setSort"
+                            wire:key="mentions-feed-{{ $mentionsFeedSignature }}"
+                        >
+                            @if($articlesList->isEmpty())
+                            <div class="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-4 shadow-sm">
+                                <svg class="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 0 0 0118 0z"></path>
+                                </svg>
+                                <p class="text-sm font-semibold text-slate-600">Belum ada penyebutan media ditemukan untuk proyek ini.</p>
+                            </div>
+                            @else
+                            @foreach($articlesList as $article)
                                     @php
                                         $analysis = $article->aiAnalysisResult;
                                         $hasReadableAiReach = (bool) ($analysis && $analysis->hasCompleteOfficialAiResult());
@@ -2658,6 +2616,7 @@ new class extends Component
                                 @endphp
                                 <article 
                                     wire:key="mention-card-{{ $article->id }}-{{ md5((string) $article->source_name) }}"
+                                    data-mention-card
                                     class="bg-white rounded-3xl border border-slate-200/80 p-4 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 border-l-4"
                                     style="border-left-color: {{ $sentimentColor }}"
                                 >
@@ -2925,9 +2884,9 @@ new class extends Component
                                         </div>
                                     </div>
                                 </article>
-                                @endforeach
-                                @endif
-                            </div>
+                            @endforeach
+                            @endif
+                        </div>
                         <!-- Infinite Scroll / Load More -->
                         @php
                             $totalArticlesCount = $this->getTotalArticlesCount();
@@ -2935,14 +2894,26 @@ new class extends Component
 
                         @if($articlesList->count() < $totalArticlesCount)
                             <div
-                                wire:key="mentions-load-more-{{ $mentionsFilterSignature }}-{{ $articlesList->count() }}-{{ $limit }}"
+                                wire:key="mentions-load-more-{{ $mentionsFeedSignature }}-{{ $articlesList->count() }}"
                                 class="py-6 text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-2"
                             >
-                                <svg class="animate-spin h-4 w-4 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span>Memuat data lainnya...</span>
+                                <button
+                                    type="button"
+                                    wire:click="loadMore"
+                                    wire:loading.attr="disabled"
+                                    wire:target="loadMore"
+                                    class="inline-flex items-center gap-2 rounded-xl border border-[#1fa387]/20 bg-[#1fa387]/5 px-4 py-2 text-xs font-bold text-[#1fa387] transition hover:bg-[#1fa387]/10 disabled:opacity-60"
+                                >
+                                    <svg wire:loading.remove wire:target="loadMore" class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"></path>
+                                    </svg>
+                                    <svg wire:loading wire:target="loadMore" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span wire:loading.remove wire:target="loadMore">Muat data lainnya</span>
+                                    <span wire:loading wire:target="loadMore">Memuat data lainnya...</span>
+                                </button>
                             </div>
                         @else
                             <div class="py-6 mt-4 border-t border-slate-100 text-center text-xs text-slate-400 font-medium">
@@ -2950,7 +2921,7 @@ new class extends Component
                                 <p class="text-[10px] text-slate-400 mt-0.5">Tidak ada data tambahan yang tersedia</p>
                             </div>
                         @endif
-                        @endif
+
                     </div>
                 </section>
             @elseif($this->isTab('analisis'))
@@ -6194,19 +6165,19 @@ new class extends Component
                             class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm transition-all hover:shadow-md cursor-pointer border-l-4"
                             style="border-left-color: {{ $sentimentColor }}"
                             @click="showViralModal = false; openedFromViral = true; openDetail(
-                                '{{ addslashes($article->title) }}',
-                                '{{ addslashes($article->source_name) }}',
-                                '{{ $article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d M Y, H:i') . ' (' . \Carbon\Carbon::parse($article->published_at)->diffForHumans() . ')' : 'Baru saja' }}',
-                                '{{ addslashes($article->url) }}',
-                                '{{ addslashes($article->content) }}',
-                                '{{ $analysis ? addslashes($analysis->ai_summary) : '' }}',
-                                '{{ $analysis ? addslashes($analysis->ai_recommendation) : '' }}',
-                                '{{ $article->sentiment }}',
-                                '{{ $article->category }}',
-                                '{{ $projectReachDisplay['reachValue'] ?? '0' }}',
-                                '{{ $projectReachDisplay['levelLabel'] ?? '-' }}',
-                                '{{ $projectReachDisplay['scoreValue'] ?? '0' }}',
-                                '{{ $article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d/m/y') : 'Baru saja' }}'
+                                {{ Js::from($article->title) }},
+                                {{ Js::from($article->source_name) }},
+                                {{ Js::from($article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d M Y, H:i') . ' (' . \Carbon\Carbon::parse($article->published_at)->diffForHumans() . ')' : 'Baru saja') }},
+                                {{ Js::from($article->url) }},
+                                {{ Js::from($article->content) }},
+                                {{ Js::from($analysis ? $analysis->ai_summary : '') }},
+                                {{ Js::from($analysis ? $analysis->ai_recommendation : '') }},
+                                {{ Js::from($article->sentiment) }},
+                                {{ Js::from($article->category) }},
+                                {{ Js::from($projectReachDisplay['reachValue'] ?? '0') }},
+                                {{ Js::from($projectReachDisplay['levelLabel'] ?? '-') }},
+                                {{ Js::from($projectReachDisplay['scoreValue'] ?? '0') }},
+                                {{ Js::from($article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d/m/y') : 'Baru saja') }}
                             )"
                         >
                             <div class="flex items-center justify-between mb-2">
@@ -6282,19 +6253,25 @@ new class extends Component
                 <div class="flex items-center gap-4 mb-4">
                     <!-- Source Icon (Dynamic Favicon/Fallback in Modal) -->
                     <div class="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm shrink-0">
-                        <img 
-                            :src="'https://www.google.com/s2/favicons?sz=64&domain=' + (
-                                detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'facebook.com' :
-                                (detailSource.toLowerCase().includes('instagram') || detailSource.toLowerCase() === 'ig' ? 'instagram.com' :
-                                (detailSource.toLowerCase().includes('tiktok') || detailSource.toLowerCase() === 'tk' ? 'tiktok.com' :
-                                (detailSource.toLowerCase().includes('twitter') || detailSource.toLowerCase() === 'x.com' ? 'x.com' :
-                                (detailSource.toLowerCase().includes('portal berau') || detailSource.toLowerCase().includes('portalberau') ? 'portalberau.online' :
-                                (detailSource.includes('.') ? detailSource : detailSource + '.com')))))
-                            )"
-                            x-on:error="$el.src = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 stroke=%22%231fa387%22 stroke-width=%222.2%22 viewBox=%220 0 24 24%22><path stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z%22></path></svg>'"
-                            class="w-5 h-5 object-contain"
-                            alt="Logo"
-                        />
+                        <div x-data="{ iconFailed: false }" class="w-full h-full">
+                            <img 
+                                :src="'https://www.google.com/s2/favicons?sz=64&domain=' + (
+                                    detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'facebook.com' :
+                                    (detailSource.toLowerCase().includes('instagram') || detailSource.toLowerCase() === 'ig' ? 'instagram.com' :
+                                    (detailSource.toLowerCase().includes('tiktok') || detailSource.toLowerCase() === 'tk' ? 'tiktok.com' :
+                                    (detailSource.toLowerCase().includes('twitter') || detailSource.toLowerCase() === 'x.com' ? 'x.com' :
+                                    (detailSource.toLowerCase().includes('portal berau') || detailSource.toLowerCase().includes('portalberau') ? 'portalberau.online' :
+                                    (detailSource.includes('.') ? detailSource : detailSource + '.com')))))
+                                )"
+                                x-on:error="iconFailed = true"
+                                x-show="!iconFailed"
+                                class="w-5 h-5 object-contain"
+                                alt="Logo"
+                            />
+                            <div x-show="iconFailed" class="w-full h-full flex items-center justify-center" style="display: none;">
+                                <svg class="w-5 h-5 text-[#1fa387]" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="flex flex-col">

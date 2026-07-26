@@ -180,3 +180,11 @@ Jalankan perintah ini di dalam direktori proyek utama di host machine (macOS And
 - `loadMore()` di tab Penyebutan sebelumnya bergantung pada `x-intersect`, tetapi project ini tidak memuat plugin Alpine `intersect`, sehingga trigger auto-load tidak berjalan.
 - Mengganti trigger auto-load ke `IntersectionObserver` bawaan browser agar tidak bergantung plugin tambahan dan tetap aman saat konten berubah akibat Livewire morphing.
 - Setelah verifikasi, `IntersectionObserver` masih tidak stabil karena runtime Alpine di halaman ini tidak mendukung cleanup yang dipakai sebelumnya dan trigger tidak konsisten saat scroll container internal. Saya ubah lagi ke listener `scroll` langsung di container feed agar load more lebih stabil di tab Penyebutan, Konten, dan Analisis.
+- Shell scroll container Penyebutan sempat ikut diberi `wire:key` berbasis `limit`, tetapi itu berpotensi me-remount container setelah batch pertama dan memutus kesinambungan scroll/load more. Shell dikembalikan ke key stabil agar batch berikutnya tetap bisa dipicu dari container yang sama.
+
+
+## 2026-07-26 12:10 WITA
+- Audit browser menunjukkan batch awal tab Penyebutan tampil, tetapi scroll sampai dasar hanya berhenti di 10 artikel dan tidak memicu batch berikutnya.
+- Console browser masih menampilkan error Livewire `TypeError: Cannot read properties of undefined (reading 'uri')` dan warning `Livewire: missing closing tags found. Ensure your template elements contain matching closing tags. div`, sehingga update morphing feed belum stabil.
+- String mentah pada handler `@click` viral article sudah diganti menjadi `Js::from(...)` supaya Alpine tidak gagal parsing ketika judul/konten berisi kutip atau newline.
+- Saya juga mencoba menaruh watcher load-more global, tetapi di sesi browser ini script tambahan belum terbaca dari render Livewire/layout, jadi blocker utama yang tersisa adalah morf DOM Livewire, bukan query artikel.

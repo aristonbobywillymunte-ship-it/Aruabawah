@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet" />
     @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
 </head>
 <body class="min-h-screen bg-[#f7f9ff] text-slate-800 font-sans">
     <div class="flex min-h-screen flex-col lg:flex-row" x-data="{ mobileMenuOpen: false }">
