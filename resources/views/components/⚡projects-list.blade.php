@@ -1039,7 +1039,6 @@ new class extends Component
                                                         </div>
                                                         <span class="text-sm font-semibold text-slate-700 truncate">Instagram</span>
                                                     </div>
-                                                    <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">0</span>
                                                 </label>
 
                                                 <label class="flex items-center justify-between gap-3 cursor-pointer group">
@@ -1053,7 +1052,6 @@ new class extends Component
                                                         </div>
                                                         <span class="text-sm font-semibold text-slate-700 truncate">TikTok</span>
                                                     </div>
-                                                    <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">29</span>
                                                 </label>
 
                                                 <label class="flex items-center justify-between gap-3 cursor-pointer group">
@@ -1066,7 +1064,6 @@ new class extends Component
                                                         </div>
                                                         <span class="text-sm font-semibold text-slate-700 truncate">Facebook</span>
                                                     </div>
-                                                    <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">60</span>
                                                 </label>
 
                                                 <label class="flex items-center justify-between gap-3 cursor-pointer group">
@@ -1079,7 +1076,6 @@ new class extends Component
                                                         </div>
                                                         <span class="text-sm font-semibold text-slate-700 truncate">Portal News</span>
                                                     </div>
-                                                    <span class="text-xs font-bold text-slate-400 tabular-nums w-6 text-right flex-shrink-0">176</span>
                                                 </label>
                                             </div>
                                         </div>
