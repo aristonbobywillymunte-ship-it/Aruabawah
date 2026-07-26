@@ -2539,18 +2539,24 @@ new class extends Component
                         class="overflow-y-auto pr-4 space-y-4"
                         wire:init="loadMentions"
                         wire:key="mentions-scroll-shell"
-                        x-data="{ loadingMore: false }"
-                        x-on:scroll.passive.debounce.100ms="
-                            if (
-                                !loadingMore
-                                && $el.scrollTop + $el.clientHeight >= $el.scrollHeight - 200
-                                && {{ $mentionsArticlesCount }} < {{ $mentionsTotalArticlesCount }}
-                            ) {
+                        x-data="{ loadingMore: false, loadMoreTimer: null }"
+                        x-init="
+                            const feedEl = $el;
+                            const triggerLoadMore = () => {
+                                if (loadingMore) return;
+                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
+                                if ({{ $mentionsArticlesCount }} >= {{ $mentionsTotalArticlesCount }}) return;
                                 loadingMore = true;
                                 Promise.resolve($wire.loadMore())
                                     .catch(() => {})
                                     .finally(() => loadingMore = false);
+                            };
+                            feedEl.addEventListener('scroll', triggerLoadMore, { passive: true });
+                            if (feedEl.loadMoreTimer) {
+                                clearInterval(feedEl.loadMoreTimer);
                             }
+                            feedEl.loadMoreTimer = setInterval(triggerLoadMore, 900);
+                            triggerLoadMore();
                         "
                     >
                         @if(!$mentionsLoaded)
@@ -2964,18 +2970,24 @@ new class extends Component
                     <div
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-6"
-                        x-data="{ loadingMore: false }"
-                        x-on:scroll.passive.debounce.100ms="
-                            if (
-                                !loadingMore
-                                && $el.scrollTop + $el.clientHeight >= $el.scrollHeight - 200
-                                && {{ $analysisArticlesCount }} < {{ $analysisTotalArticlesCount }}
-                            ) {
+                        x-data="{ loadingMore: false, loadMoreTimer: null }"
+                        x-init="
+                            const feedEl = $el;
+                            const triggerLoadMore = () => {
+                                if (loadingMore) return;
+                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
+                                if ({{ $analysisArticlesCount }} >= {{ $analysisTotalArticlesCount }}) return;
                                 loadingMore = true;
                                 Promise.resolve($wire.loadMore())
                                     .catch(() => {})
                                     .finally(() => loadingMore = false);
+                            };
+                            feedEl.addEventListener('scroll', triggerLoadMore, { passive: true });
+                            if (feedEl.loadMoreTimer) {
+                                clearInterval(feedEl.loadMoreTimer);
                             }
+                            feedEl.loadMoreTimer = setInterval(triggerLoadMore, 900);
+                            triggerLoadMore();
                         "
                     >
                         <!-- Gambaran Umum Card Grid -->
@@ -5671,18 +5683,24 @@ new class extends Component
                     <div
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-6"
-                        x-data="{ loadingMore: false }"
-                        x-on:scroll.passive.debounce.100ms="
-                            if (
-                                !loadingMore
-                                && $el.scrollTop + $el.clientHeight >= $el.scrollHeight - 200
-                                && {{ $contentArticlesCount }} < {{ $contentTotalArticlesCount }}
-                            ) {
+                        x-data="{ loadingMore: false, loadMoreTimer: null }"
+                        x-init="
+                            const feedEl = $el;
+                            const triggerLoadMore = () => {
+                                if (loadingMore) return;
+                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
+                                if ({{ $contentArticlesCount }} >= {{ $contentTotalArticlesCount }}) return;
                                 loadingMore = true;
                                 Promise.resolve($wire.loadMore())
                                     .catch(() => {})
                                     .finally(() => loadingMore = false);
+                            };
+                            feedEl.addEventListener('scroll', triggerLoadMore, { passive: true });
+                            if (feedEl.loadMoreTimer) {
+                                clearInterval(feedEl.loadMoreTimer);
                             }
+                            feedEl.loadMoreTimer = setInterval(triggerLoadMore, 900);
+                            triggerLoadMore();
                         "
                     >
 
