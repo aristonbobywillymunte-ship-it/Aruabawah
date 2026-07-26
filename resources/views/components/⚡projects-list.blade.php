@@ -1590,7 +1590,7 @@ new class extends Component
                             @else
                                 <div class="divide-y divide-slate-100">
                                     @foreach($trashed as $idx => $tp)
-                                        <div class="py-5 flex items-center justify-between gap-6 hover:bg-slate-50/40 px-3 -mx-3 rounded-2xl transition duration-150">
+                                        <div class="py-5 flex items-center justify-between gap-6 px-4 rounded-2xl transition duration-150 {{ $idx % 2 === 0 ? 'bg-[#F8F9FA]' : 'bg-white' }} hover:bg-slate-50 border border-transparent hover:border-slate-100">
                                             <div class="flex items-start gap-3 flex-1 min-w-0">
                                                 <!-- Index Badge (Identical to active project card index) -->
                                                 <div class="px-2 py-1 rounded bg-[#1fa387]/10 text-[#1fa387] font-bold text-[10px] tracking-widest border border-[#1fa387]/20 shrink-0">
