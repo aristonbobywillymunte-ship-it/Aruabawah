@@ -78,4 +78,39 @@
             border-right: 1px solid #f1f5f9 !important;
         }
     }
+    /* ===== MENTIONS FEED SCROLL ===== */
+    #mentions-feed-scroll {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+    @media (min-width: 900px) {
+        .mentions-section-wrapper {
+            height: calc(100vh - 170px) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            gap: 16px !important;
+        }
+        .mentions-section-wrapper > div:first-child {
+            flex-shrink: 0 !important;
+        }
+        #mentions-feed-scroll {
+            flex: 1 1 0px !important;
+            min-height: 0 !important;
+        }
+    }
+
+    @media (max-width: 899px) {
+        .mentions-section-wrapper {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+        }
+        #mentions-feed-scroll {
+            max-height: 75vh !important;
+        }
+    }
 </style>

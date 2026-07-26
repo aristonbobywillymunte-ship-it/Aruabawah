@@ -2368,7 +2368,7 @@ new class extends Component
             
             @if($this->isTab('penyebutan'))
                 <!-- TAB 1: Penyebutan (Mentions Feed View) -->
-                <section class="flex-1 min-w-0 flex flex-col space-y-4 pr-1" wire:key="dashboard-mentions-section">
+                <section class="flex-1 min-w-0 mentions-section-wrapper pr-1" wire:key="dashboard-mentions-section">
                     <!-- Section Title & Sort Selector -->
                     <div class="flex items-center justify-between">
                         <div>
@@ -2430,19 +2430,9 @@ new class extends Component
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                     @endphp
                     <div
-                        class="overflow-y-auto pr-4 space-y-4"
+                        class="pr-4 space-y-4"
                         wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
                         id="mentions-feed-scroll"
-                        x-data="{}"
-                        x-init="
-                            const el = $el;
-                            const setHeight = () => {
-                                const top = el.getBoundingClientRect().top;
-                                el.style.height = (window.innerHeight - top - 24) + 'px';
-                            };
-                            setHeight();
-                            window.addEventListener('resize', setHeight);
-                        "
                     >
                         @php
                             $articlesList = $mentionsArticlesList;
