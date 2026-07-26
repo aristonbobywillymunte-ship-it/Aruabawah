@@ -2529,6 +2529,11 @@ new class extends Component
                     </div>
 
                     <!-- Mentions Cards Feed -->
+                    @php
+                        $mentionsArticlesList = $mentionsLoaded ? $this->getArticles() : collect();
+                        $mentionsArticlesCount = $mentionsArticlesList->count();
+                        $mentionsTotalArticlesCount = $this->getTotalArticlesCount();
+                    @endphp
                     <div
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-4"
@@ -2540,7 +2545,7 @@ new class extends Component
                             const triggerLoadMore = () => {
                                 if (loadingMore) return;
                                 if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
-                                if ({{ $articlesList->count() }} >= {{ $totalArticlesCount }}) return;
+                                if ({{ $mentionsArticlesCount }} >= {{ $mentionsTotalArticlesCount }}) return;
                                 loadingMore = true;
                                 Promise.resolve($wire.loadMore())
                                     .catch(() => {})
@@ -2566,7 +2571,7 @@ new class extends Component
                             </div>
                         @else
                             @php
-                                $articlesList = $this->getArticles();
+                                $articlesList = $mentionsArticlesList;
                                 $mentionsFilterSignature = md5(json_encode([
                                     'project' => $projectId,
                                     'sources' => $selectedSources,
@@ -2954,6 +2959,11 @@ new class extends Component
                         <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
                         <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data yang relevan untuk proyek aktif.</p>
                     </div>
+                    @php
+                        $analysisArticlesList = $this->getArticles();
+                        $analysisArticlesCount = $analysisArticlesList->count();
+                        $analysisTotalArticlesCount = $this->getTotalArticlesCount();
+                    @endphp
                     <div
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-6"
@@ -2963,7 +2973,7 @@ new class extends Component
                             const triggerLoadMore = () => {
                                 if (loadingMore) return;
                                 if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
-                                if ({{ $articlesList->count() }} >= {{ $totalArticlesCount }}) return;
+                                if ({{ $analysisArticlesCount }} >= {{ $analysisTotalArticlesCount }}) return;
                                 loadingMore = true;
                                 Promise.resolve($wire.loadMore())
                                     .catch(() => {})
@@ -5505,7 +5515,7 @@ new class extends Component
 
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
                         @php
-                            $articlesList = $this->getArticles();
+                            $articlesList = $analysisArticlesList;
                         @endphp
                         @forelse($articlesList as $article)
                             @php
@@ -5659,7 +5669,31 @@ new class extends Component
                         </div>
                     </div>
                     
-                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
+                    @php
+                        $contentArticlesList = $this->getArticles();
+                        $contentArticlesCount = $contentArticlesList->count();
+                        $contentTotalArticlesCount = $this->getTotalArticlesCount();
+                    @endphp
+                    <div
+                        style="height: calc(100vh - 250px);"
+                        class="overflow-y-auto pr-4 space-y-6"
+                        x-data="{ loadingMore: false }"
+                        x-init="
+                            const feedEl = $el;
+                            const triggerLoadMore = () => {
+                                if (loadingMore) return;
+                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
+                                if ({{ $contentArticlesCount }} >= {{ $contentTotalArticlesCount }}) return;
+                                loadingMore = true;
+                                Promise.resolve($wire.loadMore())
+                                    .catch(() => {})
+                                    .finally(() => loadingMore = false);
+                            };
+                            const onScroll = () => requestAnimationFrame(triggerLoadMore);
+                            feedEl.addEventListener('scroll', onScroll, { passive: true });
+                            requestAnimationFrame(triggerLoadMore);
+                        "
+                    >
 
                     <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-6">
                         <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4 w-full">
