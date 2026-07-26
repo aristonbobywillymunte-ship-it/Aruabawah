@@ -1952,7 +1952,7 @@ new class extends Component
             <!-- User Profile & Add Notification -->
             <div class="flex shrink-0 items-center justify-self-end gap-4">
                 <div class="flex items-center gap-3">
-                    <livewire:notification-dropdown :project-id="$this->projectId" />
+                    <livewire:notification-dropdown :project-id="$this->getDecodedProjectId()" />
                     <div class="relative" x-data="{ openProfile: false }">
                         <button
                             type="button"
