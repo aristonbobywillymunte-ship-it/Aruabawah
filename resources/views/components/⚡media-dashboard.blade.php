@@ -1862,7 +1862,7 @@ new class extends Component
     $viralMeta = $this->getViralMeta();
 @endphp
 @include('components.media-dashboard-styles')
-<div class="w-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-x-hidden"
+<div class="w-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans"
      x-data="{
          isMobile: window.innerWidth < 900,
          scrollToTop() {
