@@ -543,12 +543,7 @@ class ProjectsList extends Component
 
         $this->lastCreatedProjectName = $this->name;
         $this->showSuccessModal = true;
-        session()->flash(
-            'message',
-            'Proyek berhasil dibuat. Data lama yang sesuai filter: '
-            . (($resyncResult['match']['articles_linked'] ?? 0)) . ' artikel, '
-            . (($resyncResult['match']['social_linked'] ?? 0)) . ' medsos.'
-        );
+        session()->flash('message', 'Proyek berhasil dibuat.');
         
         $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords']);
         $this->selectedSources = ['Instagram', 'TikTok', 'Facebook', 'Portal'];
@@ -606,15 +601,7 @@ class ProjectsList extends Component
 
         $this->showEditModal = false;
         $this->editProjectId = null;
-        session()->flash(
-            'message',
-            'Proyek berhasil diperbarui. Data lama yang sesuai filter: '
-            . (($resyncResult['match']['articles_linked'] ?? 0)) . ' artikel, '
-            . (($resyncResult['match']['social_linked'] ?? 0)) . ' medsos. '
-            . 'Social disinkronkan ulang: '
-            . (($resyncResult['social_sync']['attached'] ?? 0)) . ' tertaut, '
-            . (($resyncResult['social_sync']['detached'] ?? 0)) . ' dilepas.'
-        );
+        session()->flash('message', 'Proyek berhasil diperbarui.');
     }
 
     // Trashed projects modal state
