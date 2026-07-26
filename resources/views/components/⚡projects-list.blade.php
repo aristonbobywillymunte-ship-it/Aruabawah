@@ -910,17 +910,17 @@ new class extends Component
                                     @error('name') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                                 </div>
 
-                                <!-- Kata Kunci Pendukung (Konteks) di bawah Nama Proyek -->
+                                <!-- Kata Kunci Pencarian Tambahan (Konteks) di bawah Nama Proyek -->
                                 <div class="space-y-2">
                                     <div class="flex items-center gap-1.5">
-                                        <label class="text-sm font-bold text-slate-800">Kata Kunci Pendukung (Konteks)</label>
+                                        <label class="text-sm font-bold text-slate-800">Kata Kunci Pencarian Tambahan (Konteks)</label>
                                         <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
                                     </div>
-                                    <p class="text-xs text-slate-400 leading-tight">Semua kata kunci ini harus muncul agar penyebutan dikumpulkan.</p>
+                                    <p class="text-xs text-slate-400 leading-tight">Gunakan untuk membatasi pencarian agar harus mengandung kata/frasa pendukung spesifik (seperti nama jabatan, tokoh, objek, atau lokasi tertentu).</p>
                                     <input 
                                         wire:model="contextKeywords" 
                                         type="text" 
-                                        placeholder="Contoh: olahraga, sepatu, lari"
+                                        placeholder="Contoh: Gubernur, Kaltim, Samarinda, Balikpapan"
                                         class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
                                     >
                                     <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
