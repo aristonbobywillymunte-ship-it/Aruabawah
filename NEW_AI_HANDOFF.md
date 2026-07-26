@@ -174,3 +174,8 @@ Jalankan perintah ini di dalam direktori proyek utama di host machine (macOS And
 - Mengizinkan dispatch state `failed` dengan `last_error_code=missing_configuration` untuk dipromosikan kembali ke `queued` jika konfigurasi template/provider sudah pulih.
 - 27 artikel lama yang sebelumnya gagal karena `missing_configuration` berhasil direqueue ulang dengan template artikel aktif `Analisis Portal`.
 - Setelah requeue, status di database menunjukkan `queued=25`, `processing=0`, `retry_wait=0`, dan `failed_missing_configuration=0`, sehingga antrean AI kembali hidup untuk kasus yang memang bisa diselamatkan.
+
+
+## 2026-07-26 10:45 WITA
+- `loadMore()` di tab Penyebutan sebelumnya bergantung pada `x-intersect`, tetapi project ini tidak memuat plugin Alpine `intersect`, sehingga trigger auto-load tidak berjalan.
+- Mengganti trigger auto-load ke `IntersectionObserver` bawaan browser agar tidak bergantung plugin tambahan dan tetap aman saat konten berubah akibat Livewire morphing.
