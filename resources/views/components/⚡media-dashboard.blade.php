@@ -2430,42 +2430,11 @@ new class extends Component
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                     @endphp
                     <div
-                        class="flex-1 min-h-0 overflow-y-auto pr-4 space-y-4 pb-8"
+                        style="height: calc(100vh - 240px);"
+                        class="overflow-y-auto pr-4 space-y-4"
                         wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
-                        data-total-articles-count="{{ $mentionsTotalArticlesCount }}"
-                        data-livewire-id="{{ $this->getId() }}"
-                        x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
-                        x-init="
-                            const feedEl = $el;
-                            const lwId = feedEl.dataset.livewireId;
-                            const getLwWire = () => {
-                                if (typeof Livewire !== 'undefined' && lwId) {
-                                    return Livewire.find(lwId);
-                                }
-                                return null;
-                            };
-                            const triggerLoadMore = () => {
-                                const remaining = feedEl.scrollHeight - feedEl.scrollTop - feedEl.clientHeight;
-                                if (remaining > 300) return;
-                                const currentCount = feedEl.querySelectorAll('[data-mention-card]').length;
-                                const totalCount = parseInt(feedEl.dataset.totalArticlesCount || '0', 10);
-                                if (currentCount >= totalCount) return;
-                                if (Date.now() - lastLoadMoreAt < 1500) return;
-                                lastLoadMoreAt = Date.now();
-                                const wire = getLwWire();
-                                if (wire) {
-                                    wire.loadMore();
-                                } else {
-                                    $wire.loadMore();
-                                }
-                            };
-                            feedEl.addEventListener('scroll', triggerLoadMore, { passive: true });
-                            if (feedEl.loadMoreTimer) {
-                                clearInterval(feedEl.loadMoreTimer);
-                            }
-                            feedEl.loadMoreTimer = setInterval(triggerLoadMore, 1000);
-                            setTimeout(triggerLoadMore, 500);
-                        "
+                        data-mentions-scroll
+                        id="mentions-feed-scroll"
                     >
                         @php
                             $articlesList = $mentionsArticlesList;
@@ -2829,32 +2798,73 @@ new class extends Component
                         @endphp
 
                         @if($articlesList->count() < $totalArticlesCount)
-                            <div
-                                wire:key="mentions-load-more-{{ $mentionsFeedSignature }}-{{ $articlesList->count() }}"
-                                class="py-6 text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-2"
-                            >
-                                <button
-                                    type="button"
-                                    wire:click="loadMore"
-                                    wire:loading.attr="disabled"
+                            <div wire:key="mentions-load-more-{{ $mentionsFeedSignature }}-{{ $articlesList->count() }}">
+
+                                {{-- Sentinel: Auto-trigger saat visible di dalam scroll container --}}
+                                <div
+                                    x-data="{}"
+                                    x-init="
+                                        const sentinel = $el;
+                                        const scrollContainer = document.getElementById('mentions-feed-scroll');
+                                        let observing = true;
+                                        const obs = new IntersectionObserver(
+                                            (entries) => {
+                                                if (!observing) return;
+                                                if (entries[0].isIntersecting) {
+                                                    observing = false;
+                                                    $wire.loadMore().finally(() => {
+                                                        setTimeout(() => { observing = true; }, 1200);
+                                                    });
+                                                }
+                                            },
+                                            {
+                                                root: scrollContainer,
+                                                rootMargin: '120px',
+                                                threshold: 0
+                                            }
+                                        );
+                                        obs.observe(sentinel);
+                                        $wire.on('loadMore', () => { obs.disconnect(); });
+                                    "
+                                    class="h-px w-full"
+                                ></div>
+
+                                {{-- Loading indicator yang tampil saat loadMore berjalan --}}
+                                <div
+                                    wire:loading
                                     wire:target="loadMore"
-                                    class="inline-flex items-center gap-2 rounded-xl border border-[#1fa387]/20 bg-[#1fa387]/5 px-4 py-2 text-xs font-bold text-[#1fa387] transition hover:bg-[#1fa387]/10 disabled:opacity-60"
+                                    style="display:none;"
+                                    class="py-6 flex items-center justify-center gap-2 text-[#1fa387]"
                                 >
-                                    <svg wire:loading.remove wire:target="loadMore" class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"></path>
-                                    </svg>
-                                    <svg wire:loading wire:target="loadMore" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    <span wire:loading.remove wire:target="loadMore">Muat data lainnya</span>
-                                    <span wire:loading wire:target="loadMore">Memuat data lainnya...</span>
-                                </button>
+                                    <span class="text-xs font-bold">Memuat lebih banyak...</span>
+                                </div>
+
+                                {{-- Tombol manual fallback --}}
+                                <div
+                                    wire:loading.remove
+                                    wire:target="loadMore"
+                                    class="py-4 flex items-center justify-center"
+                                >
+                                    <button
+                                        type="button"
+                                        wire:click="loadMore"
+                                        class="inline-flex items-center gap-2 rounded-xl border border-[#1fa387]/20 bg-[#1fa387]/5 px-4 py-2 text-xs font-bold text-[#1fa387] transition hover:bg-[#1fa387]/10"
+                                    >
+                                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"></path>
+                                        </svg>
+                                        <span>Muat lebih banyak ({{ $articlesList->count() }}/{{ $totalArticlesCount }})</span>
+                                    </button>
+                                </div>
                             </div>
                         @else
                             <div class="py-6 mt-4 border-t border-slate-100 text-center text-xs text-slate-400 font-medium">
                                 <p class="text-slate-500 font-semibold">Semua data telah dimuat</p>
-                                <p class="text-[10px] text-slate-400 mt-0.5">Tidak ada data tambahan yang tersedia</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">{{ $articlesList->count() }}/{{ $totalArticlesCount }} artikel ditampilkan</p>
                             </div>
                         @endif
 
