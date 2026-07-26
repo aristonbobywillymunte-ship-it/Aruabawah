@@ -1661,10 +1661,10 @@ new class extends Component
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
                     @keydown.escape.window="$wire.closeConfirmModal()"
-                    class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/30 backdrop-blur-sm"
+                    class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-955/40 backdrop-blur-sm"
                 >
                     <div 
-                        @click.outside="$wire.closeConfirmModal()"
+                        @click.outside.stop="$wire.closeConfirmModal()"
                         class="bg-white rounded-3xl w-full max-w-sm shadow-xl border border-slate-100/50 overflow-hidden transform transition-all duration-300 scale-100 relative"
                     >
                         <!-- Close Button (X) -->
