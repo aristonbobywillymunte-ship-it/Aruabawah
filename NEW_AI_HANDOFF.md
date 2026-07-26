@@ -179,3 +179,4 @@ Jalankan perintah ini di dalam direktori proyek utama di host machine (macOS And
 ## 2026-07-26 10:45 WITA
 - `loadMore()` di tab Penyebutan sebelumnya bergantung pada `x-intersect`, tetapi project ini tidak memuat plugin Alpine `intersect`, sehingga trigger auto-load tidak berjalan.
 - Mengganti trigger auto-load ke `IntersectionObserver` bawaan browser agar tidak bergantung plugin tambahan dan tetap aman saat konten berubah akibat Livewire morphing.
+- Setelah verifikasi, `IntersectionObserver` masih tidak stabil karena runtime Alpine di halaman ini tidak mendukung cleanup yang dipakai sebelumnya dan trigger tidak konsisten saat scroll container internal. Saya ubah lagi ke listener `scroll` langsung di container feed agar load more lebih stabil di tab Penyebutan, Konten, dan Analisis.

@@ -2529,7 +2529,28 @@ new class extends Component
                     </div>
 
                     <!-- Mentions Cards Feed -->
-                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-4" wire:init="loadMentions" wire:key="mentions-scroll-shell">
+                    <div
+                        style="height: calc(100vh - 250px);"
+                        class="overflow-y-auto pr-4 space-y-4"
+                        wire:init="loadMentions"
+                        wire:key="mentions-scroll-shell"
+                        x-data="{ loadingMore: false }"
+                        x-init="
+                            const feedEl = $el;
+                            const triggerLoadMore = () => {
+                                if (loadingMore) return;
+                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
+                                if ({{ $articlesList->count() }} >= {{ $totalArticlesCount }}) return;
+                                loadingMore = true;
+                                Promise.resolve($wire.loadMore())
+                                    .catch(() => {})
+                                    .finally(() => loadingMore = false);
+                            };
+                            const onScroll = () => requestAnimationFrame(triggerLoadMore);
+                            feedEl.addEventListener('scroll', onScroll, { passive: true });
+                            requestAnimationFrame(triggerLoadMore);
+                        "
+                    >
                         @if(!$mentionsLoaded)
                             <div class="space-y-4" wire:key="mentions-initial-skeleton">
                                 @for($i = 0; $i < 4; $i++)
@@ -2909,21 +2930,6 @@ new class extends Component
                         @if($articlesList->count() < $totalArticlesCount)
                             <div
                                 wire:key="mentions-load-more-{{ $mentionsFilterSignature }}-{{ $articlesList->count() }}"
-                                x-data="{ loadingMore: false, observer: null }"
-                                x-init="
-                                    observer = new IntersectionObserver((entries) => {
-                                        entries.forEach((entry) => {
-                                            if (entry.isIntersecting && !loadingMore) {
-                                                loadingMore = true;
-                                                $wire.loadMore()
-                                                    .then(() => loadingMore = false)
-                                                    .catch(() => loadingMore = false);
-                                            }
-                                        });
-                                    }, { rootMargin: '200px' });
-                                    observer.observe($el);
-                                    $cleanup(() => observer.disconnect());
-                                "
                                 class="py-6 text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-2"
                             >
                                 <svg class="animate-spin h-4 w-4 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -2948,7 +2954,26 @@ new class extends Component
                         <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
                         <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data yang relevan untuk proyek aktif.</p>
                     </div>
-                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
+                    <div
+                        style="height: calc(100vh - 250px);"
+                        class="overflow-y-auto pr-4 space-y-6"
+                        x-data="{ loadingMore: false }"
+                        x-init="
+                            const feedEl = $el;
+                            const triggerLoadMore = () => {
+                                if (loadingMore) return;
+                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
+                                if ({{ $articlesList->count() }} >= {{ $totalArticlesCount }}) return;
+                                loadingMore = true;
+                                Promise.resolve($wire.loadMore())
+                                    .catch(() => {})
+                                    .finally(() => loadingMore = false);
+                            };
+                            const onScroll = () => requestAnimationFrame(triggerLoadMore);
+                            feedEl.addEventListener('scroll', onScroll, { passive: true });
+                            requestAnimationFrame(triggerLoadMore);
+                        "
+                    >
                         <!-- Gambaran Umum Card Grid -->
                         <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-6">
                             <div class="flex justify-between items-center pb-3 border-b border-slate-100/85 mb-6">
@@ -5606,24 +5631,7 @@ new class extends Component
                     @endphp
 
                     @if($articlesList->count() < $totalArticlesCount)
-                        <div
-                            x-data="{ loadingMore: false, observer: null }"
-                            x-init="
-                                observer = new IntersectionObserver((entries) => {
-                                    entries.forEach((entry) => {
-                                        if (entry.isIntersecting && !loadingMore) {
-                                            loadingMore = true;
-                                            $wire.loadMore()
-                                                .then(() => loadingMore = false)
-                                                .catch(() => loadingMore = false);
-                                        }
-                                    });
-                                }, { rootMargin: '200px' });
-                                observer.observe($el);
-                                $cleanup(() => observer.disconnect());
-                            "
-                            class="py-6 text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-2"
-                        >
+                        <div class="py-6 text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-2">
                             <svg class="animate-spin h-4 w-4 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
