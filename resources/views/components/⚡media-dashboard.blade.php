@@ -2538,7 +2538,7 @@ new class extends Component
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-4"
                         wire:init="loadMentions"
-                        wire:key="mentions-scroll-shell"
+                        wire:key="mentions-scroll-shell-{{ $limit }}"
                         x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
                         x-init="
                             const feedEl = $el;
@@ -2935,7 +2935,7 @@ new class extends Component
 
                         @if($articlesList->count() < $totalArticlesCount)
                             <div
-                                wire:key="mentions-load-more-{{ $mentionsFilterSignature }}-{{ $articlesList->count() }}"
+                                wire:key="mentions-load-more-{{ $mentionsFilterSignature }}-{{ $articlesList->count() }}-{{ $limit }}"
                                 class="py-6 text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-2"
                             >
                                 <svg class="animate-spin h-4 w-4 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
