@@ -1859,7 +1859,7 @@ new class extends Component
     $viralMeta = $this->getViralMeta();
 @endphp
 @include('components.media-dashboard-styles')
-<div class="h-full min-h-screen bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-x-hidden overflow-y-auto pb-14"
+<div class="h-screen w-screen bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-hidden"
      x-data="{
          detailModalOpen: false,
          showViralModal: false,
