@@ -2430,28 +2430,41 @@ new class extends Component
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                     @endphp
                     <div
-                        style="height: calc(100vh - 250px);"
-                        class="overflow-y-auto pr-4 space-y-4"
+                        class="flex-1 min-h-0 overflow-y-auto pr-4 space-y-4 pb-8"
                         wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
                         data-total-articles-count="{{ $mentionsTotalArticlesCount }}"
+                        data-livewire-id="{{ $this->getId() }}"
                         x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
                         x-init="
                             const feedEl = $el;
+                            const lwId = feedEl.dataset.livewireId;
+                            const getLwWire = () => {
+                                if (typeof Livewire !== 'undefined' && lwId) {
+                                    return Livewire.find(lwId);
+                                }
+                                return null;
+                            };
                             const triggerLoadMore = () => {
-                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
+                                const remaining = feedEl.scrollHeight - feedEl.scrollTop - feedEl.clientHeight;
+                                if (remaining > 300) return;
                                 const currentCount = feedEl.querySelectorAll('[data-mention-card]').length;
                                 const totalCount = parseInt(feedEl.dataset.totalArticlesCount || '0', 10);
                                 if (currentCount >= totalCount) return;
-                                if (Date.now() - lastLoadMoreAt < 1200) return;
+                                if (Date.now() - lastLoadMoreAt < 1500) return;
                                 lastLoadMoreAt = Date.now();
-                                $wire.loadMore();
+                                const wire = getLwWire();
+                                if (wire) {
+                                    wire.loadMore();
+                                } else {
+                                    $wire.loadMore();
+                                }
                             };
                             feedEl.addEventListener('scroll', triggerLoadMore, { passive: true });
                             if (feedEl.loadMoreTimer) {
                                 clearInterval(feedEl.loadMoreTimer);
                             }
-                            feedEl.loadMoreTimer = setInterval(triggerLoadMore, 900);
-                            triggerLoadMore();
+                            feedEl.loadMoreTimer = setInterval(triggerLoadMore, 1000);
+                            setTimeout(triggerLoadMore, 500);
                         "
                     >
                         @php
