@@ -720,6 +720,9 @@ class ProjectsList extends Component
         $this->resetConfirmState();
         session()->flash('message', 'Proyek berhasil dinonaktifkan. Data sumber tetap tersimpan.');
         $this->notifyProjectAction('Proyek dinonaktifkan. Data sumber tetap aman.');
+
+        // Refresh halaman agar list proyek aktif langsung ter-update
+        $this->redirect(request()->header('Referer') ?: '/');
     }
 
     public function getTrashedProjects()
