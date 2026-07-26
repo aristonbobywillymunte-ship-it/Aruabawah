@@ -1588,52 +1588,55 @@ new class extends Component
                                     <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Semua proyek Anda saat ini dalam status aktif dan berjalan normal.</p>
                                 </div>
                             @else
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     @foreach($trashed as $tp)
-                                        <div class="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-5 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] hover:shadow-md transition-all duration-250 flex flex-col justify-between gap-4">
-                                            <div class="space-y-3">
-                                                <!-- Top Info (Avatar & Name) -->
-                                                <div class="flex items-start gap-3">
-                                                    <div class="w-10 h-10 rounded-xl bg-slate-100/80 text-slate-600 font-extrabold text-sm flex items-center justify-center border border-slate-200/60 uppercase shrink-0">
-                                                        {{ substr($tp->name, 0, 1) }}
+                                        <div class="bg-gradient-to-br from-slate-50/50 to-white hover:from-white hover:to-white border border-slate-200/80 hover:border-[#1fa387]/30 rounded-3xl p-6 shadow-[0_2px_12px_-3px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_30px_-5px_rgba(0,0,0,0.05)] transition-all duration-300 flex flex-col justify-between gap-5 relative group overflow-hidden">
+                                            <!-- Decorative top border accent on hover -->
+                                            <div class="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#1fa387] to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                                            <div class="space-y-4">
+                                                <!-- Top Info (Folder Icon & Project Name) -->
+                                                <div class="flex items-start gap-4">
+                                                    <div class="w-12 h-12 rounded-2xl bg-emerald-50/60 text-[#1fa387] border border-emerald-100/50 flex items-center justify-center shadow-inner shrink-0 transition-transform duration-300 group-hover:scale-105">
+                                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
                                                     </div>
-                                                    <div class="min-w-0 flex-1 text-left">
-                                                        <h4 class="text-sm font-black text-slate-800 truncate tracking-tight" title="{{ $tp->name }}">{{ $tp->name }}</h4>
-                                                        <div class="flex items-center gap-1 mt-1 text-[10px] font-semibold text-slate-400">
-                                                            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
-                                                            <span class="truncate">Dihapus: {{ $tp->deleted_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') }}</span>
+                                                    <div class="min-w-0 flex-1 text-left space-y-1">
+                                                        <h4 class="text-sm font-black text-slate-800 truncate tracking-tight group-hover:text-[#1fa387] transition-colors duration-200" title="{{ $tp->name }}">{{ $tp->name }}</h4>
+                                                        <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                                            <svg class="w-3.5 h-3.5 text-slate-350" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+                                                            <span>Dihapus: {{ $tp->deleted_at->locale('id')->isoFormat('D MMM YYYY') }}</span>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 <!-- Keywords List -->
-                                                <div class="space-y-1 text-left">
-                                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Kata Kunci Utama</p>
-                                                    <div class="flex flex-wrap gap-1">
+                                                <div class="space-y-1.5 text-left bg-slate-50/50 rounded-2xl p-3 border border-slate-100">
+                                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Kata Kunci Utama</p>
+                                                    <div class="flex flex-wrap gap-1.5">
                                                         @foreach(array_slice($tp->topics ?? [], 0, 3) as $topic)
-                                                            <span class="px-2 py-0.5 text-[9px] font-extrabold bg-[#1fa387]/5 text-[#1fa387] border border-[#1fa387]/15 rounded-md truncate max-w-[120px]">#{{ $topic }}</span>
+                                                            <span class="px-2.5 py-1 text-[9px] font-black bg-[#1fa387]/5 text-[#1fa387] border border-[#1fa387]/15 rounded-full truncate max-w-[120px]">#{{ $topic }}</span>
                                                         @endforeach
                                                         @if(count($tp->topics ?? []) > 3)
-                                                            <span class="px-1.5 py-0.5 text-[9px] font-extrabold bg-slate-100 text-slate-500 rounded-md shrink-0">+{{ count($tp->topics) - 3 }}</span>
+                                                            <span class="px-2 py-1 text-[9px] font-black bg-slate-100 text-slate-500 rounded-full shrink-0">+{{ count($tp->topics) - 3 }}</span>
                                                         @endif
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <!-- Card Actions Footer -->
-                                            <div class="flex items-center gap-2 pt-3 border-t border-slate-100">
+                                            <div class="flex items-center gap-3 pt-4 border-t border-slate-100/80">
                                                 <button
                                                     wire:click="confirmRestoreProject({{ $tp->id }})"
-                                                    class="flex-1 py-2 bg-[#1fa387] hover:bg-[#1a8b73] text-white text-xs font-bold rounded-xl transition duration-150 cursor-pointer text-center active:scale-[0.98]"
+                                                    class="flex-1 py-2.5 bg-gradient-to-r from-[#1fa387] to-[#1cb595] hover:opacity-95 text-white text-xs font-bold rounded-xl transition duration-150 cursor-pointer text-center active:scale-[0.98] shadow-sm shadow-emerald-500/10"
                                                 >
-                                                    Aktifkan
+                                                    Aktifkan Kembali
                                                 </button>
                                                 <button
                                                     wire:click="confirmForceDeleteProject({{ $tp->id }})"
-                                                    class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-650 text-xs font-bold rounded-xl transition duration-150 cursor-pointer text-center active:scale-[0.98]"
+                                                    class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-650 text-xs font-bold rounded-xl transition duration-150 cursor-pointer text-center active:scale-[0.98]"
                                                     title="Hapus Permanen"
                                                 >
-                                                    Hapus
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
                                                 </button>
                                             </div>
                                         </div>
