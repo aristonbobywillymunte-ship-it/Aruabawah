@@ -140,6 +140,18 @@ class RunNewsPortalScraping extends Command
         $this->seenCanonicalUrls = [];
 
         foreach ($projects as $project) {
+            // Pastikan Portal News (Portal) dipilih dalam setelan sumber data proyek
+            $projectSources = $project->sources ?? ['Instagram', 'TikTok', 'Facebook', 'Portal'];
+            if (!in_array('Portal', $projectSources, true)) {
+                $this->line("Skipping project [{$project->name}] — Portal News tidak dipilih dalam setelan sumber data proyek ini.");
+                $portalLog->info('[Portal] Project skipped: Portal News (Portal) not selected in project sources.', [
+                    'project_id' => $project->id,
+                    'project_name' => $project->name,
+                    'project_sources' => $projectSources,
+                ]);
+                continue;
+            }
+
             $keywords = $forceKeyword ? [$forceKeyword] : $project->scrapeKeywords();
 
             if (empty($keywords)) {
