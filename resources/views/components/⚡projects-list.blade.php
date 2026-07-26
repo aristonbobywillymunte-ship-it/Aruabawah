@@ -910,39 +910,20 @@ new class extends Component
                                     @error('name') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                                 </div>
 
-                                <!-- Konteks & Dikecualikan (Context & Exclude Keywords) di bawah Nama Proyek -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <!-- Konteks Column -->
-                                    <div class="space-y-2">
-                                        <div class="flex items-center gap-1.5">
-                                            <label class="text-sm font-bold text-slate-800">Kata Kunci Pendukung (Konteks)</label>
-                                            <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
-                                        </div>
-                                        <p class="text-xs text-slate-400 leading-tight">Semua kata kunci ini harus muncul agar penyebutan dikumpulkan.</p>
-                                        <input 
-                                            wire:model="contextKeywords" 
-                                            type="text" 
-                                            placeholder="Contoh: olahraga, sepatu, lari"
-                                            class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
-                                        >
-                                        <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
+                                <!-- Kata Kunci Pendukung (Konteks) di bawah Nama Proyek -->
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-1.5">
+                                        <label class="text-sm font-bold text-slate-800">Kata Kunci Pendukung (Konteks)</label>
+                                        <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
                                     </div>
-
-                                    <!-- Dikecualikan Column -->
-                                    <div class="space-y-2">
-                                        <div class="flex items-center gap-1.5">
-                                            <label class="text-sm font-bold text-slate-800">Kata Kunci Pengecualian (Dikecualikan)</label>
-                                            <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
-                                        </div>
-                                        <p class="text-xs text-slate-400 leading-tight">Penyebutan tidak akan dikumpulkan jika mengandung kata kunci ini.</p>
-                                        <input 
-                                            wire:model="excludeKeywords" 
-                                            type="text" 
-                                            placeholder="Contoh: palsu, kw, tiruan"
-                                            class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
-                                        >
-                                        <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
-                                    </div>
+                                    <p class="text-xs text-slate-400 leading-tight">Semua kata kunci ini harus muncul agar penyebutan dikumpulkan.</p>
+                                    <input 
+                                        wire:model="contextKeywords" 
+                                        type="text" 
+                                        placeholder="Contoh: olahraga, sepatu, lari"
+                                        class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
+                                    >
+                                    <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
                                 </div>
 
                                 <!-- Main Keywords Field (Kata Kunci Utama) -->
@@ -989,6 +970,22 @@ new class extends Component
                                             <span x-show="!$wire.topicsString" class="text-xs text-slate-400 italic">Belum ada keyword.</span>
                                         </div>
                                     </div>
+                                </div>
+
+                                <!-- Dikecualikan Column (Kata Kunci Pengecualian) di bawah Kata Kunci Utama -->
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-1.5">
+                                        <label class="text-sm font-bold text-slate-800">Kata Kunci Pengecualian (Dikecualikan)</label>
+                                        <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-tight">Penyebutan tidak akan dikumpulkan jika mengandung kata kunci ini.</p>
+                                    <input 
+                                        wire:model="excludeKeywords" 
+                                        type="text" 
+                                        placeholder="Contoh: palsu, kw, tiruan"
+                                        class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
+                                    >
+                                    <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
                                 </div>
 
                                 <!-- Advanced Settings Accordion -->
