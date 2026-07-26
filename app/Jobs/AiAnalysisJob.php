@@ -105,7 +105,12 @@ class AiAnalysisJob implements ShouldQueue
             return; // Keluar dengan aman, tidak dimasukkan ke failed_jobs
         }
 
-        $template = AiPromptTemplate::where('source_type', $type)->where('is_default', true)->where('is_active', true)->first();
+        $template = AiPromptTemplate::query()
+            ->where('source_type', $type)
+            ->where('is_default', true)
+            ->where('is_active', true)
+            ->first()
+            ?? AiPromptTemplate::resolvePreferredActiveForSourceType($type);
 
         if (!$template) {
             Log::warning('[Pipeline] Missing active AI Prompt Template.');

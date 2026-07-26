@@ -92,6 +92,8 @@ class AiPromptTemplates extends Component
     {
         $this->adminOnly();
         $this->ensureSaranPortalManualDefault();
+        AiPromptTemplate::ensureDefaultForSourceType('article');
+        AiPromptTemplate::ensureDefaultForSourceType('social');
 
         $templates = AiPromptTemplate::query()
             ->when($this->search, function ($query) {
@@ -207,6 +209,8 @@ class AiPromptTemplates extends Component
             $this->notify('success', 'Template prompt baru berhasil ditambahkan.');
         }
 
+        AiPromptTemplate::ensureDefaultForSourceType($this->source_type);
+
         if (trim($this->name) === 'Saran Portal Manual' && $this->source_type === 'portal_suggestion') {
             $templateId = $this->isEditing ? $this->selected_id : null;
             AiPromptTemplate::query()
@@ -247,6 +251,8 @@ class AiPromptTemplates extends Component
 
         $template->is_active = !$template->is_active;
         $template->save();
+
+        AiPromptTemplate::ensureDefaultForSourceType($template->source_type);
 
         $this->notify('success', 'Status template prompt berhasil diperbarui.');
     }
@@ -292,6 +298,7 @@ class AiPromptTemplates extends Component
         if ($this->selected_id) {
             $template = AiPromptTemplate::findOrFail($this->selected_id);
             $template->delete();
+            AiPromptTemplate::ensureDefaultForSourceType($template->source_type);
             $this->notify('success', 'Template prompt berhasil dihapus.');
         }
         $this->confirmingDelete = false;
@@ -329,6 +336,7 @@ class AiPromptTemplates extends Component
             $template = AiPromptTemplate::onlyTrashed()->find($this->confirmingRestoreTemplateId);
             if ($template) {
                 $template->restore();
+                AiPromptTemplate::ensureDefaultForSourceType($template->source_type);
                 $this->notify('success', 'Template prompt berhasil dipulihkan.');
             }
         }
@@ -352,7 +360,9 @@ class AiPromptTemplates extends Component
         if ($this->confirmingForceDeleteTemplateId) {
             $template = AiPromptTemplate::onlyTrashed()->find($this->confirmingForceDeleteTemplateId);
             if ($template) {
+                $sourceType = $template->source_type;
                 $template->forceDelete();
+                AiPromptTemplate::ensureDefaultForSourceType($sourceType);
                 $this->notify('success', 'Template prompt berhasil dihapus secara permanen.');
             }
         }

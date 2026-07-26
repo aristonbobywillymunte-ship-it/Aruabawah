@@ -30,7 +30,8 @@ class AiAnalysisDispatchStateService
             ->where('source_type', $sourceType)
             ->where('is_default', true)
             ->where('is_active', true)
-            ->value('id');
+            ->value('id')
+            ?? AiPromptTemplate::resolvePreferredActiveForSourceType($sourceType)?->id;
     }
 
     public function resolveProviderContextHash(): string

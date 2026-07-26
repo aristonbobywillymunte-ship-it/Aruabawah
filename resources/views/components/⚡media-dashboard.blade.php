@@ -2696,6 +2696,7 @@ new class extends Component
                                                 {{ $sentimentLabel === 'Belum dianalisis AI' ? 'Netral' : $sentimentLabel }}
                                             </span>
                                         </div>
+                                    </div>
                                     @php
                                         $isSocial = $article->category === 'social' || $isFacebook || strtolower($article->source_name) == 'tiktok' || strtolower($article->source_name) == 'instagram' || strtolower($article->source_name) == 'twitter';
                                         $likesCount = 0;
@@ -2900,7 +2901,6 @@ new class extends Component
                                 @endforeach
                                 @endif
                             </div>
-                        @endif
                         <!-- Infinite Scroll / Load More -->
                         @php
                             $totalArticlesCount = $this->getTotalArticlesCount();
@@ -2924,6 +2924,7 @@ new class extends Component
                                 <p class="text-slate-500 font-semibold">Semua data telah dimuat</p>
                                 <p class="text-[10px] text-slate-400 mt-0.5">Tidak ada data tambahan yang tersedia</p>
                             </div>
+                        @endif
                         @endif
                     </div>
                 </section>

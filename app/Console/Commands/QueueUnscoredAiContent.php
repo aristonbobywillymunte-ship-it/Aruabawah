@@ -56,7 +56,7 @@ class QueueUnscoredAiContent extends Command
             })
             ->orderByDesc('published_at')
             ->orderByDesc('id')
-            ->chunkById(100, function ($articles) use ($activeProjects, $matchingService, $dispatchStateService, $limit, &$queued, &$skipped) {
+            ->chunkById(100, function ($articles) use ($activeProjects, $matchingService, $dispatchStateService, $schedulerQueueGuard, $limit, &$queued, &$skipped) {
                 foreach ($articles as $article) {
                     if ($queued >= $limit) {
                         return false;

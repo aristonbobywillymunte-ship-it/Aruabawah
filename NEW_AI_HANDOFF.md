@@ -142,3 +142,29 @@ Jalankan perintah ini di dalam direktori proyek utama di host machine (macOS And
 - Source Blade `resources/views/components/⚡media-dashboard.blade.php` sudah diselaraskan kembali dan balance directive telah diverifikasi `0`.
 - Cache Livewire compiled (`storage/framework/views/livewire/views/3f87d10b.blade.php`, `classes/3f87d10b.php`, `styles/3f87d10b.css`) dihapus manual karena masih memuat tail `@endif` lama walaupun source sudah benar.
 - View cache Laravel dibersihkan ulang agar request berikutnya meregenerasi compiled view dari source terbaru.
+
+
+## 2026-07-26 09:00 WITA
+- Menormalkan shell layout halaman Penyebutan/Kata Kunci dengan mengubah workspace desktop menjadi `overflow-hidden` dan memperbesar ruang scroll panel konten dari `calc(100vh - 250px)` ke `calc(100vh - 320px)`.
+- Tujuannya agar kartu konten terakhir tidak tertutup footer fixed dan area utama tetap bisa discroll normal di desktop, tanpa mengubah query/data.
+
+
+## 2026-07-26 09:08 WITA
+- Menutup kembali `@if($dashboardLoaded)` yang sempat belum tertutup di `resources/views/components/⚡media-dashboard.blade.php`, sehingga workspace desktop bisa render tanpa parse error dan tanpa mendorong konten ke bawah footer fixed.
+- Cache view Laravel dibersihkan ulang setelah koreksi layout dan directive Blade.
+
+
+## 2026-07-26 09:18 WITA
+- Mengubah loading state menjadi blok terpisah `@if(!$dashboardLoaded)` agar tidak bergantung pada `@else` dari blok utama dan mengurangi risiko parse error Blade.
+- Cache view Laravel dibersihkan ulang setelah perubahan.
+
+
+## 2026-07-26 09:56 WITA
+- Memperbaiki bug scope variabel pada `app/Console/Commands/QueueUnscoredAiContent.php` dengan menambahkan `SchedulerQueueGuard` ke closure `chunkById()`.
+- Perbaikan ini menghilangkan error `Undefined variable $schedulerQueueGuard` saat command `ai:queue-unscored-content` berjalan.
+
+
+## 2026-07-26 10:12 WITA
+- Menambahkan fallback dan self-healing pada `AiPromptTemplate` agar template aktif untuk `source_type=article` dan `source_type=social` tetap bisa dipakai walau penanda default sempat hilang.
+- `AiAnalysisJob`, `AiAnalysisDispatchStateService`, dan `TestArticleAiAnalysis` kini tidak lagi berhenti di `missing_configuration` hanya karena default template hilang, selama masih ada template aktif yang valid.
+- Livewire admin template sekarang ikut memulihkan default untuk article/social saat render dan setelah perubahan data, supaya sistem analisis tetap otomatis dan tidak mudah rusak lagi.

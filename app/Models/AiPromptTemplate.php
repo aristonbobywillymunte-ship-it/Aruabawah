@@ -39,6 +39,50 @@ class AiPromptTemplate extends Model
             ->first();
     }
 
+    public static function resolvePreferredActiveForSourceType(string $sourceType): ?self
+    {
+        $sourceType = trim($sourceType);
+
+        return static::query()
+            ->where('source_type', $sourceType)
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    public static function ensureDefaultForSourceType(string $sourceType): ?self
+    {
+        $sourceType = trim($sourceType);
+
+        $currentDefault = static::query()
+            ->where('source_type', $sourceType)
+            ->where('is_active', true)
+            ->where('is_default', true)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($currentDefault) {
+            return $currentDefault;
+        }
+
+        $preferred = static::resolvePreferredActiveForSourceType($sourceType);
+        if (! $preferred) {
+            return null;
+        }
+
+        static::query()
+            ->where('source_type', $sourceType)
+            ->where('id', '!=', $preferred->id)
+            ->update(['is_default' => false]);
+
+        $preferred->forceFill(['is_default' => true])->save();
+
+        return $preferred->refresh();
+    }
+
     public static function saranPortalManualSystemPrompt(): string
     {
         return 'Anda adalah sistem ahli Reverse Engineering & HTML Anatomy Analysis untuk Web Scraping. Tugas Anda adalah membedah arsitektur DOM portal berita dan menghasilkan konfigurasi ekstraksi data (scraping JSON configuration) yang akurat, lengkap, dan konsisten. Jangan mengosongkan field hanya karena ragu jika masih ada petunjuk HTML yang masuk akal; isi kandidat terbaik yang paling mungkin dan turunkan confidence bila bukti lemah.';

@@ -63,10 +63,12 @@ class TestArticleAiAnalysis extends Command
             ->orderBy('id', 'asc')
             ->first();
 
-        $template = AiPromptTemplate::where('source_type', 'article')
+        $template = AiPromptTemplate::query()
+            ->where('source_type', 'article')
             ->where('is_active', true)
             ->where('is_default', true)
-            ->first();
+            ->first()
+            ?? AiPromptTemplate::resolvePreferredActiveForSourceType('article');
 
         if (! $provider || ! $template) {
             $this->error('AI provider atau prompt template artikel belum siap.');
