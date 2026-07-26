@@ -900,14 +900,17 @@ new class extends Component
                             <form wire:submit.prevent="createProject" class="space-y-6">
                                 <!-- Project Name Field -->
                                 <div class="space-y-2">
-                                    <label class="text-sm font-bold text-slate-800 block">Nama Proyek</label>
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800 block">Nama Proyek</label>
+                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
+                                    </div>
                                     <input 
                                         wire:model="name" 
                                         type="text" 
                                         placeholder="Contoh: Analisis Sentimen BUMN 2025"
                                         class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
                                     >
-                                    @error('name') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
+                                    @error('name') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>
 
                                 <!-- Kata Kunci Pencarian Tambahan (Konteks) di bawah Nama Proyek -->
