@@ -18,6 +18,7 @@ class Project extends Model
         'topics',
         'context_keywords',
         'exclude_keywords',
+        'sources',
         'is_active',
     ];
 
@@ -25,6 +26,7 @@ class Project extends Model
         'topics' => 'array',
         'context_keywords' => 'array',
         'exclude_keywords' => 'array',
+        'sources' => 'array',
         'is_active' => 'boolean',
         'first_news_scrape_attempt_at' => 'datetime',
     ];

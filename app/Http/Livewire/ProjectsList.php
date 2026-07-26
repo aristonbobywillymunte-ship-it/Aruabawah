@@ -528,6 +528,7 @@ class ProjectsList extends Component
             'topics' => array_values($topics),
             'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
+            'sources' => array_values(array_unique(array_filter($this->selectedSources))),
         ]);
 
         // Auto-assign project to the creator if they are a regular user
@@ -561,6 +562,7 @@ class ProjectsList extends Component
         $this->editTopicsString = implode(', ', $project->topics ?? []);
         $this->contextKeywords = implode(', ', $project->context_keywords ?? []);
         $this->excludeKeywords = implode(', ', $project->exclude_keywords ?? []);
+        $this->selectedSources = $project->sources ?? ['Instagram', 'TikTok', 'Facebook', 'Portal'];
         $this->showEditModal = true;
     }
 
@@ -596,6 +598,7 @@ class ProjectsList extends Component
             'topics' => $topics,
             'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
+            'sources' => array_values(array_unique(array_filter($this->selectedSources))),
         ]);
 
         $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
