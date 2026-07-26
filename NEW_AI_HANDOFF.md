@@ -168,3 +168,9 @@ Jalankan perintah ini di dalam direktori proyek utama di host machine (macOS And
 - Menambahkan fallback dan self-healing pada `AiPromptTemplate` agar template aktif untuk `source_type=article` dan `source_type=social` tetap bisa dipakai walau penanda default sempat hilang.
 - `AiAnalysisJob`, `AiAnalysisDispatchStateService`, dan `TestArticleAiAnalysis` kini tidak lagi berhenti di `missing_configuration` hanya karena default template hilang, selama masih ada template aktif yang valid.
 - Livewire admin template sekarang ikut memulihkan default untuk article/social saat render dan setelah perubahan data, supaya sistem analisis tetap otomatis dan tidak mudah rusak lagi.
+
+
+## 2026-07-26 10:33 WITA
+- Mengizinkan dispatch state `failed` dengan `last_error_code=missing_configuration` untuk dipromosikan kembali ke `queued` jika konfigurasi template/provider sudah pulih.
+- 27 artikel lama yang sebelumnya gagal karena `missing_configuration` berhasil direqueue ulang dengan template artikel aktif `Analisis Portal`.
+- Setelah requeue, status di database menunjukkan `queued=25`, `processing=0`, `retry_wait=0`, dan `failed_missing_configuration=0`, sehingga antrean AI kembali hidup untuk kasus yang memang bisa diselamatkan.

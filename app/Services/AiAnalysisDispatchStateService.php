@@ -392,6 +392,23 @@ class AiAnalysisDispatchStateService
         }
 
         if ($state->status === 'failed') {
+            if (($state->last_error_code ?? null) === 'missing_configuration') {
+                $resolvedPromptTemplateId = $this->resolvePromptTemplateId((string) ($context['model']['analyzable_type'] === 'social' ? 'social' : 'article'));
+
+                if ($resolvedPromptTemplateId !== null && $this->hasActiveProviders()) {
+                    $state->forceFill([
+                        'status' => 'queued',
+                        'error_message' => null,
+                        'failure_category' => null,
+                        'last_error_code' => null,
+                        'next_retry_at' => null,
+                        'meta_json' => $context['meta_json'],
+                    ])->save();
+
+                    return $this->decision($state->refresh(), true, 'queued', 'retry_after_configuration_repaired');
+                }
+            }
+
             return $this->decision($state, false, 'failed', 'permanent_failure_locked');
         }
 
