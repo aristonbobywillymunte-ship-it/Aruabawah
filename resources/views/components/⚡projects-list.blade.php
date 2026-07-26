@@ -1588,43 +1588,52 @@ new class extends Component
                                     <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Semua proyek Anda saat ini dalam status aktif dan berjalan normal.</p>
                                 </div>
                             @else
-                                <div class="space-y-3.5">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     @foreach($trashed as $tp)
-                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-[#F8F9FA] hover:bg-slate-50/80 border border-slate-150 rounded-2xl transition duration-200 gap-4">
-                                            <div class="text-left flex-1 min-w-0 space-y-2">
-                                                <h4 class="text-sm font-black text-slate-800 truncate tracking-tight">{{ $tp->name }}</h4>
-                                                
-                                                <!-- Topics/Keywords Badges -->
-                                                <div class="flex flex-wrap gap-1.5 items-center">
-                                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide mr-1">Kata Kunci:</span>
-                                                    @foreach(array_slice($tp->topics ?? [], 0, 5) as $topic)
-                                                        <span class="px-2 py-0.5 text-[10px] font-bold bg-[#1fa387]/5 text-[#1fa387] border border-[#1fa387]/15 rounded-lg">#{{ $topic }}</span>
-                                                    @endforeach
-                                                    @if(count($tp->topics ?? []) > 5)
-                                                        <span class="px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-500 rounded-lg">+{{ count($tp->topics) - 5 }}</span>
-                                                    @endif
+                                        <div class="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-5 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] hover:shadow-md transition-all duration-250 flex flex-col justify-between gap-4">
+                                            <div class="space-y-3">
+                                                <!-- Top Info (Avatar & Name) -->
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-10 h-10 rounded-xl bg-slate-100/80 text-slate-600 font-extrabold text-sm flex items-center justify-center border border-slate-200/60 uppercase shrink-0">
+                                                        {{ substr($tp->name, 0, 1) }}
+                                                    </div>
+                                                    <div class="min-w-0 flex-1 text-left">
+                                                        <h4 class="text-sm font-black text-slate-800 truncate tracking-tight" title="{{ $tp->name }}">{{ $tp->name }}</h4>
+                                                        <div class="flex items-center gap-1 mt-1 text-[10px] font-semibold text-slate-400">
+                                                            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+                                                            <span class="truncate">Dihapus: {{ $tp->deleted_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') }}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
-                                                <!-- Deleted Time Info -->
-                                                <div class="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
-                                                    <span>Dinonaktifkan pada: {{ $tp->deleted_at->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</span>
+                                                <!-- Keywords List -->
+                                                <div class="space-y-1 text-left">
+                                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Kata Kunci Utama</p>
+                                                    <div class="flex flex-wrap gap-1">
+                                                        @foreach(array_slice($tp->topics ?? [], 0, 3) as $topic)
+                                                            <span class="px-2 py-0.5 text-[9px] font-extrabold bg-[#1fa387]/5 text-[#1fa387] border border-[#1fa387]/15 rounded-md truncate max-w-[120px]">#{{ $topic }}</span>
+                                                        @endforeach
+                                                        @if(count($tp->topics ?? []) > 3)
+                                                            <span class="px-1.5 py-0.5 text-[9px] font-extrabold bg-slate-100 text-slate-500 rounded-md shrink-0">+{{ count($tp->topics) - 3 }}</span>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <!-- Action Buttons -->
-                                            <div class="flex items-center gap-2.5 flex-shrink-0 self-end sm:self-center">
+                                            <!-- Card Actions Footer -->
+                                            <div class="flex items-center gap-2 pt-3 border-t border-slate-100">
                                                 <button
                                                     wire:click="confirmRestoreProject({{ $tp->id }})"
-                                                    class="px-5 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white text-xs font-bold rounded-xl transition duration-150 cursor-pointer shadow-sm shadow-emerald-500/10 active:scale-[0.98]"
+                                                    class="flex-1 py-2 bg-[#1fa387] hover:bg-[#1a8b73] text-white text-xs font-bold rounded-xl transition duration-150 cursor-pointer text-center active:scale-[0.98]"
                                                 >
-                                                    Aktifkan Kembali
+                                                    Aktifkan
                                                 </button>
                                                 <button
                                                     wire:click="confirmForceDeleteProject({{ $tp->id }})"
-                                                    class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-650 text-xs font-bold rounded-xl transition duration-150 cursor-pointer active:scale-[0.98]"
+                                                    class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-650 text-xs font-bold rounded-xl transition duration-150 cursor-pointer text-center active:scale-[0.98]"
+                                                    title="Hapus Permanen"
                                                 >
-                                                    Hapus Permanen
+                                                    Hapus
                                                 </button>
                                             </div>
                                         </div>
