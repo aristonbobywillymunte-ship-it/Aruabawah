@@ -878,7 +878,7 @@ new class extends Component
                     <div class="mb-6 max-w-3xl mx-auto">
                         <button 
                             wire:click="$set('isCreatingProject', false)"
-                            class="flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors"
+                            class="flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors cursor-pointer"
                         >
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -960,7 +960,7 @@ new class extends Component
                                     <button 
                                         type="button"
                                         @click="open = !open" 
-                                        class="w-full flex items-center justify-between px-6 py-4 bg-[#F8F9FA] text-[#1fa387] hover:text-[#1fa387]/90 text-sm font-semibold transition-all border-b border-slate-100"
+                                        class="w-full flex items-center justify-between px-6 py-4 bg-[#F8F9FA] text-[#1fa387] hover:text-[#1fa387]/90 text-sm font-semibold transition-all border-b border-slate-100 cursor-pointer"
                                     >
                                         <span class="flex items-center gap-2">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
@@ -1056,7 +1056,7 @@ new class extends Component
                                             }">
                                                 <label class="flex items-center justify-between gap-3 cursor-pointer group">
                                                     <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                        <input wire:model.live="selectedSources" value="Instagram" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5">
+                                                        <input wire:model.live="selectedSources" value="Instagram" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
                                                         <div class="w-10 h-10 rounded-xl bg-fuchsia-500 shadow-sm shadow-fuchsia-500/20 flex items-center justify-center shrink-0" style="background-color: #e1306c;">
                                                             <svg class="w-5 h-5" fill="none" stroke="#ffffff" stroke-width="1.8" viewBox="0 0 24 24">
                                                                 <rect x="4.25" y="4.25" width="15.5" height="15.5" rx="5"></rect>
@@ -1071,7 +1071,7 @@ new class extends Component
 
                                                 <label class="flex items-center justify-between gap-3 cursor-pointer group">
                                                     <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                        <input wire:model.live="selectedSources" value="TikTok" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5">
+                                                        <input wire:model.live="selectedSources" value="TikTok" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
                                                         <div class="w-10 h-10 rounded-xl bg-slate-950 shadow-sm shadow-slate-900/20 flex items-center justify-center shrink-0" style="background-color: #000000;">
                                                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24">
                                                                  <path fill="#ffffff" d="M15.8 5.2c.7.8 1.7 1.4 2.8 1.6v2.7c-1 0-2-.2-2.9-.6v5.1c0 2.9-2.4 5.3-5.3 5.3S5.1 17 5.1 14.1s2.4-5.3 5.3-5.3c.2 0 .4 0 .6.1v2.8c-.2 0-.4-.1-.6-.1-1.3 0-2.3 1.1-2.3 2.4s1 2.4 2.3 2.4 2.4-1 2.4-2.4V4.4h2.9c.1.3.1.5.1.8z"/>
@@ -1085,7 +1085,7 @@ new class extends Component
 
                                                 <label class="flex items-center justify-between gap-3 cursor-pointer group">
                                                     <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                        <input wire:model.live="selectedSources" value="Facebook" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5">
+                                                        <input wire:model.live="selectedSources" value="Facebook" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
                                                         <div class="w-10 h-10 rounded-xl bg-blue-600 shadow-sm shadow-blue-600/20 flex items-center justify-center shrink-0">
                                                             <svg class="w-5 h-5 fill-current text-white" viewBox="0 0 24 24">
                                                                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
@@ -1098,7 +1098,7 @@ new class extends Component
 
                                                 <label class="flex items-center justify-between gap-3 cursor-pointer group">
                                                     <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                        <input wire:model.live="selectedSources" value="Portal" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5">
+                                                        <input wire:model.live="selectedSources" value="Portal" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
                                                         <div class="w-10 h-10 rounded-xl bg-emerald-500 shadow-sm shadow-emerald-500/20 flex items-center justify-center shrink-0">
                                                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
@@ -1119,14 +1119,14 @@ new class extends Component
                                     <button 
                                         type="button" 
                                         wire:click="$set('isCreatingProject', false)"
-                                        class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white font-bold rounded-custom text-sm transition-all"
+                                        class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white font-bold rounded-custom text-sm transition-all cursor-pointer"
                                     >
                                         Batal
                                     </button>
                                     <!-- Buat Proyek Button -->
                                     <button 
                                         type="submit" 
-                                        class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white font-bold rounded-custom text-sm transition-all shadow-sm"
+                                        class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white font-bold rounded-custom text-sm transition-all shadow-sm cursor-pointer"
                                     >
                                         Buat Proyek
                                     </button>
