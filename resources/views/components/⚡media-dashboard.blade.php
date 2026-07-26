@@ -1859,7 +1859,7 @@ new class extends Component
     $viralMeta = $this->getViralMeta();
 @endphp
 @include('components.media-dashboard-styles')
-<div class="h-screen w-screen bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-hidden"
+<div class="min-h-screen w-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-x-hidden"
      x-data="{
          detailModalOpen: false,
          showViralModal: false,
@@ -2364,11 +2364,11 @@ new class extends Component
         @endphp
 
         <!-- Main Workspace (Center feed only; filter panel stays in the fixed shell above) -->
-        <div class="desktop-workspace-area flex-1 min-w-0 flex flex-col lg:flex-row gap-6 px-4 sm:px-8 py-6 items-stretch h-full min-h-0 overflow-visible pb-8 lg:pb-0" wire:key="desktop-workspace-area">
+        <div class="desktop-workspace-area flex-1 min-w-0 flex flex-col lg:flex-row gap-6 px-4 sm:px-8 py-6 items-stretch pb-20 lg:pb-20" wire:key="desktop-workspace-area">
             
             @if($this->isTab('penyebutan'))
                 <!-- TAB 1: Penyebutan (Mentions Feed View) -->
-                <section class="flex-1 min-w-0 min-h-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:key="dashboard-mentions-section">
+                <section class="flex-1 min-w-0 flex flex-col space-y-4 pr-1" wire:key="dashboard-mentions-section">
                     <!-- Section Title & Sort Selector -->
                     <div class="flex items-center justify-between">
                         <div>
@@ -2430,10 +2430,8 @@ new class extends Component
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                     @endphp
                     <div
-                        style="height: calc(100vh - 240px);"
-                        class="overflow-y-auto pr-4 space-y-4"
+                        class="space-y-4"
                         wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
-                        data-mentions-scroll
                         id="mentions-feed-scroll"
                     >
                         @php
@@ -2800,33 +2798,26 @@ new class extends Component
                         @if($articlesList->count() < $totalArticlesCount)
                             <div wire:key="mentions-load-more-{{ $mentionsFeedSignature }}-{{ $articlesList->count() }}">
 
-                                {{-- Sentinel: Auto-trigger saat visible di dalam scroll container --}}
+                                {{-- Sentinel: Auto-trigger saat sentinel masuk viewport browser --}}
                                 <div
                                     x-data="{}"
                                     x-init="
                                         const sentinel = $el;
-                                        const scrollContainer = document.getElementById('mentions-feed-scroll');
-                                        let observing = true;
+                                        let loading = false;
                                         const obs = new IntersectionObserver(
                                             (entries) => {
-                                                if (!observing) return;
-                                                if (entries[0].isIntersecting) {
-                                                    observing = false;
+                                                if (!loading && entries[0].isIntersecting) {
+                                                    loading = true;
                                                     $wire.loadMore().finally(() => {
-                                                        setTimeout(() => { observing = true; }, 1200);
+                                                        setTimeout(() => { loading = false; }, 800);
                                                     });
                                                 }
                                             },
-                                            {
-                                                root: scrollContainer,
-                                                rootMargin: '120px',
-                                                threshold: 0
-                                            }
+                                            { rootMargin: '200px', threshold: 0 }
                                         );
                                         obs.observe(sentinel);
-                                        $wire.on('loadMore', () => { obs.disconnect(); });
                                     "
-                                    class="h-px w-full"
+                                    class="h-2 w-full"
                                 ></div>
 
                                 {{-- Loading indicator yang tampil saat loadMore berjalan --}}

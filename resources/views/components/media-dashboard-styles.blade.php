@@ -1,14 +1,6 @@
 <style>
     html, body {
-        min-height: 100% !important;
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-    }
-
-    div[wire\:id] {
-        min-height: 100vh !important;
-        display: flex !important;
-        flex-direction: column !important;
+        overflow-x: hidden;
     }
 
     @media (min-width: 900px) {
