@@ -1544,6 +1544,8 @@ new class extends Component
                 </div>
             @endif
 
+            <!-- Trashed Projects Modal -->
+            @if($showTrashedModal)
                 <div
                     x-data="{ show: true }"
                     x-show="show"
