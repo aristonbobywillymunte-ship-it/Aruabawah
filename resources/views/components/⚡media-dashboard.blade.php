@@ -2434,26 +2434,46 @@ new class extends Component
                         wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
                         id="mentions-feed-scroll"
                         data-total-count="{{ $mentionsTotalArticlesCount }}"
-                        x-data="{}"
+                        x-data="{ busy: false }"
                         x-init="
                             const el = $el;
-                            let busy = false;
-
-                            const tryLoad = () => {
+                            
+                            // Definisikan observer untuk element paling bawah (load-more button / loader)
+                            const observer = new IntersectionObserver((entries) => {
                                 if (busy) return;
-                                const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
-                                if (remaining > 300) return;
-                                const loaded = el.querySelectorAll('[data-mention-card]').length;
-                                const total = parseInt(el.dataset.totalCount || '0');
-                                if (total === 0 || loaded >= total) return;
-                                busy = true;
-                                $wire.loadMore();
-                                setTimeout(() => { busy = false; }, 2500);
-                            };
+                                const targetEntry = entries[0];
+                                if (targetEntry.isIntersecting) {
+                                    const loaded = el.querySelectorAll('[data-mention-card]').length;
+                                    const total = parseInt(el.getAttribute('data-total-count') || '0');
+                                    if (total > 0 && loaded < total) {
+                                        busy = true;
+                                        $wire.loadMore().then(() => {
+                                            setTimeout(() => { busy = false; }, 800);
+                                        }).catch(() => {
+                                            setTimeout(() => { busy = false; }, 800);
+                                        });
+                                    }
+                                }
+                            }, {
+                                root: el,
+                                rootMargin: '200px',
+                                threshold: 0.1
+                            });
 
-                            el.addEventListener('scroll', tryLoad, { passive: true });
-                            setInterval(tryLoad, 1500);
-                            setTimeout(tryLoad, 1000);
+                            // Mulai observe elemen loader/button di paling bawah setelah render
+                            setTimeout(() => {
+                                const loader = el.querySelector('[wire\\:target=\'loadMore\']') || el.lastElementChild;
+                                if (loader) observer.observe(loader);
+                            }, 500);
+
+                            // Daftarkan ulang observer setiap kali render selesai (Livewire refresh)
+                            $wire.on('post-load', () => {
+                                const loader = el.querySelector('[wire\\:target=\'loadMore\']') || el.lastElementChild;
+                                if (loader) {
+                                    observer.disconnect();
+                                    observer.observe(loader);
+                                }
+                            });
                         "
                     >
                         @php
