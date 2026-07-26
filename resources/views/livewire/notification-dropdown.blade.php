@@ -32,7 +32,7 @@
     <div 
         x-show="open" 
         style="display: none; width: 380px; max-width: 90vw; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0,0,0,0.02);"
-        class="absolute right-0 mt-3 bg-white text-slate-800 rounded-[20px] z-[100] overflow-hidden flex flex-col ring-1 ring-slate-100"
+        class="absolute right-[-40px] sm:right-0 mt-3 bg-white text-slate-800 rounded-[20px] z-[100] overflow-hidden flex flex-col ring-1 ring-slate-100"
     >
         <!-- Header -->
         <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
