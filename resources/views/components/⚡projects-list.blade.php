@@ -1556,17 +1556,17 @@ new class extends Component
                 >
                     <div 
                         @click.outside="$wire.closeModals()"
-                        class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-100/80 overflow-hidden transform transition-all duration-300 scale-100"
+                        class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-100/80 overflow-hidden transform transition-all duration-300 scale-100 flex flex-col h-[600px]"
                     >
                         <!-- Modal Header -->
-                        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 shadow-sm border border-slate-200/50">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
                                 </div>
                                 <div>
                                     <h3 class="text-base font-hanken font-extrabold text-slate-900 leading-tight">Daftar Proyek Dihapus</h3>
-                                    <p class="text-xs text-slate-450 mt-0.5 font-medium">Pulihkan kembali proyek atau hapus secara permanen untuk membersihkan data.</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5 font-medium">Pulihkan kembali proyek atau hapus secara permanen untuk membersihkan data.</p>
                                 </div>
                             </div>
                             <button wire:click="closeModals" class="text-slate-400 hover:text-slate-650 hover:bg-slate-100 p-2 rounded-full transition duration-150 cursor-pointer">
@@ -1574,13 +1574,13 @@ new class extends Component
                             </button>
                         </div>
 
-                        <!-- Modal Body -->
-                        <div class="p-8 space-y-4 max-h-[460px] overflow-y-auto">
+                        <!-- Modal Body (Fix Height & Scrollable) -->
+                        <div class="flex-1 overflow-y-auto px-8 py-6">
                             @php
                                 $trashed = $this->getTrashedProjects();
                             @endphp
                             @if($trashed->isEmpty())
-                                <div class="flex flex-col items-center justify-center py-16 text-center">
+                                <div class="flex flex-col items-center justify-center h-full text-center">
                                     <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-350 border border-slate-100 mb-4">
                                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
                                     </div>
@@ -1588,55 +1588,39 @@ new class extends Component
                                     <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Semua proyek Anda saat ini dalam status aktif dan berjalan normal.</p>
                                 </div>
                             @else
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="divide-y divide-slate-100">
                                     @foreach($trashed as $tp)
-                                        <div class="bg-gradient-to-br from-slate-50/50 to-white hover:from-white hover:to-white border border-slate-200/80 hover:border-[#1fa387]/30 rounded-3xl p-6 shadow-[0_2px_12px_-3px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_30px_-5px_rgba(0,0,0,0.05)] transition-all duration-300 flex flex-col justify-between gap-5 relative group overflow-hidden">
-                                            <!-- Decorative top border accent on hover -->
-                                            <div class="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#1fa387] to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                                            <div class="space-y-4">
-                                                <!-- Top Info (Folder Icon & Project Name) -->
-                                                <div class="flex items-start gap-4">
-                                                    <div class="w-12 h-12 rounded-2xl bg-emerald-50/60 text-[#1fa387] border border-emerald-100/50 flex items-center justify-center shadow-inner shrink-0 transition-transform duration-300 group-hover:scale-105">
-                                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-                                                    </div>
-                                                    <div class="min-w-0 flex-1 text-left space-y-1">
-                                                        <h4 class="text-sm font-black text-slate-800 truncate tracking-tight group-hover:text-[#1fa387] transition-colors duration-200" title="{{ $tp->name }}">{{ $tp->name }}</h4>
-                                                        <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
-                                                            <svg class="w-3.5 h-3.5 text-slate-350" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
-                                                            <span>Dihapus: {{ $tp->deleted_at->locale('id')->isoFormat('D MMM YYYY') }}</span>
-                                                        </div>
-                                                    </div>
+                                        <div class="py-5 flex items-center justify-between gap-6 hover:bg-slate-50/30 px-3 -mx-3 rounded-2xl transition duration-150">
+                                            <div class="text-left flex-1 min-w-0 space-y-1.5">
+                                                <h4 class="text-sm font-bold text-slate-855 truncate tracking-tight">{{ $tp->name }}</h4>
+                                                
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Kata Kunci:</span>
+                                                    <span class="text-xs font-semibold text-slate-600 truncate">
+                                                        {{ implode(', ', $tp->topics ?? []) }}
+                                                    </span>
                                                 </div>
 
-                                                <!-- Keywords List -->
-                                                <div class="space-y-1.5 text-left bg-slate-50/50 rounded-2xl p-3 border border-slate-100">
-                                                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Kata Kunci Utama</p>
-                                                    <div class="flex flex-wrap gap-1.5">
-                                                        @foreach(array_slice($tp->topics ?? [], 0, 3) as $topic)
-                                                            <span class="px-2.5 py-1 text-[9px] font-black bg-[#1fa387]/5 text-[#1fa387] border border-[#1fa387]/15 rounded-full truncate max-w-[120px]">#{{ $topic }}</span>
-                                                        @endforeach
-                                                        @if(count($tp->topics ?? []) > 3)
-                                                            <span class="px-2 py-1 text-[9px] font-black bg-slate-100 text-slate-500 rounded-full shrink-0">+{{ count($tp->topics) - 3 }}</span>
-                                                        @endif
-                                                    </div>
+                                                <!-- Deleted Time Info -->
+                                                <div class="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
+                                                    <svg class="w-3.5 h-3.5 text-slate-350" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+                                                    <span>Dinonaktifkan pada: {{ $tp->deleted_at->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</span>
                                                 </div>
                                             </div>
 
-                                            <!-- Card Actions Footer -->
-                                            <div class="flex items-center gap-3 pt-4 border-t border-slate-100/80">
+                                            <!-- Action Buttons (Rata Kanan) -->
+                                            <div class="flex items-center gap-3 flex-shrink-0">
                                                 <button
                                                     wire:click="confirmRestoreProject({{ $tp->id }})"
-                                                    class="flex-1 py-2.5 bg-gradient-to-r from-[#1fa387] to-[#1cb595] hover:opacity-95 text-white text-xs font-bold rounded-xl transition duration-150 cursor-pointer text-center active:scale-[0.98] shadow-sm shadow-emerald-500/10"
+                                                    class="px-5 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer shadow-sm active:scale-[0.98]"
                                                 >
-                                                    Aktifkan Kembali
+                                                    Aktifkan
                                                 </button>
                                                 <button
                                                     wire:click="confirmForceDeleteProject({{ $tp->id }})"
-                                                    class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-650 text-xs font-bold rounded-xl transition duration-150 cursor-pointer text-center active:scale-[0.98]"
-                                                    title="Hapus Permanen"
+                                                    class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-650 text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer active:scale-[0.98]"
                                                 >
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+                                                    Hapus
                                                 </button>
                                             </div>
                                         </div>
@@ -1646,7 +1630,7 @@ new class extends Component
                         </div>
 
                         <!-- Modal Footer -->
-                        <div class="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                        <div class="px-8 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
                             <button
                                 type="button"
                                 wire:click="closeModals"
