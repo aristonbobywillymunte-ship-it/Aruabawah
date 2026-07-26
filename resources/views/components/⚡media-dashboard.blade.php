@@ -2430,9 +2430,19 @@ new class extends Component
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                     @endphp
                     <div
-                        class="space-y-4"
+                        class="overflow-y-auto pr-4 space-y-4"
                         wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
                         id="mentions-feed-scroll"
+                        x-data="{}"
+                        x-init="
+                            const el = $el;
+                            const setHeight = () => {
+                                const top = el.getBoundingClientRect().top;
+                                el.style.height = (window.innerHeight - top - 24) + 'px';
+                            };
+                            setHeight();
+                            window.addEventListener('resize', setHeight);
+                        "
                     >
                         @php
                             $articlesList = $mentionsArticlesList;
@@ -2798,11 +2808,12 @@ new class extends Component
                         @if($articlesList->count() < $totalArticlesCount)
                             <div wire:key="mentions-load-more-{{ $mentionsFeedSignature }}-{{ $articlesList->count() }}">
 
-                                {{-- Sentinel: Auto-trigger saat sentinel masuk viewport browser --}}
+                                {{-- Sentinel: Auto-trigger saat masuk dalam scroll container --}}
                                 <div
                                     x-data="{}"
                                     x-init="
                                         const sentinel = $el;
+                                        const scrollEl = document.getElementById('mentions-feed-scroll');
                                         let loading = false;
                                         const obs = new IntersectionObserver(
                                             (entries) => {
@@ -2813,7 +2824,7 @@ new class extends Component
                                                     });
                                                 }
                                             },
-                                            { rootMargin: '200px', threshold: 0 }
+                                            { root: scrollEl, rootMargin: '150px', threshold: 0 }
                                         );
                                         obs.observe(sentinel);
                                     "
