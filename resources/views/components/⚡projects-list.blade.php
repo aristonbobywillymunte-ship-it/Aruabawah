@@ -1544,51 +1544,85 @@ new class extends Component
                 </div>
             @endif
 
-            <!-- Trashed Projects Modal -->
-            @if($showTrashedModal)
                 <div
                     x-data="{ show: true }"
                     x-show="show"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
-                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm"
                 >
-                    <div class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl border border-slate-100 overflow-hidden">
-                        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-                            <h3 class="text-base font-hanken font-bold text-slate-900">Daftar Proyek Dihapus</h3>
-                            <button wire:click="closeModals" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                    <div 
+                        @click.outside="$wire.closeModals()"
+                        class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-100/80 overflow-hidden transform transition-all duration-300 scale-100"
+                    >
+                        <!-- Modal Header -->
+                        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 shadow-sm border border-slate-200/50">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-hanken font-extrabold text-slate-900 leading-tight">Daftar Proyek Dihapus</h3>
+                                    <p class="text-xs text-slate-450 mt-0.5 font-medium">Pulihkan kembali proyek atau hapus secara permanen untuk membersihkan data.</p>
+                                </div>
+                            </div>
+                            <button wire:click="closeModals" class="text-slate-400 hover:text-slate-650 hover:bg-slate-100 p-2 rounded-full transition duration-150 cursor-pointer">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
                             </button>
                         </div>
-                        <div class="p-8 space-y-4 max-h-[400px] overflow-y-auto">
+
+                        <!-- Modal Body -->
+                        <div class="p-8 space-y-4 max-h-[460px] overflow-y-auto">
                             @php
                                 $trashed = $this->getTrashedProjects();
                             @endphp
                             @if($trashed->isEmpty())
-                                <p class="text-slate-500 text-sm text-center py-6">Tidak ada proyek yang dinonaktifkan.</p>
+                                <div class="flex flex-col items-center justify-center py-16 text-center">
+                                    <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-350 border border-slate-100 mb-4">
+                                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                                    </div>
+                                    <h4 class="text-sm font-bold text-slate-800 mb-1">Tidak ada proyek yang dinonaktifkan</h4>
+                                    <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Semua proyek Anda saat ini dalam status aktif dan berjalan normal.</p>
+                                </div>
                             @else
-                                <div class="divide-y divide-slate-100">
+                                <div class="space-y-3.5">
                                     @foreach($trashed as $tp)
-                                        <div class="py-4 flex items-center justify-between first:pt-0 last:pb-0 gap-4">
-                                            <div class="text-left flex-1 min-w-0">
-                                                <h4 class="text-sm font-bold text-slate-800">{{ $tp->name }}</h4>
-                                                <p class="text-xs text-slate-400 mt-1">Kata kunci: {{ implode(', ', $tp->topics ?? []) }}</p>
-                                                <p class="text-[10px] text-slate-400 mt-0.5">Dinonaktifkan pada: {{ $tp->deleted_at->format('Y-m-d H:i:s') }}</p>
+                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-[#F8F9FA] hover:bg-slate-50/80 border border-slate-150 rounded-2xl transition duration-200 gap-4">
+                                            <div class="text-left flex-1 min-w-0 space-y-2">
+                                                <h4 class="text-sm font-black text-slate-800 truncate tracking-tight">{{ $tp->name }}</h4>
+                                                
+                                                <!-- Topics/Keywords Badges -->
+                                                <div class="flex flex-wrap gap-1.5 items-center">
+                                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide mr-1">Kata Kunci:</span>
+                                                    @foreach(array_slice($tp->topics ?? [], 0, 5) as $topic)
+                                                        <span class="px-2 py-0.5 text-[10px] font-bold bg-[#1fa387]/5 text-[#1fa387] border border-[#1fa387]/15 rounded-lg">#{{ $topic }}</span>
+                                                    @endforeach
+                                                    @if(count($tp->topics ?? []) > 5)
+                                                        <span class="px-2 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-500 rounded-lg">+{{ count($tp->topics) - 5 }}</span>
+                                                    @endif
+                                                </div>
+
+                                                <!-- Deleted Time Info -->
+                                                <div class="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
+                                                    <span>Dinonaktifkan pada: {{ $tp->deleted_at->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</span>
+                                                </div>
                                             </div>
-                                            <div class="flex items-center gap-2 flex-shrink-0">
+
+                                            <!-- Action Buttons -->
+                                            <div class="flex items-center gap-2.5 flex-shrink-0 self-end sm:self-center">
                                                 <button
                                                     wire:click="confirmRestoreProject({{ $tp->id }})"
-                                                    style="background-color: #1fa387;"
-                                                    class="px-4 py-2 text-white text-xs font-bold rounded-xl hover:opacity-90 transition cursor-pointer"
+                                                    class="px-5 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white text-xs font-bold rounded-xl transition duration-150 cursor-pointer shadow-sm shadow-emerald-500/10 active:scale-[0.98]"
                                                 >
-                                                    Aktifkan
+                                                    Aktifkan Kembali
                                                 </button>
                                                 <button
                                                     wire:click="confirmForceDeleteProject({{ $tp->id }})"
-                                                    class="px-4 py-2 bg-rose-50 text-rose-600 text-xs font-bold rounded-xl hover:bg-rose-100 transition cursor-pointer"
+                                                    class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-650 text-xs font-bold rounded-xl transition duration-150 cursor-pointer active:scale-[0.98]"
                                                 >
-                                                    Hapus
+                                                    Hapus Permanen
                                                 </button>
                                             </div>
                                         </div>
@@ -1596,11 +1630,13 @@ new class extends Component
                                 </div>
                             @endif
                         </div>
-                        <div class="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+
+                        <!-- Modal Footer -->
+                        <div class="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
                             <button
                                 type="button"
                                 wire:click="closeModals"
-                                class="px-5 py-2 bg-slate-200 hover:bg-slate-350 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                                class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer"
                             >
                                 Tutup
                             </button>
