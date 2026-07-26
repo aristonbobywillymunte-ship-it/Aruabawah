@@ -175,6 +175,20 @@ class RunApifyScraping extends Command
             }
 
             foreach ($actors as $actor) {
+                // Pastikan platform ini dipilih dalam setelan sumber data proyek
+                $projectSources = $project->sources ?? ['Instagram', 'TikTok', 'Facebook', 'Portal'];
+                // Normalize label Portal ke Portal News jika perlu, tapi actor platform biasanya TikTok, Instagram, Facebook
+                if (!in_array($actor->platform, $projectSources, true)) {
+                    $this->line("Skipping {$actor->platform} — platform tidak dipilih dalam setelan sumber data proyek ini.");
+                    $socialLog->info('[Social] Actor skipped: platform not selected in project sources.', [
+                        'project_id' => $project->id,
+                        'project_name' => $project->name,
+                        'platform' => $actor->platform,
+                        'project_sources' => $projectSources,
+                    ]);
+                    continue;
+                }
+
                 $lastProjectActorRunAt = $this->latestProjectActorRunAt($project->id, $actor->platform);
 
                 // Check if interval has passed since the last run for this project + platform

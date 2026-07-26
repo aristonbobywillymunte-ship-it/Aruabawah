@@ -315,7 +315,9 @@ new class extends Component
         $this->endDate = now()->format('Y-m-d');
         $this->search = '';
         $this->selectedSentiment = [];
-        $this->selectedSources = [];
+        $this->selectedSources = $project->sources
+            ? array_map(fn($s) => $s === 'Portal' ? 'Portal News' : $s, $project->sources)
+            : [];
         $this->selectedCategory = '';
         $this->sortBy = 'newest';
         $this->limit = 5;
