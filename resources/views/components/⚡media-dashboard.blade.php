@@ -2539,17 +2539,15 @@ new class extends Component
                         class="overflow-y-auto pr-4 space-y-4"
                         wire:init="loadMentions"
                         wire:key="mentions-scroll-shell"
-                        x-data="{ loadingMore: false, loadMoreTimer: null }"
+                        x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
                         x-init="
                             const feedEl = $el;
                             const triggerLoadMore = () => {
-                                if (loadingMore) return;
                                 if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
                                 if ({{ $mentionsArticlesCount }} >= {{ $mentionsTotalArticlesCount }}) return;
-                                loadingMore = true;
-                                Promise.resolve($wire.loadMore())
-                                    .catch(() => {})
-                                    .finally(() => loadingMore = false);
+                                if (Date.now() - lastLoadMoreAt < 1200) return;
+                                lastLoadMoreAt = Date.now();
+                                $wire.loadMore();
                             };
                             feedEl.addEventListener('scroll', triggerLoadMore, { passive: true });
                             if (feedEl.loadMoreTimer) {
@@ -2970,17 +2968,15 @@ new class extends Component
                     <div
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-6"
-                        x-data="{ loadingMore: false, loadMoreTimer: null }"
+                        x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
                         x-init="
                             const feedEl = $el;
                             const triggerLoadMore = () => {
-                                if (loadingMore) return;
                                 if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
                                 if ({{ $analysisArticlesCount }} >= {{ $analysisTotalArticlesCount }}) return;
-                                loadingMore = true;
-                                Promise.resolve($wire.loadMore())
-                                    .catch(() => {})
-                                    .finally(() => loadingMore = false);
+                                if (Date.now() - lastLoadMoreAt < 1200) return;
+                                lastLoadMoreAt = Date.now();
+                                $wire.loadMore();
                             };
                             feedEl.addEventListener('scroll', triggerLoadMore, { passive: true });
                             if (feedEl.loadMoreTimer) {
@@ -5683,17 +5679,15 @@ new class extends Component
                     <div
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-6"
-                        x-data="{ loadingMore: false, loadMoreTimer: null }"
+                        x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
                         x-init="
                             const feedEl = $el;
                             const triggerLoadMore = () => {
-                                if (loadingMore) return;
                                 if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
                                 if ({{ $contentArticlesCount }} >= {{ $contentTotalArticlesCount }}) return;
-                                loadingMore = true;
-                                Promise.resolve($wire.loadMore())
-                                    .catch(() => {})
-                                    .finally(() => loadingMore = false);
+                                if (Date.now() - lastLoadMoreAt < 1200) return;
+                                lastLoadMoreAt = Date.now();
+                                $wire.loadMore();
                             };
                             feedEl.addEventListener('scroll', triggerLoadMore, { passive: true });
                             if (feedEl.loadMoreTimer) {
