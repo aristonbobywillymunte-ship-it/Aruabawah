@@ -1555,7 +1555,7 @@ new class extends Component
                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm"
                 >
                     <div 
-                        @click.outside="$wire.closeModals()"
+                        @click.outside="!$wire.showConfirmModal && $wire.closeModals()"
                         class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-100/80 overflow-hidden transform transition-all duration-300 scale-100 flex flex-col h-[600px]"
                     >
                         <!-- Modal Header -->
