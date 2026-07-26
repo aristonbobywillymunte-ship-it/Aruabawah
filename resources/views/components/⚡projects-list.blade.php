@@ -907,7 +907,7 @@ new class extends Component
                                     <input 
                                         wire:model="name" 
                                         type="text" 
-                                        placeholder="Contoh: Monitoring Pilgub Kaltim 2024"
+                                        placeholder="Contoh: Analisis Kuliner Khas Indonesia"
                                         class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
                                     >
                                     @error('name') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
@@ -923,7 +923,7 @@ new class extends Component
                                     <input 
                                         wire:model="contextKeywords" 
                                         type="text" 
-                                        placeholder="Contoh: Isran Noor, Rudy Mas'ud, Seno Aji"
+                                        placeholder="Contoh: Rendang, Nasi Goreng, Sate, Gado-Gado"
                                         class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
                                     >
                                     @error('contextKeywords') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
@@ -942,7 +942,7 @@ new class extends Component
                                     <input 
                                         wire:model="topicsString" 
                                         type="text" 
-                                        placeholder="Contoh: Gubernur, Wakil Gubernur, Pilgub, Kaltim"
+                                        placeholder="Contoh: Makanan Tradisional, Kuliner Nusantara, Masakan Indonesia"
                                         class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
                                     >
                                     @error('topicsString') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
@@ -986,7 +986,7 @@ new class extends Component
                                     <input 
                                         wire:model="excludeKeywords" 
                                         type="text" 
-                                        placeholder="Contoh: palsu, hoaks, penipuan"
+                                        placeholder="Contoh: instan, cepat saji, modern"
                                         class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
                                     >
                                     <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
