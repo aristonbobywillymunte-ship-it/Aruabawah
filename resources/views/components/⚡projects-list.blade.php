@@ -703,7 +703,7 @@ new class extends Component
 ?>
 
 <div
-    class="{{ $projectId ? 'h-full flex flex-col overflow-hidden' : '' }}"
+    class="{{ $projectId ? 'w-full' : '' }}"
     x-data="{
         showSuccess: @entangle('showSuccessModal'),
         showEdit: @entangle('showEditModal'),
@@ -713,6 +713,27 @@ new class extends Component
         toastType: @entangle('toastType'),
         toastMessage: @entangle('toastMessage'),
         toastTimer: null,
+        detailModalOpen: false,
+        showViralModal: false,
+        openedFromViral: false,
+        showAiSummaryModal: false,
+        scrolledDown: false,
+        mobileFilterOpen: false,
+        detailTitle: '',
+        detailSource: '',
+        detailDate: '',
+        detailUrl: '',
+        detailContent: '',
+        detailAiSummary: '',
+        detailAiRecommendation: '',
+        detailSentiment: '',
+        detailCategory: '',
+        detailReach: '',
+        detailLevel: '',
+        detailScore: '',
+        detailFormattedDate: '',
+        detailLikes: 0,
+        detailComments: 0,
         updateScrollLock() {
             document.body.style.overflow = (this.showSuccess || this.showEdit || this.showTrashed || this.showConfirm) ? 'hidden' : '';
         },
@@ -723,6 +744,34 @@ new class extends Component
             this.toastVisible = true;
             clearTimeout(this.toastTimer);
             this.toastTimer = setTimeout(() => this.toastVisible = false, 3000);
+        },
+        init() {
+            window.openDashboardDetail = (title, source, date, url, content, summary, rec, sentiment, category, reach, level, score, formattedDate, likes = 0, comments = 0) => {
+                this.detailTitle = title;
+                this.detailSource = source;
+                this.detailDate = date;
+                this.detailUrl = url;
+                this.detailContent = content;
+                this.detailAiSummary = summary;
+                this.detailAiRecommendation = rec;
+                this.detailSentiment = sentiment;
+                this.detailCategory = category;
+                this.detailReach = reach;
+                this.detailLevel = level;
+                this.detailScore = score;
+                this.detailFormattedDate = formattedDate;
+                this.detailLikes = likes;
+                this.detailComments = comments;
+                this.showAiSummaryModal = false;
+                this.detailModalOpen = true;
+            };
+            window.closeDashboardDetail = () => {
+                this.detailModalOpen = false;
+                if (this.openedFromViral) {
+                    this.showViralModal = true;
+                    this.openedFromViral = false;
+                }
+            };
         }
     }"
     x-effect="updateScrollLock()"
@@ -1112,15 +1161,15 @@ new class extends Component
                             @endif
 
                             <!-- Project Grid -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
                                 <!-- Create Project Card -->
                                 @if(auth()->check())
                                     <div 
                                         wire:click="$set('isCreatingProject', true)"
-                                        class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col self-start min-h-[880px] cursor-pointer hover:bg-white/50 transition-all duration-300 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+                                        class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col items-center justify-center text-center h-full min-h-[460px] cursor-pointer hover:bg-white/50 transition-all duration-300 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
                                     >
-                                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                            <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-5 shadow-sm">
+                                            <svg class="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
                                             </svg>
                                         </div>
@@ -1149,7 +1198,7 @@ new class extends Component
                                                 localStorage.setItem('project-risk-stats-{{ $project['id'] }}', JSON.stringify(this.showRiskStats));
                                             }
                                         }"
-                                        class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col self-start shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all"
+                                        class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-between shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all h-full"
                                     >
                                 <!-- Card Header -->
                                 <div class="flex items-start justify-between mb-8">

@@ -45,8 +45,8 @@ new class extends Component
     // Tab state ('penyebutan' or 'analisis')
     #[Url(as: 'tab')]
     public $activeTab = 'cGVueWVidXRhbg==';
-    public bool $analysisLoaded = false;
-    public bool $analysisChartsLoaded = false;
+    public bool $analysisLoaded = true;
+    public bool $analysisChartsLoaded = true;
     public bool $keywordTabRequested = false;
 
     public function getDecodedProjectId()
@@ -92,7 +92,8 @@ new class extends Component
     {
         $this->activeTab = base64_encode($name);
         if ($name === 'analisis') {
-            $this->analysisLoaded = false;
+            $this->analysisLoaded = true;
+            $this->analysisChartsLoaded = true;
         }
         $this->js('window.scrollTo(0, 0);');
     }
@@ -129,7 +130,7 @@ new class extends Component
     public $keywordsTable = [];
     public $keywordSearch = '';
     public $selectedKeyword = null;
-    public bool $dashboardLoaded = false;
+    public bool $dashboardLoaded = true;
     public bool $mentionsLoaded = false;
     protected array $trendPointsMemo = [];
     protected array $articlesMemo = [];
@@ -1859,49 +1860,9 @@ new class extends Component
     $viralMeta = $this->getViralMeta();
 @endphp
 @include('components.media-dashboard-styles')
-<div class="min-h-screen w-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-x-hidden"
+<div class="w-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans overflow-x-hidden"
      x-data="{
-         detailModalOpen: false,
-         showViralModal: false,
-         openedFromViral: false,
-         showAiSummaryModal: false,
-         scrolledDown: false,
-         mobileFilterOpen: false,
          isMobile: window.innerWidth < 900,
-         detailTitle: '',
-         detailSource: '',
-         detailDate: '',
-         detailUrl: '',
-         detailContent: '',
-         detailAiSummary: '',
-         detailAiRecommendation: '',
-         detailSentiment: '',
-         detailCategory: '',
-         detailReach: '',
-         detailLevel: '',
-         detailScore: '',
-         detailFormattedDate: '',
-         detailLikes: 0,
-         detailComments: 0,
-         openDetail(title, source, date, url, content, summary, rec, sentiment, category, reach, level, score, formattedDate, likes = 0, comments = 0) {
-             this.detailTitle = title;
-             this.detailSource = source;
-             this.detailDate = date;
-             this.detailUrl = url;
-             this.detailContent = content;
-             this.detailAiSummary = summary;
-             this.detailAiRecommendation = rec;
-             this.detailSentiment = sentiment;
-             this.detailCategory = category;
-             this.detailReach = reach;
-             this.detailLevel = level;
-             this.detailScore = score;
-             this.detailFormattedDate = formattedDate;
-             this.detailLikes = likes;
-             this.detailComments = comments;
-             this.showAiSummaryModal = false;
-             this.detailModalOpen = true;
-         },
          scrollToTop() {
              window.scrollTo({ top: 0, behavior: 'smooth' });
          }
@@ -2025,9 +1986,10 @@ new class extends Component
                                     <span>Logout</span>
                                 </button>
                             </form>
-                        </div>
-                    </div>
-                </div>
+</div>
+</div>
+</div>
+</div>
             </div>
         </div>
     </header>
@@ -2078,7 +2040,7 @@ new class extends Component
         </div>
     </div>
 
-    <footer class="dashboard-fixed-footer px-6 border-t border-slate-200 items-center justify-between gap-4 py-3" wire:key="dashboard-fixed-footer-shell">
+    <footer class="dashboard-fixed-footer md:order-[50] px-6 border-t border-slate-200 items-center justify-between gap-4 py-3" wire:key="dashboard-fixed-footer-shell">
         <p class="text-xs text-slate-400 font-medium">© 2026 Arusbawah Media Intelligence. All rights reserved.</p>
         <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-[0.18em]">Media Intelligence Dashboard</p>
     </footer>
@@ -2088,13 +2050,13 @@ new class extends Component
     @endphp
 
     <!-- Desktop filter is fixed outside the lazy workspace so Livewire refreshes cannot remove it. -->
-    <aside class="desktop-filter-panel shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-200 rounded-2xl p-6 bg-white flex-shrink-0" wire:key="desktop-filter-panel-shell">
+    <aside class="desktop-filter-panel md:order-[50] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-200 rounded-2xl p-6 bg-white flex-shrink-0" wire:key="desktop-filter-panel-shell">
         <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3 flex-shrink-0">Filter Panel</h4>
         @include('components.⚡filter-items', ['filterContext' => 'desktop'])
     </aside>
 
     <!-- Main Workspace Layout with Real Full-Height Left Sidebar -->
-    <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 min-h-0 overflow-visible" wire:init="loadDashboard">
+    <div class="w-full flex-grow flex flex-col md:flex-row min-w-0 min-h-0 overflow-visible md:order-[10]" wire:init="loadDashboard">
 
         <!-- Left Sidebar — always rendered (static, no data needed) -->
         <aside class="hidden md:flex w-16 bg-white border-r border-slate-200 flex-col items-center py-6 gap-5 flex-shrink-0 h-full">
@@ -2108,7 +2070,6 @@ new class extends Component
             </a>
         </aside>
 
-        @if($dashboardLoaded)
         @php
             $counts = $this->getCounts();
             $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
@@ -2430,50 +2391,37 @@ new class extends Component
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                     @endphp
                     <div
-                        class="pr-4 space-y-4"
+                        class="pr-4 space-y-4 min-h-0"
                         wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
                         id="mentions-feed-scroll"
                         data-total-count="{{ $mentionsTotalArticlesCount }}"
-                        x-data="{ busy: false }"
+                        x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
                         x-init="
                             const el = $el;
-                            
-                            // Definisikan observer untuk element paling bawah (load-more button / loader)
-                            const observer = new IntersectionObserver((entries) => {
-                                if (busy) return;
-                                const targetEntry = entries[0];
-                                if (targetEntry.isIntersecting) {
-                                    const loaded = el.querySelectorAll('[data-mention-card]').length;
-                                    const total = parseInt(el.getAttribute('data-total-count') || '0');
-                                    if (total > 0 && loaded < total) {
-                                        busy = true;
-                                        $wire.loadMore().then(() => {
-                                            setTimeout(() => { busy = false; }, 800);
-                                        }).catch(() => {
-                                            setTimeout(() => { busy = false; }, 800);
-                                        });
-                                    }
-                                }
-                            }, {
-                                root: el,
-                                rootMargin: '200px',
-                                threshold: 0.1
-                            });
-
-                            // Mulai observe elemen loader/button di paling bawah setelah render
-                            setTimeout(() => {
-                                const loader = el.querySelector('[wire\\:target=\'loadMore\']') || el.lastElementChild;
-                                if (loader) observer.observe(loader);
-                            }, 500);
-
-                            // Daftarkan ulang observer setiap kali render selesai (Livewire refresh)
-                            $wire.on('post-load', () => {
-                                const loader = el.querySelector('[wire\\:target=\'loadMore\']') || el.lastElementChild;
-                                if (loader) {
-                                    observer.disconnect();
-                                    observer.observe(loader);
-                                }
-                            });
+                            const triggerLoadMore = () => {
+                                const total = parseInt(el.getAttribute('data-total-count') || '0', 10);
+                                const loaded = el.querySelectorAll('[data-mention-card]').length;
+                                if (loaded >= total) return;
+                                const usesWindowScroll = el.scrollHeight <= (el.clientHeight + 4);
+                                const nearBottom = usesWindowScroll
+                                    ? (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 220)
+                                    : (el.scrollTop + el.clientHeight >= el.scrollHeight - 220);
+                                if (!nearBottom) return;
+                                if (Date.now() - lastLoadMoreAt < 1200) return;
+                                lastLoadMoreAt = Date.now();
+                                Promise.resolve($wire.loadMore())
+                                    .catch(() => {})
+                                    .finally(() => setTimeout(() => { lastLoadMoreAt = 0; }, 900));
+                            };
+                            const onScroll = () => requestAnimationFrame(triggerLoadMore);
+                            el.addEventListener('scroll', onScroll, { passive: true });
+                            window.addEventListener('scroll', onScroll, { passive: true });
+                            window.addEventListener('resize', onScroll);
+                            if (loadMoreTimer) {
+                                clearInterval(loadMoreTimer);
+                            }
+                            loadMoreTimer = setInterval(triggerLoadMore, 900);
+                            triggerLoadMore();
                         "
                     >
                         @php
@@ -2803,7 +2751,7 @@ new class extends Component
                                             @if($article->url)
                                                 <button 
                                                     type="button"
-                                                    @click="openDetail(
+                                                    @click="window.openDashboardDetail(
                                                         {{ Js::from($article->title) }},
                                                         {{ Js::from($article->source_name) }},
                                                         {{ Js::from($article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d F Y, H:i') : 'Just now') }},
@@ -2838,38 +2786,17 @@ new class extends Component
                         @endphp
 
                         @if($articlesList->count() < $totalArticlesCount)
-                            <div wire:key="mentions-load-more-{{ $mentionsFeedSignature }}-{{ $articlesList->count() }}">
-
-                                {{-- Loading indicator saat loadMore berjalan --}}
+                            <div wire:key="mentions-load-more-{{ $mentionsFeedSignature }}-{{ $articlesList->count() }}" class="py-6 flex items-center justify-center">
                                 <div
                                     wire:loading
                                     wire:target="loadMore"
-                                    style="display:none;"
-                                    class="py-6 flex items-center justify-center gap-2 text-[#1fa387]"
+                                    class="inline-flex items-center justify-center gap-2 text-[#1fa387] mx-auto"
                                 >
                                     <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
                                     <span class="text-xs font-bold">Memuat lebih banyak...</span>
-                                </div>
-
-                                {{-- Tombol manual fallback --}}
-                                <div
-                                    wire:loading.remove
-                                    wire:target="loadMore"
-                                    class="py-4 flex items-center justify-center"
-                                >
-                                    <button
-                                        type="button"
-                                        wire:click="loadMore"
-                                        class="inline-flex items-center gap-2 rounded-xl border border-[#1fa387]/20 bg-[#1fa387]/5 px-4 py-2 text-xs font-bold text-[#1fa387] transition hover:bg-[#1fa387]/10"
-                                    >
-                                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"></path>
-                                        </svg>
-                                        <span>+ Muat lebih banyak ({{ $articlesList->count() }}/{{ $totalArticlesCount }})</span>
-                                    </button>
                                 </div>
                             </div>
 
@@ -2884,7 +2811,7 @@ new class extends Component
                 </section>
             @elseif($this->isTab('analisis'))
                 <!-- TAB 2: Analisis (Redesigned matching screenshots) -->
-                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:init="loadAnalysis" wire:key="dashboard-analysis-section">
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:key="dashboard-analysis-section">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
                         <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data yang relevan untuk proyek aktif.</p>
@@ -2926,7 +2853,6 @@ new class extends Component
                                     <p class="text-[10px] text-slate-400">Kinerja metrik utama dan distribusi penyebutan pada setiap saluran media.</p>
                                 </div>
                             </div>
-                            @if($analysisLoaded)
                         <div class="grid grid-cols-3 gap-4">
                             <!-- Card 1: Total Artikel Ditemukan -->
                             <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[100px]">
@@ -3204,35 +3130,7 @@ new class extends Component
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    @unless($analysisChartsLoaded)
-                    <div class="space-y-6">
-                        <div class="animate-pulse space-y-4">
-                            <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6">
-                                <div class="flex justify-between items-center pb-3 border-b border-slate-100/85">
-                                    <div class="space-y-2">
-                                        <div class="h-4 w-40 bg-slate-100 rounded"></div>
-                                        <div class="h-3 w-72 bg-slate-100 rounded"></div>
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-4">
-                                    <div class="h-[100px] rounded-2xl bg-slate-100"></div>
-                                    <div class="h-[100px] rounded-2xl bg-slate-100"></div>
-                                    <div class="h-[100px] rounded-2xl bg-slate-100"></div>
-                                </div>
-                                <div class="grid grid-cols-4 gap-4">
-                                    <div class="h-[155px] rounded-2xl bg-slate-100"></div>
-                                    <div class="h-[155px] rounded-2xl bg-slate-100"></div>
-                                    <div class="h-[155px] rounded-2xl bg-slate-100"></div>
-                                    <div class="h-[155px] rounded-2xl bg-slate-100"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endunless
-
-                    @if($analysisChartsLoaded)
                     <!-- SVGs Line Chart (Daily trend) -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-4" x-data="{ trendMode: 'harian', activePoint: null }">
                             <div class="flex justify-between items-center pb-2 border-b border-slate-100/85">
@@ -4013,7 +3911,7 @@ new class extends Component
                                             @if($popArt->url)
                                                 <button 
                                                     type="button"
-                                                    @click="openDetail(
+                                                    @click="window.openDashboardDetail(
                                                         {{ Js::from($popArt->title) }},
                                                         {{ Js::from($popArt->source_name) }},
                                                         {{ Js::from($popArt->published_at ? \Carbon\Carbon::parse($popArt->published_at)->format('d M Y, H:i') : 'Just now') }},
@@ -4133,7 +4031,7 @@ new class extends Component
                                             @if($newArt->url)
                                                 <button 
                                                     type="button"
-                                                    @click="openDetail(
+                                                    @click="window.openDashboardDetail(
                                                         {{ Js::from($newArt->title) }},
                                                         {{ Js::from($newArt->source_name) }},
                                                         {{ Js::from($newArt->published_at ? \Carbon\Carbon::parse($newArt->published_at)->format('d M Y, H:i') : 'Just now') }},
@@ -4159,43 +4057,6 @@ new class extends Component
                                 @endforeach
                             </div>
                         </div>
-                    @else
-                        <!-- Gambaran Umum Card Grid Skeleton (Header loaded statically inside this loading state) -->
-                        <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-6">
-                            <div class="flex justify-between items-center pb-3 border-b border-slate-100/85 mb-6">
-                                <div class="space-y-0.5 text-left">
-                                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                                        <span class="material-symbols-outlined text-[18px] text-[#1fa387]">equalizer</span>
-                                        GAMBARAN UMUM
-                                    </h3>
-                                    <p class="text-[10px] text-slate-400">Kinerja metrik utama dan distribusi penyebutan pada setiap saluran media.</p>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-3 gap-4 animate-pulse">
-                                <div class="h-[100px] rounded-2xl bg-slate-100"></div>
-                                <div class="h-[100px] rounded-2xl bg-slate-100"></div>
-                                <div class="h-[100px] rounded-2xl bg-slate-100"></div>
-                            </div>
-                            <div class="grid grid-cols-4 gap-4 mt-4 animate-pulse">
-                                <div class="h-[155px] rounded-2xl bg-slate-100"></div>
-                                <div class="h-[155px] rounded-2xl bg-slate-100"></div>
-                                <div class="h-[155px] rounded-2xl bg-slate-100"></div>
-                                <div class="h-[155px] rounded-2xl bg-slate-100"></div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4 mt-4 animate-pulse">
-                                <div class="h-[188px] rounded-2xl bg-slate-100"></div>
-                                <div class="h-[188px] rounded-2xl bg-slate-100"></div>
-                            </div>
-                        </div>
-
-                        <!-- Charts Loader Skeleton -->
-                        <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left mt-6 animate-pulse space-y-4">
-                            <div class="h-4 w-40 bg-slate-100 rounded"></div>
-                            <div class="h-3 w-72 bg-slate-100 rounded"></div>
-                            <div class="h-[200px] bg-slate-100 rounded-2xl mt-4"></div>
-                        </div>
-                    @endif
-                    @endif
                     </div>
                     </div>
                 </section>
@@ -5462,7 +5323,7 @@ new class extends Component
                                         <!-- Ringkasan AI Button -->
                                         <button 
                                             type="button"
-                                            @click="openDetail(
+                                            @click="window.openDashboardDetail(
                                                 {{ Js::from($article->title) }},
                                                 {{ Js::from($article->source_name) }},
                                                 {{ Js::from($article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d F Y, H:i') : 'Baru saja') }},
@@ -5533,7 +5394,7 @@ new class extends Component
                                     </div>
                                     <button 
                                         type="button"
-                                        @click="openDetail(
+                                        @click="window.openDashboardDetail(
                                             {{ Js::from($article->title) }},
                                             {{ Js::from($article->source_name) }},
                                             {{ Js::from($article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d F Y, H:i') : 'Baru saja') }},
@@ -6038,23 +5899,7 @@ new class extends Component
                 </div>
             </div>
         </div>
-        @else
-            <div class="flex-1 min-w-0 min-h-0 px-4 sm:px-8 py-4">
-                <div class="space-y-4">
-                    @for($i = 0; $i < 4; $i++)
-                        <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm animate-pulse">
-                            <div class="h-4 w-28 rounded bg-slate-100 mb-3"></div>
-                            <div class="h-5 w-3/4 rounded bg-slate-100 mb-4"></div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="h-20 rounded-2xl bg-slate-100"></div>
-                                <div class="h-20 rounded-2xl bg-slate-100"></div>
-                            </div>
-                        </div>
-                    @endfor
-                </div>
-            </div>
-        @endif
-
+    </div>
     <!-- Viral Articles Modal (Alpine.js) -->
     <div 
         x-show="showViralModal" 
@@ -6122,7 +5967,7 @@ new class extends Component
                         <div 
                             class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm transition-all hover:shadow-md cursor-pointer border-l-4"
                             style="border-left-color: {{ $sentimentColor }}"
-                            @click="showViralModal = false; openedFromViral = true; openDetail(
+                            @click="showViralModal = false; openedFromViral = true; window.openDashboardDetail(
                                 {{ Js::from($article->title) }},
                                 {{ Js::from($article->source_name) }},
                                 {{ Js::from($article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d M Y, H:i') . ' (' . \Carbon\Carbon::parse($article->published_at)->diffForHumans() . ')' : 'Baru saja') }},
@@ -6183,7 +6028,7 @@ new class extends Component
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         x-cloak
-        @keydown.escape.window="detailModalOpen = false; if (openedFromViral) { showViralModal = true; openedFromViral = false; }"
+        @keydown.escape.window="window.closeDashboardDetail()"
         style="display: none;"
     >
         <div 
@@ -6194,12 +6039,12 @@ new class extends Component
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-            @click.away="detailModalOpen = false; if (openedFromViral) { showViralModal = true; openedFromViral = false; }"
+            @click.away="window.closeDashboardDetail()"
             style="position: relative;"
         >
             <!-- Close Button (Positioned absolute with robust inline style) -->
             <button 
-                @click="detailModalOpen = false; if (openedFromViral) { showViralModal = true; openedFromViral = false; }" 
+                @click="window.closeDashboardDetail()" 
                 class="bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer shadow-sm rounded-full"
                 style="position: absolute; right: 24px; top: 24px; width: 36px; height: 36px; font-weight: bold; border: none; font-size: 14px; z-index: 50;"
             >
