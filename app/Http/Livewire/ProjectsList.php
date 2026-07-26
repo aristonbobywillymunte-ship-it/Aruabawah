@@ -616,6 +616,12 @@ class ProjectsList extends Component
         $this->resetConfirmState();
     }
 
+    public function closeConfirmModal()
+    {
+        $this->showConfirmModal = false;
+        $this->resetConfirmState();
+    }
+
     protected function resetConfirmState(): void
     {
         $this->confirmAction = null;

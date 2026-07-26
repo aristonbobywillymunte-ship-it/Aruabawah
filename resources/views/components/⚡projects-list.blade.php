@@ -1660,17 +1660,17 @@ new class extends Component
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
-                    @keydown.escape.window="$wire.closeModals()"
+                    @keydown.escape.window="$wire.closeConfirmModal()"
                     class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/30 backdrop-blur-sm"
                 >
                     <div 
-                        @click.outside="$wire.closeModals()"
+                        @click.outside="$wire.closeConfirmModal()"
                         class="bg-white rounded-3xl w-full max-w-sm shadow-xl border border-slate-100/50 overflow-hidden transform transition-all duration-300 scale-100 relative"
                     >
                         <!-- Close Button (X) -->
                         <button 
                             type="button" 
-                            wire:click="closeModals" 
+                            wire:click="closeConfirmModal" 
                             wire:loading.attr="disabled"
                             class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 hover:bg-slate-50 p-1.5 rounded-full transition duration-150 cursor-pointer disabled:opacity-50"
                         >
@@ -1699,7 +1699,7 @@ new class extends Component
                         <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-100/60 flex gap-3">
                             <button
                                 type="button"
-                                wire:click="closeModals"
+                                wire:click="closeConfirmModal"
                                 wire:loading.attr="disabled"
                                 class="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer disabled:opacity-50 text-center"
                             >
