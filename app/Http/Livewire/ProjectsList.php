@@ -37,11 +37,11 @@ class ProjectsList extends Component
     public $topicsString = ''; // Reset default to empty string
     public $contextKeywords = '';
     public $excludeKeywords = '';
-    public $selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
+    public $selectedSources = ['Instagram', 'TikTok', 'Facebook', 'Portal'];
     public $isCreatingProject = false;
     public $showSuccessModal = false;
     public $lastCreatedProjectName = '';
-
+ 
     // Edit project state
     public $showEditModal = false;
     public $editProjectId = null;
@@ -497,6 +497,11 @@ class ProjectsList extends Component
         $this->validate([
             'name' => 'required|min:3|unique:projects,name',
             'topicsString' => 'required',
+        ], [
+            'name.required' => 'Nama proyek wajib diisi.',
+            'name.min' => 'Nama proyek minimal harus 3 karakter.',
+            'name.unique' => 'Nama proyek ini sudah digunakan, silakan pilih nama lain.',
+            'topicsString.required' => 'Kata kunci utama wajib diisi.',
         ]);
 
         // Validate JSON string
@@ -543,7 +548,7 @@ class ProjectsList extends Component
         );
         
         $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords']);
-        $this->selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
+        $this->selectedSources = ['Instagram', 'TikTok', 'Facebook', 'Portal'];
     }
 
     public function editProject($id)

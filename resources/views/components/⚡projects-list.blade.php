@@ -951,8 +951,42 @@ new class extends Component
                                             </template>
                                             <span x-show="!$wire.topicsString" class="text-xs text-slate-400 italic">Belum ada keyword.</span>
                                         </div>
+                                                                     @error('topicsString') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Konteks & Dikecualikan (Context & Exclude Keywords) di bawah Kata Kunci Utama -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Konteks Column -->
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-1.5">
+                                            <label class="text-sm font-bold text-slate-800">Kata Kunci Pendukung (Konteks)</label>
+                                            <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
+                                        </div>
+                                        <p class="text-xs text-slate-400 leading-tight">Semua kata kunci ini harus muncul agar penyebutan dikumpulkan.</p>
+                                        <input 
+                                            wire:model="contextKeywords" 
+                                            type="text" 
+                                            placeholder="Contoh: olahraga, sepatu, lari"
+                                            class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
+                                        >
+                                        <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
                                     </div>
-                                    @error('topicsString') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
+
+                                    <!-- Dikecualikan Column -->
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-1.5">
+                                            <label class="text-sm font-bold text-slate-800">Kata Kunci Pengecualian (Dikecualikan)</label>
+                                            <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
+                                        </div>
+                                        <p class="text-xs text-slate-400 leading-tight">Penyebutan tidak akan dikumpulkan jika mengandung kata kunci ini.</p>
+                                        <input 
+                                            wire:model="excludeKeywords" 
+                                            type="text" 
+                                            placeholder="Contoh: palsu, kw, tiruan"
+                                            class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
+                                        >
+                                        <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
+                                    </div>
                                 </div>
 
                                 <!-- Advanced Settings Accordion -->
@@ -971,70 +1005,9 @@ new class extends Component
                                         </svg>
                                     </button>
                                     
-                                    <div x-show="open" class="p-6 space-y-6" x-data="{
-                                        getTags() {
-                                            return $wire.topicsString ? $wire.topicsString.split(',').map(t => t.trim()).filter(Boolean) : [];
-                                        }
-                                    }">
-                                        <!-- Detail Filter Kata Kunci -->
-                                        <div class="space-y-4">
-                                            <div class="flex justify-between items-center">
-                                                <h4 class="text-xs font-bold text-slate-800">Detail Filter Kata Kunci</h4>
-                                            </div>
-
-                                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-slate-50/50 border border-slate-100 rounded-2xl p-6 relative">
-                                                <!-- Trash bin delete icon -->
-                                                <button type="button" @click="$wire.topicsString = ''; $wire.contextKeywords = ''; $wire.excludeKeywords = '';" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors" title="Hapus Filter">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-                                                </button>
-
-                                                <!-- UTAMA Column -->
-                                                <div class="space-y-2">
-                                                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">UTAMA</label>
-                                                    <div class="flex flex-wrap gap-2 min-h-[44px] items-center">
-                                                        <template x-for="tag in getTags()" :key="tag">
-                                                            <span class="px-3 py-1 bg-[#1fa387]/5 text-[#1fa387] border border-[#1fa387]/20 rounded-xl text-xs font-bold" x-text="tag"></span>
-                                                        </template>
-                                                        <span x-show="getTags().length === 0" class="text-xs text-slate-400 italic">Belum ada kata kunci...</span>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Konteks Column -->
-                                                <div class="space-y-2">
-                                                    <div class="flex items-center gap-1.5">
-                                                        <label class="text-xs font-bold text-slate-800">Konteks</label>
-                                                        <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
-                                                    </div>
-                                                    <p class="text-[10px] text-slate-400 leading-tight">Semua kata kunci ini harus muncul agar penyebutan dikumpulkan.</p>
-                                                    <input 
-                                                        wire:model="contextKeywords" 
-                                                        type="text" 
-                                                        placeholder="Misal: shoes"
-                                                        class="w-full bg-white border border-slate-200 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387] rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 transition"
-                                                    >
-                                                    <p class="text-[9px] text-slate-400">Pisahkan dengan koma.</p>
-                                                </div>
-
-                                                <!-- Dikecualikan Column -->
-                                                <div class="space-y-2">
-                                                    <div class="flex items-center gap-1.5">
-                                                        <label class="text-xs font-bold text-slate-800">Dikecualikan</label>
-                                                        <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
-                                                    </div>
-                                                    <p class="text-[10px] text-slate-400 leading-tight">Penyebutan tidak akan dikumpulkan jika mengandung kata kunci ini.</p>
-                                                    <input 
-                                                        wire:model="excludeKeywords" 
-                                                        type="text" 
-                                                        placeholder="Misal: fake"
-                                                        class="w-full bg-white border border-slate-200 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387] rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 transition"
-                                                    >
-                                                    <p class="text-[9px] text-slate-400">Pisahkan dengan koma.</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
+                                    <div x-show="open" class="p-6 space-y-6">
                                         <!-- Sumber Data Section -->
-                                        <div class="space-y-4 pt-4 border-t border-slate-100">
+                                        <div class="space-y-4">
                                             <div class="flex items-start justify-between gap-4">
                                                 <div>
                                                     <h4 class="text-xs font-bold text-slate-800">Sumber Data</h4>
