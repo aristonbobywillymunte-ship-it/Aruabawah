@@ -10,9 +10,11 @@ class NotificationDropdown extends Component
 {
     public $notifications = [];
     public $unreadCount = 0;
+    public $projectId = null;
 
-    public function mount()
+    public function mount($projectId = null)
     {
+        $this->projectId = $projectId;
         $this->loadNotifications();
     }
 
@@ -23,8 +25,13 @@ class NotificationDropdown extends Component
             return;
         }
 
-        // Get project IDs accessible by user
-        $projectIds = Project::accessibleBy($user)->pluck('id');
+        // Determine which project IDs to filter
+        if ($this->projectId) {
+            $projectIds = collect([$this->projectId]);
+        } else {
+            // Fallback (fallback if no project is active, though page filters usually active)
+            $projectIds = Project::accessibleBy($user)->pluck('id');
+        }
 
         // Get read notification IDs from Session
         $readNotificationIds = session()->get('user_' . $user->id . '_read_notifications', []);
