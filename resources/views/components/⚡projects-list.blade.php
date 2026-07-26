@@ -919,7 +919,7 @@ new class extends Component
                                         <label class="text-sm font-bold text-slate-800">Kata Kunci Pencarian Tambahan (Konteks)</label>
                                         <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
                                     </div>
-                                    <p class="text-xs text-slate-400 leading-tight">Gunakan untuk membatasi pencarian agar harus mengandung kata/frasa pendukung spesifik (seperti nama jabatan, tokoh, objek, atau lokasi tertentu).</p>
+                                    <p class="text-xs text-slate-400 leading-tight">Sistem wajib mencocokkan kata kunci di kolom ini. Biasanya digunakan untuk menentukan nama subjek spesifik (seperti nama orang, benda, lokasi, atau jabatan). Artikel hanya akan ditarik jika mengandung kata kunci utama DAN minimal salah satu kata kunci tambahan yang Anda masukkan di sini.</p>
                                     <input 
                                         wire:model="contextKeywords" 
                                         type="text" 
