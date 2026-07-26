@@ -910,51 +910,7 @@ new class extends Component
                                     @error('name') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
                                 </div>
 
-                                <!-- Main Keywords Field -->
-                                <div class="space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <label class="text-sm font-bold text-slate-800 block">Kata Kunci Utama</label>
-                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
-                                    </div>
-                                    <p class="text-xs text-slate-400">
-                                        Kata kunci atau frasa utama untuk proyek Anda. Penyebutan yang mengandung kata kunci ini akan dikumpulkan.
-                                    </p>
-                                    <input 
-                                        wire:model="topicsString" 
-                                        type="text" 
-                                        placeholder="Contoh: Nike, Adidas, Puma"
-                                        class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
-                                    >
-                                    <p class="text-[10px] text-slate-400 mt-1">Tidak peka huruf besar/kecil. Pisahkan dengan Koma atau tekan Enter untuk banyak kata kunci.</p>
-                                    <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4" x-data="{
-                                        topics() {
-                                            return $wire.topicsString ? $wire.topicsString.split(',').map(t => t.trim()).filter(Boolean) : [];
-                                        },
-                                        toHashtag(topic) {
-                                            const clean = topic
-                                                .replace(/^#+/, '')
-                                                .replace(/['’‘`]/g, '')
-                                                .replace(/\s+/g, '');
-                                            return clean ? `#${clean}` : '';
-                                        }
-                                    }">
-                                        <div class="flex items-center justify-between gap-3 mb-3">
-                                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Preview Hashtag</span>
-                                            <span class="text-[10px] font-semibold text-slate-500">Hasil akhir saat disimpan</span>
-                                        </div>
-                                        <div class="flex flex-wrap gap-2 text-xs">
-                                            <template x-for="topic in topics()" :key="topic">
-                                                <span
-                                                    class="px-3 py-1.5 rounded-full border border-[#1fa387]/20 bg-[#1fa387]/5 text-[#1fa387] font-bold"
-                                                    x-text="toHashtag(topic)"
-                                                ></span>
-                                            </template>
-                                            <span x-show="!$wire.topicsString" class="text-xs text-slate-400 italic">Belum ada keyword.</span>
-                                        </div>
-                                                                     @error('topicsString') <span class="text-red-500 text-xs font-medium">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- Konteks & Dikecualikan (Context & Exclude Keywords) di bawah Kata Kunci Utama -->
+                                <!-- Konteks & Dikecualikan (Context & Exclude Keywords) di bawah Nama Proyek -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <!-- Konteks Column -->
                                     <div class="space-y-2">
@@ -986,6 +942,52 @@ new class extends Component
                                             class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
                                         >
                                         <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Main Keywords Field (Kata Kunci Utama) -->
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800 block">Kata Kunci Utama</label>
+                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400">
+                                        Kata kunci atau frasa utama untuk proyek Anda. Penyebutan yang mengandung kata kunci ini akan dikumpulkan.
+                                    </p>
+                                    <input 
+                                        wire:model="topicsString" 
+                                        type="text" 
+                                        placeholder="Contoh: Nike, Adidas, Puma"
+                                        class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
+                                    >
+                                    @error('topicsString') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                    <p class="text-[10px] text-slate-400 mt-1">Tidak peka huruf besar/kecil. Pisahkan dengan Koma atau tekan Enter untuk banyak kata kunci.</p>
+                                    
+                                    <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4" x-data="{
+                                        topics() {
+                                            return $wire.topicsString ? $wire.topicsString.split(',').map(t => t.trim()).filter(Boolean) : [];
+                                        },
+                                        toHashtag(topic) {
+                                            const clean = topic
+                                                .replace(/^#+/, '')
+                                                .replace(/['’‘`]/g, '')
+                                                .replace(/\s+/g, '');
+                                            return clean ? `#${clean}` : '';
+                                        }
+                                    }">
+                                        <div class="flex items-center justify-between gap-3 mb-3">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Preview Hashtag</span>
+                                            <span class="text-[10px] font-semibold text-slate-500">Hasil akhir saat disimpan</span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2 text-xs">
+                                            <template x-for="topic in topics()" :key="topic">
+                                                <span
+                                                    class="px-3 py-1.5 rounded-full border border-[#1fa387]/20 bg-[#1fa387]/5 text-[#1fa387] font-bold"
+                                                    x-text="toHashtag(topic)"
+                                                ></span>
+                                            </template>
+                                            <span x-show="!$wire.topicsString" class="text-xs text-slate-400 italic">Belum ada keyword.</span>
+                                        </div>
                                     </div>
                                 </div>
 
