@@ -741,6 +741,9 @@ class ProjectsList extends Component
         session()->flash('message', 'Proyek berhasil diaktifkan kembali.');
         $this->notifyProjectAction('Proyek aktif kembali dan siap dipantau.');
         $this->resetConfirmState();
+
+        // Refresh/reload halaman proyek agar langsung memuat data yang baru dipulihkan
+        $this->redirect(request()->header('Referer') ?: '/');
     }
 
     public function forceDeleteProject($id)
