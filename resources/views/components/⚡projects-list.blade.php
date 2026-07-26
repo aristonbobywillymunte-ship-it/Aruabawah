@@ -1589,22 +1589,31 @@ new class extends Component
                                 </div>
                             @else
                                 <div class="divide-y divide-slate-100">
-                                    @foreach($trashed as $tp)
-                                        <div class="py-5 flex items-center justify-between gap-6 hover:bg-slate-50/30 px-3 -mx-3 rounded-2xl transition duration-150">
-                                            <div class="text-left flex-1 min-w-0 space-y-1.5">
-                                                <h4 class="text-sm font-bold text-slate-855 truncate tracking-tight uppercase">{{ $tp->name }}</h4>
-                                                
-                                                <div class="flex flex-wrap items-center gap-2">
-                                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Kata Kunci:</span>
-                                                    <span class="text-xs font-semibold text-slate-600 truncate">
-                                                        {{ implode(', ', $tp->topics ?? []) }}
-                                                    </span>
+                                    @foreach($trashed as $idx => $tp)
+                                        <div class="py-5 flex items-center justify-between gap-6 hover:bg-slate-50/40 px-3 -mx-3 rounded-2xl transition duration-150">
+                                            <div class="flex items-start gap-3 flex-1 min-w-0">
+                                                <!-- Index Badge (Identical to active project card index) -->
+                                                <div class="px-2 py-1 rounded bg-[#1fa387]/10 text-[#1fa387] font-bold text-[10px] tracking-widest border border-[#1fa387]/20 shrink-0">
+                                                    {{ sprintf('%02d', $idx + 1) }}
                                                 </div>
+                                                
+                                                <div class="text-left min-w-0 space-y-1">
+                                                    <div class="flex items-center gap-1.5 leading-none">
+                                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">PROYEK</span>
+                                                        <span class="text-[8px] text-slate-300">•</span>
+                                                        <span class="text-[9px] text-slate-400 font-bold">Dibuat: {{ $tp->created_at ? $tp->created_at->format('d M Y H:i') : '—' }}</span>
+                                                    </div>
+                                                    
+                                                    <!-- Uppercase Tosca Title (Identical to active project card title) -->
+                                                    <h4 class="text-sm font-extrabold text-[#1fa387] truncate uppercase tracking-tight">{{ $tp->name }}</h4>
+                                                    
+                                                    <!-- Keywords List -->
+                                                    <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                                        <span>Kata kunci:</span>
+                                                        <span class="font-semibold text-slate-600 truncate">{{ implode(', ', $tp->topics ?? []) }}</span>
+                                                    </div>
 
-                                                <!-- Deleted Time Info -->
-                                                <div class="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
-                                                    <svg class="w-3.5 h-3.5 text-slate-350" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
-                                                    <span>Dinonaktifkan pada: {{ $tp->deleted_at->locale('id')->isoFormat('D MMMM YYYY, HH:mm') }}</span>
+                                                    <p class="text-[9px] text-rose-500 font-bold">Dinonaktifkan pada: {{ $tp->deleted_at->locale('id')->isoFormat('D MMM YYYY, HH:mm') }}</p>
                                                 </div>
                                             </div>
 
