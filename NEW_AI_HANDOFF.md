@@ -56,6 +56,20 @@ Semua penyesuaian UI terbaru dipusatkan agar ramah perangkat HP/Mobile pada komp
     *   Jika grafik terlihat kosong padahal data tersedia, cek dulu query keyword, normalisasi hashtag, dan case-sensitivity PostgreSQL sebelum mengubah logika chart.
     *   Audit project `Wagub Kaltim` (`project_id=3`) menunjukkan data memang ada: `project_articles` berisi 433 relasi, 121 artikel berada di rentang `2026-07-01` s/d `2026-07-18`, dan keyword `wagub kaltim` masih punya 55 kecocokan.
     *   Jika chart tetap kosong pada kasus seperti ini, sumber masalah paling mungkin ada di jalur render/filter aktif/cache, bukan di ketersediaan data mentah.
+    *   **Cache Keyword Table**: Tabel kata kunci memakai cache key yang harus dibersihkan sebelum `primaryKeywords` diubah. Jangan hanya `forget()` key baru setelah array keyword sudah terlanjur dimodifikasi.
+    *   **Tab Kata Kunci Blank**: Saat tab `katakunci` dibuka langsung via URL, `dashboardLoaded` sekarang dipaksa aktif di `mount()` supaya area utama tidak tetap kosong menunggu `wire:init`. Jika halaman ini terlihat kosong lagi, cek dulu gate render `@if($dashboardLoaded)` dan pastikan `loadDashboard()`/hydrasi Livewire benar-benar jalan.
+    *   **Dashboard Loaded Default**: `dashboardLoaded` kini di-set `true` sejak `mount()` agar shell workspace tidak hilang pada render awal. Ini menutup celah ketika Livewire/Alpine gagal memicu `wire:init` tepat waktu.
+    *   **Keyword Tab Request Flag**: Tab `katakunci` sekarang memakai flag request mentah (`keywordTabRequested`) supaya render awal tidak bergantung penuh pada hidrasi `activeTab` Livewire. Ini dipakai untuk membedakan tab keyword saat halaman dibuka langsung dari URL.
+    *   **Gate Render Kata Kunci**: Workspace `Kata Kunci` sekarang juga dibolehkan tampil saat `isTab('katakunci')` walau `dashboardLoaded` belum sempat ter-set. Ini menjaga konten tetap muncul jika hidrasi Livewire terlambat atau `wire:init` gagal memicu awal.
+    *   **Layout Clipping Kata Kunci**: Jika area tab `katakunci` tampak seperti tertutup / kosong walau panel filter hidup, cek wrapper `section` dan container scroll internal di `media-dashboard.blade.php`. Pembungkus dengan `overflow-hidden` dan tinggi tetap bisa men-clipping tabel serta grafik sebelum sempat terlihat.
+    *   **Wire Key Tab**: Tab `katakunci` sekarang memakai `wire:key="dashboard-keyword-section"` supaya Livewire tidak salah morphing saat pindah tab. Jika area kosong muncul lagi, cek dulu apakah tab section ini masih punya key unik dan apakah tab lain memakai pola yang sama.
+    *   **Scroll Shell Kata Kunci**: Tab `katakunci` memakai shell `flex-1 min-h-0 overflow-y-auto pb-24` agar konten tetap scrollable dan tidak tertutup footer/panel fixed. Jika layout tampak kosong lagi, cek apakah shell ini berubah atau hilang saat refactor.
+    *   **Loading Shell Dihapus**: Wrapper workspace utama di `media-dashboard.blade.php` tidak lagi memakai `wire:init="loadDashboard"` karena pemicu itu sempat membuat skeleton/loading menempel di halaman Kata Kunci. Render kini mengandalkan state mount Livewire yang sudah dipaksa aktif untuk tab ini.
+    *   **Chain Blade Dipulihkan**: Branch `katakunci` dikembalikan sebagai `@elseif($this->isTab('katakunci'))` agar tidak memecah chain tab utama dan tidak memunculkan skeleton branch tab lain secara tidak sengaja. Jika loading muncul lagi, cek dulu keseimbangan `@if/@elseif/@endif` di `media-dashboard.blade.php` sebelum menyentuh query/data.
+    *   **Parse Error Blade**: Jika muncul `unexpected token "endif"`, cek penutup `@endif` di area setelah mobile tabs dan di akhir workspace utama. Beberapa edit sebelumnya sempat meninggalkan atau menghapus penutup yang salah sehingga compiled Livewire view gagal dirender.
+    *   **Fallback Loading Dihapus**: Skeleton fallback `@else` di akhir workspace utama sudah dihapus agar tab `katakunci` tidak lagi menampilkan blok loading statis yang bisa memicu parse/branch mismatch saat Livewire mengompilasi view.
+    *   **Tail `@endif` Harus Pas**: Penutup `@endif` terakhir di `media-dashboard.blade.php` harus tetap menutup `@if($dashboardLoaded)`; jangan menambah atau menghapus penutup itu tanpa mengecek pasangan branch tab utama dan modal yang mengikuti di bawahnya.
+    *   **Tail Double Endif Dihapus**: Jika compiled Livewire masih mengeluh `unexpected token "endif"`, cek tail `media-dashboard.blade.php` dan pastikan tidak ada dua `@endif` berdiri sendiri setelah modal detail. Dua penutup terakhir sempat tersisa dari refactor sebelumnya dan memicu EOF parse error.
 
 ---
 
@@ -116,3 +130,15 @@ Jalankan perintah ini di dalam direktori proyek utama di host machine (macOS And
 ---
 
 *Catatan: Baca file pendukung [AI_CONTEXT.md](file:///Users/unity/Documents/proyek%20baru/AI_CONTEXT.md) untuk detail arsitektur scheduler dan aturan antrean.*
+
+
+## 2026-07-26 08:15 WITA
+- Menemukan dan menghapus `@if($dashboardLoaded)` ganda di `resources/views/components/⚡media-dashboard.blade.php` yang menggeser balance Blade pada workspace dashboard.
+- Langkah ini ditujukan untuk menghilangkan parse error `unexpected token "endif"` pada compiled Livewire view dan memulihkan render halaman Kata Kunci tanpa mengubah query/data.
+- Setelah perubahan, cache view Laravel dibersihkan lagi agar compiled Livewire view diregenerasi dari source terbaru.
+
+
+## 2026-07-26 08:22 WITA
+- Source Blade `resources/views/components/⚡media-dashboard.blade.php` sudah diselaraskan kembali dan balance directive telah diverifikasi `0`.
+- Cache Livewire compiled (`storage/framework/views/livewire/views/3f87d10b.blade.php`, `classes/3f87d10b.php`, `styles/3f87d10b.css`) dihapus manual karena masih memuat tail `@endif` lama walaupun source sudah benar.
+- View cache Laravel dibersihkan ulang agar request berikutnya meregenerasi compiled view dari source terbaru.

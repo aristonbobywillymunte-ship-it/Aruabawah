@@ -649,7 +649,9 @@ class RunNewsPortalScraping extends Command
             $this->runStats['resolved_count']++;
         }
 
-        \Illuminate\Support\Facades\Log::channel('portal_manual')->info('[Portal] Scraping candidate article details.', [
+        $logChannel = $sourceType === 'google_news' ? 'google_news' : 'portal_manual';
+        $logPrefix = $sourceType === 'google_news' ? '[GoogleNews]' : '[Portal]';
+        \Illuminate\Support\Facades\Log::channel($logChannel)->info($logPrefix . ' Scraping candidate article details.', [
             'project_id' => $project->id,
             'project_name' => $project->name,
             'keyword' => $keyword ?: 'N/A',

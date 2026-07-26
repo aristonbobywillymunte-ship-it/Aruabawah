@@ -63,10 +63,18 @@ class SystemLogs extends Component
         abort_unless(auth()->user()?->isAdmin(), 403);
     }
 
-    public function mount(): void
+    public function mount(?string $file = null, ?string $source = null): void
     {
         $this->adminOnly();
         $this->loadDynamicLogFiles();
+
+        if ($file && array_key_exists($file, $this->logFiles)) {
+            $this->selectedFile = $file;
+        }
+        if ($source && array_key_exists($source, $this->sourceOptions)) {
+            $this->sourceFilter = $source;
+        }
+
         $this->projectOptions = Project::query()
             ->orderBy('name')
             ->get(['id', 'name'])
@@ -338,6 +346,7 @@ class SystemLogs extends Component
         $errorCode = $this->inferErrorCode($message, $context);
         $projectLabel = $this->inferProjectLabel($message, $context);
         $keywordLabel = $this->inferKeywordLabel($message, $context);
+        $websiteLabel = $this->inferWebsiteLabel($message, $context);
         $messageShort = $this->shortenMessage($message, 180);
         $translatedMessage = $this->translateMessageToIndonesian($messageShort);
 
@@ -354,10 +363,47 @@ class SystemLogs extends Component
             'project_id' => $context['project_id'] ?? null,
             'project_label' => $projectLabel,
             'keyword_label' => $keywordLabel,
+            'website_label' => $websiteLabel,
             'message' => $translatedMessage,
             'raw_line' => $rawLine,
             'level' => $level,
         ];
+    }
+
+    protected function inferWebsiteLabel(string $message, array $context): string
+    {
+        if (!empty($context['source'])) {
+            return (string) $context['source'];
+        }
+        if (!empty($context['source_name'])) {
+            return (string) $context['source_name'];
+        }
+        if (!empty($context['domain'])) {
+            return (string) $context['domain'];
+        }
+        if (!empty($context['source_id'])) {
+            $name = \App\Models\NewsSource::where('id', $context['source_id'])->value('name');
+            if ($name) {
+                return $name;
+            }
+            return 'Source #' . $context['source_id'];
+        }
+
+        // Try to parse from message context
+        if (preg_match('/source_name:\s*(?<name>[^\,\.\}]+)/i', $message, $matches)) {
+            return trim($matches['name']);
+        }
+        if (preg_match('/source:\s*(?<name>[^\,\.\}]+)/i', $message, $matches)) {
+            return trim($matches['name']);
+        }
+        if (preg_match('/source\s+"(?<name>[^"]+)"/i', $message, $matches)) {
+            return trim($matches['name']);
+        }
+        if (preg_match('/\[NewsPortal\]\s*(?<name>[a-zA-Z0-9\.\-\_]+)/i', $message, $matches)) {
+            return trim($matches['name']);
+        }
+
+        return '-';
     }
 
     protected function translateMessageToIndonesian(string $message): string

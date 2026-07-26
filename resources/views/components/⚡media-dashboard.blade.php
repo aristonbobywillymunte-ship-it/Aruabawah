@@ -47,6 +47,7 @@ new class extends Component
     public $activeTab = 'cGVueWVidXRhbg==';
     public bool $analysisLoaded = false;
     public bool $analysisChartsLoaded = false;
+    public bool $keywordTabRequested = false;
 
     public function getDecodedProjectId()
     {
@@ -165,6 +166,12 @@ new class extends Component
     protected function totalArticlesCountCacheKey(): string
     {
         return 'media_dashboard_total_articles:' . $this->dashboardCacheKeyPrefix();
+    }
+
+    protected function keywordsTableCacheKey(): string
+    {
+        return 'project_keywords_' . $this->getDecodedProjectId() . '_' .
+            md5($this->startDate . '_' . $this->endDate . '_' . implode(',', $this->primaryKeywords));
     }
 
     public function toggleKeyword($keyword)
@@ -323,6 +330,7 @@ new class extends Component
                     $tabFromUrl = base64_encode('wawasan');
                 }
                 $this->activeTab = $tabFromUrl;
+                $this->keywordTabRequested = $decoded === 'katakunci';
             } else {
                 $this->activeTab = base64_encode($tabFromUrl);
             }
@@ -332,6 +340,7 @@ new class extends Component
         $this->primaryKeywords = $project->topics ?? [$this->projectName];
         $this->supportKeywords = [];
         $this->excludeKeywords = [];
+        $this->dashboardLoaded = true;
 
         // Jika cache shell dashboard sudah ada, tampilkan isi utama lebih cepat
         // tanpa menunggu wire:init untuk pertama kali.
@@ -343,11 +352,26 @@ new class extends Component
             $this->mentionsLoaded = true;
         }
 
+        // Tab Kata Kunci harus tampil segera saat dibuka langsung via URL.
+        // Jika hanya mengandalkan wire:init, area utama bisa tetap kosong sebelum
+        // request inisialisasi Livewire selesai.
+        if ($this->keywordTabRequested || $this->isTab('katakunci')) {
+            $this->dashboardLoaded = true;
+        }
+
+        // Selalu rebuild keywords table saat mount agar tab Kata Kunci tidak kosong
+        // bahkan jika dashboardLoaded sudah true dari cache.
+        $this->rebuildKeywordsTable();
+
     }
 
     public function loadDashboard(): void
     {
         if ($this->dashboardLoaded) {
+            // Tetap rebuild table jika belum terisi (misal halaman kata kunci dibuka pertama kali)
+            if (empty($this->keywordsTable)) {
+                $this->rebuildKeywordsTable();
+            }
             return;
         }
 
@@ -389,27 +413,21 @@ new class extends Component
      */
     public function rebuildKeywordsTable(): void
     {
-        $projectIdDecoded = $this->getDecodedProjectId();
-        $cacheKey = "project_keywords_{$projectIdDecoded}_" . 
-            md5($this->startDate . '_' . $this->endDate . '_' . implode(',', $this->primaryKeywords));
+        $cacheKey = $this->keywordsTableCacheKey();
 
         $this->keywordsTable = Cache::remember($cacheKey, 120, function () {
             $keywordsTable = [];
             $now = now();
             foreach ($this->primaryKeywords as $kw) {
                 // Base: project articles mentioning the keyword, with date filter applied
-                $baseKwQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery())
-                    ->where(function($q) use ($kw) {
-                        $q->where('title', 'like', '%' . $kw . '%')
-                          ->orWhere('content', 'like', '%' . $kw . '%');
-                    });
+                $baseKwQuery = clone $this->projectArticlesQuery();
+                $this->applyActiveFilters($baseKwQuery);
+                $this->applyKeywordSearch($baseKwQuery, $kw);
                 $totalCount = (clone $baseKwQuery)->count();
 
                 // Trend: compare last 30 days vs prior 30 days (always relative to now, not the date filter)
-                $allKwQuery = (clone $this->projectArticlesQuery())->where(function($q) use ($kw) {
-                    $q->where('title', 'like', '%' . $kw . '%')
-                      ->orWhere('content', 'like', '%' . $kw . '%');
-                });
+                $allKwQuery = clone $this->projectArticlesQuery();
+                $this->applyKeywordSearch($allKwQuery, $kw);
                 $recent = (clone $allKwQuery)->whereBetween('published_at', [$now->copy()->subDays(30), $now])->count();
                 $prior  = (clone $allKwQuery)->whereBetween('published_at', [$now->copy()->subDays(60), $now->copy()->subDays(30)])->count();
                 if ($prior === 0) {
@@ -963,16 +981,11 @@ new class extends Component
 
         if (trim($this->newKeywordText) == '') return;
         
+        $oldCacheKey = $this->keywordsTableCacheKey();
         $newKw = trim($this->newKeywordText);
         $countQuery = clone $this->projectArticlesQuery();
+        $this->applyActiveFilters($countQuery);
         $this->applyKeywordSearch($countQuery, $newKw);
-        $totalCount = $countQuery->count();
-        
-        $this->keywordsTable[] = [
-            'keyword' => '# ' . strtoupper($newKw),
-            'total'   => $totalCount,
-            'trend'   => 'Stabil'
-        ];
 
         if ($this->newKeywordType == 'primary') {
             $this->primaryKeywords[] = trim($this->newKeywordText);
@@ -981,6 +994,19 @@ new class extends Component
         } else {
             $this->excludeKeywords[] = trim($this->newKeywordText);
         }
+
+        // Save to database
+        $project = $this->resolveProjectOrFail($this->projectId);
+        $project->update([
+            'topics' => $this->primaryKeywords,
+            'context_keywords' => $this->supportKeywords,
+            'exclude_keywords' => $this->excludeKeywords,
+        ]);
+
+        // Evict old cache
+        Cache::forget($oldCacheKey);
+        Cache::forget($this->keywordsTableCacheKey());
+        $this->rebuildKeywordsTable();
         
         $this->newKeywordText = '';
         $this->showAddKeywordModal = false;
@@ -990,6 +1016,8 @@ new class extends Component
     public function removeKeywordTable($index)
     {
         abort_unless($this->isAdmin(), 403, 'Hanya admin yang dapat menghapus kata kunci.');
+
+        $oldCacheKey = $this->keywordsTableCacheKey();
 
         if (isset($this->keywordsTable[$index])) {
             $kw = $this->keywordsTable[$index]['keyword'];
@@ -1002,10 +1030,21 @@ new class extends Component
                 unset($this->primaryKeywords[$key]);
                 $this->primaryKeywords = array_values($this->primaryKeywords);
             }
-
-            unset($this->keywordsTable[$index]);
-            $this->keywordsTable = array_values($this->keywordsTable);
         }
+
+        // Save to database
+        $project = $this->resolveProjectOrFail($this->projectId);
+        $project->update([
+            'topics' => $this->primaryKeywords,
+            'context_keywords' => $this->supportKeywords,
+            'exclude_keywords' => $this->excludeKeywords,
+        ]);
+
+        // Evict old cache
+        Cache::forget($oldCacheKey);
+        Cache::forget($this->keywordsTableCacheKey());
+        $this->rebuildKeywordsTable();
+
         session()->flash('message', 'Kata kunci berhasil dihapus.');
     }
 
@@ -1023,6 +1062,21 @@ new class extends Component
             unset($this->excludeKeywords[$index]);
             $this->excludeKeywords = array_values($this->excludeKeywords);
         }
+
+        // Save to database
+        $project = $this->resolveProjectOrFail($this->projectId);
+        $project->update([
+            'topics' => $this->primaryKeywords,
+            'context_keywords' => $this->supportKeywords,
+            'exclude_keywords' => $this->excludeKeywords,
+        ]);
+
+        // Evict old cache
+        $projectIdDecoded = $this->getDecodedProjectId();
+        $cacheKey = "project_keywords_{$projectIdDecoded}_" . 
+            md5($this->startDate . '_' . $this->endDate . '_' . implode(',', $this->primaryKeywords));
+        Cache::forget($cacheKey);
+
         session()->flash('message', 'Kata kunci berhasil dihapus.');
     }
 
@@ -2169,7 +2223,6 @@ new class extends Component
         </aside>
 
         @if($dashboardLoaded)
-
         @php
             $counts = $this->getCounts();
             $socials = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
@@ -2657,8 +2710,6 @@ new class extends Component
                                             }
                                         }
                                     @endphp
-                                    <!-- Header Badges -->
-                                    </div>
                                     <!-- Metrics Grid (Cleaned & Modernized) -->
                                     <div class="grid grid-cols-2 sm:grid-cols-3 {{ $isSocial ? 'lg:grid-cols-5' : 'lg:grid-cols-3' }} gap-y-3 gap-x-2 bg-slate-50/60 rounded-2xl p-3 border border-slate-100 mb-4 text-left">
                                         <div class="px-1.5 py-0.5">
@@ -2849,7 +2900,7 @@ new class extends Component
                                 @endforeach
                                 @endif
                             </div>
-
+                        @endif
                         <!-- Infinite Scroll / Load More -->
                         @php
                             $totalArticlesCount = $this->getTotalArticlesCount();
@@ -2873,7 +2924,6 @@ new class extends Component
                                 <p class="text-slate-500 font-semibold">Semua data telah dimuat</p>
                                 <p class="text-[10px] text-slate-400 mt-0.5">Tidak ada data tambahan yang tersedia</p>
                             </div>
-                        @endif
                         @endif
                     </div>
                 </section>
@@ -4129,25 +4179,49 @@ new class extends Component
                                 @endforeach
                             </div>
                         </div>
-                        </div>
                     @else
-                        <div class="grid grid-cols-3 gap-4">
-                            <div class="bg-white rounded-2xl h-24 border border-slate-200 bg-slate-50 animate-pulse"></div>
-                            <div class="bg-white rounded-2xl h-24 border border-slate-200 bg-slate-50 animate-pulse"></div>
-                            <div class="bg-white rounded-2xl h-24 border border-slate-200 bg-slate-50 animate-pulse"></div>
+                        <!-- Gambaran Umum Card Grid Skeleton (Header loaded statically inside this loading state) -->
+                        <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-6">
+                            <div class="flex justify-between items-center pb-3 border-b border-slate-100/85 mb-6">
+                                <div class="space-y-0.5 text-left">
+                                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[18px] text-[#1fa387]">equalizer</span>
+                                        GAMBARAN UMUM
+                                    </h3>
+                                    <p class="text-[10px] text-slate-400">Kinerja metrik utama dan distribusi penyebutan pada setiap saluran media.</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 animate-pulse">
+                                <div class="h-[100px] rounded-2xl bg-slate-100"></div>
+                                <div class="h-[100px] rounded-2xl bg-slate-100"></div>
+                                <div class="h-[100px] rounded-2xl bg-slate-100"></div>
+                            </div>
+                            <div class="grid grid-cols-4 gap-4 mt-4 animate-pulse">
+                                <div class="h-[155px] rounded-2xl bg-slate-100"></div>
+                                <div class="h-[155px] rounded-2xl bg-slate-100"></div>
+                                <div class="h-[155px] rounded-2xl bg-slate-100"></div>
+                                <div class="h-[155px] rounded-2xl bg-slate-100"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mt-4 animate-pulse">
+                                <div class="h-[188px] rounded-2xl bg-slate-100"></div>
+                                <div class="h-[188px] rounded-2xl bg-slate-100"></div>
+                            </div>
                         </div>
-                        <div class="bg-white rounded-3xl h-64 border border-slate-200 bg-slate-50 animate-pulse mt-6"></div>
-                        <div class="grid grid-cols-2 gap-6 mt-6">
-                            <div class="bg-white rounded-3xl h-80 border border-slate-200 bg-slate-50 animate-pulse"></div>
-                            <div class="bg-white rounded-3xl h-80 border border-slate-200 bg-slate-50 animate-pulse"></div>
+
+                        <!-- Charts Loader Skeleton -->
+                        <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left mt-6 animate-pulse space-y-4">
+                            <div class="h-4 w-40 bg-slate-100 rounded"></div>
+                            <div class="h-3 w-72 bg-slate-100 rounded"></div>
+                            <div class="h-[200px] bg-slate-100 rounded-2xl mt-4"></div>
                         </div>
+                    @endif
                     @endif
                     </div>
                     </div>
                 </section>
             @elseif($this->isTab('katakunci'))
                 <!-- TAB 3: Kata Kunci Configuration Page -->
-                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                <section class="flex-1 min-w-0 flex flex-col h-full min-h-0 overflow-hidden space-y-4 pr-1 relative z-10" wire:key="dashboard-keyword-section">
                     <div class="flex items-center justify-between text-left shrink-0">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">vpn_key</span>Pengaturan dan Analisis Kata Kunci</h2>
@@ -4162,7 +4236,7 @@ new class extends Component
                         </div>
                     @endif
 
-                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
+                    <div class="flex-1 min-h-0 overflow-y-auto pr-4 pb-24 space-y-6">
 
                     <!-- Manajemen Kata Kunci Card -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left">
@@ -5759,7 +5833,6 @@ new class extends Component
                 Kembali ke atas
             </button>
         </div>
-        @endif
     </div>
 
     <!-- Date Range Picker Modal -->
@@ -5960,8 +6033,6 @@ new class extends Component
                 </div>
             </div>
         </div>
-    </div>
-
         @else
             <div class="flex-1 min-w-0 min-h-0 px-4 sm:px-8 py-4">
                 <div class="space-y-4">
@@ -6277,5 +6348,4 @@ new class extends Component
             </div>
         </div>
     </div>
-</div>
 </div>

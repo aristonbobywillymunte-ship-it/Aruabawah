@@ -41,6 +41,11 @@ class AiPromptTemplates extends Component
     public ?string $flashMessage = null;
     public ?string $flashType = null;
 
+    // Trash and Confirmation Modals
+    public bool $showTrashModal = false;
+    public ?int $confirmingRestoreTemplateId = null;
+    public ?int $confirmingForceDeleteTemplateId = null;
+
     protected function adminOnly(): void
     {
         abort_unless(auth()->user()?->isAdmin(), 403, 'Akses ditolak.');
@@ -69,7 +74,7 @@ class AiPromptTemplates extends Component
                     }
                 },
             ],
-            'source_type' => ['required', 'string', 'in:article,social'],
+            'source_type' => ['required', 'string', 'in:article,social,portal_suggestion'],
             'system_prompt' => ['required', 'string'],
             'user_prompt_template' => ['required', 'string'],
             'output_schema' => ['required', 'string'],
@@ -109,6 +114,7 @@ class AiPromptTemplates extends Component
         return view('livewire.admin.ai-prompt-templates', [
             'templates' => $templates,
             'duplicateNames' => $duplicateNames,
+            'trashTemplates' => AiPromptTemplate::onlyTrashed()->orderByDesc('deleted_at')->paginate(5, pageName: 'trashPage'),
         ]);
     }
 
@@ -157,10 +163,10 @@ class AiPromptTemplates extends Component
         $this->adminOnly();
         $this->validate();
 
-        if (trim($this->name) === 'Saran Portal Manual' && $this->source_type === 'article') {
+        if (trim($this->name) === 'Saran Portal Manual' && $this->source_type === 'portal_suggestion') {
             $duplicateExists = AiPromptTemplate::query()
                 ->where('name', 'Saran Portal Manual')
-                ->where('source_type', 'article')
+                ->where('source_type', 'portal_suggestion')
                 ->when($this->selected_id, fn ($query) => $query->where('id', '!=', $this->selected_id))
                 ->exists();
 
@@ -192,19 +198,19 @@ class AiPromptTemplates extends Component
             $template->update($data);
             $this->notify('success', 'Template prompt berhasil diperbarui.');
         } else {
-            // If this is the first template for this source_type, make it default
-            $exists = AiPromptTemplate::where('source_type', $this->source_type)->exists();
-            if (!$exists) {
-                $data['is_default'] = true;
-            }
+            // Set new template as default, and remove default from other templates of this source_type
+            $data['is_default'] = true;
+            AiPromptTemplate::where('source_type', $this->source_type)
+                ->update(['is_default' => false]);
+
             AiPromptTemplate::create($data);
             $this->notify('success', 'Template prompt baru berhasil ditambahkan.');
         }
 
-        if (trim($this->name) === 'Saran Portal Manual' && $this->source_type === 'article') {
+        if (trim($this->name) === 'Saran Portal Manual' && $this->source_type === 'portal_suggestion') {
             $templateId = $this->isEditing ? $this->selected_id : null;
             AiPromptTemplate::query()
-                ->where('source_type', 'article')
+                ->where('source_type', 'portal_suggestion')
                 ->where('name', 'Saran Portal Manual')
                 ->where('id', '!=', $templateId)
                 ->update(['is_default' => false]);
@@ -216,7 +222,7 @@ class AiPromptTemplates extends Component
             } else {
                 AiPromptTemplate::query()
                     ->where('name', 'Saran Portal Manual')
-                    ->where('source_type', 'article')
+                    ->where('source_type', 'portal_suggestion')
                     ->where('is_active', true)
                     ->orderByDesc('id')
                     ->limit(1)
@@ -290,6 +296,67 @@ class AiPromptTemplates extends Component
         }
         $this->confirmingDelete = false;
         $this->resetForm();
+    }
+
+    public function openTrashModal(): void
+    {
+        $this->adminOnly();
+        $this->showTrashModal = true;
+    }
+
+    public function closeTrashModal(): void
+    {
+        $this->showTrashModal = false;
+        $this->confirmingRestoreTemplateId = null;
+        $this->confirmingForceDeleteTemplateId = null;
+    }
+
+    public function confirmRestoreTemplate(int $id): void
+    {
+        $this->adminOnly();
+        $this->confirmingRestoreTemplateId = $id;
+    }
+
+    public function cancelRestore(): void
+    {
+        $this->confirmingRestoreTemplateId = null;
+    }
+
+    public function restoreTemplateConfirmed(): void
+    {
+        $this->adminOnly();
+        if ($this->confirmingRestoreTemplateId) {
+            $template = AiPromptTemplate::onlyTrashed()->find($this->confirmingRestoreTemplateId);
+            if ($template) {
+                $template->restore();
+                $this->notify('success', 'Template prompt berhasil dipulihkan.');
+            }
+        }
+        $this->confirmingRestoreTemplateId = null;
+    }
+
+    public function confirmForceDeleteTemplate(int $id): void
+    {
+        $this->adminOnly();
+        $this->confirmingForceDeleteTemplateId = $id;
+    }
+
+    public function cancelForceDelete(): void
+    {
+        $this->confirmingForceDeleteTemplateId = null;
+    }
+
+    public function forceDeleteTemplateConfirmed(): void
+    {
+        $this->adminOnly();
+        if ($this->confirmingForceDeleteTemplateId) {
+            $template = AiPromptTemplate::onlyTrashed()->find($this->confirmingForceDeleteTemplateId);
+            if ($template) {
+                $template->forceDelete();
+                $this->notify('success', 'Template prompt berhasil dihapus secara permanen.');
+            }
+        }
+        $this->confirmingForceDeleteTemplateId = null;
     }
 
     public function closeFormModal(): void
@@ -421,7 +488,7 @@ class AiPromptTemplates extends Component
     {
         $template = AiPromptTemplate::query()
             ->where('name', 'Saran Portal Manual')
-            ->where('source_type', 'article')
+            ->where('source_type', 'portal_suggestion')
             ->where('is_active', true)
             ->orderByDesc('is_default')
             ->orderByDesc('updated_at')
@@ -458,7 +525,7 @@ class AiPromptTemplates extends Component
         }
 
         AiPromptTemplate::query()
-            ->where('source_type', 'article')
+            ->where('source_type', 'portal_suggestion')
             ->where('id', '!=', $template->id)
             ->update(['is_default' => false]);
 

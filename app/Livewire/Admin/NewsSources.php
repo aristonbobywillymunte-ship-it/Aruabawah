@@ -51,6 +51,8 @@ class NewsSources extends Component
     public bool $confirmingSave = false;
     public bool $confirmingDelete = false;
     public bool $showTrashModal = false;
+    public ?int $confirmingRestoreSourceId = null;
+    public ?int $confirmingForceDeleteSourceId = null;
     public ?string $flashMessage = null;
     public ?string $flashType = null;
 
@@ -193,7 +195,7 @@ class NewsSources extends Component
             'sources' => $sources,
             'suggestionSourceIds' => $suggestionSourceIds,
             'suggestionDomains' => $suggestionDomains,
-            'trashSources' => NewsSource::onlyTrashed()->orderByDesc('deleted_at')->get(),
+            'trashSources' => NewsSource::onlyTrashed()->orderByDesc('deleted_at')->paginate(5, pageName: 'trashPage'),
         ]);
     }
 
@@ -387,22 +389,50 @@ class NewsSources extends Component
         $this->showTrashModal = false;
     }
 
-    public function restoreSource(int $id): void
+    public function confirmRestoreSource(int $id): void
     {
         $this->adminOnly();
-        $source = NewsSource::onlyTrashed()->findOrFail($id);
-        $source->restore();
-        $this->notify('success', 'Portal berita berhasil dikembalikan.');
-        $this->flushSuggestionUiCache();
+        $this->confirmingRestoreSourceId = $id;
     }
 
-    public function forceDeleteSource(int $id): void
+    public function cancelRestore(): void
+    {
+        $this->confirmingRestoreSourceId = null;
+    }
+
+    public function restoreSourceConfirmed(): void
     {
         $this->adminOnly();
-        $source = NewsSource::onlyTrashed()->findOrFail($id);
-        $source->forceDelete();
-        $this->notify('success', 'Portal berita berhasil dihapus secara permanen.');
+        if ($this->confirmingRestoreSourceId) {
+            $source = NewsSource::onlyTrashed()->findOrFail($this->confirmingRestoreSourceId);
+            $source->restore();
+            $this->notify('success', 'Portal berita berhasil dikembalikan.');
+        }
         $this->flushSuggestionUiCache();
+        $this->confirmingRestoreSourceId = null;
+    }
+
+    public function confirmForceDeleteSource(int $id): void
+    {
+        $this->adminOnly();
+        $this->confirmingForceDeleteSourceId = $id;
+    }
+
+    public function cancelForceDelete(): void
+    {
+        $this->confirmingForceDeleteSourceId = null;
+    }
+
+    public function forceDeleteSourceConfirmed(): void
+    {
+        $this->adminOnly();
+        if ($this->confirmingForceDeleteSourceId) {
+            $source = NewsSource::onlyTrashed()->findOrFail($this->confirmingForceDeleteSourceId);
+            $source->forceDelete();
+            $this->notify('success', 'Portal berita berhasil dihapus secara permanen.');
+        }
+        $this->flushSuggestionUiCache();
+        $this->confirmingForceDeleteSourceId = null;
     }
 
     public function closeFormModal(): void
@@ -446,7 +476,7 @@ class NewsSources extends Component
     {
         $this->adminOnly();
         $this->validate([
-            'manualHtmlInput' => ['required', 'string', 'max:200000'],
+            'manualHtmlInput' => ['required', 'string', 'max:2000000'],
         ]);
 
         $htmlInput = trim($this->manualHtmlInput);
@@ -521,7 +551,7 @@ class NewsSources extends Component
         }
 
         try {
-            $template = AiPromptTemplate::resolveActiveDefaultForSourceType('Saran Portal Manual', 'article');
+            $template = AiPromptTemplate::resolveActiveDefaultForSourceType('Saran Portal Manual', 'portal_suggestion');
 
             if (! $template || blank($template->system_prompt) || blank($template->user_prompt_template)) {
                 $this->notify('error', 'Template Saran Portal Manual belum tersedia atau belum lengkap di AI Prompt Templates.');
@@ -923,31 +953,11 @@ class NewsSources extends Component
         $this->testingSuggestionId = $id;
         $this->testingSourceId = null;
         $this->testingSource = null;
+        $this->selectedSuggestionId = $id;
 
-        $suggestion->status = 'testing';
-        $suggestion->save();
-
-        try {
-            $result = \App\Services\NewsSourceSuggestionTester::test($suggestion, $this->testKeyword);
-
-            $nextStatus = ($result['status'] === 'verified')
-                ? 'lolos'
-                : ($result['status'] === 'failed' ? 'failed' : $result['status']);
-
-            $suggestion->status = $nextStatus;
-            $suggestion->test_result_json = $result;
-            $suggestion->save();
-
-            $this->selectedSuggestionId = $suggestion->id;
-            $this->testResult = $result;
-            $this->testStatus = $nextStatus;
-            $this->showTestModal = true;
-
-            $flashType = $nextStatus === 'lolos' ? 'success' : 'failed';
-            $this->notify($flashType, 'Pengujian selesai dengan status: ' . strtoupper($nextStatus));
-        } finally {
-            $this->testingSuggestionId = null;
-        }
+        $this->testResult = null;
+        $this->testStatus = 'testing';
+        $this->showTestModal = true;
     }
 
     public function testManualUrl(int $id): void
@@ -1018,27 +1028,62 @@ class NewsSources extends Component
         $this->selectedSuggestionId = null;
         $this->testingSuggestionId = null;
 
-        $suggestion = new \App\Models\NewsSourceSuggestion();
-        $suggestion->news_source_id = $source->id;
-        $suggestion->suggested_by = 'ai';
-        $suggestion->source_name = $source->name;
-        $suggestion->domain = $source->domain;
-        $suggestion->base_url = $source->base_url;
-        $suggestion->search_url = $source->search_url;
-        $suggestion->feed_url = $source->feed_url;
-        $suggestion->sitemap_url = $source->sitemap_url;
-        $suggestion->search_result_selector = $source->search_result_selector;
-        $suggestion->article_link_selector = $source->article_link_selector;
-        $suggestion->article_content_selector = $source->article_content_selector;
-        $suggestion->article_author_selector = $source->article_author_selector;
-        $suggestion->article_date_selector = $source->article_date_selector;
-        $suggestion->article_noise_selector = $source->article_noise_selector;
-        $suggestion->crawling_type = $source->crawling_type;
-
-        $this->testingSuggestionId = $source->id;
-        $this->testResult = \App\Services\NewsSourceSuggestionTester::test($suggestion, $this->testKeyword);
-        $this->testStatus = data_get($this->testResult, 'status', 'failed');
+        $this->testResult = null;
+        $this->testStatus = 'testing';
         $this->showTestModal = true;
+    }
+
+    public function runDeferredTest(): void
+    {
+        $this->adminOnly();
+        if ($this->testingSourceId && !$this->testResult) {
+            $source = NewsSource::findOrFail($this->testingSourceId);
+            $suggestion = new \App\Models\NewsSourceSuggestion();
+            $suggestion->news_source_id = $source->id;
+            $suggestion->suggested_by = 'ai';
+            $suggestion->source_name = $source->name;
+            $suggestion->domain = $source->domain;
+            $suggestion->base_url = $source->base_url;
+            $suggestion->search_url = $source->search_url;
+            $suggestion->feed_url = $source->feed_url;
+            $suggestion->sitemap_url = $source->sitemap_url;
+            $suggestion->search_result_selector = $source->search_result_selector;
+            $suggestion->article_link_selector = $source->article_link_selector;
+            $suggestion->article_content_selector = $source->article_content_selector;
+            $suggestion->article_author_selector = $source->article_author_selector;
+            $suggestion->article_date_selector = $source->article_date_selector;
+            $suggestion->article_noise_selector = $source->article_noise_selector;
+            $suggestion->crawling_type = $source->crawling_type;
+
+            $this->testingSuggestionId = $source->id;
+            try {
+                $this->testResult = \App\Services\NewsSourceSuggestionTester::test($suggestion, $this->testKeyword);
+                $this->testStatus = data_get($this->testResult, 'status', 'failed');
+            } finally {
+                $this->testingSuggestionId = null;
+            }
+        } elseif ($this->selectedSuggestionId && !$this->testResult) {
+            $suggestion = \App\Models\NewsSourceSuggestion::findOrFail($this->selectedSuggestionId);
+            $this->testingSuggestionId = $suggestion->id;
+            $suggestion->status = 'testing';
+            $suggestion->save();
+
+            try {
+                $result = \App\Services\NewsSourceSuggestionTester::test($suggestion, $this->testKeyword);
+                $nextStatus = ($result['status'] === 'verified')
+                    ? 'lolos'
+                    : ($result['status'] === 'failed' ? 'failed' : $result['status']);
+
+                $suggestion->status = $nextStatus;
+                $suggestion->test_result_json = $result;
+                $suggestion->save();
+
+                $this->testResult = $result;
+                $this->testStatus = $nextStatus;
+            } finally {
+                $this->testingSuggestionId = null;
+            }
+        }
     }
 
     public function updatedManualHtmlInput(): void

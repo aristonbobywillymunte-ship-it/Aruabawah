@@ -22,6 +22,13 @@
                 <span class="material-symbols-outlined text-[18px]">delete</span>
                 <span>Data Dihapus</span>
             </button>
+            <a 
+                href="{{ route('admin.logs', ['file' => 'portal-manual.log', 'source' => 'portal_manual']) }}" 
+                class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
+            >
+                <span class="material-symbols-outlined text-[18px]">terminal</span>
+                <span>Log Scraping</span>
+            </a>
             <button 
                 wire:click="create" 
                 class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
@@ -57,28 +64,44 @@
     </div>
 
     <!-- News Sources Table Card -->
-    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left">
+    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left relative">
+        <!-- Premium Modal-style Loading Overlay covering entire card body -->
+        <div wire:loading wire:target="search, previousPage, nextPage, gotoPage" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/10 backdrop-blur-[2px] rounded-3xl transition-all duration-300">
+            <div class="w-full max-w-[280px] rounded-3xl bg-white/95 border border-slate-100 p-5 shadow-2xl text-center space-y-3.5 flex flex-col items-center justify-center">
+                <div class="relative flex items-center justify-center">
+                    <span class="animate-ping absolute inline-flex h-14 w-14 rounded-full bg-[#1fa387]/15 opacity-75"></span>
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-[#1fa387]/10 text-[#1fa387] border border-[#1fa387]/20">
+                        <span class="animate-spin material-symbols-outlined text-[20px]">progress_activity</span>
+                    </span>
+                </div>
+                <div class="space-y-1">
+                    <h4 class="text-xs font-black text-slate-800">Menyinkronkan Portal</h4>
+                    <p class="text-[10px] text-slate-400 leading-normal font-medium">Mohon tunggu sebentar, sedang memproses pembaruan data...</p>
+                </div>
+            </div>
+        </div>
+
         <div class="border-b border-slate-100 px-6 py-4">
             <h2 class="text-sm font-bold text-slate-800">Daftar Portal Berita</h2>
             <p class="text-[10px] text-slate-400 mt-0.5">Kelola portal manual dalam satu alur: isi data, minta AI, cek, lalu simpan.</p>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto min-h-[200px]">
+
             <table class="w-full border-collapse text-xs text-slate-700">
                 <thead class="bg-slate-50/75 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     <tr>
                         <th class="px-4 py-3.5 text-left font-bold w-12">No</th>
                         <th class="px-4 py-3.5 text-left font-bold">Nama Portal</th>
                         <th class="px-4 py-3.5 text-left font-bold">Domain / Base URL</th>
-                        <th class="px-4 py-3.5 text-left font-bold">Tipe Crawling</th>
-                        <th class="px-4 py-3.5 text-left font-bold">AI</th>
+                        <th class="px-4 py-3.5 text-left font-bold">Verified</th>
                         <th class="px-4 py-3.5 text-left font-bold">Selector</th>
                         <th class="px-4 py-3.5 text-left font-bold">Timeout</th>
                         <th class="px-4 py-3.5 text-left font-bold">Status</th>
                         <th class="px-4 py-3.5 text-right font-bold w-36">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody wire:loading.remove wire:target="search, previousPage, nextPage, gotoPage" class="divide-y divide-slate-100">
                     @forelse($sources as $source)
                         <tr wire:key="news-source-row-{{ $source->id }}" class="hover:bg-slate-50/50 transition">
                             <td class="px-4 py-3 font-semibold text-slate-500">{{ ($sources->currentPage() - 1) * $sources->perPage() + $loop->iteration }}</td>
@@ -101,24 +124,20 @@
                                 </div>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border {{ $source->crawling_type === 'rss' ? 'bg-orange-50 text-orange-700 border-orange-100' : ($source->crawling_type === 'api' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-blue-50 text-blue-700 border-blue-100') }}">
-                                    {{ strtoupper($source->crawling_type) }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3">
                                 @php
                                     $normalizedDomain = preg_replace('~^www\.~', '', strtolower(trim($source->domain ?? '')));
                                     $normalizedDomain = preg_replace('~^https?://~', '', $normalizedDomain);
                                     $normalizedDomain = preg_replace('~/.*$~', '', $normalizedDomain);
-                                    $hasSuggestion = !empty($suggestionSourceIds[$source->id]) || (!empty($normalizedDomain) && !empty($suggestionDomains[$normalizedDomain]));
+                                    $statusFromId = $suggestionSourceIds[$source->id] ?? null;
+                                    $statusFromDomain = $suggestionDomains[$normalizedDomain] ?? null;
+                                    $suggStatus = $statusFromId ?: $statusFromDomain;
+                                    $isVerified = ($suggStatus === 'verified' || $suggStatus === 'approved');
                                 @endphp
-                                <div class="flex flex-col gap-1">
-                                    @if($hasSuggestion)
-                                        <span class="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-100">Saran AI Ada</span>
-                                    @else
-                                        <span class="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-slate-50 text-slate-500 border-slate-100">Belum Ada</span>
-                                    @endif
-                                </div>
+                                @if($isVerified)
+                                    <span class="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-100">Terverifikasi</span>
+                                @else
+                                    <span class="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-slate-50 text-slate-500 border-slate-100">Belum Terverifikasi</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3 font-mono text-[10px] text-slate-500">{{ $source->selector ?: '-' }}</td>
                             <td class="px-4 py-3 font-semibold text-slate-700">{{ $source->timeout_seconds ? $source->timeout_seconds . 's' : 'Default' }}</td>
@@ -188,9 +207,45 @@
         </div>
 
         @if($sources->hasPages())
-            <div class="border-t border-slate-100 px-4 sm:px-6 py-4">
-                <div class="scale-[0.85] origin-right select-none w-full">
-                    {{ $sources->onEachSide(1)->links(data: ['scrollTo' => false]) }}
+            <div wire:loading.remove wire:target="search, previousPage, nextPage, gotoPage" class="border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30 rounded-b-[24px]">
+                <div class="text-xs font-bold text-slate-500">
+                    Menampilkan <span class="text-slate-800 font-black">{{ $sources->firstItem() }}</span> - <span class="text-slate-800 font-black">{{ $sources->lastItem() }}</span> dari <span class="text-slate-800 font-black">{{ $sources->total() }}</span> portal
+                </div>
+                <div class="flex items-center gap-1.5">
+                    {{-- Previous Page Button --}}
+                    @if ($sources->onFirstPage())
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-300 cursor-not-allowed">
+                            <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                        </span>
+                    @else
+                        <button wire:click="previousPage('sourcesPage')" wire:loading.attr="disabled" class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-95 transition cursor-pointer shadow-sm">
+                            <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                        </button>
+                    @endif
+
+                    {{-- Page Numbers --}}
+                    @foreach ($sources->getUrlRange(max(1, $sources->currentPage() - 1), min($sources->lastPage(), $sources->currentPage() + 1)) as $page => $url)
+                        @if ($page == $sources->currentPage())
+                            <span class="inline-flex h-9 min-w-9 px-3 items-center justify-center rounded-xl bg-[#1fa387] text-white text-xs font-black shadow-sm shadow-[#1fa387]/20 border border-[#1fa387]">
+                                {{ $page }}
+                            </span>
+                        @else
+                            <button wire:click="gotoPage({{ $page }}, 'sourcesPage')" wire:loading.attr="disabled" class="inline-flex h-9 min-w-9 px-3 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold active:scale-95 transition cursor-pointer shadow-sm">
+                                {{ $page }}
+                            </button>
+                        @endif
+                    @endforeach
+
+                    {{-- Next Page Button --}}
+                    @if ($sources->hasMorePages())
+                        <button wire:click="nextPage('sourcesPage')" wire:loading.attr="disabled" class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-95 transition cursor-pointer shadow-sm">
+                            <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                        </button>
+                    @else
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-300 cursor-not-allowed">
+                            <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                        </span>
+                    @endif
                 </div>
             </div>
         @endif
@@ -395,8 +450,8 @@
                 overflow: hidden !important;
             }
         </style>
-        <template x-teleport="body">
-        <div class="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6">
+        <template x-teleport="body" wire:key="news-source-confirm-delete-modal-template">
+        <div wire:key="news-source-confirm-delete-modal" class="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6">
             <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain">
                 <div class="flex items-center gap-3">
                     <span class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
@@ -425,48 +480,58 @@
         </style>
         <template x-teleport="body">
         <div class="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6">
-            <div class="w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-2xl text-left flex flex-col max-h-[88vh] border border-slate-100/80">
-                <!-- Header with premium brand colors -->
-                <div class="flex items-center justify-between border-b border-slate-100/80 px-8 py-5 flex-none bg-slate-50/50">
-                    <div class="flex items-center gap-3">
-                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-500 border border-rose-100">
-                            <span class="material-symbols-outlined text-[20px]">delete_sweep</span>
-                        </span>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-[#1fa387]">Manajemen Arsip</p>
-                            <h2 class="text-base font-black text-slate-800 mt-0.5 flex items-center gap-2">
-                                <span>Portal Berita Dihapus</span>
-                                <span class="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black border border-rose-100/60">
-                                    {{ $trashSources->count() }} Data
-                                </span>
-                            </h2>
-                        </div>
-                    </div>
-                    <button type="button" wire:click="closeTrashModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer">
-                        <span class="material-symbols-outlined text-[20px] block">close</span>
+            <div class="w-full max-w-5xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left flex flex-col max-h-[92vh] font-sans border border-slate-100 overscroll-contain">
+                <!-- Modal Header matching Test Result modal -->
+                <div class="flex items-center justify-between border-b border-slate-100 px-8 py-5">
+                    <h2 class="text-lg font-black text-slate-850">
+                        Daftar Portal Berita Dihapus
+                    </h2>
+                    <button type="button" wire:click="closeTrashModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-155 hover:text-slate-700 transition cursor-pointer">
+                        <span class="material-symbols-outlined text-[22px] block">close</span>
                     </button>
                 </div>
 
-                <!-- Premium Table Content -->
-                <div class="p-8 overflow-y-auto flex-1 custom-scrollbar">
+                <!-- Modal Content (Scrollable) -->
+                <div class="px-8 py-6 space-y-5 overflow-y-auto flex-1 bg-white overscroll-contain">
+                    <!-- Metadata Header Row matching Test Result modal -->
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200">
+                                <span class="material-symbols-outlined text-[20px] block">delete_sweep</span>
+                            </span>
+                            <div>
+                                <h3 class="text-xs font-black text-slate-800">
+                                    Tempat Sampah Portal Berita
+                                </h3>
+                                <p class="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                    Total Data Terhapus: <span class="text-slate-600 font-bold">{{ $trashSources->count() }} Portal</span>
+                                </p>
+                                <p class="text-[9px] text-slate-400 font-medium mt-0.5">
+                                    Aksi pemulihan (Kembalikan) atau hapus permanen dapat dilakukan langsung pada tabel di bawah.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     @if($trashSources->count() > 0)
-                        <div class="overflow-hidden border border-slate-200/60 rounded-[20px] shadow-sm bg-white">
+                        <!-- Premium Table Containerized -->
+                        <div class="overflow-hidden border border-slate-200 rounded-2xl bg-white shadow-sm">
                             <table class="w-full border-collapse text-xs text-slate-700">
                                 <thead class="bg-slate-50/75 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">
                                     <tr>
-                                        <th class="px-5 py-4 w-12 text-left font-bold">No</th>
-                                        <th class="px-5 py-4 font-bold">Nama Portal</th>
-                                        <th class="px-5 py-4 font-bold">Domain & Base URL</th>
-                                        <th class="px-5 py-4 font-bold">Tipe Crawling</th>
-                                        <th class="px-5 py-4 font-bold">Waktu Dihapus</th>
-                                        <th class="px-5 py-4 text-right w-64 font-bold">Aksi Pengembalian / Hapus</th>
+                                        <th class="px-4 py-3.5 w-12 text-left font-bold">No</th>
+                                        <th class="px-4 py-3.5 font-bold">Nama Portal</th>
+                                        <th class="px-4 py-3.5 font-bold">Domain & Base URL</th>
+                                        <th class="px-4 py-3.5 font-bold">AI</th>
+                                        <th class="px-4 py-3.5 font-bold">Waktu Dihapus</th>
+                                        <th class="px-4 py-3.5 text-right w-64 font-bold">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @foreach($trashSources as $trashSource)
                                         <tr wire:key="trash-source-row-{{ $trashSource->id }}" class="hover:bg-slate-50/30 transition">
-                                            <td class="px-5 py-3.5 font-bold text-slate-400">{{ $loop->iteration }}</td>
-                                            <td class="px-5 py-3.5">
+                                            <td class="px-4 py-3 font-bold text-slate-400">{{ $loop->iteration }}</td>
+                                            <td class="px-4 py-3">
                                                 <div class="flex items-center gap-2.5">
                                                     @if($trashSource->icon_url)
                                                         <img src="{{ $trashSource->icon_url }}" class="w-6 h-6 rounded-lg object-cover border border-slate-100 shadow-sm" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23cbd5e1\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><circle cx=\'12\' cy=\'12\' r=\'10\'/><line x1=\'2\' y1=\'12\' x2=\'22\' y2=\'12\'/><path d=\'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\'/></svg>'">
@@ -478,7 +543,7 @@
                                                     <span class="font-black text-slate-800 text-[13px]">{{ $trashSource->name }}</span>
                                                 </div>
                                             </td>
-                                            <td class="px-5 py-3.5 font-semibold text-slate-500 break-all">
+                                            <td class="px-4 py-3 font-semibold text-slate-500 break-all">
                                                 <div class="space-y-0.5">
                                                     <div class="font-bold text-slate-700 flex items-center gap-1">
                                                         <span class="material-symbols-outlined text-[13px] text-slate-400">link</span>
@@ -489,24 +554,32 @@
                                                     @endif
                                                 </div>
                                             </td>
-                                            <td class="px-5 py-3.5">
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border {{ $trashSource->crawling_type === 'rss' ? 'bg-orange-50 text-orange-700 border-orange-100' : ($trashSource->crawling_type === 'api' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-blue-50 text-blue-700 border-blue-100') }}">
-                                                    {{ strtoupper($trashSource->crawling_type) }}
-                                                </span>
+                                            <td class="px-4 py-3">
+                                                @php
+                                                    $normalizedTrashDomain = preg_replace('~^www\.~', '', strtolower(trim($trashSource->domain ?? '')));
+                                                    $normalizedTrashDomain = preg_replace('~^https?://~', '', $normalizedTrashDomain);
+                                                    $normalizedTrashDomain = preg_replace('~/.*$~', '', $normalizedTrashDomain);
+                                                    $trashHasSuggestion = !empty($suggestionSourceIds[$trashSource->id]) || (!empty($normalizedTrashDomain) && !empty($suggestionDomains[$normalizedTrashDomain]));
+                                                @endphp
+                                                @if($trashHasSuggestion)
+                                                    <span class="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-100">Saran AI Ada</span>
+                                                @else
+                                                    <span class="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-[10px] font-bold border bg-slate-50 text-slate-500 border-slate-100">Belum Ada</span>
+                                                @endif
                                             </td>
-                                            <td class="px-5 py-3.5 font-semibold text-slate-400">
+                                            <td class="px-4 py-3 font-semibold text-slate-400">
                                                 <div class="flex items-center gap-1.5">
                                                     <span class="material-symbols-outlined text-[14px] text-rose-400">calendar_today</span>
                                                     <span>{{ $trashSource->deleted_at->format('d M Y, H:i') }}</span>
                                                 </div>
                                             </td>
-                                            <td class="px-5 py-3.5 text-right">
+                                            <td class="px-4 py-3 text-right">
                                                 <div class="flex items-center gap-2 justify-end whitespace-nowrap">
                                                     <!-- Restore Action -->
                                                     <button 
-                                                        wire:click="restoreSource({{ $trashSource->id }})" 
+                                                        wire:click="confirmRestoreSource({{ $trashSource->id }})" 
                                                         wire:loading.attr="disabled"
-                                                        wire:target="restoreSource({{ $trashSource->id }})"
+                                                        wire:target="confirmRestoreSource({{ $trashSource->id }})"
                                                         class="inline-flex h-8 items-center justify-center gap-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/40 hover:border-emerald-300 px-3.5 text-[11px] font-black transition cursor-pointer disabled:opacity-50"
                                                         title="Kembalikan Portal ke Daftar Aktif"
                                                     >
@@ -516,9 +589,9 @@
  
                                                     <!-- Permanent Delete Action -->
                                                     <button 
-                                                        wire:click="forceDeleteSource({{ $trashSource->id }})" 
+                                                        wire:click="confirmForceDeleteSource({{ $trashSource->id }})" 
                                                         wire:loading.attr="disabled"
-                                                        wire:target="forceDeleteSource({{ $trashSource->id }})"
+                                                        wire:target="confirmForceDeleteSource({{ $trashSource->id }})"
                                                         class="inline-flex h-8 items-center justify-center gap-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/40 hover:border-rose-300 px-3.5 text-[11px] font-black transition cursor-pointer disabled:opacity-50"
                                                         title="Hapus Permanen"
                                                     >
@@ -532,6 +605,48 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Trash Pagination -->
+                        @if($trashSources->hasPages())
+                            <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/50 p-4 border border-slate-200 rounded-2xl">
+                                <div class="text-xs font-bold text-slate-500">
+                                    Menampilkan <span class="text-slate-800 font-black">{{ $trashSources->firstItem() }}</span> - <span class="text-slate-800 font-black">{{ $trashSources->lastItem() }}</span> dari <span class="text-slate-800 font-black">{{ $trashSources->total() }}</span> portal
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    @if ($trashSources->onFirstPage())
+                                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-300 cursor-not-allowed">
+                                            <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                                        </span>
+                                    @else
+                                        <button wire:click="gotoPage({{ $trashSources->currentPage() - 1 }}, 'trashPage')" wire:loading.attr="disabled" class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-95 transition cursor-pointer shadow-sm">
+                                            <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                                        </button>
+                                    @endif
+
+                                    @foreach ($trashSources->getUrlRange(max(1, $trashSources->currentPage() - 1), min($trashSources->lastPage(), $trashSources->currentPage() + 1)) as $page => $url)
+                                        @if ($page == $trashSources->currentPage())
+                                            <span class="inline-flex h-9 min-w-9 px-3 items-center justify-center rounded-xl bg-[#1fa387] text-white text-xs font-black shadow-sm border border-[#1fa387]">
+                                                {{ $page }}
+                                            </span>
+                                        @else
+                                            <button wire:click="gotoPage({{ $page }}, 'trashPage')" wire:loading.attr="disabled" class="inline-flex h-9 min-w-9 px-3 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold active:scale-95 transition cursor-pointer shadow-sm">
+                                                {{ $page }}
+                                            </button>
+                                        @endif
+                                    @endforeach
+
+                                    @if ($trashSources->hasMorePages())
+                                        <button wire:click="gotoPage({{ $trashSources->currentPage() + 1 }}, 'trashPage')" wire:loading.attr="disabled" class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-95 transition cursor-pointer shadow-sm">
+                                            <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                                        </button>
+                                    @else
+                                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 text-slate-300 cursor-not-allowed">
+                                            <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                     @else
                         <!-- Empty Premium State -->
                         <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
@@ -544,9 +659,9 @@
                     @endif
                 </div>
 
-                <!-- Footer closing -->
-                <div class="flex items-center justify-end px-8 py-5 border-t border-slate-100/80 bg-slate-50/50 rounded-b-[28px] flex-none">
-                    <button type="button" wire:click="closeTrashModal" class="h-10 rounded-xl border border-slate-200 bg-white px-6 text-xs font-black text-slate-600 hover:bg-slate-50 transition cursor-pointer shadow-sm">
+                <!-- Modal Footer matching Test Result modal -->
+                <div class="flex items-center justify-end px-8 py-5 border-t border-slate-100 bg-slate-50/70 rounded-b-[24px] flex-none">
+                    <button type="button" wire:click="closeTrashModal" class="h-10 rounded-xl border border-slate-200 bg-white px-6 text-xs font-bold text-slate-700 hover:bg-slate-55 transition cursor-pointer shadow-sm">
                         Tutup
                     </button>
                 </div>
@@ -554,6 +669,74 @@
         </div>
         </template>
     @endif
+
+    @if($confirmingRestoreSourceId)
+        @php
+            $restoreTarget = \App\Models\NewsSource::onlyTrashed()->find($confirmingRestoreSourceId);
+        @endphp
+        <style>
+            body, html {
+                overflow: hidden !important;
+            }
+        </style>
+        <template x-teleport="body" wire:key="news-source-confirm-restore-modal-template">
+        <div wire:key="news-source-confirm-restore-modal" class="fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6" style="z-index: 1050;">
+            <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain border border-slate-100/80">
+                <div class="flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
+                        <span class="material-symbols-outlined text-[20px] block">restore_from_trash</span>
+                    </span>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-500">Konfirmasi Pemulihan</p>
+                        <h2 class="text-sm font-black text-slate-900 mt-0.5">Kembalikan Portal?</h2>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Apakah Anda yakin ingin mengembalikan portal <strong class="text-slate-800">{{ $restoreTarget?->name }}</strong> ke daftar aktif? Portal akan kembali dirayap secara otomatis.
+                </p>
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button wire:click="cancelRestore" wire:loading.attr="disabled" wire:target="restoreSourceConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
+                    <button wire:click="restoreSourceConfirmed" wire:loading.attr="disabled" wire:target="restoreSourceConfirmed" class="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">Ya, Kembalikan</button>
+                </div>
+            </div>
+        </div>
+        </template>
+    @endif
+
+    @if($confirmingForceDeleteSourceId)
+        @php
+            $deleteTarget = \App\Models\NewsSource::onlyTrashed()->find($confirmingForceDeleteSourceId);
+        @endphp
+        <style>
+            body, html {
+                overflow: hidden !important;
+            }
+        </style>
+        <template x-teleport="body" wire:key="news-source-confirm-force-delete-modal-template">
+        <div wire:key="news-source-confirm-force-delete-modal" class="fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6" style="z-index: 1050;">
+            <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain border border-slate-100/80">
+                <div class="flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100">
+                        <span class="material-symbols-outlined text-[20px] block">delete_forever</span>
+                    </span>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-rose-500">Hapus Permanen</p>
+                        <h2 class="text-sm font-black text-slate-900 mt-0.5">Hapus Secara Permanen?</h2>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Tindakan ini tidak dapat dibatalkan. Portal <strong class="text-slate-800">{{ $deleteTarget?->name }}</strong> akan dihapus selamanya dari sistem.
+                </p>
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button wire:click="cancelForceDelete" wire:loading.attr="disabled" wire:target="forceDeleteSourceConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
+                    <button wire:click="forceDeleteSourceConfirmed" wire:loading.attr="disabled" wire:target="forceDeleteSourceConfirmed" class="h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+        </template>
+    @endif
+
+
 
     @if($showSuggestInputModal)
         <style>
@@ -597,7 +780,7 @@
         </template>
     @endif
 
-    @if($showTestModal && $testResult)
+    @if($showTestModal)
         @php
             $activeSuggestion = $selectedSuggestionId ? \App\Models\NewsSourceSuggestion::find($selectedSuggestionId) : null;
             $isSourceTest = !is_null($testingSourceId);
@@ -628,7 +811,7 @@
         </style>
         <template x-teleport="body">
         <div class="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6">
-            <div class="w-full max-w-5xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left flex flex-col max-h-[92vh] font-sans border border-slate-100 overscroll-contain">
+            <div wire:init="runDeferredTest" class="w-full max-w-5xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left flex flex-col max-h-[92vh] font-sans border border-slate-100 overscroll-contain">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 px-8 py-5">
                     <h2 class="text-lg font-black text-slate-850">
@@ -641,8 +824,30 @@
 
                 <!-- Modal Content (Scrollable) -->
                 <div class="px-8 py-6 space-y-5 overflow-y-auto flex-1 bg-white overscroll-contain">
+                    @if(is_null($testResult))
+                        <!-- Beautiful dynamic loading indicator -->
+                        <div class="flex flex-col items-center justify-center py-20 px-4 text-center space-y-4">
+                            <div class="relative flex items-center justify-center">
+                                <span class="animate-ping absolute inline-flex h-16 w-16 rounded-full bg-[#1fa387]/15 opacity-75"></span>
+                                <span class="flex h-12 w-12 items-center justify-center rounded-full bg-[#1fa387]/10 text-[#1fa387] border border-[#1fa387]/20">
+                                    <span class="animate-spin material-symbols-outlined text-[24px]">progress_activity</span>
+                                </span>
+                            </div>
+                            <div class="space-y-1">
+                                <h3 class="text-sm font-black text-slate-800">Sedang Melakukan Uji Coba</h3>
+                                <p class="text-[11px] text-slate-400 max-w-xs leading-normal">
+                                    Menghubungi server portal <strong>{{ $testContextName }}</strong> untuk mengunduh halaman pencarian dan mengekstrak artikel berita...
+                                </p>
+                            </div>
+                            <div class="w-full max-w-md bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3 mt-4 animate-pulse">
+                                <div class="h-2 bg-slate-200 rounded w-1/3"></div>
+                                <div class="h-3 bg-slate-200 rounded w-3/4"></div>
+                                <div class="h-2 bg-slate-200 rounded w-1/2"></div>
+                            </div>
+                        </div>
+                    @else
                     <!-- Metadata Header Row -->
-                    <div class="rounded-2xl border border-slate-150 bg-slate-50/50 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
                             <span class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200">
                                 <span class="material-symbols-outlined text-[20px] block">assignment_turned_in</span>
@@ -1069,6 +1274,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                 </div>
 
                 <!-- Modal Footer -->

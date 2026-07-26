@@ -146,7 +146,12 @@
                                 {{ $entry['timestamp_label'] ?? '-' }}
                             </td>
                             <td class="px-4 py-3">
-                                <div class="text-xs font-bold text-slate-800">{{ $entry['source_label'] ?? '-' }}</div>
+                                <div class="text-xs font-bold text-slate-800">
+                                    {{ $entry['source_label'] ?? '-' }}
+                                    @if(!empty($entry['website_label']) && $entry['website_label'] !== '-')
+                                        <span class="block text-[10px] font-bold text-[#1fa387] mt-0.5">{{ $entry['website_label'] }}</span>
+                                    @endif
+                                </div>
                                 <div class="text-[10px] text-slate-400">{{ $entry['file_label'] ?? '-' }}</div>
                             </td>
                             <td class="px-4 py-3">
