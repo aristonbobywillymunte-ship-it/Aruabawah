@@ -1554,7 +1554,7 @@ new class extends Component
                     x-transition:enter-end="opacity-100"
                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
                 >
-                    <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-100 overflow-hidden">
+                    <div class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl border border-slate-100 overflow-hidden">
                         <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
                             <h3 class="text-base font-hanken font-bold text-slate-900">Daftar Proyek Dihapus</h3>
                             <button wire:click="closeModals" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
