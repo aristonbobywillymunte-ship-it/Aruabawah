@@ -2433,6 +2433,26 @@ new class extends Component
                         class="pr-4 space-y-4"
                         wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
                         id="mentions-feed-scroll"
+                        data-total-count="{{ $mentionsTotalArticlesCount }}"
+                        x-data="{ _lmLoading: false }"
+                        x-init="
+                            const el = $el;
+                            const tryLoad = () => {
+                                if (_lmLoading) return;
+                                const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+                                if (remaining > 300) return;
+                                const loaded = el.querySelectorAll('[data-mention-card]').length;
+                                const total = parseInt(el.dataset.totalCount || '0');
+                                if (loaded >= total || total === 0) return;
+                                _lmLoading = true;
+                                $wire.loadMore().finally(() => {
+                                    setTimeout(() => { _lmLoading = false; }, 1500);
+                                });
+                            };
+                            el.addEventListener('scroll', tryLoad, { passive: true });
+                            setInterval(tryLoad, 2000);
+                            setTimeout(tryLoad, 800);
+                        "
                     >
                         @php
                             $articlesList = $mentionsArticlesList;
@@ -2790,7 +2810,7 @@ new class extends Component
                             @endforeach
                             @endif
                         </div>
-                        <!-- Infinite Scroll / Load More -->
+                        <!-- Load More -->
                         @php
                             $totalArticlesCount = $this->getTotalArticlesCount();
                         @endphp
@@ -2798,30 +2818,7 @@ new class extends Component
                         @if($articlesList->count() < $totalArticlesCount)
                             <div wire:key="mentions-load-more-{{ $mentionsFeedSignature }}-{{ $articlesList->count() }}">
 
-                                {{-- Sentinel: Auto-trigger saat masuk dalam scroll container --}}
-                                <div
-                                    x-data="{}"
-                                    x-init="
-                                        const sentinel = $el;
-                                        const scrollEl = document.getElementById('mentions-feed-scroll');
-                                        let loading = false;
-                                        const obs = new IntersectionObserver(
-                                            (entries) => {
-                                                if (!loading && entries[0].isIntersecting) {
-                                                    loading = true;
-                                                    $wire.loadMore().finally(() => {
-                                                        setTimeout(() => { loading = false; }, 800);
-                                                    });
-                                                }
-                                            },
-                                            { root: scrollEl, rootMargin: '150px', threshold: 0 }
-                                        );
-                                        obs.observe(sentinel);
-                                    "
-                                    class="h-2 w-full"
-                                ></div>
-
-                                {{-- Loading indicator yang tampil saat loadMore berjalan --}}
+                                {{-- Loading indicator saat loadMore berjalan --}}
                                 <div
                                     wire:loading
                                     wire:target="loadMore"
@@ -2849,10 +2846,11 @@ new class extends Component
                                         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"></path>
                                         </svg>
-                                        <span>Muat lebih banyak ({{ $articlesList->count() }}/{{ $totalArticlesCount }})</span>
+                                        <span>+ Muat lebih banyak ({{ $articlesList->count() }}/{{ $totalArticlesCount }})</span>
                                     </button>
                                 </div>
                             </div>
+
                         @else
                             <div class="py-6 mt-4 border-t border-slate-100 text-center text-xs text-slate-400 font-medium">
                                 <p class="text-slate-500 font-semibold">Semua data telah dimuat</p>
