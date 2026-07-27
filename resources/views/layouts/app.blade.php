@@ -45,6 +45,7 @@
         }
         .btn-primary:hover { background: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) - 5%)); }
     </style>
+    @include('components.media-dashboard-styles')
     @stack('styles')
 </head>
 <body>

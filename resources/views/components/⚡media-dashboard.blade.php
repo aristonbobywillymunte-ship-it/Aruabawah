@@ -41,6 +41,7 @@ new class extends Component
 
     public $projectId;
     public $projectName = 'Dashboard';
+    public array $viralMeta = [];
 
     // Tab state ('penyebutan' or 'analisis')
     #[Url(as: 'tab')]
@@ -343,6 +344,7 @@ new class extends Component
         $this->supportKeywords = [];
         $this->excludeKeywords = [];
         $this->dashboardLoaded = true;
+        $this->viralMeta = $this->getViralMeta();
 
         // Tab Kata Kunci harus tampil segera saat dibuka langsung via URL.
         // Jika hanya mengandalkan wire:init, area utama bisa tetap kosong sebelum
@@ -1857,11 +1859,6 @@ new class extends Component
 };
 ?>
 
-<div>
-@php
-    $viralMeta = $this->getViralMeta();
-@endphp
-@include('components.media-dashboard-styles')
 <div class="w-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans"
      x-data="{
          isMobile: window.innerWidth < 900,
@@ -1872,7 +1869,6 @@ new class extends Component
      x-effect="document.body.style.overflow = (detailModalOpen || showViralModal) ? 'hidden' : 'auto'"
      x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 900; }); isMobile = window.innerWidth < 900;"
 >
-    
     <!-- Top Header -->
     <header class="w-full bg-white border-b border-slate-200 sticky top-0 z-50 flex-shrink-0">
         <div class="max-w-[1400px] mx-auto px-6 h-20 flex flex-row flex-nowrap items-center justify-between gap-6">
@@ -1992,8 +1988,6 @@ new class extends Component
 </div>
 </div>
 </div>
-            </div>
-        </div>
     </header>
 
     <!-- Mobile Tabs (Visible on mobile only) -->
@@ -4599,11 +4593,11 @@ new class extends Component
                         >
                             <div class="space-y-1.5 text-left">
                                 <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block group-hover:text-indigo-650 transition-colors">Kondisi Viral</span>
-                                <h3 class="text-3xl font-black tracking-tight leading-none text-{{ $viralMeta['viral_color'] }}-600">{{ $viralMeta['viral_status'] }}</h3>
-                                <p class="text-[11px] font-semibold text-slate-400 truncate max-w-[170px]" title="{{ $viralMeta['viral_desc'] }}">{{ $viralMeta['viral_desc'] }}</p>
+                                <h3 class="text-3xl font-black tracking-tight leading-none text-{{ $this->viralMeta['viral_color'] }}-600">{{ $this->viralMeta['viral_status'] }}</h3>
+                                <p class="text-[11px] font-semibold text-slate-400 truncate max-w-[170px]" title="{{ $this->viralMeta['viral_desc'] }}">{{ $this->viralMeta['viral_desc'] }}</p>
                             </div>
-                            <div class="w-10 h-10 rounded-full bg-{{ $viralMeta['viral_color'] }}-50 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
-                                <svg class="w-5 h-5 text-{{ $viralMeta['viral_color'] }}-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                            <div class="w-10 h-10 rounded-full bg-{{ $this->viralMeta['viral_color'] }}-50 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+                                <svg class="w-5 h-5 text-{{ $this->viralMeta['viral_color'] }}-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                             </div>
                         </div>
                     </div>
@@ -5930,8 +5924,8 @@ new class extends Component
             <div class="flex items-center justify-between pb-4 border-b border-slate-200 flex-shrink-0">
                 <div>
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-{{ $viralMeta['viral_color'] }}-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                        Penyebab Kondisi: <span class="text-{{ $viralMeta['viral_color'] }}-600 font-extrabold">{{ $viralMeta['viral_status'] }}</span>
+                        <svg class="w-5 h-5 text-{{ $this->viralMeta['viral_color'] }}-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        Penyebab Kondisi: <span class="text-{{ $this->viralMeta['viral_color'] }}-600 font-extrabold">{{ $this->viralMeta['viral_status'] }}</span>
                     </h3>
                 </div>
                 <button 
