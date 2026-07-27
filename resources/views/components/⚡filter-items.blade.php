@@ -3,17 +3,34 @@
     <!-- Laporan Filter Panel (matching screenshot) -->
     <div class="space-y-1.5 text-left">
         <label class="text-xs font-bold text-slate-650">Periode</label>
-        <div class="relative">
-            <select 
-                class="w-full bg-[#f8f9fa] border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#1fa387] focus:bg-white transition cursor-pointer appearance-none font-semibold"
-            >
-                <option value="daily">Harian</option>
-                <option value="weekly">Mingguan</option>
-                <option value="monthly">Bulanan</option>
-            </select>
-            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <button
+            type="button"
+            wire:click="$set('showDatePicker', true)"
+            class="w-full bg-[#f8f9fa] border border-slate-200 rounded-xl px-4 py-3 text-left text-xs text-slate-800 hover:bg-white hover:border-[#1fa387]/40 transition flex items-center justify-between gap-3"
+        >
+            <div class="min-w-0">
+                <div class="font-bold text-slate-800">
+                    {{ $this->getPeriodLabel() }}
+                </div>
+                <div class="mt-1 text-[11px] text-slate-500 truncate">
+                    {{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d/m/Y') . ($endDate && $endDate !== $startDate ? ' - ' . \Carbon\Carbon::parse($endDate)->format('d/m/Y') : '') : 'Semua Waktu' }}
+                </div>
             </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="px-2 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-bold text-[#1fa387] uppercase tracking-wider">
+                    {{ $this->getPeriodLabel() }}
+                </span>
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+        </button>
+        <p class="text-[10px] text-slate-400 leading-snug">
+            Pilih harian, mingguan, bulanan, atau tahunan lewat datepicker.
+        </p>
+        <div class="flex flex-wrap gap-2 pt-1">
+            <button type="button" wire:click="$set('showDatePicker', true)" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:border-[#1fa387] hover:text-[#1fa387] transition">Harian</button>
+            <button type="button" wire:click="$set('showDatePicker', true)" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:border-[#1fa387] hover:text-[#1fa387] transition">Mingguan</button>
+            <button type="button" wire:click="$set('showDatePicker', true)" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:border-[#1fa387] hover:text-[#1fa387] transition">Bulanan</button>
+            <button type="button" wire:click="$set('showDatePicker', true)" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:border-[#1fa387] hover:text-[#1fa387] transition">Tahunan</button>
         </div>
     </div>
 @else

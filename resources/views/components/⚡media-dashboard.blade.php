@@ -115,6 +115,41 @@ new class extends Component
     public $startDate;
     public $endDate;
 
+    public function getPeriodLabel(): string
+    {
+        if (!$this->startDate && !$this->endDate) {
+            return 'Semua Waktu';
+        }
+
+        try {
+            $start = $this->startDate ? \Carbon\Carbon::parse($this->startDate)->startOfDay() : null;
+            $end = $this->endDate ? \Carbon\Carbon::parse($this->endDate)->endOfDay() : null;
+            $today = now();
+
+            if ($start && $end) {
+                if ($start->isSameDay($end)) {
+                    return 'Harian';
+                }
+
+                if ($start->copy()->startOfWeek()->isSameDay($start) && $end->copy()->endOfWeek()->isSameDay($end)) {
+                    return 'Mingguan';
+                }
+
+                if ($start->copy()->startOfMonth()->isSameDay($start) && $end->isSameDay($today->copy()->endOfMonth())) {
+                    return 'Bulanan';
+                }
+
+                if ($start->copy()->startOfYear()->isSameDay($start) && $end->isSameDay($today->copy()->endOfYear())) {
+                    return 'Tahunan';
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fall back to formatted range below
+        }
+
+        return 'Periode';
+    }
+
 
 
     // Form fields for adding articles

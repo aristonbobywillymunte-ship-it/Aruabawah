@@ -59,16 +59,16 @@
         </div>
 
         <!-- Scrollable list of items -->
-        <div style="max-height: 420px; overflow-y: auto;" class="w-full bg-white px-5 py-5 space-y-3.5">
+        <div style="max-height: 420px; overflow-y: auto;" class="w-full bg-white px-5 py-5 space-y-3">
             @forelse($notifications as $notif)
                 <a 
                     href="{{ $notif['url'] }}" 
                     target="_blank" 
-                    class="block p-4.5 bg-white border border-slate-200/70 hover:border-[#1fa387]/40 hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] rounded-2xl transition duration-200 group cursor-pointer"
+                    class="block p-4.5 bg-[#F8F9FA] hover:bg-white hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] rounded-2xl transition duration-200 group cursor-pointer"
                 >
                     <div class="flex items-start gap-4">
                         <!-- Warning Icon wrapper -->
-                        <div class="mt-0.5 w-8 h-8 bg-rose-50/50 text-rose-550 rounded-full flex-shrink-0 flex items-center justify-center border border-rose-100/40 group-hover:scale-105 transition-transform duration-200">
+                        <div class="mt-0.5 w-8 h-8 bg-rose-50/70 text-rose-550 rounded-full flex-shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                         </div>
                         
@@ -80,10 +80,10 @@
                             
                             <!-- Badges Row -->
                             <div class="flex flex-wrap items-center gap-1.5">
-                                <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider {{ $notif['risk_level'] === 'high' || $notif['risk_level'] === 'critical' ? 'bg-rose-50 text-rose-650 border border-rose-100/60' : 'bg-amber-50 text-amber-700 border border-amber-100/60' }}">
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider {{ $notif['risk_level'] === 'high' || $notif['risk_level'] === 'critical' ? 'bg-rose-50 text-rose-650' : 'bg-amber-50/70 text-amber-700' }}">
                                     Risk: {{ $notif['risk_level'] }}
                                 </span>
-                                <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-slate-50 text-slate-500 border border-slate-200/50">
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-slate-100/60 text-slate-500">
                                     Reach: {{ $notif['reach_level'] }}
                                 </span>
                             </div>
