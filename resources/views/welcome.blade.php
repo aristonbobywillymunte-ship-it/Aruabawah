@@ -14,6 +14,7 @@
         <!-- Styles & Scripts -->
         @livewireStyles
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @include('components.media-dashboard-styles')
         @stack('styles')
     </head>
     <body class="antialiased bg-surface-studio text-on-surface font-sans selection:bg-primary/20 selection:text-primary {{ request()->query('project') ? 'h-screen overflow-hidden' : 'min-h-screen' }} flex flex-col">
