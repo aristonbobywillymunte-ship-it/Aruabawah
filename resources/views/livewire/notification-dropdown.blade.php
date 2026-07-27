@@ -34,8 +34,8 @@
     <!-- Clean Light Premium Dropdown Menu (Z-index lifted to stay above backdrop blur) -->
     <div 
         x-show="open" 
-        style="display: none; width: 390px; max-width: 92vw; box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0,0,0,0.03);"
-        class="absolute right-[-40px] sm:right-0 mt-3 bg-white text-slate-800 rounded-[24px] z-[100] overflow-hidden flex flex-col ring-1 ring-slate-100"
+        style="display: none; width: 390px; max-width: 92vw; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.08);"
+        class="absolute right-[-40px] sm:right-0 mt-3 bg-white text-slate-800 rounded-[24px] z-[100] overflow-hidden flex flex-col border border-slate-100/80"
     >
         <!-- Header -->
         <div class="px-6 py-4.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -56,7 +56,7 @@
                 <a 
                     href="{{ $notif['url'] }}" 
                     target="_blank" 
-                    class="block p-4 bg-[#F8F9FA] hover:bg-white border border-slate-150 hover:border-[#1fa387]/30 hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-2xl transition duration-200 group cursor-pointer"
+                    class="block p-4 bg-[#F8F9FA] hover:bg-white border border-slate-100/80 hover:border-[#1fa387]/30 hover:shadow-[0_8px_20px_rgba(0,0,0,0.03)] rounded-2xl transition duration-200 group cursor-pointer"
                 >
                     <div class="flex items-start gap-3.5">
                         <!-- Warning Icon wrapper -->
