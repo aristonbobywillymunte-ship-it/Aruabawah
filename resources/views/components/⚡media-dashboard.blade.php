@@ -1892,16 +1892,16 @@ new class extends Component
         });
     }
 };
-?>
 
 <div class="w-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans"
      x-data="{
          isMobile: window.innerWidth < 900,
+         openMobileMenu: false,
          scrollToTop() {
              window.scrollTo({ top: 0, behavior: 'smooth' });
          }
      }"
-     x-effect="document.body.style.overflow = (detailModalOpen || showViralModal) ? 'hidden' : 'auto'"
+     x-effect="document.body.style.overflow = (detailModalOpen || showViralModal || openMobileMenu) ? 'hidden' : 'auto'"
      x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 900; }); isMobile = window.innerWidth < 900;"
 >
     <!-- Top Header -->
@@ -1979,71 +1979,151 @@ new class extends Component
                         Laporan
                     </a>
             </nav>
-
             <!-- User Profile & Add Notification -->
-            <div class="flex shrink-0 items-center justify-self-end gap-4">
-                <div class="flex items-center gap-3">
-                    <livewire:notification-dropdown :project-id="$this->getDecodedProjectId()" />
-                    <div class="relative" x-data="{ openProfile: false }">
-                        <button
-                            type="button"
-                            @click="openProfile = !openProfile"
-                            class="flex items-center gap-1.5 sm:gap-3 bg-slate-50 border border-slate-200 rounded-full p-1 sm:pr-3 cursor-pointer hover:bg-slate-100 transition-colors active:scale-95"
-                        >
-                            <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                                </svg>
-                            </div>
-                            <span class="hidden sm:inline text-xs font-medium text-slate-600">{{ auth()->user()?->email ?? 'Guest' }}</span>
-                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+            <div class="flex shrink-0 items-center justify-self-end gap-3">
+                <livewire:notification-dropdown :project-id="$this->getDecodedProjectId()" />
+                
+                <!-- Desktop Profile -->
+                <div class="hidden md:block relative" x-data="{ openProfile: false }">
+                    <button
+                        type="button"
+                        @click="openProfile = !openProfile"
+                        class="flex items-center gap-1.5 sm:gap-3 bg-slate-50 border border-slate-200 rounded-full p-1 sm:pr-3 cursor-pointer hover:bg-slate-100 transition-colors active:scale-95"
+                    >
+                        <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
                             </svg>
-                        </button>
+                        </div>
+                        <span class="hidden sm:inline text-xs font-medium text-slate-600">{{ auth()->user()?->email ?? 'Guest' }}</span>
+                        <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                        </svg>
+                    </button>
 
-                        <div 
-                            x-show="openProfile" 
-                            @click.away="openProfile = false"
-                            style="display: none;"
-                            class="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-slate-100 shadow-lg z-[60] py-2"
-                        >
-                            <a wire:navigate class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors" href="{{ route('password.change') }}">
-                                <span class="material-symbols-outlined text-slate-400 text-lg">lock</span>
-                                <span>Ganti Password</span>
-                            </a>
-                            <div class="my-1 border-t border-slate-100"></div>
-                            <form method="POST" action="{{ url('/logout') }}">
-                                @csrf
-                                <button type="submit" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors text-left">
-                                    <span class="material-symbols-outlined text-lg">logout</span>
-                                    <span>Logout</span>
-                                </button>
-                            </form>
-</div>
-</div>
-</div>
-</div>
+                    <div 
+                        x-show="openProfile" 
+                        @click.away="openProfile = false"
+                        style="display: none;"
+                        class="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-slate-100 shadow-lg z-[60] py-2"
+                    >
+                        <a wire:navigate class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors" href="{{ route('password.change') }}">
+                            <span class="material-symbols-outlined text-slate-400 text-lg">lock</span>
+                            <span>Ganti Password</span>
+                        </a>
+                        <div class="my-1 border-t border-slate-100"></div>
+                        <form method="POST" action="{{ url('/logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors text-left">
+                                <span class="material-symbols-outlined text-lg">logout</span>
+                                <span>Logout</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Burger Button (Mobile Menu Trigger) -->
+                <button 
+                    type="button" 
+                    @click="openMobileMenu = !openMobileMenu"
+                    class="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition active:scale-95 cursor-pointer"
+                    title="Menu Navigasi"
+                >
+                    <span class="material-symbols-outlined text-[20px]" x-text="openMobileMenu ? 'close' : 'menu'">menu</span>
+                </button>
+            </div>
+        </div>
     </header>
 
-    <!-- Mobile Tabs (Visible on mobile only) -->
-    <div class="md:hidden sticky top-20 z-40 bg-white border-b border-slate-200 flex flex-row gap-1 px-4 py-2 overflow-x-auto scrollbar-none shrink-0">
-        @foreach([
-            ['key' => 'penyebutan', 'label' => 'Penyebutan'],
-            ['key' => 'analisis', 'label' => 'Analisis'],
-            ['key' => 'katakunci', 'label' => 'Kata Kunci'],
-            ['key' => 'wawasan', 'label' => 'Wawasan'],
-            ['key' => 'konten', 'label' => 'Konten'],
-            ['key' => 'sumber', 'label' => 'Sumber'],
-            ['key' => 'laporan', 'label' => 'Laporan']
-        ] as $tab)
-            <a 
-                href="{{ route('home', ['project' => $this->projectId, 'tab' => base64_encode($tab['key'])]) }}"
-                class="flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer {{ $this->isTab($tab['key']) ? 'bg-[#1fa387]/10 text-[#1fa387]' : 'text-slate-500 hover:text-slate-800' }}"
-            >
-                {{ $tab['label'] }}
-            </a>
-        @endforeach
-    </div>
+    <!-- Mobile Sidebar Drawer Menu -->
+    <div 
+        x-show="openMobileMenu"
+        class="fixed inset-0 z-50 md:hidden flex justify-end"
+        style="display: none;"
+    >
+        <!-- Backdrop -->
+        <div 
+            x-show="openMobileMenu"
+            x-transition:enter="transition-opacity ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition-opacity ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @click="openMobileMenu = false"
+            class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
+        ></div>
+
+        <!-- Sidebar Drawer Content -->
+        <div 
+            x-show="openMobileMenu"
+            x-transition:enter="transition-transform ease-out duration-300"
+            x-transition:enter-start="translate-x-full"
+            x-transition:enter-end="translate-x-0"
+            x-transition:leave="transition-transform ease-in duration-200"
+            x-transition:leave-start="translate-x-0"
+            x-transition:leave-end="translate-x-full"
+            class="relative w-80 max-w-xs bg-white h-full shadow-2xl flex flex-col p-6 space-y-6 z-10 text-left border-l border-slate-100"
+        >
+            <!-- Drawer Header -->
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <span class="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Navigasi Proyek</span>
+                <button 
+                    type="button" 
+                    @click="openMobileMenu = false"
+                    class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                >
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <nav class="flex-grow flex flex-col gap-2 overflow-y-auto">
+                @foreach([
+                    ['key' => 'penyebutan', 'label' => 'Penyebutan', 'icon' => 'feed'],
+                    ['key' => 'analisis', 'label' => 'Analisis', 'icon' => 'analytics'],
+                    ['key' => 'katakunci', 'label' => 'Kata Kunci', 'icon' => 'key'],
+                    ['key' => 'wawasan', 'label' => 'Wawasan', 'icon' => 'auto_awesome'],
+                    ['key' => 'konten', 'label' => 'Konten', 'icon' => 'description'],
+                    ['key' => 'sumber', 'label' => 'Sumber', 'icon' => 'source'],
+                    ['key' => 'laporan', 'label' => 'Laporan', 'icon' => 'assignment']
+                ] as $tab)
+                    <a 
+                        href="{{ route('home', ['project' => $this->projectId, 'tab' => base64_encode($tab['key'])]) }}"
+                        class="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-xs font-bold transition-all cursor-pointer {{ $this->isTab($tab['key']) ? 'bg-[#1fa387]/10 text-[#1fa387]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}"
+                        @click="openMobileMenu = false"
+                    >
+                        <span class="material-symbols-outlined text-[18px]">{{ $tab['icon'] }}</span>
+                        <span>{{ $tab['label'] }}</span>
+                    </a>
+                @endforeach
+            </nav>
+
+            <!-- Mobile Profile / Logout -->
+            <div class="border-t border-slate-100 pt-4 space-y-3.5">
+                <div class="flex items-center gap-3 bg-slate-50 rounded-2xl p-3 border border-slate-200/50">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-slate-500 text-base">person</span>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pengguna</div>
+                        <div class="text-xs font-bold text-slate-700 truncate">{{ auth()->user()?->email ?? 'Guest' }}</div>
+                    </div>
+                </div>
+                <a wire:navigate href="{{ route('password.change') }}" class="flex items-center gap-3 px-2 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors">
+                    <span class="material-symbols-outlined text-slate-400 text-[18px]">lock</span>
+                    <span>Ganti Password</span>
+                </a>
+                <form method="POST" action="{{ url('/logout') }}">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center gap-3 px-2 py-2 text-xs font-bold text-red-500 hover:text-red-750 transition-colors text-left cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px]">logout</span>
+                        <span>Logout</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div></div>
 
     <!-- Sub-header -->
     <div class="w-full bg-[#f0f3f8] border-b border-slate-200 py-2.5 flex-shrink-0">
@@ -2541,7 +2621,7 @@ new class extends Component
                                 <article 
                                     wire:key="mention-card-{{ $article->id }}-{{ md5((string) $article->source_name) }}"
                                     data-mention-card
-                                    class="bg-white rounded-3xl border border-slate-200/80 p-4 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 border-l-4"
+                                    class="bg-white rounded-[24px] sm:rounded-3xl border border-slate-200/80 p-3.5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 border-l-4"
                                     style="border-left-color: {{ $sentimentColor }}"
                                 >
                                     @php
@@ -5002,32 +5082,36 @@ new class extends Component
                             </button>
                         </div>
 
-                        <!-- PDF Option List -->
-                        <div x-show="reportType === 'pdf'" class="space-y-6">
-                            <!-- Group 1 -->
-                            <div class="space-y-4">
-                                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ringkasan & Statistik</h4>
+                    <!-- PDF Option List -->
+                    <div x-show="reportType === 'pdf'" class="space-y-6">
+                        <!-- Group 1 -->
+                        <div class="space-y-4">
+                                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Isi Laporan PDF</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    <!-- Rangkuman & Wawasan -->
+                                    <!-- Kesimpulan AI -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">📄</div>
+                                            <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">auto_graph</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
-                                                <h5 class="text-xs font-bold text-slate-800">Rangkuman & Wawasan</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Ringkasan otomatis dari insight dan temuan kunci</p>
+                                                <h5 class="text-xs font-bold text-slate-800">Kesimpulan AI</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Ringkasan otomatis dari insight dan temuan utama</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.wawasan = !pdfToggles.wawasan" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.wawasan ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="pdfToggles.wawasan ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Statistik Umum -->
+                                    <!-- Ringkasan Statistik -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">📊</div>
+                                            <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">bar_chart</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
-                                                <h5 class="text-xs font-bold text-slate-800">Statistik Umum</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Metrik performa media dan statistik penting</p>
+                                                <h5 class="text-xs font-bold text-slate-800">Ringkasan Statistik</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Distribusi sumber dan metrik performa utama</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.statistik = !pdfToggles.statistik" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.statistik ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -5037,7 +5121,9 @@ new class extends Component
                                     <!-- Grafik Penyebutan -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">📈</div>
+                                            <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">query_stats</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Grafik Penyebutan</h5>
                                                 <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Visualisasi tren penyebutan sepanjang waktu</p>
@@ -5050,7 +5136,9 @@ new class extends Component
                                     <!-- Grafik Sentimen -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center font-bold">😊</div>
+                                            <div class="w-8 h-8 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">sentiment_satisfied</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
                                                 <h5 class="text-xs font-bold text-slate-800">Grafik Sentimen</h5>
                                                 <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Analisis sentimen dari percakapan media</p>
@@ -5060,26 +5148,30 @@ new class extends Component
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="pdfToggles.grafikSentimen ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Konteks Percakapan -->
+                                    <!-- Potensi Viral -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">💬</div>
+                                            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">local_fire_department</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
-                                                <h5 class="text-xs font-bold text-slate-800">Konteks Percakapan</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Topik dan konteks percakapan yang paling banyak</p>
+                                                <h5 class="text-xs font-bold text-slate-800">Potensi Viral</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Konten dengan potensi interaksi atau jangkauan tertinggi</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.konteks = !pdfToggles.konteks" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.konteks ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="pdfToggles.konteks ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Per Kata Kunci -->
+                                    <!-- Analisis Kata Kunci -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">🏷️</div>
+                                            <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">tag</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
-                                                <h5 class="text-xs font-bold text-slate-800">Per Kata Kunci</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Analisis berdasarkan kata kunci yang dipantau</p>
+                                                <h5 class="text-xs font-bold text-slate-800">Analisis Kata Kunci</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Top keyword yang paling sering muncul di laporan</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.perKataKunci = !pdfToggles.perKataKunci" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.perKataKunci ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -5091,67 +5183,77 @@ new class extends Component
 
                             <!-- Group 2 -->
                             <div class="space-y-4 pt-4 border-t border-slate-100">
-                                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Media & Konten</h4>
+                                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Penyebutan & Sumber</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    <!-- Berita Terpopuler -->
+                                    <!-- 5 Terpopuler -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold">🔥</div>
+                                            <div class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">trending_up</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
-                                                <h5 class="text-xs font-bold text-slate-800">Berita Terpopuler</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Artikel berita dengan engagement tertinggi</p>
+                                                <h5 class="text-xs font-bold text-slate-800">5 Terpopuler</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Daftar penyebutan dengan estimasi jangkauan tertinggi</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.beritaPopuler = !pdfToggles.beritaPopuler" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.beritaPopuler ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="pdfToggles.beritaPopuler ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Berita Terbaru -->
+                                    <!-- 5 Berita Terbaru -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold">📅</div>
+                                            <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
-                                                <h5 class="text-xs font-bold text-slate-800">Berita Terbaru</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Artikel berita terbaru dari sumber terpercaya</p>
+                                                <h5 class="text-xs font-bold text-slate-800">5 Berita Terbaru</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Penyebutan terbaru yang masuk ke laporan</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.beritaTerbaru = !pdfToggles.beritaTerbaru" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.beritaTerbaru ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="pdfToggles.beritaTerbaru ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Sumber Berita -->
+                                    <!-- 5 Portal Negatif -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">📰</div>
+                                            <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">newspaper</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
-                                                <h5 class="text-xs font-bold text-slate-800">Sumber Berita</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Sumber berita dengan kontribusi paling banyak</p>
+                                                <h5 class="text-xs font-bold text-slate-800">5 Portal Negatif</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Portal berita dengan sentimen negatif tertinggi</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.sumberBerita = !pdfToggles.sumberBerita" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.sumberBerita ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="pdfToggles.sumberBerita ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Sumber Medsos -->
+                                    <!-- 5 Besar Medsos Negatif -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">📸</div>
+                                            <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">groups</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
-                                                <h5 class="text-xs font-bold text-slate-800">Sumber Medsos</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Influencer dan akun paling aktif</p>
+                                                <h5 class="text-xs font-bold text-slate-800">5 Besar Medsos Negatif</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Akun media sosial dengan sentimen negatif tertinggi</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.sumberMedsos = !pdfToggles.sumberMedsos" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.sumberMedsos ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="pdfToggles.sumberMedsos ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Rekomendasi -->
+                                    <!-- Rekomendasi AI -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-start justify-between gap-4">
                                         <div class="flex items-start gap-3 min-w-0 flex-1">
-                                            <div class="w-8 h-8 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center font-bold">💡</div>
+                                            <div class="w-8 h-8 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">lightbulb</span>
+                                            </div>
                                             <div class="min-w-0 flex-1">
-                                                <h5 class="text-xs font-bold text-slate-800">Rekomendasi</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Saran konten berdasarkan analisis data</p>
+                                                <h5 class="text-xs font-bold text-slate-800">Rekomendasi AI</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Saran tindak lanjut berdasarkan analisis data</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="pdfToggles.rekomendasi = !pdfToggles.rekomendasi" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="pdfToggles.rekomendasi ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -5178,27 +5280,31 @@ new class extends Component
                         <div x-show="reportType === 'excel'" class="space-y-6" style="display: none;">
                             <!-- Group 1 -->
                             <div class="space-y-4">
-                                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data Mentah & Ringkasan</h4>
+                                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Isi Laporan Excel</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    <!-- Ringkasan Penyebutan -->
+                                    <!-- Ringkasan Statistik -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">📝</div>
+                                            <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">summarize</span>
+                                            </div>
                                             <div>
-                                                <h5 class="text-xs font-bold text-slate-800">Ringkasan Penyebutan</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Tabel ringkasan semua penyebutan berdasarkan sumber</p>
+                                                <h5 class="text-xs font-bold text-slate-800">Ringkasan Statistik</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Ringkasan isi laporan dan metrik utama</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="excelToggles.ringkasan = !excelToggles.ringkasan" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="excelToggles.ringkasan ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="excelToggles.ringkasan ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Penyebutan Terbaru -->
+                                    <!-- Data Penyebutan -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">🕒</div>
+                                            <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">article</span>
+                                            </div>
                                             <div>
-                                                <h5 class="text-xs font-bold text-slate-800">Penyebutan Terbaru</h5>
+                                                <h5 class="text-xs font-bold text-slate-800">Data Penyebutan</h5>
                                                 <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Daftar penyebutan terbaru dengan detail lengkap</p>
                                             </div>
                                         </div>
@@ -5206,26 +5312,30 @@ new class extends Component
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="excelToggles.terbaru ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Penyebutan per Kategori -->
+                                    <!-- Analisis Kata Kunci -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">🗂️</div>
+                                            <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">topic</span>
+                                            </div>
                                             <div>
-                                                <h5 class="text-xs font-bold text-slate-800">Penyebutan per Kategori</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Pengelompokan penyebutan berdasarkan kategori</p>
+                                                <h5 class="text-xs font-bold text-slate-800">Analisis Kata Kunci</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Pengelompokan kata kunci yang sering muncul</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="excelToggles.kategori = !excelToggles.kategori" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="excelToggles.kategori ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="excelToggles.kategori ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Konteks Percakapan -->
+                                    <!-- Grafik Penyebutan -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">💬</div>
+                                            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">query_stats</span>
+                                            </div>
                                             <div>
-                                                <h5 class="text-xs font-bold text-slate-800">Konteks Percakapan</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Topik dan konteks yang muncul dari percakapan</p>
+                                                <h5 class="text-xs font-bold text-slate-800">Grafik Penyebutan</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Visualisasi tren penyebutan dari laporan</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="excelToggles.konteks = !excelToggles.konteks" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="excelToggles.konteks ? 'bg-[#1fa387]' : 'bg-slate-200'">
@@ -5237,67 +5347,77 @@ new class extends Component
 
                             <!-- Group 2 -->
                             <div class="space-y-4 pt-4 border-t border-slate-100">
-                                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Analisis & Rekomendasi</h4>
+                                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Analisis & Sumber</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    <!-- Situs Berpengaruh -->
+                                    <!-- Penyebutan Per Sumber -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">🌐</div>
+                                            <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">hub</span>
+                                            </div>
                                             <div>
-                                                <h5 class="text-xs font-bold text-slate-800">Situs Berpengaruh</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Situs dengan skor pengaruh tertinggi</p>
+                                                <h5 class="text-xs font-bold text-slate-800">Penyebutan Per Sumber</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Sumber paling aktif di laporan</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="excelToggles.situsBerpengaruh = !excelToggles.situsBerpengaruh" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="excelToggles.situsBerpengaruh ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="excelToggles.situsBerpengaruh ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Penyebutan Populer -->
+                                    <!-- 5 Terpopuler -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold">🔥</div>
+                                            <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">whatshot</span>
+                                            </div>
                                             <div>
-                                                <h5 class="text-xs font-bold text-slate-800">Penyebutan Populer</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Penyebutan dengan engagement tertinggi</p>
+                                                <h5 class="text-xs font-bold text-slate-800">5 Terpopuler</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Penyebutan dengan jangkauan tertinggi</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="excelToggles.populer = !excelToggles.populer" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="excelToggles.populer ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="excelToggles.populer ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Influencer Berpengaruh -->
+                                    <!-- 5 Besar Medsos Negatif -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold">👥</div>
+                                            <div class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">groups</span>
+                                            </div>
                                             <div>
-                                                <h5 class="text-xs font-bold text-slate-800">Influencer Berpengaruh</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Influencer dengan dampak terbesar</p>
+                                                <h5 class="text-xs font-bold text-slate-800">5 Besar Medsos Negatif</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Akun media sosial dengan sentimen negatif tertinggi</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="excelToggles.influencer = !excelToggles.influencer" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="excelToggles.influencer ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="excelToggles.influencer ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Situs Paling Aktif -->
+                                    <!-- 5 Portal Negatif -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold">🎙️</div>
+                                            <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">news</span>
+                                            </div>
                                             <div>
-                                                <h5 class="text-xs font-bold text-slate-800">Situs Paling Aktif</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Situs dengan aktivitas tertinggi</p>
+                                                <h5 class="text-xs font-bold text-slate-800">5 Portal Negatif</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Portal berita dengan sentimen negatif tertinggi</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="excelToggles.situsAktif = !excelToggles.situsAktif" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="excelToggles.situsAktif ? 'bg-[#1fa387]' : 'bg-slate-200'">
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="excelToggles.situsAktif ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <!-- Rekomendasi Konten -->
+                                    <!-- Rekomendasi AI -->
                                     <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center font-bold">💡</div>
+                                            <div class="w-8 h-8 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">lightbulb</span>
+                                            </div>
                                             <div>
-                                                <h5 class="text-xs font-bold text-slate-800">Rekomendasi Konten</h5>
-                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Saran konten berdasarkan analisis data</p>
+                                                <h5 class="text-xs font-bold text-slate-800">Rekomendasi AI</h5>
+                                                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-none">Saran tindak lanjut berdasarkan analisis data</p>
                                             </div>
                                         </div>
                                         <button type="button" @click="excelToggles.rekomendasi = !excelToggles.rekomendasi" class="relative inline-flex h-5 w-9 items-center rounded-full transition cursor-pointer" :class="excelToggles.rekomendasi ? 'bg-[#1fa387]' : 'bg-slate-200'">
