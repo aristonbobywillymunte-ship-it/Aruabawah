@@ -694,7 +694,9 @@
                       <td class="px-3 py-2.5 font-bold text-[9px] text-slate-800 leading-snug break-words whitespace-normal">{{ \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags((string) $art->title))), 88) }}</td>
                       <td class="px-3 py-2.5 text-right text-[8.5px] text-slate-500 font-medium leading-normal shrink-0">
                         <div class="font-bold text-slate-750">{{ \Illuminate\Support\Str::limit($art->source_name ?? 'Portal', 18) }}</div>
-                        <div class="text-[7.5px] text-slate-400 mt-0.5">{{ $art->published_at ? $art->published_at->format('d/m H:i') : '' }}</div>
+                        <div class="text-[7.5px] text-slate-400 mt-0.5">
+                          {{ $art->published_at ? \Carbon\Carbon::parse($art->published_at)->format('d/m H:i') : '' }}
+                        </div>
                       </td>
                     </tr>
                   @endforeach

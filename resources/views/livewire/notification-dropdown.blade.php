@@ -49,7 +49,7 @@
         <div class="px-6 py-4.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
             <div class="flex items-center gap-2">
                 <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                <span class="font-extrabold text-[11px] uppercase tracking-wider text-slate-600">Peringatan Sentimen</span>
+                <span class="font-extrabold text-[11px] uppercase tracking-wider text-slate-600">Temuan Berita Negatif</span>
             </div>
             @if($unreadCount > 0)
                 <span class="px-2.5 py-0.5 bg-rose-50 text-rose-600 rounded-full text-[9px] font-black uppercase tracking-wide border border-rose-100/50">
@@ -74,6 +74,7 @@
                         
                         <!-- Details -->
                         <div class="flex-1 min-w-0 space-y-1.5 text-left">
+                            <div class="text-[9.5px] font-bold text-[#1fa387] uppercase tracking-wider">{{ $notif['source_type'] }}</div>
                             <p class="text-xs font-black text-slate-700 leading-snug group-hover:text-[#1fa387] transition-colors duration-150">
                                 {{ Str::limit($notif['title'], 60) }}
                             </p>
@@ -81,10 +82,10 @@
                             <!-- Badges Row -->
                             <div class="flex flex-wrap items-center gap-1.5">
                                 <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider {{ $notif['risk_level'] === 'high' || $notif['risk_level'] === 'critical' ? 'bg-rose-50 text-rose-650' : 'bg-amber-50/70 text-amber-700' }}">
-                                    Risk: {{ $notif['risk_level'] }}
+                                    {{ $notif['risk_label'] }}
                                 </span>
                                 <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-slate-100/60 text-slate-500">
-                                    Reach: {{ $notif['reach_level'] }}
+                                    {{ $notif['reach_label'] }}
                                 </span>
                             </div>
                             

@@ -53,12 +53,42 @@ class NotificationDropdown extends Component
 
         $this->notifications = $results->map(function ($result) {
             $source = $result->article ?? $result->socialMediaItem;
+            
+            // Terjemahkan Tingkat Risiko ke Bahasa Indonesia
+            $riskRaw = strtolower((string) $result->risk_level);
+            if ($riskRaw === 'critical') {
+                $riskIndo = 'Resiko Kritis';
+            } elseif ($riskRaw === 'high') {
+                $riskIndo = 'Resiko Tinggi';
+            } elseif ($riskRaw === 'medium') {
+                $riskIndo = 'Resiko Sedang';
+            } else {
+                $riskIndo = 'Resiko Rendah';
+            }
+
+            // Terjemahkan Tingkat Jangkauan (Reach) ke Bahasa Indonesia
+            $reachRaw = strtoupper((string) ($result->project_reach_level ?? $result->potential_reach_level ?? $result->reach_level));
+            if (str_contains($reachRaw, 'NASIONAL') || str_contains($reachRaw, 'LUAR BIASA')) {
+                $reachIndo = 'Jangkauan Nasional';
+            } elseif (str_contains($reachRaw, 'REGIONAL')) {
+                $reachIndo = 'Jangkauan Regional';
+            } elseif (str_contains($reachRaw, 'LOKAL')) {
+                $reachIndo = 'Jangkauan Lokal';
+            } else {
+                $reachIndo = 'Jangkauan Rendah';
+            }
+
+            // Tentukan tipe sumber
+            $sourceType = $result->article ? 'Portal Berita' : 'Media Sosial';
+
             return [
                 'id' => $result->id,
-                'title' => $source ? ($source->title ?? $source->content ?? 'Notifikasi Negatif') : 'Item Dihapus',
+                'title' => $source ? ($source->title ?? $source->content ?? 'Komentar Negatif') : 'Konten Dihapus',
                 'url' => $source ? ($source->url ?? '#') : '#',
-                'risk_level' => $result->risk_level,
-                'reach_level' => $result->project_reach_level ?? $result->potential_reach_level ?? $result->reach_level,
+                'risk_level' => $result->risk_level, // tetap kirim raw untuk class styling
+                'risk_label' => $riskIndo,
+                'reach_label' => $reachIndo,
+                'source_type' => $sourceType,
                 'time' => $result->created_at->diffForHumans(),
             ];
         })->toArray();
