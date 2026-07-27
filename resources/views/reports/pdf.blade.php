@@ -581,7 +581,7 @@
         @endif
 
         <!-- 5 Besar Medsos Negatif -->
-        @if(empty($toggles) || !empty($toggles['beritaPopuler']))
+        @if(empty($toggles) || !empty($toggles['sumberMedsos']))
         <div>
           <div class="flex items-center gap-2 mb-3 border-b border-outline-variant pb-1.5">
             <span class="material-symbols-outlined text-[#ef4444] text-[18px]">thumb_down</span>
@@ -623,10 +623,10 @@
         @endif
       </div>
 
-      <!-- Column 2: 5 Portal Negatif (33%) -->
+      <!-- Column 2: 5 Portal Negatif & 5 Berita Terbaru (33%) -->
       <div class="col-span-4 flex flex-col gap-5 border-l border-r border-outline-variant/60 px-6">
         <!-- Top 5 Negative Portal Articles -->
-        @if(empty($toggles) || !empty($toggles['sumberMedsos']))
+        @if(empty($toggles) || !empty($toggles['sumberBerita']))
         <div>
           <div class="flex items-center gap-2 mb-3 border-b border-outline-variant pb-1.5">
             <span class="material-symbols-outlined text-[#ef4444] text-[18px]">thumb_down</span>
@@ -656,7 +656,45 @@
                       <td class="px-3 py-2.5 font-bold text-[9px] text-slate-800 leading-snug break-words whitespace-normal">{{ \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags((string) $art->title))), 88) }}</td>
                       <td class="px-3 py-2.5 text-slate-600 font-medium break-words whitespace-normal">{{ \Illuminate\Support\Str::limit((string) ($art->source_name ?? 'Portal'), 18) }}</td>
                       <td class="px-3 py-2.5 text-right shrink-0">
-                        <span class="inline-block px-1.5 py-0.5 text-[8px] font-bold rounded-lg border bg-rose-50 text-rose-700 border-rose-200/60">Negatif</span>
+                        <span class="inline-block px-1.5 py-0.5 text-[8px] font-bold rounded-lg border bg-rose-50 text-rose-700 border-rose-200/60 font-sans">Negatif</span>
+                      </td>
+                    </tr>
+                  @endforeach
+                @endif
+              </tbody>
+            </table>
+          </div>
+        </div>
+        @endif
+
+        <!-- 5 Berita Terbaru -->
+        @if(empty($toggles) || !empty($toggles['beritaTerbaru']))
+        <div>
+          <div class="flex items-center gap-2 mb-3 border-b border-outline-variant pb-1.5">
+            <span class="material-symbols-outlined text-primary text-[18px]">calendar_today</span>
+            <h2 class="font-bold text-[11px] uppercase tracking-widest text-slate-800">5 Berita Terbaru</h2>
+          </div>
+          <div class="border border-outline-variant rounded-xl overflow-hidden shadow-sm bg-white">
+            <table class="w-full text-left text-[10px] table-fixed">
+              <thead class="bg-slate-50 border-b border-outline-variant">
+                <tr>
+                  <th class="w-[60%] px-3 py-2 font-bold text-slate-700 uppercase text-[8px]">Judul Berita</th>
+                  <th class="w-[40%] px-3 py-2 font-bold text-slate-700 uppercase text-[8px] text-right">Sumber / Waktu</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                @php
+                  $latestArticles = $articles->sortByDesc('published_at')->take(5);
+                @endphp
+                @if($latestArticles->isEmpty())
+                  <tr><td colspan="2" class="px-3 py-3 text-center text-slate-400">Tidak ada berita terbaru.</td></tr>
+                @else
+                  @foreach($latestArticles as $art)
+                    <tr class="hover:bg-slate-50/50 transition">
+                      <td class="px-3 py-2.5 font-bold text-[9px] text-slate-800 leading-snug break-words whitespace-normal">{{ \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags((string) $art->title))), 88) }}</td>
+                      <td class="px-3 py-2.5 text-right text-[8.5px] text-slate-500 font-medium leading-normal shrink-0">
+                        <div class="font-bold text-slate-750">{{ \Illuminate\Support\Str::limit($art->source_name ?? 'Portal', 18) }}</div>
+                        <div class="text-[7.5px] text-slate-400 mt-0.5">{{ $art->published_at ? $art->published_at->format('d/m H:i') : '' }}</div>
                       </td>
                     </tr>
                   @endforeach
@@ -765,7 +803,7 @@
         @endif
 
         <!-- 5 Penyebutan Terpopuler -->
-        @if(empty($toggles) || !empty($toggles['beritaTerbaru']))
+        @if(empty($toggles) || !empty($toggles['beritaPopuler']))
         <div>
           <div class="flex items-center gap-2 mb-3 border-b border-outline-variant pb-1.5">
             <span class="material-symbols-outlined text-primary text-[18px]">trending_up</span>

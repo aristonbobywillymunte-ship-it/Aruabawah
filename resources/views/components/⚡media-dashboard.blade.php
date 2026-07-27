@@ -5738,6 +5738,7 @@ new class extends Component
             show: @entangle('showDatePicker'),
             localStart: @entangle('startDate'), 
             localEnd: @entangle('endDate'),
+            periodMode: 'daily',
             month: new Date().getMonth(),
             year: new Date().getFullYear(),
             monthNames: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
@@ -5747,6 +5748,49 @@ new class extends Component
                     this.month = d.getMonth();
                     this.year = d.getFullYear();
                 }
+                this.syncPeriodMode();
+            },
+            syncPeriodMode() {
+                if (!this.localStart || !this.localEnd) {
+                    this.periodMode = 'custom';
+                    return;
+                }
+
+                const start = new Date(this.localStart + 'T00:00:00');
+                const end = new Date(this.localEnd + 'T23:59:59');
+                const today = new Date();
+                today.setHours(0,0,0,0);
+
+                const sameDay = start.toDateString() === end.toDateString();
+                const monday = new Date(start);
+                monday.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+                monday.setHours(0,0,0,0);
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                const monthStart = new Date(start.getFullYear(), start.getMonth(), 1);
+                const yearStart = new Date(start.getFullYear(), 0, 1);
+
+                if (sameDay) {
+                    this.periodMode = 'daily';
+                    return;
+                }
+
+                if (start.toDateString() === monday.toDateString() && end.toDateString() === (today < sunday ? today : sunday).toDateString()) {
+                    this.periodMode = 'weekly';
+                    return;
+                }
+
+                if (start.toDateString() === monthStart.toDateString()) {
+                    this.periodMode = 'monthly';
+                    return;
+                }
+
+                if (start.toDateString() === yearStart.toDateString()) {
+                    this.periodMode = 'yearly';
+                    return;
+                }
+
+                this.periodMode = 'custom';
             },
             get no_of_days() {
                 let daysInMonth = new Date(this.year, this.month + 1, 0).getDate();
@@ -5771,17 +5815,11 @@ new class extends Component
                 if (this.isFuture(day)) return;
                 let selected = new Date(this.year, this.month, day);
                 let selectedStr = this.formatDate(selected);
-                if (!this.localStart || (this.localStart && this.localEnd)) {
-                    this.localStart = selectedStr;
-                    this.localEnd = null;
-                } else if (this.localStart && !this.localEnd) {
-                    if (selectedStr < this.localStart) {
-                        this.localEnd = this.localStart;
-                        this.localStart = selectedStr;
-                    } else {
-                        this.localEnd = selectedStr;
-                    }
-                }
+                this.periodMode = 'daily';
+                this.localStart = selectedStr;
+                this.localEnd = selectedStr;
+                this.month = selected.getMonth();
+                this.year = selected.getFullYear();
             },
             isStart(day) {
                 return this.localStart === this.formatDate(new Date(this.year, this.month, day));
@@ -5807,19 +5845,59 @@ new class extends Component
                 $wire.set('endDate', this.localEnd ? this.localEnd : this.localStart);
                 $wire.set('showDatePicker', false);
             },
-            setPeriod(days) {
-                let end = new Date();
-                let start = new Date(end);
-                if (days === 'year') {
-                    start = new Date(end.getFullYear() - 1, 0, 1);
-                    end = new Date(end.getFullYear() - 1, 11, 31);
+            setPeriod(mode) {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                let start = new Date(today);
+                let end = new Date(today);
+
+                if (mode === 'daily') {
+                    this.periodMode = 'daily';
+                } else if (mode === 'weekly') {
+                    this.periodMode = 'weekly';
+                    const offset = (today.getDay() + 6) % 7;
+                    start = new Date(today);
+                    start.setDate(today.getDate() - offset);
+                } else if (mode === 'monthly') {
+                    this.periodMode = 'monthly';
+                    start = new Date(today.getFullYear(), today.getMonth(), 1);
+                } else if (mode === 'yearly') {
+                    this.periodMode = 'yearly';
+                    start = new Date(today.getFullYear(), 0, 1);
                 } else {
-                    start.setDate(end.getDate() - days + 1);
+                    this.periodMode = 'custom';
+                    return;
                 }
-                this.localEnd = this.formatDate(end);
+
                 this.localStart = this.formatDate(start);
+                this.localEnd = this.formatDate(end);
                 this.month = start.getMonth();
                 this.year = start.getFullYear();
+            },
+            clearPeriod() {
+                this.periodMode = 'custom';
+                this.localStart = null;
+                this.localEnd = null;
+            },
+            prevMonth() {
+                if (this.month === 0) {
+                    this.month = 11;
+                    this.year--;
+                } else {
+                    this.month--;
+                }
+            },
+            nextMonth() {
+                const next = new Date(this.year, this.month + 1, 1);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                if (next > today) return;
+                if (this.month === 11) {
+                    this.month = 0;
+                    this.year++;
+                } else {
+                    this.month++;
+                }
             }
         }"
         x-show="show"
@@ -5838,23 +5916,33 @@ new class extends Component
         >
             <!-- Left Panel (PERIODE Presets) -->
             <div class="datepicker-left-panel bg-[#FAFBFD] p-6 text-left space-y-4 flex-shrink-0">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">PERIODE</span>
-                <div class="flex flex-col gap-2.5">
-                    <button type="button" @click="setPeriod(1)" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold">Hari ini</button>
-                    <button type="button" @click="setPeriod(2); localEnd = localStart" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold">Kemarin</button>
-                    <button type="button" @click="setPeriod(7)" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold">7 hari terakhir</button>
-                    <button type="button" @click="setPeriod(30)" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-[#1fa387] hover:font-bold text-left font-semibold">30 hari terakhir</button>
-                    <button type="button" @click="setPeriod(90)" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold">3 bulan terakhir</button>
-                    <button type="button" @click="setPeriod('year')" class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold">Tahun lalu</button>
-                    
-                    <button 
-                        type="button" 
-                        @click="localStart = null; localEnd = null;" 
-                        class="text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold pt-2 border-t border-slate-200 mt-1"
-                    >
-                        Semua Waktu
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">MODE PERIODE</span>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button type="button" @click="setPeriod('daily')" :class="periodMode === 'daily' ? 'border-[#1fa387] bg-[#1fa387]/5 text-[#1fa387]' : 'border-slate-200 bg-white text-slate-600'" class="rounded-2xl border px-3 py-3 text-left transition">
+                        <div class="text-[10px] font-black uppercase tracking-widest">Harian</div>
+                        <div class="text-[11px] mt-1 font-semibold">Pilih 1 tanggal</div>
+                    </button>
+                    <button type="button" @click="setPeriod('weekly')" :class="periodMode === 'weekly' ? 'border-[#1fa387] bg-[#1fa387]/5 text-[#1fa387]' : 'border-slate-200 bg-white text-slate-600'" class="rounded-2xl border px-3 py-3 text-left transition">
+                        <div class="text-[10px] font-black uppercase tracking-widest">Mingguan</div>
+                        <div class="text-[11px] mt-1 font-semibold">Senin sampai hari ini</div>
+                    </button>
+                    <button type="button" @click="setPeriod('monthly')" :class="periodMode === 'monthly' ? 'border-[#1fa387] bg-[#1fa387]/5 text-[#1fa387]' : 'border-slate-200 bg-white text-slate-600'" class="rounded-2xl border px-3 py-3 text-left transition">
+                        <div class="text-[10px] font-black uppercase tracking-widest">Bulanan</div>
+                        <div class="text-[11px] mt-1 font-semibold">Awal bulan sampai hari ini</div>
+                    </button>
+                    <button type="button" @click="setPeriod('yearly')" :class="periodMode === 'yearly' ? 'border-[#1fa387] bg-[#1fa387]/5 text-[#1fa387]' : 'border-slate-200 bg-white text-slate-600'" class="rounded-2xl border px-3 py-3 text-left transition">
+                        <div class="text-[10px] font-black uppercase tracking-widest">Tahunan</div>
+                        <div class="text-[11px] mt-1 font-semibold">Awal tahun sampai hari ini</div>
                     </button>
                 </div>
+                
+                <button 
+                    type="button" 
+                    @click="clearPeriod()" 
+                    class="w-full text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold pt-2 border-t border-slate-200 mt-1"
+                >
+                    Semua Waktu
+                </button>
             </div>
 
             <!-- Right Panel (Calendar Grid) -->
@@ -5864,7 +5952,8 @@ new class extends Component
                     <div class="flex justify-between items-center mb-6">
                         <h4 class="text-sm font-bold text-slate-800">Tanggal khusus</h4>
                         <span class="px-3 py-1 bg-[#FAFBFD] text-xs font-semibold text-slate-650 rounded-full border border-slate-200">
-                            <span x-text="formatDisplayDate(localStart)"></span>
+                            <span x-text="periodMode === 'daily' ? 'Harian' : (periodMode === 'weekly' ? 'Mingguan' : (periodMode === 'monthly' ? 'Bulanan' : (periodMode === 'yearly' ? 'Tahunan' : 'Khusus')))"></span>
+                            <span class="ml-2 font-bold text-slate-500" x-text="formatDisplayDate(localStart)"></span>
                             <span x-show="localEnd && localEnd !== localStart" x-text="' - ' + formatDisplayDate(localEnd)"></span>
                         </span>
                     </div>
@@ -5872,10 +5961,15 @@ new class extends Component
                     <!-- Calendar Body (Juni 2026) -->
                     <div class="space-y-4">
                         <div class="flex justify-between items-center px-2">
-                            <span class="text-xs font-bold text-slate-700" x-text="monthNames[month] + ' ' + year"></span>
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-slate-700" x-text="monthNames[month] + ' ' + year"></span>
+                                <span class="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                    Mode: <span class="text-[#1fa387]" x-text="periodMode === 'daily' ? 'Harian' : (periodMode === 'weekly' ? 'Mingguan' : (periodMode === 'monthly' ? 'Bulanan' : (periodMode === 'yearly' ? 'Tahunan' : 'Khusus')))"></span>
+                                </span>
+                            </div>
                             <div class="flex gap-2 text-slate-400">
-                                <span @click="if(month===0){year--;month=11}else{month--}" class="material-symbols-outlined text-sm cursor-pointer hover:text-slate-750">chevron_left</span>
-                                <span @click="if(month===11){year++;month=0}else{month++}" class="material-symbols-outlined text-sm cursor-pointer hover:text-slate-750">chevron_right</span>
+                                <span @click="prevMonth()" class="material-symbols-outlined text-sm cursor-pointer hover:text-slate-750">chevron_left</span>
+                                <span @click="nextMonth()" class="material-symbols-outlined text-sm cursor-pointer hover:text-slate-750">chevron_right</span>
                             </div>
                         </div>
 
