@@ -3679,8 +3679,8 @@
                                 <p class="text-[11px] sm:text-[13px] text-slate-500 line-clamp-3 mb-4 sm:mb-5 leading-relaxed flex-grow font-medium font-sans">
                                     {{ Str::limit(strip_tags($article->content), 120) }}
                                 </p>
-                                <div class="flex items-center justify-between pt-4 border-t border-slate-100 mt-auto">
-                                    <div class="flex items-center gap-2.5 bg-slate-50 pl-1 pr-3 py-1 rounded-full border border-slate-100">
+                                <div class="flex items-center justify-between gap-3 pt-3.5 border-t border-slate-100 mt-auto min-w-0">
+                                    <div class="flex items-center gap-1.5 sm:gap-2.5 bg-slate-55 pl-1 pr-2.5 py-0.5 sm:py-1 rounded-full border border-slate-100 min-w-0 max-w-[55%] xs:max-w-none">
                                         @php
                                             $srcLower = strtolower($article->source_name);
                                             if (str_contains($srcLower, 'instagram') || $srcLower === 'ig') {
@@ -3693,27 +3693,27 @@
                                                 $logoBg = 'bg-transparent';
                                             }
                                         @endphp
-                                        <div class="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0 {{ $logoBg }} border border-slate-200">
+                                        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0 {{ $logoBg }} border border-slate-200/60 p-0.5">
                                             @if(str_contains($srcLower, 'facebook') || $srcLower === 'fb')
-                                                <svg class="w-3.5 h-3.5 fill-current text-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
+                                                <svg class="w-3 h-3 fill-current text-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
                                             @elseif(str_contains($srcLower, 'instagram') || $srcLower === 'ig')
-                                                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-linecap="round"></line></svg>
+                                                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-linecap="round"></line></svg>
                                             @elseif(str_contains($srcLower, 'tiktok') || $srcLower === 'tk')
-                                                <svg class="w-3.5 h-3.5 fill-current text-white" viewBox="0 0 24 24"><path d="M12.525.01c1.306-.022 2.615-.011 3.921-.012.08 1.836 1.011 3.5 2.501 4.485.006 1.341-.004 2.683-.004 4.024-1.57-.107-3.067-.932-3.955-2.247-.008 2.827-.003 5.657-.005 8.486-.098 3.546-3.13 6.643-6.726 6.467-3.526-.067-6.523-3.18-6.241-6.722.215-3.327 3.012-6.104 6.347-5.992v4.06c-1.393-.16-2.775.76-3.085 2.112-.397 1.488.583 3.125 2.1 3.328 1.455.234 2.924-.766 3.14-2.224.048-2.617.02-5.237.03-7.856.002-3.834-.002-7.67.002-11.504z"></path></svg>
+                                                <svg class="w-3 h-3 fill-current text-white" viewBox="0 0 24 24"><path d="M12.525.01c1.306-.022 2.615-.011 3.921-.012.08 1.836 1.011 3.5 2.501 4.485.006 1.341-.004 2.683-.004 4.024-1.57-.107-3.067-.932-3.955-2.247-.008 2.827-.003 5.657-.005 8.486-.098 3.546-3.13 6.643-6.726 6.467-3.526-.067-6.523-3.18-6.241-6.722.215-3.327 3.012-6.104 6.347-5.992v4.06c-1.393-.16-2.775.76-3.085 2.112-.397 1.488.583 3.125 2.1 3.328 1.455.234 2.924-.766 3.14-2.224.048-2.617.02-5.237.03-7.856.002-3.834-.002-7.67.002-11.504z"></path></svg>
                                             @else
                                                 <div class="relative w-full h-full flex items-center justify-center" x-data="{ imgFailed: false }">
                                                     <img x-show="!imgFailed" 
                                                          src="{{ $this->resolveArticleLogoUrl($article) }}" 
                                                          x-on:error="imgFailed = true"
-                                                         class="w-full h-full object-cover animate-fade-in" 
+                                                         class="w-full h-full object-cover" 
                                                          alt="{{ $article->source_name }}" />
                                                     <div x-show="imgFailed" class="absolute inset-0 w-full h-full bg-transparent flex items-center justify-center" style="display: none;">
-                                                        <svg class="w-3.5 h-3.5 text-[#1fa387]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
+                                                        <svg class="w-3 h-3 text-[#1fa387]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
                                                     </div>
                                                 </div>
                                             @endif
                                         </div>
-                                        <span class="text-[11px] font-extrabold text-slate-700 tracking-wide">{{ $article->source_name }}</span>
+                                        <span class="text-[10px] sm:text-[11px] font-extrabold text-slate-700 tracking-wide truncate">{{ $article->source_name }}</span>
                                     </div>
                                     <button 
                                         type="button"
@@ -3732,7 +3732,7 @@
                                             {{ Js::from($articleReachDisp['hasOfficialProjectReach'] ? $articleReachDisp['scoreValue'] . '/10' : ($articleReachDisp['hasReadableAiReach'] ? 'Belum tersedia' : 'Belum dinilai AI')) }},
                                             {{ Js::from($article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d/m/y') : 'Baru saja') }}
                                         )" 
-                                        class="text-[11px] font-bold text-white bg-[#1fa387] hover:bg-[#178a70] px-4 py-2 rounded-xl transition-colors shadow-sm flex items-center gap-1 cursor-pointer"
+                                        class="text-[10px] sm:text-[11px] font-bold text-white bg-[#1fa387] hover:bg-[#178a70] px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-colors shadow-sm flex items-center gap-1 cursor-pointer shrink-0"
                                     >
                                         Selengkapnya
                                         <span class="material-symbols-outlined text-[12px]">arrow_forward</span>
