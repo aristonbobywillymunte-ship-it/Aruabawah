@@ -3840,6 +3840,10 @@
                             </div>
                         </div>
 
+                        @php
+                            $projectSourcesList = $this->getProjectSources();
+                            $grandTotal = collect($projectSourcesList)->sum('total');
+                        @endphp
                         <div class="block sm:hidden space-y-3" wire:key="source-mobile-list">
                             @forelse($projectSourcesList as $src)
                                 @php
@@ -3957,10 +3961,6 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @php
-                                        $projectSourcesList = $this->getProjectSources();
-                                        $grandTotal = collect($projectSourcesList)->sum('total');
-                                    @endphp
                                     @forelse($projectSourcesList as $src)
                                         @php
                                             $srcName = data_get($src, 'source_name', 'Sumber tidak diketahui') ?: 'Sumber tidak diketahui';
