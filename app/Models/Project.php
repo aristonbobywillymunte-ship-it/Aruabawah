@@ -19,6 +19,9 @@ class Project extends Model
         'context_keywords',
         'exclude_keywords',
         'sources',
+        'ai_insight_summary',
+        'ai_insight_recommendations',
+        'ai_insight_updated_at',
         'is_active',
     ];
 
@@ -27,6 +30,8 @@ class Project extends Model
         'context_keywords' => 'array',
         'exclude_keywords' => 'array',
         'sources' => 'array',
+        'ai_insight_recommendations' => 'array',
+        'ai_insight_updated_at' => 'datetime',
         'is_active' => 'boolean',
         'first_news_scrape_attempt_at' => 'datetime',
     ];

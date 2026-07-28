@@ -7,8 +7,12 @@
              window.scrollTo({ top: 0, behavior: 'smooth' });
          }
      }"
-     x-effect="document.body.style.overflow = (detailModalOpen || showViralModal || openMobileMenu) ? 'hidden' : 'auto'"
-     x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 900; }); isMobile = window.innerWidth < 900;"
+     x-effect="
+         const shouldLock = !isMobile || (typeof detailModalOpen !== 'undefined' && detailModalOpen) || (typeof showViralModal !== 'undefined' && showViralModal) || openMobileMenu;
+         document.body.style.overflow = shouldLock ? 'hidden' : '';
+         document.documentElement.style.overflow = shouldLock ? 'hidden' : '';
+     "
+     x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 900; }); window.addEventListener('open-report-pdf', event => { if (event.detail?.url) window.open(event.detail.url, '_blank'); }); isMobile = window.innerWidth < 900;"
 >
     <!-- Top Header -->
     <header class="w-full bg-white border-b border-slate-200 sticky top-0 z-50 flex-shrink-0">
@@ -1005,11 +1009,11 @@
                         @endphp
 
                         @if($articlesList->count() < $totalArticlesCount)
-                            <div wire:key="mentions-load-more-{{ $mentionsFeedSignature }}-{{ $articlesList->count() }}" class="py-6 flex items-center justify-center">
+                            <div wire:key="mentions-load-more-{{ $mentionsFeedSignature }}-{{ $articlesList->count() }}" class="py-6 flex items-center justify-center w-full">
                                 <div
-                                    wire:loading
+                                    wire:loading.flex
                                     wire:target="loadMore"
-                                    class="inline-flex items-center justify-center gap-2 text-[#1fa387] mx-auto"
+                                    class="hidden items-center justify-center gap-2 text-[#1fa387]"
                                 >
                                     <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -2281,7 +2285,7 @@
                 </section>
             @elseif($this->isTab('katakunci'))
                 <!-- TAB 3: Kata Kunci Configuration Page -->
-                <section class="flex-1 min-w-0 flex flex-col h-full min-h-0 overflow-hidden space-y-4 pr-1 relative z-10" wire:key="dashboard-keyword-section">
+                <section class="flex-1 min-w-0 pr-1 relative z-10" wire:key="dashboard-keyword-section">
                     <div class="flex items-center justify-between text-left shrink-0">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">vpn_key</span>Pengaturan dan Analisis Kata Kunci</h2>
@@ -2296,7 +2300,7 @@
                         </div>
                     @endif
 
-                    <div class="flex-1 min-h-0 overflow-y-auto pr-4 pb-24 space-y-6">
+                    <div style="height: calc(100vh - 270px) !important; overflow-y: auto !important;" class="flex-1 min-h-0 pr-4 pb-24 space-y-6">
 
                     <!-- Manajemen Kata Kunci Card -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left">
@@ -3372,15 +3376,31 @@
                             </div>
 
                             <div class="flex justify-end pt-6 border-t border-slate-100">
-                                <a
-                                    :href="`{{ route('report.pdf', ['project_id' => $this->getDecodedProjectId()]) }}&start_date={{ $startDate }}&end_date={{ $endDate }}&toggles=` + encodeURIComponent(JSON.stringify(pdfToggles))"
-                                    target="_blank"
-                                    class="bg-[#c0392b] hover:bg-[#a93226] text-white font-bold text-xs px-6 py-3 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                <button
+                                    type="button"
+                                    @click="$wire.preparePdfReport(JSON.stringify(pdfToggles))"
+                                    wire:loading.attr="disabled"
+                                    wire:target="preparePdfReport"
+                                    class="bg-[#c0392b] hover:bg-[#a93226] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-xs px-6 py-3 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                                 >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    <svg wire:loading.remove wire:target="preparePdfReport" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    <svg wire:loading wire:target="preparePdfReport" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
                                     <span>⬇ Unduh Laporan PDF</span>
-                                </a>
+                                </button>
+                            </div>
+
+                            <div wire:loading.flex wire:target="preparePdfReport" class="fixed inset-0 z-[90] items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                                <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-6 text-center">
+                                    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1fa387]/10 text-[#1fa387]">
+                                        <svg class="h-7 w-7 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-base font-extrabold text-slate-900">Menyusun AI Report</h3>
+                                    <p class="mt-2 text-sm text-slate-500">AI sedang menyiapkan kesimpulan dan rekomendasi berdasarkan isu berita terbaru. Mohon tunggu sebentar.</p>
+                                </div>
                             </div>
                         </div>
 
@@ -3875,14 +3895,20 @@
                                             } elseif (str_contains($srcLower, 'facebook') || $srcLower === 'fb') {
                                                 $logoBg = 'bg-gradient-to-br from-blue-600 to-blue-700';
                                             } else {
-                                                $logoBg = 'bg-slate-50';
+                                                $logoBg = 'bg-white';
+                                            }
+
+                                            // Extract clean domain for favicon
+                                            $faviconDomain = str_replace(' ', '', $srcLower);
+                                            if (!str_contains($faviconDomain, '.')) {
+                                                $faviconDomain .= '.com';
                                             }
                                         @endphp
                                         <tr data-source-card class="hover:bg-slate-50/60 transition-all duration-200 group">
                                             <!-- Logo & Name -->
                                             <td class="py-3 px-4 rounded-l-2xl border-y border-l border-slate-100/60 group-hover:border-slate-200/80">
                                                 <div class="flex items-center gap-3">
-                                                    <div class="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex-shrink-0 {{ $logoBg }} border border-slate-200/50">
+                                                    <div class="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex-shrink-0 {{ $logoBg }} border border-slate-200/50 p-1">
                                                         @if(str_contains($srcLower, 'facebook') || $srcLower === 'fb')
                                                             <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
                                                         @elseif(str_contains($srcLower, 'instagram') || $srcLower === 'ig')
@@ -3892,9 +3918,9 @@
                                                         @else
                                                             <div class="relative w-full h-full flex items-center justify-center" x-data="{ imgFailed: false }">
                                                                 <img x-show="!imgFailed" 
-                                                                     src="{{ 'https://logo.clearbit.com/' . $srcLower }}?size=64" 
+                                                                     src="{{ 'https://www.google.com/s2/favicons?domain=' . $faviconDomain }}&sz=64" 
                                                                      x-on:error="imgFailed = true"
-                                                                     class="w-full h-full object-cover animate-fade-in" 
+                                                                     class="w-5 h-5 object-contain animate-fade-in" 
                                                                      alt="{{ $srcName }}" />
                                                                 <div x-show="imgFailed" class="absolute inset-0 w-full h-full bg-slate-50 flex items-center justify-center">
                                                                     <span class="material-symbols-outlined text-[15px] text-slate-400">feed</span>

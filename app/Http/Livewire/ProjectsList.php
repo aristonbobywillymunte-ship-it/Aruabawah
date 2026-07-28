@@ -469,8 +469,8 @@ class ProjectsList extends Component
             'name.required' => 'Nama proyek wajib diisi.',
             'name.min' => 'Nama proyek minimal harus 3 karakter.',
             'name.unique' => 'Nama proyek ini sudah digunakan, silakan pilih nama lain.',
-            'contextKeywords.required' => 'Kata kunci pencarian tambahan wajib diisi.',
-            'topicsString.required' => 'Kata kunci utama wajib diisi.',
+            'contextKeywords.required' => 'Kata kunci penyaring (wajib) wajib diisi.',
+            'topicsString.required' => 'Kata kunci pencarian (scraping) wajib diisi.',
         ]);
 
         // Validate JSON string
@@ -538,8 +538,8 @@ class ProjectsList extends Component
             'editName.required'         => 'Nama proyek wajib diisi.',
             'editName.min'              => 'Nama proyek minimal 3 karakter.',
             'editName.unique'           => 'Nama proyek sudah digunakan.',
-            'contextKeywords.required'  => 'Kata kunci pencarian tambahan wajib diisi.',
-            'editTopicsString.required' => 'Topik/kata kunci wajib diisi.',
+            'contextKeywords.required'  => 'Kata kunci penyaring (wajib) wajib diisi.',
+            'editTopicsString.required' => 'Kata kunci pencarian (scraping) wajib diisi.',
         ]);
 
         $project = Project::accessibleBy(auth()->user())->findOrFail($this->editProjectId);
@@ -571,6 +571,7 @@ class ProjectsList extends Component
         $this->showEditModal = false;
         $this->editProjectId = null;
         session()->flash('message', 'Proyek berhasil diperbarui.');
+        $this->redirect(request()->header('Referer') ?: '/');
     }
 
     // Trashed projects modal state
@@ -582,7 +583,9 @@ class ProjectsList extends Component
         $this->showEditModal = false;
         $this->showTrashedModal = false;
         $this->showConfirmModal = false;
+        $this->isCreatingProject = false;
         $this->resetConfirmState();
+        $this->redirect(request()->header('Referer') ?: '/');
     }
 
     public function closeConfirmModal()

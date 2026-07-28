@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\AiAnalysisResult;
+use App\Jobs\GenerateProjectAiInsightJob;
 use App\Models\Project;
 use App\Models\SocialMediaItem;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -57,6 +58,8 @@ class ReportController extends Controller
         $articles    = $this->getArticles($projectId, $startDate, $endDate);
         $socialMediaItems = $this->getSocialMediaItems($projectId, $startDate, $endDate);
 
+        [$wawasanSummary, $wawasanRecs] = $this->resolveProjectAiInsights($project);
+
         $total    = $articles->count();
         $positive = $articles->where('sentiment', 'positive')->count();
         $neutral  = $articles->where('sentiment', 'neutral')->count();
@@ -72,29 +75,8 @@ class ReportController extends Controller
         $neg_pct = $total > 0 ? round(($negative / $total) * 100) : 0;
         $reputation_score = $total > 0 ? round((($positive + ($neutral * 0.5)) / $total) * 100) : 0;
 
-        // Prioritaskan wawasan buatan AI (jika sudah di-generate)
-        if (!empty($project->ai_insight_summary) && !empty($project->ai_insight_recommendations)) {
-            $wawasanSummary = $project->ai_insight_summary;
-            $wawasanRecs = $project->ai_insight_recommendations;
-        } else {
-            $wawasanSummary = "Berdasarkan analisis terhadap **{$total}** penyebutan, proyek **" . strtoupper($projectName) . "** memiliki reputasi media yang ";
-            if ($reputation_score >= 75) {
-                $wawasanSummary .= "sangat kuat (**{$reputation_score}/100**). Sentimen positif mendominasi perbincangan sebesar **{$pos_pct}%**, yang mencerminkan respons masyarakat yang sangat baik.";
-            } elseif ($reputation_score >= 50) {
-                $wawasanSummary .= "cukup stabil (**{$reputation_score}/100**). Sebagian besar perbincangan bersifat netral (**{$neu_pct}%**), menunjukkan liputan berita yang bersifat informatif tanpa opini yang kuat.";
-            } else {
-                $wawasanSummary .= "kurang kondusif (**{$reputation_score}/100**). Volume sentimen negatif mencapai **{$neg_pct}%**, mengindikasikan adanya isu sensitif atau kritik yang perlu segera direspon.";
-            }
-
-            $wawasanRecs = [];
-            if ($neg_pct >= 20) {
-                $wawasanRecs[] = "Lakukan klarifikasi segera melalui siaran pers terkait isu negatif utama yang berkembang.";
-                $wawasanRecs[] = "Tingkatkan frekuensi publikasi berita positif untuk menyeimbangkan sentimen di media online.";
-            } else {
-                $wawasanRecs[] = "Pertahankan kampanye komunikasi yang sedang berjalan dan perluas jangkauan ke media nasional terkemuka.";
-                $wawasanRecs[] = "Optimalkan kata kunci pendukung untuk menangkap peluang publikasi yang lebih luas.";
-            }
-            $wawasanRecs[] = "Gunakan influencer lokal untuk memperkuat pesan positif di kanal media sosial utama.";
+        if (empty($wawasanSummary) || empty($wawasanRecs)) {
+            abort(503, 'AI insight untuk laporan PDF belum tersedia. Silakan jalankan proses AI terlebih dahulu.');
         }
 
         // 1. Konteks Percakapan (Topik Utama / Word Cloud)
@@ -150,6 +132,52 @@ class ReportController extends Controller
             'wawasanSummary', 'wawasanRecs',
             'topWords', 'keywordsTable', 'topReachArticles', 'socialCounts', 'socialMediaItems'
         ));
+    }
+
+    private function resolveProjectAiInsights(Project $project): array
+    {
+        $summary = trim((string) ($project->ai_insight_summary ?? ''));
+        $recommendations = $project->ai_insight_recommendations;
+
+        if ($summary !== '' && is_array($recommendations) && $recommendations !== []) {
+            return [$summary, $recommendations];
+        }
+
+        if ($summary === '' || ! is_array($recommendations) || $recommendations === []) {
+            GenerateProjectAiInsightJob::dispatchSync($project->id);
+            $project->refresh();
+
+            $summary = trim((string) ($project->ai_insight_summary ?? ''));
+            $recommendations = $project->ai_insight_recommendations;
+        }
+
+        $recommendations = $this->normalizeRecommendationList($recommendations);
+
+        return [$summary, $recommendations];
+    }
+
+    private function normalizeRecommendationList(mixed $recommendations): array
+    {
+        if (is_string($recommendations)) {
+            $decoded = json_decode($recommendations, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $recommendations = $decoded;
+            } else {
+                $recommendations = preg_split('/\r\n|\r|\n/', $recommendations) ?: [];
+            }
+        }
+
+        if (! is_array($recommendations)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(function ($item) {
+            if (is_array($item)) {
+                $item = json_encode($item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+
+            return trim((string) $item);
+        }, $recommendations)));
     }
 
     // ─────────────────────────────────────────────────────────────────────

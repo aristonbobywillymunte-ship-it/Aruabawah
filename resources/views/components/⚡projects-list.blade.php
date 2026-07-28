@@ -735,7 +735,9 @@ new class extends Component
         detailLikes: 0,
         detailComments: 0,
         updateScrollLock() {
-            document.body.style.overflow = (this.showSuccess || this.showEdit || this.showTrashed || this.showConfirm) ? 'hidden' : '';
+            const shouldLock = (this.showSuccess || this.showEdit || this.showTrashed || this.showConfirm || this.detailModalOpen || this.showViralModal || this.showAiSummaryModal);
+            document.body.style.overflow = shouldLock ? 'hidden' : '';
+            document.documentElement.style.overflow = shouldLock ? 'hidden' : '';
         },
         showToast(message = null, type = null) {
             if (message) this.toastMessage = message;
@@ -746,6 +748,9 @@ new class extends Component
             this.toastTimer = setTimeout(() => this.toastVisible = false, 3000);
         },
         init() {
+            @if(session()->has('message'))
+                this.showToast("{{ session('message') }}", 'success');
+            @endif
             window.openDashboardDetail = (title, source, date, url, content, summary, rec, sentiment, category, reach, level, score, formattedDate, likes = 0, comments = 0) => {
                 this.detailTitle = title;
                 this.detailSource = source;
@@ -911,13 +916,13 @@ new class extends Component
                                     @error('name') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>
 
-                                <!-- Kata Kunci Pencarian Tambahan (Konteks) di bawah Nama Proyek -->
+                                <!-- Kata Kunci Penyaring (Wajib) di bawah Nama Proyek -->
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between">
-                                        <label class="text-sm font-bold text-slate-800">Kata Kunci Pencarian Tambahan (Konteks)</label>
+                                        <label class="text-sm font-bold text-slate-800">Kata Kunci Penyaring (Wajib)</label>
                                         <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
                                     </div>
-                                    <p class="text-xs text-slate-400 leading-tight">Sistem wajib mencocokkan kata kunci di kolom ini. Biasanya digunakan untuk menentukan nama subjek spesifik (seperti nama orang, benda, lokasi, atau jabatan). Artikel hanya akan ditarik jika mengandung kata kunci utama DAN minimal salah satu kata kunci tambahan yang Anda masukkan di sini.</p>
+                                    <p class="text-xs text-slate-400 leading-tight">Kata kunci tambahan yang wajib ada di dalam konten. Data berita dan sosial media hanya akan ditampilkan jika mengandung kata kunci pencarian (scraping) DAN minimal salah satu dari kata kunci penyaring (wajib) yang Anda masukkan di sini.</p>
                                     <input 
                                         wire:model="contextKeywords" 
                                         type="text" 
@@ -928,14 +933,14 @@ new class extends Component
                                     <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
                                 </div>
 
-                                <!-- Main Keywords Field (Kata Kunci Utama) -->
+                                <!-- Main Keywords Field (Kata Kunci Pencarian (Scraping)) -->
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between">
-                                        <label class="text-sm font-bold text-slate-800 block">Kata Kunci Utama</label>
+                                        <label class="text-sm font-bold text-slate-800 block">Kata Kunci Pencarian (Scraping)</label>
                                         <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
                                     </div>
                                     <p class="text-xs text-slate-400">
-                                        Kata kunci atau frasa utama untuk proyek Anda. Penyebutan yang mengandung kata kunci ini akan dikumpulkan.
+                                        Kata kunci pencarian atau frasa utama untuk proyek Anda. Kata kunci ini digunakan sebagai acuan untuk melakukan scraping data berita dan sosial media.
                                     </p>
                                     <input 
                                         wire:model="topicsString" 
@@ -1445,9 +1450,10 @@ new class extends Component
                         </div>
 
                         <!-- Modal Body (Form) -->
-                        <form wire:submit.prevent="updateProject" class="px-8 py-6 space-y-6 overflow-y-auto flex-1 min-h-0">
-                            <!-- Project Name Field -->
-                            <div class="space-y-2">
+                        <form wire:submit.prevent="updateProject" class="flex flex-col flex-1 min-h-0">
+                            <div class="px-8 py-6 space-y-6 overflow-y-auto flex-1 min-h-0">
+                                <!-- Project Name Field -->
+                                <div class="space-y-2">
                                 <div class="flex items-center justify-between">
                                     <label class="text-sm font-bold text-slate-800 block">Nama Proyek</label>
                                     <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
@@ -1459,15 +1465,15 @@ new class extends Component
                                     class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
                                 >
                                 @error('editName') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
-                            </div>
+                                </div>
 
-                            <!-- Kata Kunci Pencarian Tambahan (Konteks) -->
-                            <div class="space-y-2">
+                            <!-- Kata Kunci Penyaring (Wajib) -->
+                                <div class="space-y-2">
                                 <div class="flex items-center justify-between">
-                                    <label class="text-sm font-bold text-slate-800">Kata Kunci Pencarian Tambahan (Konteks)</label>
+                                    <label class="text-sm font-bold text-slate-800">Kata Kunci Penyaring (Wajib)</label>
                                     <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
                                 </div>
-                                <p class="text-xs text-slate-400 leading-tight">Sistem wajib mencocokkan kata kunci di kolom ini. Biasanya digunakan untuk menentukan nama subjek spesifik (seperti nama orang, benda, lokasi, atau jabatan). Artikel hanya akan ditarik jika mengandung kata kunci utama DAN minimal salah satu kata kunci tambahan yang Anda masukkan di sini.</p>
+                                <p class="text-xs text-slate-400 leading-tight">Kata kunci tambahan yang wajib ada di dalam konten. Data berita dan sosial media hanya akan ditampilkan jika mengandung kata kunci pencarian (scraping) DAN minimal salah satu dari kata kunci penyaring (wajib) yang Anda masukkan di sini.</p>
                                 <input 
                                     wire:model="contextKeywords" 
                                     type="text" 
@@ -1476,16 +1482,16 @@ new class extends Component
                                 >
                                 @error('contextKeywords') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
-                            </div>
+                                </div>
 
-                            <!-- Main Keywords Field (Kata Kunci Utama) -->
-                            <div class="space-y-2">
+                            <!-- Main Keywords Field (Kata Kunci Pencarian (Scraping)) -->
+                                <div class="space-y-2">
                                 <div class="flex items-center justify-between">
-                                    <label class="text-sm font-bold text-slate-800 block">Kata Kunci Utama</label>
+                                    <label class="text-sm font-bold text-slate-800 block">Kata Kunci Pencarian (Scraping)</label>
                                     <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
                                 </div>
                                 <p class="text-xs text-slate-400">
-                                    Kata kunci atau frasa utama untuk proyek Anda. Penyebutan yang mengandung kata kunci ini akan dikumpulkan.
+                                    Kata kunci pencarian atau frasa utama untuk proyek Anda. Kata kunci ini digunakan sebagai acuan untuk melakukan scraping data berita dan sosial media.
                                 </p>
                                 <input 
                                     wire:model="editTopicsString" 
@@ -1522,10 +1528,10 @@ new class extends Component
                                         <span x-show="!$wire.editTopicsString" class="text-xs text-slate-400 italic">Belum ada keyword.</span>
                                     </div>
                                 </div>
-                            </div>
+                                </div>
 
                             <!-- Dikecualikan Column (Kata Kunci Pengecualian) -->
-                            <div class="space-y-2">
+                                <div class="space-y-2">
                                 <div class="flex items-center gap-1.5">
                                     <label class="text-sm font-bold text-slate-800">Kata Kunci Pengecualian (Dikecualikan)</label>
                                     <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
@@ -1538,10 +1544,10 @@ new class extends Component
                                     class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
                                 >
                                 <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
-                            </div>
+                                </div>
 
                             <!-- Advanced Settings Accordion -->
-                            <div x-data="{ open: false }" class="border border-slate-200 rounded-2xl overflow-hidden text-left bg-white shadow-sm">
+                                <div x-data="{ open: false }" class="border border-slate-200 rounded-2xl overflow-hidden text-left bg-white shadow-sm">
                                 <button 
                                     type="button"
                                     @click="open = !open" 
@@ -1621,10 +1627,11 @@ new class extends Component
                                         </div>
                                     </div>
                                 </div>
+                                </div>
                             </div>
 
                             <!-- Footer buttons -->
-                            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-200 shrink-0">
+                            <div class="flex justify-end space-x-3 px-8 py-4 border-t border-slate-200 shrink-0 bg-white">
                                 <button 
                                     type="button" 
                                     wire:click="closeModals"

@@ -67,8 +67,10 @@ class MediaDashboard extends Component
 
     protected function dashboardCacheSignature(): string
     {
+        $project = $this->resolveProjectOrFail($this->projectId);
         return md5(json_encode([
             'cacheVersion' => self::DASHBOARD_CACHE_VERSION,
+            'project_updated_at' => $project->updated_at?->timestamp ?? 0,
             'startDate' => $this->startDate,
             'endDate' => $this->endDate,
             'sources' => $this->selectedSources,
@@ -447,6 +449,26 @@ class MediaDashboard extends Component
         \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id);
         $project->refresh();
         session()->flash('message', 'Wawasan AI berhasil diperbarui!');
+    }
+
+    public function preparePdfReport(string $togglesJson = '{}'): void
+    {
+        $project = $this->resolveProjectOrFail($this->projectId);
+        \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id);
+        $project->refresh();
+
+        if (empty(trim((string) ($project->ai_insight_summary ?? ''))) || empty($project->ai_insight_recommendations)) {
+            abort(503, 'AI insight untuk laporan PDF belum tersedia. Silakan jalankan proses AI terlebih dahulu.');
+        }
+
+        $url = route('report.pdf', [
+            'project_id' => $this->getDecodedProjectId(),
+            'start_date' => $this->startDate,
+            'end_date' => $this->endDate,
+            'toggles' => $togglesJson,
+        ]);
+
+        $this->dispatch('open-report-pdf', url: $url);
     }
 
     public function updatedStartDate()
