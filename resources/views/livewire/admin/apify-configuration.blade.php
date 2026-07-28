@@ -160,8 +160,8 @@
                                             <span class="material-symbols-outlined text-[15px] block">edit</span>
                                         </button>
                                         <button 
-                                            wire:click="toggleActorStatus({{ $actor->id }})" 
-                                            class="p-1.5 text-slate-500 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition cursor-pointer"
+                                            wire:click="requestToggleActorStatus({{ $actor->id }})" 
+                                            class="p-1.5 {{ $actor->status === 'active' ? 'text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100' : 'text-slate-400 bg-slate-50 border-slate-200 hover:bg-slate-100' }} border rounded-lg transition cursor-pointer"
                                             title="{{ $actor->status === 'active' ? 'Nonaktifkan actor' : 'Aktifkan actor' }}"
                                         >
                                             <span class="material-symbols-outlined text-[15px] block">
@@ -525,6 +525,62 @@
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button wire:click="$set('confirmingDelete', false)" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
                     <button wire:click="deleteActorConfirmed" class="h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Toggle Status Confirmation Modal -->
+    @if($confirmingToggle)
+        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+            <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain">
+                <div class="flex items-center gap-3">
+                    @if($toggleCurrentStatus === 'active')
+                        <span class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 shrink-0">
+                            <span class="material-symbols-outlined text-[20px] block">toggle_off</span>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-500">Konfirmasi Nonaktifkan</p>
+                            <h2 class="text-sm font-black text-slate-900 mt-0.5">Nonaktifkan Aktor Ini?</h2>
+                        </div>
+                    @else
+                        <span class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                            <span class="material-symbols-outlined text-[20px] block">toggle_on</span>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Konfirmasi Aktifkan</p>
+                            <h2 class="text-sm font-black text-slate-900 mt-0.5">Aktifkan Aktor Ini?</h2>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 space-y-2">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Aktor yang akan diubah</p>
+                    <p class="text-xs font-bold text-slate-800 truncate">{{ $toggleActorName }}</p>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold {{ $toggleCurrentStatus === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">
+                            {{ $toggleCurrentStatus === 'active' ? '● Aktif' : '○ Nonaktif' }}
+                        </span>
+                        <span class="text-slate-300 text-xs">→</span>
+                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold {{ $toggleCurrentStatus === 'active' ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700' }}">
+                            {{ $toggleCurrentStatus === 'active' ? '○ Nonaktif' : '● Aktif' }}
+                        </span>
+                    </div>
+                </div>
+
+                @if($toggleCurrentStatus === 'active')
+                    <p class="text-xs text-slate-500 leading-relaxed">Aktor ini tidak akan dijalankan oleh sistem otomatis. Anda bisa mengaktifkannya kembali kapan saja.</p>
+                @else
+                    <p class="text-xs text-slate-500 leading-relaxed">Aktor ini akan diaktifkan dan siap dijalankan oleh sistem otomatis sesuai jadwal interval yang dikonfigurasi.</p>
+                @endif
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button wire:click="cancelToggle" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
+                    @if($toggleCurrentStatus === 'active')
+                        <button wire:click="toggleActorStatusConfirmed" class="h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Nonaktifkan</button>
+                    @else
+                        <button wire:click="toggleActorStatusConfirmed" class="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Aktifkan</button>
+                    @endif
                 </div>
             </div>
         </div>

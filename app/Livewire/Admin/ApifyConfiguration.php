@@ -75,6 +75,12 @@ class ApifyConfiguration extends Component
     public bool $confirmingDelete = false;
     public ?int $deleteId = null;
 
+    // Toggle status confirmation
+    public bool $confirmingToggle = false;
+    public ?int $toggleId = null;
+    public string $toggleActorName = '';
+    public string $toggleCurrentStatus = '';
+
     protected function adminOnly(): void
     {
         abort_unless(auth()->user()?->isAdmin(), 403);
@@ -532,13 +538,39 @@ class ApifyConfiguration extends Component
         $this->notify('success', 'Actor berhasil dihapus.');
     }
 
-    public function toggleActorStatus(int $id): void
+    public function requestToggleActorStatus(int $id): void
     {
         $this->adminOnly();
         $actor = ApifyActor::findOrFail($id);
+        $this->toggleId = $id;
+        $this->toggleActorName = $actor->actor_name;
+        $this->toggleCurrentStatus = $actor->status;
+        $this->confirmingToggle = true;
+    }
+
+    public function toggleActorStatusConfirmed(): void
+    {
+        $this->adminOnly();
+        abort_unless($this->toggleId, 400);
+        $actor = ApifyActor::findOrFail($this->toggleId);
         $actor->status = $actor->status === 'active' ? 'inactive' : 'active';
         $actor->save();
-        $this->notify('success', 'Status actor berhasil diperbarui.');
+
+        $label = $actor->status === 'active' ? 'diaktifkan' : 'dinonaktifkan';
+        $this->notify('success', "Actor \"{$actor->actor_name}\" berhasil {$label}.");
+
+        $this->confirmingToggle = false;
+        $this->toggleId = null;
+        $this->toggleActorName = '';
+        $this->toggleCurrentStatus = '';
+    }
+
+    public function cancelToggle(): void
+    {
+        $this->confirmingToggle = false;
+        $this->toggleId = null;
+        $this->toggleActorName = '';
+        $this->toggleCurrentStatus = '';
     }
 
     public function openTestRun(int $id): void
