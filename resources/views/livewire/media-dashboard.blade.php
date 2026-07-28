@@ -1686,32 +1686,32 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-grow overflow-y-auto pr-1">
                                 <!-- News -->
                                 <div class="group relative rounded-2xl p-[1px] bg-gradient-to-br from-emerald-400/40 via-emerald-200/20 to-teal-400/30 hover:-translate-y-1 hover:shadow-[0_8px_30px_-6px_rgba(16,185,129,0.25)] transition-all duration-300 cursor-pointer">
-                                    <div class="relative bg-white rounded-[15px] p-3.5 flex items-center gap-3.5 h-[80px] overflow-hidden">
+                                    <div class="relative bg-white rounded-[15px] p-2.5 xs:p-3.5 flex items-center gap-2 xs:gap-3.5 h-[80px] overflow-hidden">
                                         <!-- Subtle background glow -->
                                         <div class="absolute -right-6 -top-6 w-24 h-24 bg-emerald-400/[0.04] rounded-full blur-2xl group-hover:bg-emerald-400/[0.08] transition-all duration-500"></div>
                                         <!-- Icon -->
-                                        <div class="relative w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/35 group-hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, #10b981, #14b8a6);">
-                                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6m-6 4h3"></path></svg>
+                                        <div class="relative w-10 h-10 xs:w-[52px] xs:h-[52px] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/35 group-hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, #10b981, #14b8a6);">
+                                            <svg class="w-5 h-5 xs:w-6 xs:h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6m-6 4h3"></path></svg>
                                         </div>
                                         <!-- Content -->
                                         <div class="relative flex flex-col text-left min-w-0">
-                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] leading-none">Portal News</span>
-                                            <span class="text-[26px] font-black text-slate-900 mt-1 leading-none tracking-tight">{{ $fmt($counts['sources']['News'] ?? 0) }}</span>
+                                            <span class="text-[9px] xs:text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] leading-none">Portal News</span>
+                                            <span class="text-xl xs:text-2xl sm:text-[26px] font-black text-slate-900 mt-0.5 xs:mt-1 leading-none tracking-tight">{{ $fmt($counts['sources']['News'] ?? 0) }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <!-- Instagram -->
                                 <div class="group relative rounded-2xl p-[1px] bg-gradient-to-br from-purple-400/40 via-pink-400/30 to-orange-300/30 hover:-translate-y-1 hover:shadow-[0_8px_30px_-6px_rgba(219,39,119,0.25)] transition-all duration-300 cursor-pointer">
-                                    <div class="relative bg-white rounded-[15px] p-3.5 flex items-center gap-3.5 h-[80px] overflow-hidden">
+                                    <div class="relative bg-white rounded-[15px] p-2.5 xs:p-3.5 flex items-center gap-2 xs:gap-3.5 h-[80px] overflow-hidden">
                                         <div class="absolute -right-6 -top-6 w-24 h-24 bg-pink-400/[0.04] rounded-full blur-2xl group-hover:bg-pink-400/[0.08] transition-all duration-500"></div>
                                         <!-- Icon -->
-                                        <div class="relative w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-pink-500/20 group-hover:shadow-pink-500/35 group-hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);">
-                                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-linecap="round"></line></svg>
+                                        <div class="relative w-10 h-10 xs:w-[52px] xs:h-[52px] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-pink-500/20 group-hover:shadow-pink-500/35 group-hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);">
+                                            <svg class="w-5 h-5 xs:w-6 xs:h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-linecap="round"></line></svg>
                                         </div>
                                         <!-- Content -->
                                         <div class="relative flex flex-col text-left min-w-0">
-                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] leading-none">Instagram</span>
-                                            <span class="text-[26px] font-black text-slate-900 mt-1 leading-none tracking-tight">{{ $fmt($counts['sources']['Instagram'] ?? 0) }}</span>
+                                            <span class="text-[9px] xs:text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] leading-none">Instagram</span>
+                                            <span class="text-xl xs:text-2xl sm:text-[26px] font-black text-slate-900 mt-0.5 xs:mt-1 leading-none tracking-tight">{{ $fmt($counts['sources']['Instagram'] ?? 0) }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1729,31 +1729,31 @@
                                 @endif
                                 <!-- TikTok -->
                                 <div class="group relative rounded-2xl p-[1px] bg-gradient-to-br from-slate-700/40 via-pink-500/20 to-cyan-400/30 hover:-translate-y-1 hover:shadow-[0_8px_30px_-6px_rgba(15,23,42,0.25)] transition-all duration-300 cursor-pointer">
-                                    <div class="relative bg-white rounded-[15px] p-3.5 flex items-center gap-3.5 h-[80px] overflow-hidden">
+                                    <div class="relative bg-white rounded-[15px] p-2.5 xs:p-3.5 flex items-center gap-2 xs:gap-3.5 h-[80px] overflow-hidden">
                                         <div class="absolute -right-6 -top-6 w-24 h-24 bg-slate-800/[0.03] rounded-full blur-2xl group-hover:bg-slate-800/[0.06] transition-all duration-500"></div>
                                         <!-- Icon -->
-                                        <div class="relative w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-slate-900/25 group-hover:shadow-slate-900/40 group-hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, #111111, #333333);">
-                                            <svg class="w-6 h-6 fill-current text-white" viewBox="0 0 24 24"><path d="M12.525.01c1.306-.022 2.615-.011 3.921-.012.08 1.836 1.011 3.5 2.501 4.485.006 1.341-.004 2.683-.004 4.024-1.57-.107-3.067-.932-3.955-2.247-.008 2.827-.003 5.657-.005 8.486-.098 3.546-3.13 6.643-6.726 6.467-3.526-.067-6.523-3.18-6.241-6.722.215-3.327 3.012-6.104 6.347-5.992v4.06c-1.393-.16-2.775.76-3.085 2.112-.397 1.488.583 3.125 2.1 3.328 1.455.234 2.924-.766 3.14-2.224.048-2.617.02-5.237.03-7.856.002-3.834-.002-7.67.002-11.504z"></path></svg>
+                                        <div class="relative w-10 h-10 xs:w-[52px] xs:h-[52px] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-slate-900/25 group-hover:shadow-slate-900/40 group-hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, #111111, #333333);">
+                                            <svg class="w-5 h-5 xs:w-6 xs:h-6 fill-current text-white" viewBox="0 0 24 24"><path d="M12.525.01c1.306-.022 2.615-.011 3.921-.012.08 1.836 1.011 3.5 2.501 4.485.006 1.341-.004 2.683-.004 4.024-1.57-.107-3.067-.932-3.955-2.247-.008 2.827-.003 5.657-.005 8.486-.098 3.546-3.13 6.643-6.726 6.467-3.526-.067-6.523-3.18-6.241-6.722.215-3.327 3.012-6.104 6.347-5.992v4.06c-1.393-.16-2.775.76-3.085 2.112-.397 1.488.583 3.125 2.1 3.328 1.455.234 2.924-.766 3.14-2.224.048-2.617.02-5.237.03-7.856.002-3.834-.002-7.67.002-11.504z"></path></svg>
                                         </div>
                                         <!-- Content -->
                                         <div class="relative flex flex-col text-left min-w-0">
-                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] leading-none">TikTok</span>
-                                            <span class="text-[26px] font-black text-slate-900 mt-1 leading-none tracking-tight">{{ $fmt($counts['sources']['TikTok'] ?? 0) }}</span>
+                                            <span class="text-[9px] xs:text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] leading-none">TikTok</span>
+                                            <span class="text-xl xs:text-2xl sm:text-[26px] font-black text-slate-900 mt-0.5 xs:mt-1 leading-none tracking-tight">{{ $fmt($counts['sources']['TikTok'] ?? 0) }}</span>
                                         </div>
                                     </div>
                                 </div>
                                 <!-- Facebook -->
                                 <div class="group relative rounded-2xl p-[1px] bg-gradient-to-br from-blue-500/40 via-blue-300/20 to-indigo-400/30 hover:-translate-y-1 hover:shadow-[0_8px_30px_-6px_rgba(37,99,235,0.25)] transition-all duration-300 cursor-pointer">
-                                    <div class="relative bg-white rounded-[15px] p-3.5 flex items-center gap-3.5 h-[80px] overflow-hidden">
+                                    <div class="relative bg-white rounded-[15px] p-2.5 xs:p-3.5 flex items-center gap-2 xs:gap-3.5 h-[80px] overflow-hidden">
                                         <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-400/[0.04] rounded-full blur-2xl group-hover:bg-blue-400/[0.08] transition-all duration-500"></div>
                                         <!-- Icon -->
-                                        <div class="relative w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/20 group-hover:shadow-blue-600/35 group-hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, #1877f2, #3b82f6);">
-                                            <svg class="w-6 h-6 fill-current text-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
+                                        <div class="relative w-10 h-10 xs:w-[52px] xs:h-[52px] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/20 group-hover:shadow-blue-600/35 group-hover:scale-105 transition-all duration-300" style="background: linear-gradient(135deg, #1877f2, #3b82f6);">
+                                            <svg class="w-5 h-5 xs:w-6 xs:h-6 fill-current text-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
                                         </div>
                                         <!-- Content -->
                                         <div class="relative flex flex-col text-left min-w-0">
-                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] leading-none">Facebook</span>
-                                            <span class="text-[26px] font-black text-slate-900 mt-1 leading-none tracking-tight">{{ $counts['counts']['sources']['Facebook'] ?? $counts['sources']['Facebook'] ?? 0 }}</span>
+                                            <span class="text-[9px] xs:text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] leading-none">Facebook</span>
+                                            <span class="text-xl xs:text-2xl sm:text-[26px] font-black text-slate-900 mt-0.5 xs:mt-1 leading-none tracking-tight">{{ $counts['counts']['sources']['Facebook'] ?? $counts['sources']['Facebook'] ?? 0 }}</span>
                                         </div>
                                     </div>
                                 </div>
