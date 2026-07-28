@@ -322,6 +322,7 @@ class ProjectsList extends Component
                         $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
 
                         $articleQuery = Article::query()
+                            ->select('articles.*')
                             ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
                             ->where('project_articles.project_id', $project->id)
                             ->withCompleteOfficialAiResult();

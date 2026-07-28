@@ -288,6 +288,7 @@ class MediaDashboard extends Component
         $project = $this->resolveProjectOrFail($this->projectId);
 
         return \App\Models\Article::query()
+            ->select('articles.*')
             ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
             ->where('project_articles.project_id', $project->id)
             ->with(['aiAnalysisResult'])
