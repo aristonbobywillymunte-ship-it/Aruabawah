@@ -1,4 +1,21 @@
 <div class="w-full">
+<style>
+    /* Perbaikan responsif khusus untuk perangkat mobile landscape (tinggi layar pendek) */
+    @media (max-height: 540px) {
+        [style*="height: calc(100vh -"],
+        div[style*="height: calc(100vh -"] {
+            height: auto !important;
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+        /* Lepaskan kuncian scroll utama di mobile landscape */
+        body, html {
+            overflow: auto !important;
+            overflow-y: auto !important;
+            height: auto !important;
+        }
+    }
+</style>
 <div class="w-full bg-[#f7f9ff] text-slate-800 flex flex-col font-sans"
      x-data="{
          isMobile: window.innerWidth < 900,
