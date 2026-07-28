@@ -264,10 +264,14 @@ class TelegramSettings extends Component
         }
 
         try {
+            $targetChatId = $this->test_chat_id;
+            if (is_numeric($targetChatId) && !str_starts_with($targetChatId, '-')) {
+                $targetChatId = '-' . $targetChatId;
+            }
             // Real Telegram API Request Call
             $response = Http::timeout(10)
                 ->post("https://api.telegram.org/bot{$this->bot_token}/sendMessage", [
-                    'chat_id' => $this->test_chat_id,
+                    'chat_id' => $targetChatId,
                     'text' => $this->test_message
                 ]);
 

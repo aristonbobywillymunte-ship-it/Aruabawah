@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\AiPromptTemplate;
 use App\Models\Project;
 use App\Models\Article;
 use App\Services\AiProviderRouter;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class GenerateProjectAiInsightJob implements ShouldQueue
 {
@@ -28,6 +30,14 @@ class GenerateProjectAiInsightJob implements ShouldQueue
     {
         $project = Project::find($this->projectId);
         if (!$project) {
+            return;
+        }
+
+        $template = AiPromptTemplate::resolveActiveDefaultForSourceType('Laporan AI Media Intelligence', 'report')
+            ?? AiPromptTemplate::resolvePreferredActiveForSourceType('report');
+
+        if (! $template) {
+            Log::error("Report AI prompt template not found for project insight {$this->projectId}.");
             return;
         }
 
@@ -62,23 +72,42 @@ class GenerateProjectAiInsightJob implements ShouldQueue
         $neu = $articles->where('sentiment', 'neutral')->count();
         $neg = $articles->where('sentiment', 'negative')->count();
 
-        // Siapkan Prompt
-        $statsText = "Total Penyebutan/Artikel Dianalisis: {$total}\nSentimen Positif: {$pos}\nSentimen Netral: {$neu}\nSentimen Negatif: {$neg}\n\nBeberapa judul, sumber, dan ringkasan terbaru:\n";
-        foreach ($articles->take(15) as $art) {
-            $summarySnippet = trim((string) ($art->summary ?? ''));
-            $summarySnippet = $summarySnippet !== '' ? ' | Ringkasan: ' . \Illuminate\Support\Str::limit($summarySnippet, 180) : '';
-            $sourceName = trim((string) ($art->source_name ?? ''));
-            $sourceSnippet = $sourceName !== '' ? " | Sumber: {$sourceName}" : '';
-            $statsText .= "- [{$art->sentiment}] {$art->title}{$sourceSnippet}{$summarySnippet}\n";
-        }
+        $topSources = $articles
+            ->groupBy(fn ($article) => $this->normalizeSourceLabel((string) ($article->source_name ?? '')))
+            ->map(fn ($group) => $group->count())
+            ->sortDesc()
+            ->take(5)
+            ->map(fn (int $count, string $source) => "{$source} ({$count})")
+            ->implode(', ');
 
-        $prompt = "Anda adalah analis isu berita dan reputasi media. Tulis kesimpulan dan rekomendasi untuk proyek / tokoh / brand bernama '{$project->name}' berdasarkan data berikut:\n\n{$statsText}\n\nFokuskan jawaban pada isu yang paling menonjol, arah pemberitaan, framing media, kecenderungan sentimen, potensi risiko reputasi, dan langkah respons yang perlu disiapkan. Hindari bahasa umum seperti 'kinerja baik' tanpa menyebut isu yang nyata di data.\n\nKeluarkan output dalam format JSON murni dengan skema berikut:\n{\n  \"summary\": \"(2 paragraf maksimal, naratif, spesifik ke isu berita paling dominan, siapa/apa yang disebut, bagaimana arah opini media, dan implikasi reputasi. Wajib menyebut angka statistik yang relevan)\",\n  \"recommendations\": [\"(Langkah respons isu 1 yang spesifik)\", \"(Langkah respons isu 2 yang spesifik)\", \"(Langkah respons isu 3 yang spesifik)\"]\n}";
+        $topTopics = $this->deriveTopTopics($articles);
+        $topArticles = $this->buildTopArticlesContext($articles->take(15));
+
+        $renderedPrompt = $this->renderTemplatePrompt($template, [
+            'project_name' => (string) $project->name,
+            'period_start' => $articles->min('published_at')
+                ? \Carbon\Carbon::parse($articles->min('published_at'))->format('Y-m-d')
+                : now()->toDateString(),
+            'period_end' => $articles->max('published_at')
+                ? \Carbon\Carbon::parse($articles->max('published_at'))->format('Y-m-d')
+                : now()->toDateString(),
+            'total_mentions' => (string) $total,
+            'positive_count' => (string) $pos,
+            'neutral_count' => (string) $neu,
+            'negative_count' => (string) $neg,
+            'positive_pct' => $total > 0 ? (string) round(($pos / $total) * 100) : '0',
+            'neutral_pct' => $total > 0 ? (string) round(($neu / $total) * 100) : '0',
+            'negative_pct' => $total > 0 ? (string) round(($neg / $total) * 100) : '0',
+            'top_sources' => $topSources !== '' ? $topSources : '-',
+            'top_topics' => $topTopics !== '' ? $topTopics : '-',
+            'top_articles' => $topArticles !== '' ? $topArticles : '-',
+        ]);
 
         try {
             $router = app(AiProviderRouter::class);
             $result = $router->execute(
-                'Anda harus merespon dengan format JSON murni tanpa markup apapun.',
-                $prompt,
+                trim((string) $template->system_prompt),
+                trim($renderedPrompt),
                 ['response_format' => 'json_object'],
                 $this->projectId,
                 'project_insight'
@@ -87,9 +116,9 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             $decoded = $this->decodeAiJson($rawText);
 
             if (! $decoded) {
-                $retryPrompt = $this->buildValidationRetryPrompt($prompt, $rawText);
+                $retryPrompt = $this->buildValidationRetryPrompt(trim((string) $template->system_prompt), trim($renderedPrompt), $rawText, $template);
                 $retryResult = $router->execute(
-                    'Anda harus merespon dengan format JSON murni tanpa markup apapun.',
+                    trim((string) $template->system_prompt),
                     $retryPrompt,
                     ['response_format' => 'json_object'],
                     $this->projectId,
@@ -200,5 +229,86 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             . "- Jangan tambahkan markdown, penjelasan, atau teks di luar JSON.\n\n"
             . "Prompt asli:\n{$originalPrompt}\n\n"
             . "Output sebelumnya:\n{$rawText}";
+    }
+
+    protected function renderTemplatePrompt(AiPromptTemplate $template, array $context): string
+    {
+        $replacements = [
+            '{project_name}' => trim((string) ($context['project_name'] ?? '')),
+            '{period_start}' => trim((string) ($context['period_start'] ?? '')),
+            '{period_end}' => trim((string) ($context['period_end'] ?? '')),
+            '{total_mentions}' => trim((string) ($context['total_mentions'] ?? '0')),
+            '{positive_count}' => trim((string) ($context['positive_count'] ?? '0')),
+            '{neutral_count}' => trim((string) ($context['neutral_count'] ?? '0')),
+            '{negative_count}' => trim((string) ($context['negative_count'] ?? '0')),
+            '{positive_pct}' => trim((string) ($context['positive_pct'] ?? '0')),
+            '{neutral_pct}' => trim((string) ($context['neutral_pct'] ?? '0')),
+            '{negative_pct}' => trim((string) ($context['negative_pct'] ?? '0')),
+            '{top_sources}' => trim((string) ($context['top_sources'] ?? '-')),
+            '{top_topics}' => trim((string) ($context['top_topics'] ?? '-')),
+            '{top_articles}' => trim((string) ($context['top_articles'] ?? '-')),
+        ];
+
+        return strtr((string) $template->user_prompt_template, $replacements);
+    }
+
+    protected function buildTopArticlesContext($articles): string
+    {
+        $lines = [];
+
+        foreach ($articles as $article) {
+            $title = trim((string) ($article->title ?? ''));
+            $source = trim((string) ($article->source_name ?? ''));
+            $sentiment = trim((string) ($article->sentiment ?? ''));
+            $summary = trim((string) ($article->summary ?? ''));
+            $publishedAt = $article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('Y-m-d H:i') : '-';
+
+            $line = "- {$title}";
+            $metaParts = array_filter([
+                $source !== '' ? "Sumber: {$source}" : null,
+                $sentiment !== '' ? "Sentimen: {$sentiment}" : null,
+                $publishedAt !== '-' ? "Waktu: {$publishedAt}" : null,
+                $summary !== '' ? 'Ringkasan: ' . Str::limit($summary, 180) : null,
+            ]);
+
+            if ($metaParts !== []) {
+                $line .= ' | ' . implode(' | ', $metaParts);
+            }
+
+            $lines[] = $line;
+        }
+
+        return implode("\n", $lines);
+    }
+
+    protected function deriveTopTopics($articles): string
+    {
+        $stopWords = ['dan', 'di', 'ke', 'dari', 'yang', 'untuk', 'dengan', 'ini', 'itu', 'pada', 'dalam', 'adalah', 'akan', 'juga', 'sudah', 'ada', 'bisa', 'atau', 'tidak', 'lebih', 'saat', 'oleh', 'para', 'telah', 'agar', 'atas', 'jika', 'karena', 'maka', 'namun', 'pun', 'serta', 'tentang', 'setelah', 'antara', 'hingga', 'ia', 'kami', 'kita', 'mereka', 'anda', 'bagi', 'dua', 'tiga', 'lain', 'hal', 'tahun', 'baru', 'terkait', 'pihak', 'sebuah', 'satu', 'tersebut', 'the', 'a', 'an', 'is', 'in', 'of', 'and', 'to', 'for', 'masa', 'jalan', 'jadi', 'pemerintah'];
+        $wordFreq = [];
+
+        foreach ($articles as $article) {
+            $title = strtolower(preg_replace('/[^a-zA-Z0-9\s]/u', ' ', html_entity_decode(strip_tags((string) ($article->title ?? '')), ENT_QUOTES, 'UTF-8')));
+            $words = array_filter(explode(' ', $title), function ($word) use ($stopWords) {
+                $word = trim((string) $word);
+                return mb_strlen($word) > 3 && ! in_array($word, $stopWords, true);
+            });
+
+            foreach ($words as $word) {
+                $wordFreq[$word] = ($wordFreq[$word] ?? 0) + 1;
+            }
+        }
+
+        arsort($wordFreq);
+
+        return collect(array_slice($wordFreq, 0, 10, true))
+            ->map(fn (int $count, string $word) => "{$word} ({$count})")
+            ->implode(', ');
+    }
+
+    protected function normalizeSourceLabel(string $source): string
+    {
+        $source = trim($source);
+
+        return $source !== '' ? $source : 'Sumber tidak diketahui';
     }
 }

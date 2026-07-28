@@ -133,7 +133,12 @@ class TelegramNotificationJob implements ShouldQueue
                     sleep(60);
                 }
 
-                Log::channel('telegram')->info('[Pipeline] Sending alert message to Telegram Chat ID: ' . $targetChatId);
+                $formattedChatId = $targetChatId;
+                if (is_numeric($targetChatId) && !str_starts_with($targetChatId, '-')) {
+                    $formattedChatId = '-' . $targetChatId;
+                }
+
+                Log::channel('telegram')->info('[Pipeline] Sending alert message to Telegram Chat ID: ' . $formattedChatId);
 
                 $response = null;
                 $sendError = null;
@@ -141,7 +146,7 @@ class TelegramNotificationJob implements ShouldQueue
                 try {
                     // Timeout set to 30 seconds as requested by the user
                     $response = Http::timeout(30)->post("https://api.telegram.org/bot{$setting->bot_token}/sendMessage", [
-                        'chat_id' => $targetChatId,
+                        'chat_id' => $formattedChatId,
                         'text' => $message,
                         'parse_mode' => 'HTML',
                         'disable_web_page_preview' => true,

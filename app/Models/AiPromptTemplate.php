@@ -128,4 +128,50 @@ PROMPT;
     {
         return '{"type":"object","properties":{"base_url":{"type":"string"},"crawling_type":{"type":"string"},"search_url":{"type":"string"},"feed_url":{"type":"string"},"sitemap_url":{"type":"string"},"search_result_selector":{"type":"string"},"article_link_selector":{"type":"string"},"article_content_selector":{"type":"string"},"article_noise_selector":{"type":"string"},"article_author_selector":{"type":"string"},"article_date_selector":{"type":"string"},"ai_reason":{"type":"string"},"confidence":{"type":"number"}},"required":["base_url","crawling_type","search_url","feed_url","sitemap_url","search_result_selector","article_link_selector","article_content_selector","article_noise_selector","article_author_selector","article_date_selector","ai_reason","confidence"]}';
     }
+
+    public static function reportAiSystemPrompt(): string
+    {
+        return 'Anda adalah analis isu berita dan reputasi media untuk laporan eksekutif. Tugas Anda adalah membaca ringkasan statistik, isu utama, sumber dominan, dan sampel artikel lalu menyusun kesimpulan yang tajam, spesifik, dan berbasis fakta. Hindari kalimat generik. Fokus pada isu berita yang nyata, framing media, arah sentimen, dampak reputasi, dan tindakan respons yang bisa segera dilakukan.';
+    }
+
+    public static function reportAiUserPromptTemplate(): string
+    {
+        return <<<'PROMPT'
+KONTEKS LAPORAN:
+- Nama Proyek: {project_name}
+- Periode Laporan: {period_start} s/d {period_end}
+- Total Penyebutan / Artikel: {total_mentions}
+- Sentimen Positif: {positive_count} ({positive_pct}%)
+- Sentimen Netral: {neutral_count} ({neutral_pct}%)
+- Sentimen Negatif: {negative_count} ({negative_pct}%)
+- Sumber Dominan: {top_sources}
+- Topik / Kata Kunci Dominan: {top_topics}
+
+SAMPEL BERITA / PENYEBUTAN TERKINI:
+{top_articles}
+
+ATURAN WAJIB:
+1. Tulis kesimpulan yang benar-benar membaca isu berita yang muncul dari data di atas.
+2. Sebutkan isu, aktor, konteks, dan arah pemberitaan secara spesifik.
+3. Hindari kalimat umum seperti "kinerja baik" atau "reputasi kuat" tanpa menyebut isu nyata yang terlihat pada data.
+4. Rekomendasi harus berupa langkah respons isu yang konkret, relevan dengan pemberitaan, dan bisa ditindaklanjuti.
+5. Gunakan bahasa Indonesia formal untuk laporan eksekutif.
+6. Output harus JSON murni dan hanya berisi dua key: summary dan recommendations.
+
+FORMAT OUTPUT:
+{
+  "summary": "Ringkasan analisis berita yang spesifik, naratif, dan berbasis data.",
+  "recommendations": [
+    "Rekomendasi respons isu pertama yang konkret.",
+    "Rekomendasi respons isu kedua yang konkret.",
+    "Rekomendasi respons isu ketiga yang konkret."
+  ]
+}
+PROMPT;
+    }
+
+    public static function reportAiOutputSchema(): string
+    {
+        return '{"type":"object","properties":{"summary":{"type":"string"},"recommendations":{"type":"array","items":{"type":"string"}}},"required":["summary","recommendations"]}';
+    }
 }

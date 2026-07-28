@@ -18,7 +18,7 @@ class AiPromptTemplates extends Component
     // Form fields
     public ?int $selected_id = null;
     public string $name = '';
-    public string $source_type = 'article'; // article, social
+    public string $source_type = 'article'; // article, social, report, portal_suggestion
     public string $system_prompt = '';
     public string $user_prompt_template = '';
     public string $output_schema = '';
@@ -74,7 +74,7 @@ class AiPromptTemplates extends Component
                     }
                 },
             ],
-            'source_type' => ['required', 'string', 'in:article,social,portal_suggestion'],
+            'source_type' => ['required', 'string', 'in:article,social,report,portal_suggestion'],
             'system_prompt' => ['required', 'string'],
             'user_prompt_template' => ['required', 'string'],
             'output_schema' => ['required', 'string'],
@@ -94,6 +94,7 @@ class AiPromptTemplates extends Component
         $this->ensureSaranPortalManualDefault();
         AiPromptTemplate::ensureDefaultForSourceType('article');
         AiPromptTemplate::ensureDefaultForSourceType('social');
+        AiPromptTemplate::ensureDefaultForSourceType('report');
 
         $templates = AiPromptTemplate::query()
             ->when($this->search, function ($query) {

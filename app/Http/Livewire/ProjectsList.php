@@ -38,6 +38,7 @@ class ProjectsList extends Component
     public $contextKeywords = '';
     public $excludeKeywords = '';
     public $selectedSources = ['Instagram', 'TikTok', 'Facebook', 'Portal'];
+    public $telegramChatId = '';
     public $isCreatingProject = false;
     public $showSuccessModal = false;
     public $lastCreatedProjectName = '';
@@ -465,12 +466,14 @@ class ProjectsList extends Component
             'name' => 'required|min:3|unique:projects,name',
             'contextKeywords' => 'required',
             'topicsString' => 'required',
+            'telegramChatId' => 'required',
         ], [
             'name.required' => 'Nama proyek wajib diisi.',
             'name.min' => 'Nama proyek minimal harus 3 karakter.',
             'name.unique' => 'Nama proyek ini sudah digunakan, silakan pilih nama lain.',
             'contextKeywords.required' => 'Kata kunci penyaring (wajib) wajib diisi.',
             'topicsString.required' => 'Kata kunci pencarian (scraping) wajib diisi.',
+            'telegramChatId.required' => 'Telegram Chat ID wajib diisi.',
         ]);
 
         // Validate JSON string
@@ -498,6 +501,18 @@ class ProjectsList extends Component
             'sources' => array_values(array_unique(array_filter($this->selectedSources))),
         ]);
 
+        // Save telegram recipient without minus (-) sign
+        $cleanChatId = ltrim(trim($this->telegramChatId), '-');
+        if ($cleanChatId !== '') {
+            DB::table('project_telegram_recipients')->insert([
+                'project_id' => $project->id,
+                'chat_id' => $cleanChatId,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
         // Auto-assign project to the creator if they are a regular user
         $user = auth()->user();
         if ($user && !$user->isAdmin()) {
@@ -512,7 +527,7 @@ class ProjectsList extends Component
         $this->showSuccessModal = true;
         session()->flash('message', 'Proyek berhasil dibuat.');
         
-        $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords']);
+        $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords', 'telegramChatId']);
         $this->selectedSources = ['Instagram', 'TikTok', 'Facebook', 'Portal'];
     }
 
@@ -525,6 +540,10 @@ class ProjectsList extends Component
         $this->contextKeywords = implode(', ', $project->context_keywords ?? []);
         $this->excludeKeywords = implode(', ', $project->exclude_keywords ?? []);
         $this->selectedSources = $project->sources ?? ['Instagram', 'TikTok', 'Facebook', 'Portal'];
+        
+        $recipient = DB::table('project_telegram_recipients')->where('project_id', $project->id)->first();
+        $this->telegramChatId = $recipient ? $recipient->chat_id : '';
+        
         $this->showEditModal = true;
     }
 
@@ -534,12 +553,14 @@ class ProjectsList extends Component
             'editName'         => 'required|min:3|unique:projects,name,' . $this->editProjectId,
             'contextKeywords'  => 'required',
             'editTopicsString' => 'required',
+            'telegramChatId'   => 'required',
         ], [
             'editName.required'         => 'Nama proyek wajib diisi.',
             'editName.min'              => 'Nama proyek minimal 3 karakter.',
             'editName.unique'           => 'Nama proyek sudah digunakan.',
             'contextKeywords.required'  => 'Kata kunci penyaring (wajib) wajib diisi.',
             'editTopicsString.required' => 'Kata kunci pencarian (scraping) wajib diisi.',
+            'telegramChatId.required'   => 'Telegram Chat ID wajib diisi.',
         ]);
 
         $project = Project::accessibleBy(auth()->user())->findOrFail($this->editProjectId);
@@ -565,11 +586,25 @@ class ProjectsList extends Component
             'sources' => array_values(array_unique(array_filter($this->selectedSources))),
         ]);
 
+        // Save or update telegram recipient without minus (-) sign
+        $cleanChatId = ltrim(trim($this->telegramChatId), '-');
+        if ($cleanChatId !== '') {
+            DB::table('project_telegram_recipients')->updateOrInsert(
+                ['project_id' => $project->id],
+                [
+                    'chat_id' => $cleanChatId,
+                    'is_active' => true,
+                    'updated_at' => now(),
+                ]
+            );
+        }
+
         $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
         $this->forgetProjectsCache();
 
         $this->showEditModal = false;
         $this->editProjectId = null;
+        $this->telegramChatId = '';
         session()->flash('message', 'Proyek berhasil diperbarui.');
         $this->redirect(request()->header('Referer') ?: '/');
     }
@@ -584,6 +619,7 @@ class ProjectsList extends Component
         $this->showTrashedModal = false;
         $this->showConfirmModal = false;
         $this->isCreatingProject = false;
+        $this->telegramChatId = '';
         $this->resetConfirmState();
         $this->redirect(request()->header('Referer') ?: '/');
     }

@@ -73,8 +73,8 @@
                             <td class="px-4 py-3 text-slate-500 font-semibold">{{ $loop->iteration }}</td>
                         <td class="px-4 py-3 font-bold text-slate-900">{{ $template->name }}</td>
                         <td class="px-4 py-3">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold border {{ $template->source_type === 'article' ? 'bg-blue-50 text-blue-700 border-blue-100' : ($template->source_type === 'portal_suggestion' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-purple-50 text-purple-700 border-purple-100') }}">
-                                {{ $template->source_type === 'article' ? 'Portal Berita' : ($template->source_type === 'portal_suggestion' ? 'Saran Portal' : 'Media Sosial') }}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold border {{ $template->source_type === 'article' ? 'bg-blue-50 text-blue-700 border-blue-100' : ($template->source_type === 'social' ? 'bg-purple-50 text-purple-700 border-purple-100' : ($template->source_type === 'report' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100')) }}">
+                                {{ $template->source_type === 'article' ? 'Portal Berita' : ($template->source_type === 'social' ? 'Media Sosial' : ($template->source_type === 'report' ? 'Laporan AI' : 'Saran Portal')) }}
                             </span>
                         </td>
                             <td class="px-4 py-3">
@@ -170,6 +170,7 @@
                             <select wire:model="source_type" class="h-11 w-full rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition">
                                 <option value="article">Portal / Berita (article)</option>
                                 <option value="social">Sosial Media (social)</option>
+                                <option value="report">Laporan AI (report)</option>
                                 <option value="portal_suggestion">Saran Portal Manual (portal_suggestion)</option>
                             </select>
                             @error('source_type') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror

@@ -916,6 +916,22 @@ new class extends Component
                                     @error('name') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>
 
+                                <!-- Telegram Chat ID (Wajib) -->
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800 block">Telegram Chat ID (Wajib)</label>
+                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-tight">Masukkan ID chat/group Telegram tanpa menggunakan tanda minus di depan (contoh: 10022334455).</p>
+                                    <input 
+                                        wire:model="telegramChatId" 
+                                        type="text" 
+                                        placeholder="Contoh: 10022334455"
+                                        class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
+                                    >
+                                    @error('telegramChatId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                </div>
+
                                 <!-- Kata Kunci Penyaring (Wajib) di bawah Nama Proyek -->
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between">
@@ -1463,8 +1479,24 @@ new class extends Component
                                     type="text" 
                                     placeholder="Contoh: Arsip Sejarah Tokoh Bangsa"
                                     class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
-                                >
+                                    >
                                 @error('editName') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Telegram Chat ID (Wajib) -->
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800 block">Telegram Chat ID (Wajib)</label>
+                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-tight">Masukkan ID chat/group Telegram tanpa menggunakan tanda minus di depan (contoh: 10022334455).</p>
+                                    <input 
+                                        wire:model="telegramChatId" 
+                                        type="text" 
+                                        placeholder="Contoh: 10022334455"
+                                        class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
+                                    >
+                                    @error('telegramChatId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>
 
                             <!-- Kata Kunci Penyaring (Wajib) -->

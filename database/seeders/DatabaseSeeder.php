@@ -320,6 +320,18 @@ class DatabaseSeeder extends Seeder
         );
 
         \App\Models\AiPromptTemplate::updateOrCreate(
+            ['name' => 'Laporan AI Media Intelligence'],
+            [
+                'source_type' => 'report',
+                'system_prompt' => \App\Models\AiPromptTemplate::reportAiSystemPrompt(),
+                'user_prompt_template' => \App\Models\AiPromptTemplate::reportAiUserPromptTemplate(),
+                'output_schema' => \App\Models\AiPromptTemplate::reportAiOutputSchema(),
+                'is_active' => true,
+                'is_default' => true,
+            ]
+        );
+
+        \App\Models\AiPromptTemplate::updateOrCreate(
             ['name' => 'Saran Portal Manual'],
             [
                 'source_type' => 'article',
