@@ -11,6 +11,15 @@
     @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
+    <style>
+        /* Menghilangkan scrollbar global browser agar sidebar menu di kiri tetap terkunci di posisinya */
+        @media (min-width: 1024px) {
+            html, body {
+                height: 100vh;
+                overflow: hidden !important;
+            }
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-[#f7f9ff] text-slate-800 font-sans">
     <div class="flex min-h-screen flex-col lg:flex-row" x-data="{ mobileMenuOpen: false }">
@@ -75,7 +84,7 @@
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex min-w-0 flex-1 flex-col">
+        <div class="flex min-w-0 flex-1 flex-col lg:h-screen lg:overflow-y-auto">
             <!-- Header -->
             <header class="sticky top-0 z-30 w-full border-b border-slate-200 bg-white">
                 <!-- Upper Header (Navbar) -->
