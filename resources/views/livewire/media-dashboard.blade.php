@@ -2307,7 +2307,8 @@
                     <div style="height: calc(100vh - 270px) !important; overflow-y: auto !important;" class="flex-1 min-h-0 pr-4 pb-24 space-y-6">
 
                     <!-- Manajemen Kata Kunci Card -->
-                    <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left">
+                    <!-- Manajemen Kata Kunci Card -->
+                    <div class="bg-white rounded-3xl border border-slate-200 p-4 sm:p-8 shadow-sm text-left">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                             <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5"><span class="material-symbols-outlined text-[18px] text-[#1fa387]">vpn_key</span>Manajemen Kata Kunci</h3>
                             @if($this->isAdmin())
@@ -2337,8 +2338,70 @@
                             </div>
                         </div>
 
-                        <!-- Table -->
-                        <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                        @php
+                            $filteredTable = array_filter($keywordsTable, function($item) {
+                                return empty($this->keywordSearch) || str_contains(strtolower($item['keyword']), strtolower($this->keywordSearch));
+                            });
+                        @endphp
+
+                        <!-- Mobile Card List View (Visible on Mobile only) -->
+                        <div class="block sm:hidden space-y-3 mb-6">
+                            @forelse($filteredTable as $idx => $row)
+                                @php
+                                    $cleanKw = trim(str_replace('#', '', $row['keyword']));
+                                    $trendColor = match($row['trend']) {
+                                        'Naik'  => 'bg-emerald-50 text-emerald-600 border border-emerald-100',
+                                        'Turun' => 'bg-rose-50 text-rose-500 border border-rose-100',
+                                        default => 'bg-slate-50 text-slate-500 border border-slate-100',
+                                    };
+                                    $trendIcon = match($row['trend']) {
+                                        'Naik'  => 'M5 10l7-7m0 0l7 7m-7-7v18',
+                                        'Turun' => 'M19 14l-7 7m0 0l-7-7m7 7V3',
+                                        default => 'M5 12h14',
+                                    };
+                                @endphp
+                                <div 
+                                    wire:key="kw-mobile-card-{{ $cleanKw }}"
+                                    wire:click="toggleKeyword('{{ $cleanKw }}')"
+                                    class="p-4 bg-slate-50/50 hover:bg-[#1fa387]/5 border rounded-2xl transition cursor-pointer flex flex-col gap-3 {{ $selectedKeyword === $cleanKw ? 'border-[#1fa387] bg-[#1fa387]/5' : 'border-slate-100' }}"
+                                >
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex flex-col min-w-0">
+                                            <span class="font-extrabold text-[13px] {{ $selectedKeyword === $cleanKw ? 'text-[#1fa387]' : 'text-slate-900' }} truncate">{{ $cleanKw }}</span>
+                                            <span class="text-[10px] font-bold text-slate-400 mt-0.5 truncate">
+                                                #{{ preg_replace('/\s+/u', '', preg_replace('/^#+/u', '', $cleanKw) ?? $cleanKw) }}
+                                            </span>
+                                        </div>
+                                        @if($this->isAdmin())
+                                            <button 
+                                                type="button"
+                                                wire:click.stop="removeKeywordTable({{ $idx }})"
+                                                class="text-rose-500 hover:text-rose-700 p-1.5 transition cursor-pointer shrink-0"
+                                                title="Hapus Kata Kunci"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center justify-between border-t border-slate-100/70 pt-2.5 mt-0.5">
+                                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            Total: <span class="text-slate-700 font-extrabold ml-1">{{ number_format($row['total']) }}</span>
+                                        </div>
+                                        <span class="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-lg uppercase tracking-wider {{ $trendColor }}">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="{{ $trendIcon }}"></path></svg>
+                                            <span>{{ $row['trend'] }}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="p-8 text-center text-slate-400 italic text-xs bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                    Tidak ada data kata kunci ditemukan.
+                                </div>
+                            @endforelse
+                        </div>
+
+                        <!-- Table (Visible on Desktop only) -->
+                        <div class="hidden sm:block overflow-x-auto border border-slate-100 rounded-2xl">
                             <table class="w-full border-collapse text-left text-xs text-slate-700">
                                 <thead class="bg-slate-50/75 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                     <tr>
@@ -2357,11 +2420,6 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
-                                    @php
-                                        $filteredTable = array_filter($keywordsTable, function($item) {
-                                            return empty($this->keywordSearch) || str_contains(strtolower($item['keyword']), strtolower($this->keywordSearch));
-                                        });
-                                    @endphp
                                     @forelse($filteredTable as $idx => $row)
                                         @php
                                             $cleanKw = trim(str_replace('#', '', $row['keyword']));
@@ -2423,7 +2481,7 @@
                         </div>
 
                         <!-- Footer / Pagination row matching layout exactly -->
-                        <div class="flex items-center justify-between mt-6 text-xs text-slate-400 font-semibold">
+                        <div class="flex flex-col gap-3 sm:flex-row items-center justify-between mt-6 text-xs text-slate-400 font-semibold">
                             <span>Menampilkan 1-{{ count($filteredTable) }} dari {{ count($filteredTable) }} data</span>
                             <div class="flex items-center gap-1.5">
                                 <button class="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:bg-slate-100 transition cursor-pointer">«</button>
@@ -2436,8 +2494,8 @@
                     </div>
 
                     <!-- Grafik Tren Card -->
-                    <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-6" x-data="{ trendInterval: 'harian', trendMetric: 'penyebutan', activePoint: null }">
-                        <div class="flex justify-between items-start">
+                    <div class="bg-white rounded-3xl border border-slate-200 p-4 sm:p-8 shadow-sm text-left space-y-6" x-data="{ trendInterval: 'harian', trendMetric: 'penyebutan', activePoint: null }">
+                        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                             <div>
                                 <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5"><span class="material-symbols-outlined text-[18px] text-[#1fa387]">show_chart</span>Grafik Tren</h3>
                                 <p class="text-xs text-slate-400 mt-1 flex items-center flex-wrap gap-1">
@@ -2450,18 +2508,18 @@
                                     @endif
                                 </p>
                             </div>
-                            <div class="flex items-center gap-3">
+                            <div class="flex flex-col xs:flex-row items-stretch xs:items-center gap-2.5 w-full lg:w-auto">
                                 <!-- Interval Button Toggle -->
-                                <div class="bg-slate-100 p-0.5 rounded-full flex gap-1 text-[10px] font-bold text-slate-500">
-                                    <button @click="trendInterval = 'harian'" class="px-3.5 py-1 rounded-full transition cursor-pointer" :class="trendInterval == 'harian' ? 'bg-blue-600 text-white' : 'hover:text-slate-800'">Harian</button>
-                                    <button @click="trendInterval = 'mingguan'" class="px-3.5 py-1 rounded-full transition cursor-pointer" :class="trendInterval == 'mingguan' ? 'bg-blue-600 text-white' : 'hover:text-slate-800'">Mingguan</button>
-                                    <button @click="trendInterval = 'bulanan'" class="px-3.5 py-1 rounded-full transition cursor-pointer" :class="trendInterval == 'bulanan' ? 'bg-blue-600 text-white' : 'hover:text-slate-800'">Bulanan</button>
+                                <div class="bg-slate-100 p-0.5 rounded-full flex gap-1 text-[10px] font-bold text-slate-500 w-full xs:w-auto justify-center">
+                                    <button @click="trendInterval = 'harian'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendInterval == 'harian' ? 'bg-blue-600 text-white' : 'hover:text-slate-800'">Harian</button>
+                                    <button @click="trendInterval = 'mingguan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendInterval == 'mingguan' ? 'bg-blue-600 text-white' : 'hover:text-slate-800'">Mingguan</button>
+                                    <button @click="trendInterval = 'bulanan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendInterval == 'bulanan' ? 'bg-blue-600 text-white' : 'hover:text-slate-800'">Bulanan</button>
                                 </div>
                                 <!-- Metric Button Toggle -->
-                                <div class="bg-slate-100 p-0.5 rounded-full flex gap-1 text-[10px] font-bold text-slate-500">
-                                    <button @click="trendMetric = 'penyebutan'" class="px-3.5 py-1 rounded-full transition cursor-pointer" :class="trendMetric == 'penyebutan' ? 'bg-[#1fa387] text-white' : 'hover:text-slate-800'">Penyebutan</button>
-                                    <button @click="trendMetric = 'jangkauan'" class="px-3.5 py-1 rounded-full transition cursor-pointer" :class="trendMetric == 'jangkauan' ? 'bg-[#1fa387] text-white' : 'hover:text-slate-800'">Jangkauan</button>
-                                    <button @click="trendMetric = 'sentimen'" class="px-3.5 py-1 rounded-full transition cursor-pointer" :class="trendMetric == 'sentimen' ? 'bg-[#1fa387] text-white' : 'hover:text-slate-800'">Sentimen</button>
+                                <div class="bg-slate-100 p-0.5 rounded-full flex gap-1 text-[10px] font-bold text-slate-500 w-full xs:w-auto justify-center">
+                                    <button @click="trendMetric = 'penyebutan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendMetric == 'penyebutan' ? 'bg-[#1fa387] text-white' : 'hover:text-slate-800'">Penyebutan</button>
+                                    <button @click="trendMetric = 'jangkauan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendMetric == 'jangkauan' ? 'bg-[#1fa387] text-white' : 'hover:text-slate-800'">Jangkauan</button>
+                                    <button @click="trendMetric = 'sentimen'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendMetric == 'sentimen' ? 'bg-[#1fa387] text-white' : 'hover:text-slate-800'">Sentimen</button>
                                 </div>
                             </div>
                         </div>
