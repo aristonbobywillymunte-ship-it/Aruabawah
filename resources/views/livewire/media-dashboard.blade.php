@@ -548,14 +548,14 @@
                 <!-- TAB 1: Penyebutan (Mentions Feed View) -->
                 <section class="flex-1 min-w-0 mentions-section-wrapper pr-1" wire:key="dashboard-mentions-section">
                     <!-- Section Title & Sort Selector -->
-                    <div class="flex items-center justify-between">
+                    <!-- Section Title & Sort Selector -->
+                    <div class="flex items-center justify-between gap-3 pb-2.5 border-b border-slate-100">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[#1fa387] text-[22px]">forum</span>Penyebutan
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[#1fa387] text-[20px]">forum</span>Penyebutan
                             </h2>
-                            <p class="text-xs text-slate-500 flex items-center gap-1">
-                                Pantau percakapan media untuk proyek
-                                <span class="font-bold text-[#1fa387]">{{ $projectName }}</span>
+                            <p class="text-[10px] sm:text-xs text-slate-400 mt-1">
+                                Pantau percakapan media proyek <span class="hidden sm:inline font-bold text-[#1fa387]">{{ $projectName }}</span>
                             </p>
                         </div>
                         <div>
@@ -563,10 +563,11 @@
                             <div class="relative" x-data="{ openSort: false }">
                                 <button
                                     @click="openSort = !openSort"
-                                    class="bg-white border border-slate-200 rounded-full px-4 py-1.5 text-xs font-semibold text-slate-700 flex items-center gap-2 shadow-sm hover:bg-slate-50 transition"
+                                    class="bg-white border border-slate-200 rounded-full px-3 py-1.5 text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-sm hover:bg-slate-50 transition"
+                                    style="padding-top: 4px; padding-bottom: 4px;"
                                 >
                                     <span class="material-symbols-outlined text-sm text-slate-400">sort</span>
-                                    <span>{{ $sortBy == 'newest' ? 'Yang Terbaru' : 'Paling Populer' }}</span>
+                                    <span class="text-[11px]">{{ $sortBy == 'newest' ? 'Yang Terbaru' : 'Paling Populer' }}</span>
                                     <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                                 </button>
                                 <!-- Dropdown Box -->
@@ -608,7 +609,8 @@
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                     @endphp
                     <div
-                        class="pr-4 space-y-4 min-h-0"
+                        style="height: calc(100vh - 250px);"
+                        class="overflow-y-auto pr-2 sm:pr-4 space-y-4 min-h-0 mt-4 text-left"
                         wire:key="mentions-scroll-shell-{{ $mentionsFeedSignature }}"
                         id="mentions-feed-scroll"
                         data-total-count="{{ $mentionsTotalArticlesCount }}"
