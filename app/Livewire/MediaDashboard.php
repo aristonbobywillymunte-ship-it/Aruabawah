@@ -1557,61 +1557,59 @@ class MediaDashboard extends Component
             return $this->projectSourcesMemo[$cacheKey];
         }
 
-        return $this->projectSourcesMemo[$cacheKey] = Cache::remember($cacheKey, 120, function () {
-            $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['sentiment']);
-            $rawSourcesClean = clone $baseQuery;
-            $rawSourcesClean->getQuery()->columns = []; // RESET SELECT COLUMNS
-            $rawSources = $rawSourcesClean
-                ->leftJoin('ai_analysis_results as ai', function ($join) {
-                    $join->on('articles.id', '=', 'ai.article_id')
-                         ->where('ai.analysis_status', '=', 'success');
-                })
-                ->select([
-                    \Illuminate\Support\Facades\DB::raw("lower(coalesce(articles.source_name, '')) as source_key"),
-                    \Illuminate\Support\Facades\DB::raw("MIN(COALESCE(NULLIF(articles.canonical_url, ''), NULLIF(articles.url, ''))) as sample_url"),
-                    \Illuminate\Support\Facades\DB::raw("count(articles.id) as total"),
-                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive"),
-                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral"),
-                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
-                ])
-                ->groupBy('source_key')
-                ->orderByDesc('total')
-                ->get();
+        $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['sentiment']);
+        $rawSourcesClean = clone $baseQuery;
+        $rawSourcesClean->getQuery()->columns = []; // RESET SELECT COLUMNS
+        $rawSources = $rawSourcesClean
+            ->leftJoin('ai_analysis_results as ai', function ($join) {
+                $join->on('articles.id', '=', 'ai.article_id')
+                     ->where('ai.analysis_status', '=', 'success');
+            })
+            ->select([
+                \Illuminate\Support\Facades\DB::raw("lower(coalesce(articles.source_name, '')) as source_key"),
+                \Illuminate\Support\Facades\DB::raw("MIN(COALESCE(NULLIF(articles.canonical_url, ''), NULLIF(articles.url, ''))) as sample_url"),
+                \Illuminate\Support\Facades\DB::raw("count(articles.id) as total"),
+                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive"),
+                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral"),
+                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
+            ])
+            ->groupBy('source_key')
+            ->orderByDesc('total')
+            ->get();
 
-            $aggregated = [];
+        $aggregated = [];
 
-            foreach ($rawSources as $row) {
-                $sourceKey = (string) ($row->source_key ?? '');
-                $sourceName = $this->normalizeSourceLabel($sourceKey);
+        foreach ($rawSources as $row) {
+            $sourceKey = (string) ($row->source_key ?? '');
+            $sourceName = $this->normalizeSourceLabel($sourceKey);
 
-                if ($sourceName === '') {
-                    $sourceName = $this->fallbackSourceLabelFromUrl((string) ($row->sample_url ?? ''));
-                }
-
-                if ($sourceName === '') {
-                    $sourceName = $sourceKey !== '' ? $sourceKey : 'Sumber tidak diketahui';
-                }
-
-                if (!isset($aggregated[$sourceName])) {
-                    $aggregated[$sourceName] = [
-                        'source_name' => $sourceName,
-                        'total' => 0,
-                        'positive' => 0,
-                        'neutral' => 0,
-                        'negative' => 0,
-                    ];
-                }
-
-                $aggregated[$sourceName]['total'] += (int) $row->total;
-                $aggregated[$sourceName]['positive'] += (int) ($row->positive ?? 0);
-                $aggregated[$sourceName]['neutral'] += (int) ($row->neutral ?? 0);
-                $aggregated[$sourceName]['negative'] += (int) ($row->negative ?? 0);
+            if ($sourceName === '') {
+                $sourceName = $this->fallbackSourceLabelFromUrl((string) ($row->sample_url ?? ''));
             }
 
-            return collect(array_values($aggregated))
-                ->sortByDesc('total')
-                ->values();
-        });
+            if ($sourceName === '') {
+                $sourceName = $sourceKey !== '' ? $sourceKey : 'Sumber tidak diketahui';
+            }
+
+            if (!isset($aggregated[$sourceName])) {
+                $aggregated[$sourceName] = [
+                    'source_name' => $sourceName,
+                    'total' => 0,
+                    'positive' => 0,
+                    'neutral' => 0,
+                    'negative' => 0,
+                ];
+            }
+
+            $aggregated[$sourceName]['total'] += (int) $row->total;
+            $aggregated[$sourceName]['positive'] += (int) ($row->positive ?? 0);
+            $aggregated[$sourceName]['neutral'] += (int) ($row->neutral ?? 0);
+            $aggregated[$sourceName]['negative'] += (int) ($row->negative ?? 0);
+        }
+
+        return $this->projectSourcesMemo[$cacheKey] = collect(array_values($aggregated))
+            ->sortByDesc('total')
+            ->values();
     }
 
     public function getWawasan()
