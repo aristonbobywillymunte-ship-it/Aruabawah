@@ -2300,13 +2300,13 @@
 
                     <!-- Manajemen Kata Kunci Card -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left">
-                        <div class="flex items-center justify-between mb-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                             <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5"><span class="material-symbols-outlined text-[18px] text-[#1fa387]">vpn_key</span>Manajemen Kata Kunci</h3>
                             @if($this->isAdmin())
                                 <button 
                                     type="button"
                                     wire:click="$set('showAddKeywordModal', true)"
-                                    class="bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                                    class="bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
                                 >
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                                     <span>Tambah Kata Kunci</span>
