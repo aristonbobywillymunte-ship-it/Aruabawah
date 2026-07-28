@@ -12,11 +12,13 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
     <style>
-        /* Menghilangkan scrollbar global browser agar sidebar menu di kiri tetap terkunci di posisinya */
+        /* Mengunci navigasi sidebar di desktop agar tetap di posisinya saat halaman di-scroll */
         @media (min-width: 1024px) {
-            html, body {
+            aside {
+                position: sticky;
+                top: 0;
                 height: 100vh;
-                overflow: hidden !important;
+                overflow-y: auto;
             }
         }
     </style>
@@ -84,9 +86,9 @@
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex min-w-0 flex-1 flex-col lg:h-screen lg:max-h-screen lg:overflow-hidden">
+        <div class="flex min-w-0 flex-1 flex-col">
             <!-- Header -->
-            <header class="sticky top-0 z-30 w-full border-b border-slate-200 bg-white shrink-0">
+            <header class="sticky top-0 z-30 w-full border-b border-slate-200 bg-white">
                 <!-- Upper Header (Navbar) -->
                 <div class="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-6 border-b border-slate-100">
                     <div class="text-sm font-semibold text-slate-500">@yield('title', 'Admin Panel')</div>
@@ -129,11 +131,9 @@
                 @endif
             </header>
 
-            <!-- Main Panel (Hanya area ini yang dapat di-scroll secara independen) -->
-            <main class="w-full flex-1 overflow-y-auto px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pt-8 min-h-0 focus:outline-none outline-none flex flex-col">
-                <div class="mx-auto w-full max-w-[1440px] flex-1 flex flex-col min-h-0">
-                    @yield('content')
-                </div>
+            <!-- Main Panel -->
+            <main class="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pt-8">
+                @yield('content')
             </main>
         </div>
     </div>
