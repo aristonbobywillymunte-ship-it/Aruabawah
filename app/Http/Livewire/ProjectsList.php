@@ -321,7 +321,9 @@ class ProjectsList extends Component
                         $contextKeywords = $project->scrapeContextKeywordVariants();
                         $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
 
-                        $articleQuery = $project->articles()
+                        $articleQuery = Article::query()
+                            ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
+                            ->where('project_articles.project_id', $project->id)
                             ->withCompleteOfficialAiResult();
 
                         $pendingAi = DB::table('ai_analysis_dispatch_states')
