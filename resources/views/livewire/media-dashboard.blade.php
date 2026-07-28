@@ -232,27 +232,27 @@
     </div></div>
 
     <!-- Sub-header -->
-    <div class="w-full bg-[#f0f3f8] border-b border-slate-200 py-2.5 flex-shrink-0">
-        <div class="max-w-[1400px] mx-auto px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 font-medium text-left">
-            <div class="flex items-center gap-2 flex-wrap">
-                <span>Filter Aktif:</span>
-                <span class="px-2 py-0.5 bg-white border border-slate-200 rounded text-[#1fa387] font-bold">
+    <div class="w-full bg-[#f8fafc] border-b border-slate-200 py-1.5 flex-shrink-0">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs text-slate-500 font-medium text-left">
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider">Filter:</span>
+                <span class="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] sm:text-xs text-[#1fa387] font-bold">
                     {{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d/m/Y') . ($endDate && $endDate !== $startDate ? ' - ' . \Carbon\Carbon::parse($endDate)->format('d/m/Y') : '') : 'Semua Waktu' }}
                 </span>
             </div>
-            <div class="text-left sm:text-right">
-                <h1 class="text-lg sm:text-2xl font-bold flex items-center gap-2 flex-wrap justify-start sm:justify-end">
-                    <span class="text-slate-500 text-xs sm:text-sm font-medium">Proyek:</span> 
-                    <span class="text-[#1fa387] uppercase tracking-wide truncate max-w-[200px] sm:max-w-none">{{ $projectName }}</span>
+            <div class="flex items-baseline gap-2 flex-wrap sm:justify-end">
+                <h1 class="text-xs sm:text-sm font-bold flex items-center gap-1">
+                    <span class="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Proyek:</span> 
+                    <span class="text-[#1fa387] uppercase tracking-wide truncate max-w-[150px] sm:max-w-none">{{ $projectName }}</span>
                 </h1>
-                <p class="mt-1 text-[9px] sm:text-[10px] font-semibold text-slate-500">
-                    Total berita:
+                <span class="text-[9px] sm:text-[10px] text-slate-400 font-semibold before:content-[''] sm:before:content-['|'] sm:before:mr-2 sm:before:text-slate-200">
+                    Berita: 
                     @if($dashboardLoaded)
-                        <span class="text-slate-800">{{ number_format($this->getProjectArticleCount(), 0, ',', '.') }}</span>
+                        <span class="text-slate-800 font-bold">{{ number_format($this->getProjectArticleCount(), 0, ',', '.') }}</span>
                     @else
-                        <span class="inline-block w-10 h-3 rounded bg-slate-200 animate-pulse align-middle"></span>
+                        <span class="inline-block w-8 h-2 bg-slate-200 animate-pulse align-middle"></span>
                     @endif
-                </p>
+                </span>
             </div>
         </div>
     </div>
