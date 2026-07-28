@@ -1156,14 +1156,14 @@ class MediaDashboard extends Component
             // Single aggregation query instead of 8 separate COUNT queries
             $socialSql = $this->buildSocialSourceSql();
             $rawRows = (clone $sourceQuery)
-                ->selectRaw("
-                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'instagram%' THEN 1 ELSE 0 END) as instagram_count,
-                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'tiktok%' THEN 1 ELSE 0 END) as tiktok_count,
-                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'youtube%' THEN 1 ELSE 0 END) as youtube_count,
-                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'facebook%' THEN 1 ELSE 0 END) as facebook_count,
-                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'threads%' THEN 1 ELSE 0 END) as threads_count,
-                    SUM(CASE WHEN lower(coalesce(source_name,'')) like 'twitter%' OR lower(coalesce(source_name,'')) like 'x.com%' OR lower(coalesce(source_name,'')) = 'x' THEN 1 ELSE 0 END) as twitter_count
-                ")
+                ->select([
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN lower(coalesce(source_name,'')) like 'instagram%' THEN 1 ELSE 0 END) as instagram_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN lower(coalesce(source_name,'')) like 'tiktok%' THEN 1 ELSE 0 END) as tiktok_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN lower(coalesce(source_name,'')) like 'youtube%' THEN 1 ELSE 0 END) as youtube_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN lower(coalesce(source_name,'')) like 'facebook%' THEN 1 ELSE 0 END) as facebook_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN lower(coalesce(source_name,'')) like 'threads%' THEN 1 ELSE 0 END) as threads_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN lower(coalesce(source_name,'')) like 'twitter%' OR lower(coalesce(source_name,'')) like 'x.com%' OR lower(coalesce(source_name,'')) = 'x' THEN 1 ELSE 0 END) as twitter_count")
+                ])
                 ->first();
 
             $sourceCounts = [
@@ -1187,15 +1187,15 @@ class MediaDashboard extends Component
                 ->whereNotNull('ai.sentiment')
                 ->whereNotNull('ai.risk_level');
 
-            $agg = $sentimentQueryWithAI->selectRaw("
-                SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as pos_count,
-                SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu_count,
-                SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as neg_count,
-                SUM(CASE WHEN ai.risk_level = 'low' THEN 1 ELSE 0 END) as low_count,
-                SUM(CASE WHEN ai.risk_level = 'medium' THEN 1 ELSE 0 END) as med_count,
-                SUM(CASE WHEN ai.risk_level = 'high' THEN 1 ELSE 0 END) as high_count,
-                SUM(CASE WHEN ai.risk_level = 'critical' THEN 1 ELSE 0 END) as crit_count
-            ")->first();
+            $agg = $sentimentQueryWithAI->select([
+                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as pos_count"),
+                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu_count"),
+                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as neg_count"),
+                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'low' THEN 1 ELSE 0 END) as low_count"),
+                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'medium' THEN 1 ELSE 0 END) as med_count"),
+                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'high' THEN 1 ELSE 0 END) as high_count"),
+                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'critical' THEN 1 ELSE 0 END) as crit_count")
+            ])->first();
 
             $sentimentCounts = [
                 'positive' => (int) ($agg->pos_count ?? 0),
