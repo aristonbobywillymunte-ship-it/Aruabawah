@@ -43,6 +43,12 @@ class AiProviders extends Component
     public bool $confirmingDelete = false;
     public ?int $deleteId = null;
 
+    // Toggle status confirmation
+    public bool $confirmingToggle = false;
+    public ?int $toggleId = null;
+    public string $toggleProviderName = '';
+    public bool $toggleCurrentStatus = false;
+
     public ?string $flashMessage = null;
     public ?string $flashType = null;
 
@@ -378,7 +384,7 @@ class AiProviders extends Component
         $this->notify('success', "{$provider->name} sekarang menjadi provider default.");
     }
 
-    public function toggleStatus(int $id): void
+    public function requestToggleStatus(int $id): void
     {
         $this->adminOnly();
         $provider = AiProvider::findOrFail($id);
@@ -388,10 +394,36 @@ class AiProviders extends Component
             return;
         }
 
+        $this->toggleId = $id;
+        $this->toggleProviderName = $provider->name;
+        $this->toggleCurrentStatus = (bool) $provider->is_active;
+        $this->confirmingToggle = true;
+    }
+
+    public function toggleStatusConfirmed(): void
+    {
+        $this->adminOnly();
+        abort_unless($this->toggleId, 400);
+        $provider = AiProvider::findOrFail($this->toggleId);
+
         $provider->is_active = !$provider->is_active;
         $provider->save();
 
-        $this->notify('success', 'Status provider berhasil diperbarui.');
+        $label = $provider->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        $this->notify('success', "Provider \"{$provider->name}\" berhasil {$label}.");
+
+        $this->confirmingToggle = false;
+        $this->toggleId = null;
+        $this->toggleProviderName = '';
+        $this->toggleCurrentStatus = false;
+    }
+
+    public function cancelToggle(): void
+    {
+        $this->confirmingToggle = false;
+        $this->toggleId = null;
+        $this->toggleProviderName = '';
+        $this->toggleCurrentStatus = false;
     }
 
     public function requestDelete(int $id): void

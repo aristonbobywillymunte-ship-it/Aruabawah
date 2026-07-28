@@ -13,8 +13,6 @@ class ApifyActorRegistry
         return [
             'facebook' => [
                 'platform' => 'Facebook',
-                'label' => 'Facebook Post Search',
-                'menu_label' => 'Facebook Post Search',
                 'actor_name' => 'Facebook Posts Search Scraper',
                 'actor_slug' => 'scrapeflow/facebook-posts-search-scraper',
                 'function_type' => 'Search Post',
@@ -31,13 +29,9 @@ class ApifyActorRegistry
                 'range_mode' => '30d',
                 'priority' => 1,
                 'maximum_cost_per_run_usd' => 0.2000,
-                'editable_fields' => ['default_keyword', 'default_limit', 'range_mode', 'priority'],
-                'locked_fields' => ['platform', 'actor_slug', 'function_type'],
             ],
             'instagram' => [
                 'platform' => 'Instagram',
-                'label' => 'Instagram Keyword Search',
-                'menu_label' => 'Instagram Keyword Search',
                 'actor_name' => 'Instagram Hashtag Scraper',
                 'actor_slug' => 'apify/instagram-hashtag-scraper',
                 'function_type' => 'Search Post',
@@ -54,13 +48,9 @@ class ApifyActorRegistry
                 'range_mode' => '7d',
                 'priority' => 2,
                 'maximum_cost_per_run_usd' => 0.1500,
-                'editable_fields' => ['default_keyword', 'default_limit', 'range_mode', 'priority'],
-                'locked_fields' => ['platform', 'actor_slug', 'function_type'],
             ],
             'tiktok' => [
                 'platform' => 'TikTok',
-                'label' => 'TikTok Hashtag Scraper',
-                'menu_label' => 'TikTok Hashtag Scraper',
                 'actor_name' => 'TikTok Hashtag Scraper',
                 'actor_slug' => 'clockworks/tiktok-hashtag-scraper',
                 'function_type' => 'Search Post',
@@ -77,8 +67,6 @@ class ApifyActorRegistry
                 'range_mode' => '7d',
                 'priority' => 3,
                 'maximum_cost_per_run_usd' => 0.1500,
-                'editable_fields' => ['default_limit', 'range_mode', 'priority'],
-                'locked_fields' => ['platform', 'actor_slug', 'function_type'],
             ],
         ];
     }
@@ -88,15 +76,11 @@ class ApifyActorRegistry
         return [
             'facebook-legacy' => [
                 'platform' => 'Facebook',
-                'label' => 'Legacy / Inactive',
-                'menu_label' => 'Legacy / Inactive',
                 'actor_name' => 'Facebook Search Posts',
                 'actor_slug' => 'scrapeflow/facebook-search-posts',
             ],
             'legacy-no-longer-used' => [
                 'platform' => 'Threads',
-                'label' => 'Legacy / Inactive',
-                'menu_label' => 'Legacy / Inactive',
                 'actor_name' => 'Threads Search Scraper',
                 'actor_slug' => 'apify/threads-scraper',
             ],

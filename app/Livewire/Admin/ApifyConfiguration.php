@@ -40,12 +40,6 @@ class ApifyConfiguration extends Component
     public string $facebook_post_time_range = '24h';
     public bool $facebook_use_apify_proxy = true;
     public ?int $facebook_max_posts = null;
-    public ?int $tiktok_results_per_page = null;
-    public bool $tiktok_should_download_covers = false;
-    public bool $tiktok_should_download_slideshow_images = false;
-    public bool $tiktok_should_download_videos = false;
-    public string $tiktok_download_subtitles_options = 'NEVER_DOWNLOAD_SUBTITLES';
-    public bool $tiktok_use_apify_proxy = true;
     
     // New fields
     public string $keyword_field_mapping = 'search';
@@ -298,8 +292,6 @@ class ApifyConfiguration extends Component
             $this->facebook_max_posts = $resolved;
         } elseif ($this->platform === 'Instagram') {
             $this->instagram_results_limit = $resolved;
-        } elseif ($this->platform === 'TikTok') {
-            $this->tiktok_results_per_page = $resolved;
         }
 
     }
@@ -310,8 +302,6 @@ class ApifyConfiguration extends Component
             $this->output_mapping = $this->buildFacebookOutputMapping([]);
         } elseif (in_array($propertyName, ['defaultKeyword', 'instagram_results_type', 'instagram_results_limit'], true)) {
             $this->output_mapping = $this->buildInstagramOutputMapping([]);
-        } elseif (in_array($propertyName, ['tiktok_results_per_page', 'tiktok_should_download_covers', 'tiktok_should_download_slideshow_images', 'tiktok_should_download_videos', 'tiktok_download_subtitles_options', 'tiktok_use_apify_proxy'], true)) {
-            $this->output_mapping = $this->buildTikTokOutputMapping([]);
         }
     }
 
@@ -399,12 +389,6 @@ class ApifyConfiguration extends Component
                 'facebook_use_apify_proxy' => ['required_if:platform,Facebook', 'accepted'],
                 'instagram_results_type' => ['required_if:platform,Instagram', 'nullable', 'in:posts,reels'],
                 'instagram_results_limit' => ['required_if:platform,Instagram', 'nullable', 'integer'],
-                'tiktok_results_per_page' => ['required_if:platform,TikTok', 'nullable', 'integer'],
-                'tiktok_should_download_covers' => ['boolean'],
-                'tiktok_should_download_slideshow_images' => ['boolean'],
-                'tiktok_should_download_videos' => ['boolean'],
-                'tiktok_download_subtitles_options' => ['required_if:platform,TikTok', 'nullable', 'string'],
-                'tiktok_use_apify_proxy' => ['boolean'],
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Illuminate\Support\Facades\Log::error('Apify actor validation failed', [
@@ -425,8 +409,6 @@ class ApifyConfiguration extends Component
             // `defaultLimit` is the source of truth from the modal; keep the IG-specific
             // limit in sync even when the field is submitted via `wire:model.defer`.
             $this->instagram_results_limit = $data['defaultLimit'];
-        } elseif ($data['platform'] === 'TikTok') {
-            $this->tiktok_results_per_page = $data['defaultLimit'];
         }
 
         $data['build'] = $this->build;
@@ -716,12 +698,6 @@ class ApifyConfiguration extends Component
         $this->facebook_post_time_range = '24h';
         $this->facebook_use_apify_proxy = true;
         $this->facebook_max_posts = null;
-        $this->tiktok_results_per_page = null;
-        $this->tiktok_should_download_covers = false;
-        $this->tiktok_should_download_slideshow_images = false;
-        $this->tiktok_should_download_videos = false;
-        $this->tiktok_download_subtitles_options = 'NEVER_DOWNLOAD_SUBTITLES';
-        $this->tiktok_use_apify_proxy = true;
         $this->loadFacebookPayloadDefaults();
         $this->loadTikTokPayloadDefaults();
     }
@@ -804,17 +780,6 @@ class ApifyConfiguration extends Component
 
     protected function loadTikTokPayloadDefaults(?string $outputMapping = null): void
     {
-        $template = $outputMapping ? json_decode($outputMapping, true) : null;
-        if (!is_array($template)) {
-            $template = json_decode($this->registry()->primaryActors()['tiktok']['output_mapping'], true) ?: [];
-        }
-
-        $this->tiktok_results_per_page = (int) ($template['maxItems'] ?? $template['resultsPerPage'] ?? $this->registry()->primaryActors()['tiktok']['default_limit']);
-        $this->tiktok_should_download_covers = (bool) data_get($template, 'shouldDownloadCovers', false);
-        $this->tiktok_should_download_slideshow_images = (bool) data_get($template, 'shouldDownloadSlideshowImages', false);
-        $this->tiktok_should_download_videos = (bool) data_get($template, 'shouldDownloadVideos', false);
-        $this->tiktok_download_subtitles_options = (string) data_get($template, 'downloadSubtitlesOptions', 'NEVER_DOWNLOAD_SUBTITLES');
-        $this->tiktok_use_apify_proxy = (bool) data_get($template, 'proxyConfiguration.useApifyProxy', true);
         $this->keyword_field_mapping = 'hashtags';
     }
 
@@ -824,7 +789,7 @@ class ApifyConfiguration extends Component
             'customMapFunction' => '(object) => { return {...object} }',
             'endPage' => 1,
             'extendOutputFunction' => '($) => { return {} }',
-            'maxItems' => max(1, (int) ($this->tiktok_results_per_page ?? $this->defaultLimit ?? 1)),
+            'maxItems' => max(1, (int) ($this->defaultLimit ?? 1)),
             'hashtags' => ['{keyword}'],
         ];
 

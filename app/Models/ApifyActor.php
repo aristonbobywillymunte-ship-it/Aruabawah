@@ -57,12 +57,6 @@ class ApifyActor extends Model
         'maximum_cost_per_run_usd' => 'decimal:4',
     ];
 
-    protected static function booted()
-    {
-        static::saving(function ($actor) {
-        });
-    }
-
     public static function shouldSuppressUiError(?string $message): bool
     {
         if (!$message) {
