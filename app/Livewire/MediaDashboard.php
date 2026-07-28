@@ -312,6 +312,10 @@ class MediaDashboard extends Component
         $this->selectedSources = $project->sources && count($project->sources) > 0
             ? array_map(fn($s) => $s === 'Portal' ? 'Portal News' : $s, $project->sources)
             : ['Portal News', 'Instagram', 'TikTok', 'Facebook', 'Youtube', 'Threads', 'Twitter'];
+
+        if (!in_array('Portal News', $this->selectedSources, true)) {
+            $this->selectedSources[] = 'Portal News';
+        }
         $this->selectedCategory = '';
         $this->sortBy = 'newest';
         $this->limit = 5;
