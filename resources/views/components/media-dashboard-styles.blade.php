@@ -69,13 +69,17 @@
 
         .datepicker-modal-container {
             flex-direction: row !important;
-            height: 450px !important;
+            height: 500px !important;
         }
 
         .datepicker-left-panel {
-            width: 200px !important;
+            width: 235px !important;
             border-bottom: none !important;
             border-right: 1px solid #f1f5f9 !important;
+        }
+
+        .datepicker-right-panel {
+            padding: 24px !important;
         }
     }
     /* ===== MENTIONS FEED SCROLL ===== */

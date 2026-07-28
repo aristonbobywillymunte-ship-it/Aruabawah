@@ -131,7 +131,7 @@ PROMPT;
 
     public static function reportAiSystemPrompt(): string
     {
-        return 'Anda adalah analis isu berita dan reputasi media untuk laporan eksekutif. Tugas Anda adalah membaca ringkasan statistik, isu utama, sumber dominan, dan sampel artikel lalu menyusun kesimpulan yang tajam, spesifik, dan berbasis fakta. Hindari kalimat generik. Fokus pada isu berita yang nyata, framing media, arah sentimen, dampak reputasi, dan tindakan respons yang bisa segera dilakukan.';
+        return 'Anda adalah analis isu berita dan reputasi media untuk laporan eksekutif. Tugas Anda adalah membaca ringkasan statistik, kondisi viral, isu utama, sumber dominan, dan sampel artikel lalu menyusun kesimpulan yang tajam, spesifik, dan berbasis fakta. Hindari kalimat generik. Fokus pada isu berita yang nyata, framing media, arah sentimen, dampak reputasi, kondisi viral, dan tindakan respons yang bisa segera dilakukan.';
     }
 
     public static function reportAiUserPromptTemplate(): string
@@ -144,6 +144,10 @@ KONTEKS LAPORAN:
 - Sentimen Positif: {positive_count} ({positive_pct}%)
 - Sentimen Netral: {neutral_count} ({neutral_pct}%)
 - Sentimen Negatif: {negative_count} ({negative_pct}%)
+- Kondisi Viral: {viral_status}
+- Penjelasan Kondisi Viral: {viral_desc}
+- Penyebutan 7 Hari Terakhir: {viral_recent_7d}
+- Dasar Penilaian Viral: {viral_basis}
 - Sumber Dominan: {top_sources}
 - Topik / Kata Kunci Dominan: {top_topics}
 
@@ -156,7 +160,8 @@ ATURAN WAJIB:
 3. Hindari kalimat umum seperti "kinerja baik" atau "reputasi kuat" tanpa menyebut isu nyata yang terlihat pada data.
 4. Rekomendasi harus berupa langkah respons isu yang konkret, relevan dengan pemberitaan, dan bisa ditindaklanjuti.
 5. Gunakan bahasa Indonesia formal untuk laporan eksekutif.
-6. Output harus JSON murni dan hanya berisi dua key: summary dan recommendations.
+6. Buat juga penilaian tersendiri tentang kondisi viral berdasarkan data di atas, lalu masukkan ke dalam ringkasan secara eksplisit.
+7. Output harus JSON murni dan hanya berisi tiga key: summary, recommendations, dan viral_condition.
 
 FORMAT OUTPUT:
 {
@@ -165,13 +170,14 @@ FORMAT OUTPUT:
     "Rekomendasi respons isu pertama yang konkret.",
     "Rekomendasi respons isu kedua yang konkret.",
     "Rekomendasi respons isu ketiga yang konkret."
-  ]
+  ],
+  "viral_condition": "Penilaian khusus kondisi viral yang menjelaskan apakah proyek mulai viral, sangat viral, atau normal beserta alasannya."
 }
 PROMPT;
     }
 
     public static function reportAiOutputSchema(): string
     {
-        return '{"type":"object","properties":{"summary":{"type":"string"},"recommendations":{"type":"array","items":{"type":"string"}}},"required":["summary","recommendations"]}';
+        return '{"type":"object","properties":{"summary":{"type":"string"},"recommendations":{"type":"array","items":{"type":"string"}},"viral_condition":{"type":"string"}},"required":["summary","recommendations","viral_condition"]}';
     }
 }

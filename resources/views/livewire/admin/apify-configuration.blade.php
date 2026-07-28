@@ -455,19 +455,6 @@
                             </details>
                         @endif
 
-                        @if($platform !== 'Instagram')
-                        <!-- Group 4: Status -->
-                        <div class="bg-slate-50 border border-slate-100 p-4 rounded-2xl flex flex-wrap gap-6 items-center">
-                            <label class="flex items-center gap-2.5 cursor-pointer group">
-                                <div class="relative w-9 h-5 rounded-full bg-slate-200 transition-colors duration-200 ease-in-out" :class="{ 'bg-blue-500': $wire.actorStatus === 'active' }">
-                                    <input type="checkbox" wire:model.live="actorStatus" true-value="active" false-value="inactive" class="sr-only">
-                                    <div class="absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform duration-200 ease-in-out" :class="{ 'translate-x-4': $wire.actorStatus === 'active' }"></div>
-                                </div>
-                                <span class="text-[11px] font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Aktor Dalam Status Aktif</span>
-                            </label>
-                        </div>
-                        @endif
-
                         </div>
                     </div>
 

@@ -938,7 +938,7 @@ new class extends Component
                                         <label class="text-sm font-bold text-slate-800">Kata Kunci Penyaring (Wajib)</label>
                                         <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
                                     </div>
-                                    <p class="text-xs text-slate-400 leading-tight">Kata kunci tambahan yang wajib ada di dalam konten. Data berita dan sosial media hanya akan ditampilkan jika mengandung kata kunci pencarian (scraping) DAN minimal salah satu dari kata kunci penyaring (wajib) yang Anda masukkan di sini.</p>
+                                    <p class="text-xs text-slate-400 leading-tight">Kata kunci tambahan yang wajib ada di dalam judul atau isi portal. Data berita dan sosial media hanya akan ditampilkan jika mengandung kata kunci pencarian (scraping) DAN minimal salah satu dari kata kunci penyaring (wajib) yang Anda masukkan di sini.</p>
                                     <input 
                                         wire:model="contextKeywords" 
                                         type="text" 
@@ -1505,7 +1505,7 @@ new class extends Component
                                     <label class="text-sm font-bold text-slate-800">Kata Kunci Penyaring (Wajib)</label>
                                     <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
                                 </div>
-                                <p class="text-xs text-slate-400 leading-tight">Kata kunci tambahan yang wajib ada di dalam konten. Data berita dan sosial media hanya akan ditampilkan jika mengandung kata kunci pencarian (scraping) DAN minimal salah satu dari kata kunci penyaring (wajib) yang Anda masukkan di sini.</p>
+                                <p class="text-xs text-slate-400 leading-tight">Kata kunci tambahan yang wajib ada di dalam judul atau isi portal. Data berita dan sosial media hanya akan ditampilkan jika mengandung kata kunci pencarian (scraping) DAN minimal salah satu dari kata kunci penyaring (wajib) yang Anda masukkan di sini.</p>
                                 <input 
                                     wire:model="contextKeywords" 
                                     type="text" 

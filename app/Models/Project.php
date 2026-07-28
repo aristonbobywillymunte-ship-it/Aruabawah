@@ -21,6 +21,7 @@ class Project extends Model
         'sources',
         'ai_insight_summary',
         'ai_insight_recommendations',
+        'ai_insight_viral_summary',
         'ai_insight_updated_at',
         'is_active',
     ];
@@ -31,6 +32,7 @@ class Project extends Model
         'exclude_keywords' => 'array',
         'sources' => 'array',
         'ai_insight_recommendations' => 'array',
+        'ai_insight_viral_summary' => 'string',
         'ai_insight_updated_at' => 'datetime',
         'is_active' => 'boolean',
         'first_news_scrape_attempt_at' => 'datetime',

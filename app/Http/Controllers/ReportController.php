@@ -8,6 +8,7 @@ use App\Jobs\GenerateProjectAiInsightJob;
 use App\Models\Project;
 use App\Models\SocialMediaItem;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -57,8 +58,9 @@ class ReportController extends Controller
         $projectName = $project->name;
         $articles    = $this->getArticles($projectId, $startDate, $endDate);
         $socialMediaItems = $this->getSocialMediaItems($projectId, $startDate, $endDate);
+        $viralMeta = $this->resolveViralMeta($articles, $startDate, $endDate);
 
-        [$wawasanSummary, $wawasanRecs] = $this->resolveProjectAiInsights($project);
+        [$wawasanSummary, $wawasanRecs, $viralInsightSummary] = $this->resolveProjectAiInsights($project);
 
         $total    = $articles->count();
         $positive = $articles->where('sentiment', 'positive')->count();
@@ -130,7 +132,7 @@ class ReportController extends Controller
             'total', 'positive', 'neutral', 'negative',
             'sourceCounts', 'startDate', 'endDate', 'toggles',
             'wawasanSummary', 'wawasanRecs',
-            'topWords', 'keywordsTable', 'topReachArticles', 'socialCounts', 'socialMediaItems'
+            'topWords', 'keywordsTable', 'topReachArticles', 'socialCounts', 'socialMediaItems', 'viralMeta', 'viralInsightSummary'
         ));
     }
 
@@ -138,22 +140,24 @@ class ReportController extends Controller
     {
         $summary = trim((string) ($project->ai_insight_summary ?? ''));
         $recommendations = $project->ai_insight_recommendations;
+        $viralSummary = trim((string) ($project->ai_insight_viral_summary ?? ''));
 
-        if ($summary !== '' && is_array($recommendations) && $recommendations !== []) {
-            return [$summary, $recommendations];
+        if ($summary !== '' && is_array($recommendations) && $recommendations !== [] && $viralSummary !== '') {
+            return [$summary, $recommendations, $viralSummary];
         }
 
-        if ($summary === '' || ! is_array($recommendations) || $recommendations === []) {
+        if ($summary === '' || ! is_array($recommendations) || $recommendations === [] || $viralSummary === '') {
             GenerateProjectAiInsightJob::dispatchSync($project->id);
             $project->refresh();
 
             $summary = trim((string) ($project->ai_insight_summary ?? ''));
             $recommendations = $project->ai_insight_recommendations;
+            $viralSummary = trim((string) ($project->ai_insight_viral_summary ?? ''));
         }
 
         $recommendations = $this->normalizeRecommendationList($recommendations);
 
-        return [$summary, $recommendations];
+        return [$summary, $recommendations, $viralSummary];
     }
 
     private function normalizeRecommendationList(mixed $recommendations): array
@@ -178,6 +182,44 @@ class ReportController extends Controller
 
             return trim((string) $item);
         }, $recommendations)));
+    }
+
+    private function resolveViralMeta($articles, ?string $startDate, ?string $endDate): array
+    {
+        $periodEnd = Carbon::parse($endDate ?: now()->toDateString())->endOfDay();
+        $cutoff = $periodEnd->copy()->subDays(7);
+
+        $recent7d = $articles->filter(function ($article) use ($cutoff, $periodEnd) {
+            if (empty($article->published_at)) {
+                return false;
+            }
+
+            $publishedAt = Carbon::parse($article->published_at);
+
+            return $publishedAt->betweenIncluded($cutoff, $periodEnd);
+        })->count();
+
+        if ($recent7d >= 100) {
+            return [
+                'viral_status' => 'Sangat Viral',
+                'viral_color' => 'purple',
+                'viral_desc' => 'Lonjakan percakapan sangat tinggi',
+            ];
+        }
+
+        if ($recent7d >= 30) {
+            return [
+                'viral_status' => 'Mulai Viral',
+                'viral_color' => 'blue',
+                'viral_desc' => 'Ada peningkatan atensi',
+            ];
+        }
+
+        return [
+            'viral_status' => 'Normal',
+            'viral_color' => 'slate',
+            'viral_desc' => 'Volume berita stabil',
+        ];
     }
 
     // ─────────────────────────────────────────────────────────────────────

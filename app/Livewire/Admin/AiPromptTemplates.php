@@ -3,8 +3,6 @@
 namespace App\Livewire\Admin;
 
 use App\Models\AiPromptTemplate;
-use App\Models\AiProvider;
-use App\Services\AiProviderClient;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -28,16 +26,7 @@ class AiPromptTemplates extends Component
     // UI state
     public bool $showFormModal = false;
     public bool $isEditing = false;
-    public bool $showTestModal = false;
     public bool $confirmingDelete = false;
-    public ?int $testingTemplateId = null;
-    public string $test_name = '';
-    public string $test_domain = '';
-    public string $test_base_url = '';
-    public string $test_article_url = '';
-    public string $test_rendered_prompt = '';
-    public ?string $test_raw_output = null;
-    public ?string $test_error = null;
     public ?string $flashMessage = null;
     public ?string $flashType = null;
 
@@ -376,82 +365,6 @@ class AiPromptTemplates extends Component
         $this->resetForm();
     }
 
-    public function openTestModal(int $id): void
-    {
-        $this->adminOnly();
-        $template = AiPromptTemplate::findOrFail($id);
-
-        $this->testingTemplateId = $template->id;
-        $this->test_name = 'Arusbawah.co';
-        $this->test_domain = 'arusbawah.co';
-        $this->test_base_url = 'https://arusbawah.co';
-        $this->test_article_url = 'https://arusbawah.co/contoh-artikel';
-        $this->test_rendered_prompt = '';
-        $this->test_raw_output = null;
-        $this->test_error = null;
-        $this->showTestModal = true;
-    }
-
-    public function closeTestModal(): void
-    {
-        $this->showTestModal = false;
-        $this->testingTemplateId = null;
-        $this->test_name = '';
-        $this->test_domain = '';
-        $this->test_base_url = '';
-        $this->test_article_url = '';
-        $this->test_rendered_prompt = '';
-        $this->test_raw_output = null;
-        $this->test_error = null;
-    }
-
-    public function runTemplateTest(): void
-    {
-        $this->adminOnly();
-
-        $template = AiPromptTemplate::findOrFail($this->testingTemplateId);
-        $provider = AiProvider::query()
-            ->where('is_active', true)
-            ->orderByDesc('is_default')
-            ->orderBy('id')
-            ->first();
-
-        if (! $provider) {
-            $this->test_error = 'AI provider belum tersedia.';
-            $this->test_raw_output = null;
-            return;
-        }
-
-        $renderedPrompt = $this->renderTemplatePrompt($template, [
-            'name' => $this->test_name,
-            'domain' => $this->test_domain,
-            'base_url' => $this->test_base_url,
-            'article_url' => $this->test_article_url,
-        ]);
-        $schemaPrompt = trim((string) ($template->output_schema ?? ''));
-        if ($schemaPrompt !== '') {
-            $renderedPrompt .= "\n\nWAJIB IKUTI SCHEMA OUTPUT INI TANPA MENAMBAH KEY LAIN:\n" . $schemaPrompt;
-        }
-        $this->test_rendered_prompt = $renderedPrompt;
-        $this->test_error = null;
-
-        try {
-            $client = app(AiProviderClient::class);
-            $response = $client->sendRequest($provider, trim($template->system_prompt), trim($renderedPrompt), [
-                'temperature' => 0.0,
-            ]);
-
-            if (! $response->successful()) {
-                throw new \RuntimeException('HTTP ' . $response->status() . ': ' . $response->body());
-            }
-
-            $this->test_raw_output = $client->parseResponse($provider, $response) ?? '';
-        } catch (\Throwable $e) {
-            $this->test_error = $e->getMessage();
-            $this->test_raw_output = null;
-        }
-    }
-
     protected function notify(string $type, string $message): void
     {
         $this->flashType = $type;
@@ -467,32 +380,6 @@ class AiPromptTemplates extends Component
         }
 
         $this->dispatch('admin-toast', payload: $payload);
-    }
-
-    private function renderTemplatePrompt(AiPromptTemplate $template, array $context): string
-    {
-        $name = trim((string) ($context['name'] ?? ''));
-        $domain = trim((string) ($context['domain'] ?? ''));
-        $baseUrl = trim((string) ($context['base_url'] ?? ''));
-        $articleUrl = trim((string) ($context['article_url'] ?? ''));
-
-        $name = $name !== '' ? $name : 'Arusbawah.co';
-        $domain = $domain !== '' ? $domain : 'arusbawah.co';
-        $baseUrl = $baseUrl !== '' ? $baseUrl : 'https://arusbawah.co';
-        $articleUrl = $articleUrl !== '' ? $articleUrl : 'https://arusbawah.co/contoh-artikel';
-
-        $replacements = [
-            '{name}' => $name,
-            '{domain}' => $domain,
-            '{base_url}' => $baseUrl,
-            '{article_url}' => $articleUrl,
-            '{html}' => $articleUrl,
-            '{url}' => $articleUrl,
-            '{keyword}' => 'politik',
-            '{query}' => 'politik',
-        ];
-
-        return strtr($template->user_prompt_template, $replacements);
     }
 
     private function ensureSaranPortalManualDefault(): void

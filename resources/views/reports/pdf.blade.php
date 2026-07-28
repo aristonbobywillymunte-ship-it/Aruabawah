@@ -258,6 +258,28 @@
 
       <!-- Right Column: Metrics (33%) -->
       <div class="col-span-4 flex flex-col gap-4 border-l border-outline-variant/60 pl-6 justify-start overflow-hidden">
+        <!-- AI Viral Assessment -->
+        @if(empty($toggles) || !empty($toggles['statistik']))
+        <div>
+          <div class="flex items-center gap-1.5 mb-1 border-b border-outline-variant pb-0.5">
+            <span class="material-symbols-outlined text-{{ $viralMeta['viral_color'] }}-500 text-[14px]">local_fire_department</span>
+            <h2 class="font-bold text-[9px] uppercase tracking-widest text-slate-800">Kondisi Viral</h2>
+          </div>
+          <div class="glass-panel rounded-xl p-3 shadow-sm bg-white border-glow">
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[8px] font-black uppercase tracking-widest text-{{ $viralMeta['viral_color'] }}-600">{{ $viralMeta['viral_status'] }}</div>
+                <div class="text-[10px] font-semibold text-slate-500 mt-0.5">{{ $viralMeta['viral_desc'] }}</div>
+              </div>
+              <span class="inline-flex items-center rounded-full bg-{{ $viralMeta['viral_color'] }}-50 px-2 py-0.5 text-[8px] font-black text-{{ $viralMeta['viral_color'] }}-600 border border-{{ $viralMeta['viral_color'] }}-100 shrink-0">AI</span>
+            </div>
+            <p class="mt-2 text-[10px] leading-relaxed text-slate-600">
+              {{ $viralInsightSummary ?: $viralMeta['viral_desc'] }}
+            </p>
+          </div>
+        </div>
+        @endif
+
         <!-- Stats summary by Channel/Source Type -->
         @if(empty($toggles) || !empty($toggles['statistik']))
         @php

@@ -348,7 +348,7 @@ class ApifyConfiguration extends Component
             $this->functionType = $instagram['function_type'];
             $this->actorStatus = (string) ($instagram['status'] ?? 'active');
         } elseif ($actor->platform === 'TikTok') {
-            $this->loadTikTokPayloadDefaults($actor->output_mapping);
+            $this->loadTikTokPayloadDefaults();
             $tiktok = $this->registry()->primaryActors()['tiktok'];
             $this->actorName = $tiktok['actor_name'];
             $this->actorSlug = $tiktok['actor_slug'];
@@ -778,7 +778,7 @@ class ApifyConfiguration extends Component
         return json_encode($payload, JSON_UNESCAPED_SLASHES);
     }
 
-    protected function loadTikTokPayloadDefaults(?string $outputMapping = null): void
+    protected function loadTikTokPayloadDefaults(): void
     {
         $this->keyword_field_mapping = 'hashtags';
     }

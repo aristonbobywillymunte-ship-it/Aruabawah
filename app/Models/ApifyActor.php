@@ -257,7 +257,7 @@ class ApifyActor extends Model
             $keywords = [$this->normalizeTikTokHashtag((string) ($keyword ?: $this->default_keyword))];
         }
 
-        $configuredTotalLimit = (int) ($this->default_limit ?? $this->tiktok_results_per_page ?? $limit);
+        $configuredTotalLimit = (int) ($this->default_limit ?? $limit);
         if ($configuredTotalLimit < 1) {
             $configuredTotalLimit = max(1, $limit);
         }
@@ -269,7 +269,7 @@ class ApifyActor extends Model
             'maxItems' => $configuredTotalLimit,
             'hashtags' => $keywords,
             'proxyConfiguration' => [
-                'useApifyProxy' => (bool) ($this->tiktok_use_apify_proxy ?? true),
+                'useApifyProxy' => true,
             ],
         ];
     }

@@ -11,11 +11,19 @@
     @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
+    <style>
+        @media (min-width: 1024px) {
+            html, body {
+                height: 100vh;
+                overflow: hidden !important;
+            }
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-[#f7f9ff] text-slate-800 font-sans">
     <div class="flex min-h-screen flex-col lg:flex-row" x-data="{ mobileMenuOpen: false }">
         <!-- Sidebar / Navigation -->
-        <aside class="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 bg-white">
+        <aside class="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto z-40">
             <div class="flex flex-col h-full">
                 <!-- Brand logo + Mobile Menu Toggle Button -->
                 <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 lg:border-none lg:py-5 shrink-0">
@@ -39,7 +47,7 @@
                 </div>
 
                 <!-- Navigation links -->
-                <div class="flex-col text-left px-5 pb-5 lg:py-5 lg:h-[calc(100vh-80px)] lg:sticky lg:top-20 lg:overflow-y-auto" :class="mobileMenuOpen ? 'flex' : 'hidden lg:flex'">
+                <div class="flex-col text-left px-5 pb-5 lg:py-5 lg:h-[calc(100vh-80px)] lg:overflow-y-auto" :class="mobileMenuOpen ? 'flex' : 'hidden lg:flex'">
                     <div class="mt-4 lg:mt-0 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Admin Menu</div>
                     <nav class="mt-3 space-y-1">
                         @php
@@ -75,10 +83,11 @@
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex min-w-0 flex-1 flex-col">
+        <div class="flex min-w-0 flex-1 flex-col lg:h-screen lg:overflow-hidden">
             <!-- Header -->
-            <header class="sticky top-0 z-50 w-full border-b border-slate-200 bg-white">
-                <div class="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-6">
+            <header class="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shrink-0">
+                <!-- Upper Header (Navbar) -->
+                <div class="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-6 border-b border-slate-100">
                     <div class="text-sm font-semibold text-slate-500">@yield('title', 'Admin Panel')</div>
                     <div class="flex items-center gap-4">
                         <div class="hidden text-right sm:block">
@@ -108,12 +117,24 @@
                         </details>
                     </div>
                 </div>
+
+                <!-- Lower Header (Page Title & Action Buttons) -->
+                @hasSection('page-header')
+                    <div class="bg-white px-6 py-4 border-b border-slate-100">
+                        <div class="mx-auto w-full max-w-[1440px]">
+                            @yield('page-header')
+                        </div>
+                    </div>
+                @endif
             </header>
 
-            <!-- Main Panel -->
-            <main class="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pt-8">
-                @yield('content')
-            </main>
+            <!-- Scrollable Content Container -->
+            <div class="flex-1 overflow-y-auto min-h-0">
+                <!-- Main Panel -->
+                <main class="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pt-8">
+                    @yield('content')
+                </main>
+            </div>
         </div>
     </div>
     <x-admin-toast />

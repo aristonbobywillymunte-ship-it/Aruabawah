@@ -453,22 +453,63 @@ class MediaDashboard extends Component
 
     public function preparePdfReport(string $togglesJson = '{}'): void
     {
-        $project = $this->resolveProjectOrFail($this->projectId);
-        \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id);
-        $project->refresh();
+        try {
+            $project = $this->resolveProjectOrFail($this->projectId);
+            \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id);
+            $project->refresh();
 
-        if (empty(trim((string) ($project->ai_insight_summary ?? ''))) || empty($project->ai_insight_recommendations)) {
-            abort(503, 'AI insight untuk laporan PDF belum tersedia. Silakan jalankan proses AI terlebih dahulu.');
+            if (
+                empty(trim((string) ($project->ai_insight_summary ?? ''))) ||
+                empty($project->ai_insight_recommendations) ||
+                empty(trim((string) ($project->ai_insight_viral_summary ?? '')))
+            ) {
+                throw new \RuntimeException('AI untuk laporan belum siap dipakai.');
+            }
+
+            $url = route('report.pdf', [
+                'project_id' => $this->getDecodedProjectId(),
+                'start_date' => $this->startDate,
+                'end_date' => $this->endDate,
+                'toggles' => $togglesJson,
+            ]);
+
+            $this->dispatch('open-report-pdf', url: $url);
+            $this->dispatch('report-download-feedback',
+                type: 'success',
+                title: 'Laporan siap',
+                message: 'Laporan PDF berhasil disiapkan dan akan dibuka.'
+            );
+        } catch (\Throwable $e) {
+            report($e);
+
+            $message = $this->simplifyPdfReportError($e);
+
+            $this->dispatch('report-download-feedback',
+                type: 'error',
+                title: 'Laporan belum bisa dibuka',
+                message: $message
+            );
+        }
+    }
+
+    protected function simplifyPdfReportError(\Throwable $e): string
+    {
+        $message = trim((string) $e->getMessage());
+        $messageLower = strtolower($message);
+
+        if (str_contains($messageLower, 'ai insight untuk laporan pdf belum tersedia') || str_contains($messageLower, 'ai untuk laporan belum siap')) {
+            return 'Laporan belum siap karena AI masih memproses ringkasan. Silakan coba lagi sebentar.';
         }
 
-        $url = route('report.pdf', [
-            'project_id' => $this->getDecodedProjectId(),
-            'start_date' => $this->startDate,
-            'end_date' => $this->endDate,
-            'toggles' => $togglesJson,
-        ]);
+        if (str_contains($messageLower, 'anda tidak memiliki akses') || str_contains($messageLower, 'autentikasi diperlukan')) {
+            return 'Anda belum punya akses ke laporan ini.';
+        }
 
-        $this->dispatch('open-report-pdf', url: $url);
+        if ($message !== '') {
+            return 'Laporan belum bisa dibuka. ' . $message;
+        }
+
+        return 'Laporan belum bisa dibuka. Silakan coba lagi sebentar.';
     }
 
     public function updatedStartDate()

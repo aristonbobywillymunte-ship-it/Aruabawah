@@ -162,10 +162,15 @@ class TelegramSettings extends Component
     {
         $this->adminOnly();
 
+        $this->chat_id = $this->normalizeTelegramChatIdInput($this->chat_id);
+
         $this->validate([
             'project_id' => ['required', 'exists:projects,id'],
-            'chat_id' => ['required', 'string', 'max:255'],
+            'chat_id' => ['required', 'string', 'max:255', 'regex:/^\d+$/'],
             'recipient_is_active' => ['boolean'],
+        ], [
+            'chat_id.required' => 'Custom Chat/Group ID wajib diisi.',
+            'chat_id.regex' => 'Custom Chat/Group ID harus berupa angka tanpa tanda minus atau karakter lain.',
         ]);
 
         $exists = ProjectTelegramRecipient::where('project_id', $this->project_id)

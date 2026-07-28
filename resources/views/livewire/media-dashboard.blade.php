@@ -20,16 +20,20 @@
      x-data="{
          isMobile: window.innerWidth < 900,
          openMobileMenu: false,
+         reportFeedbackOpen: false,
+         reportFeedbackType: 'success',
+         reportFeedbackTitle: '',
+         reportFeedbackMessage: '',
          scrollToTop() {
              window.scrollTo({ top: 0, behavior: 'smooth' });
          }
      }"
      x-effect="
-         const shouldLock = !isMobile || (typeof detailModalOpen !== 'undefined' && detailModalOpen) || (typeof showViralModal !== 'undefined' && showViralModal) || openMobileMenu;
+         const shouldLock = !isMobile || (typeof detailModalOpen !== 'undefined' && detailModalOpen) || (typeof showViralModal !== 'undefined' && showViralModal) || openMobileMenu || reportFeedbackOpen;
          document.body.style.overflow = shouldLock ? 'hidden' : '';
          document.documentElement.style.overflow = shouldLock ? 'hidden' : '';
      "
-     x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 900; }); window.addEventListener('open-report-pdf', event => { if (event.detail?.url) window.open(event.detail.url, '_blank'); }); isMobile = window.innerWidth < 900;"
+     x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 900; }); window.addEventListener('open-report-pdf', event => { if (event.detail?.url) window.open(event.detail.url, '_blank'); }); window.addEventListener('report-download-feedback', event => { const detail = event.detail || {}; reportFeedbackType = detail.type || 'info'; reportFeedbackTitle = detail.title || 'Informasi laporan'; reportFeedbackMessage = detail.message || ''; reportFeedbackOpen = true; setTimeout(() => { reportFeedbackOpen = false; }, reportFeedbackType === 'error' ? 5000 : 2800); }); isMobile = window.innerWidth < 900;"
 >
     <!-- Top Header -->
     <header class="w-full bg-white border-b border-slate-200 sticky top-0 z-50 flex-shrink-0">
@@ -3483,6 +3487,34 @@
                             </div>
                         </div>
 
+                        <div
+                            x-show="reportFeedbackOpen"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            class="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4"
+                            style="display:none;"
+                        >
+                            <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-6 text-center">
+                                <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
+                                     :class="reportFeedbackType === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]'">
+                                    <span class="material-symbols-outlined text-[28px]" x-text="reportFeedbackType === 'error' ? 'error' : 'check_circle'"></span>
+                                </div>
+                                <h3 class="text-base font-extrabold text-slate-900" x-text="reportFeedbackTitle"></h3>
+                                <p class="mt-2 text-sm leading-relaxed text-slate-500" x-text="reportFeedbackMessage"></p>
+                                <button
+                                    type="button"
+                                    @click="reportFeedbackOpen = false"
+                                    class="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-slate-100 px-5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+                                >
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- Excel Option List -->
                         <div x-show="reportType === 'excel'" class="space-y-6" style="display: none;">
                             <!-- Group 1 -->
@@ -3753,7 +3785,14 @@
                                     </div>
                                 </div>
                                 <h3 class="text-xs sm:text-sm md:text-[17px] font-extrabold text-slate-900 leading-snug mb-2 sm:mb-3 line-clamp-2 group-hover:text-[#1fa387] transition-colors tracking-tight">
-                                    <a href="{{ $article->url }}" target="_blank">{{ $article->title }}</a>
+                                    <a href="{{ $article->url }}" target="_blank" class="flex items-start gap-2 min-w-0">
+                                        @if(str_contains(strtolower($article->source_name), 'tiktok') || strtolower($article->source_name) === 'tk')
+                                            <span class="inline-flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-500 mt-0.5">
+                                                <span class="material-symbols-outlined text-[12px] sm:text-[13px]">person</span>
+                                            </span>
+                                        @endif
+                                        <span class="min-w-0 line-clamp-2">{{ $article->title }}</span>
+                                    </a>
                                 </h3>
                                 <p class="text-[11px] sm:text-sm text-slate-600 line-clamp-3 mb-4 sm:mb-5 leading-relaxed flex-grow font-medium">
                                     {{ Str::limit(strip_tags($article->content), 120) }}
@@ -4405,7 +4444,7 @@
     >
         <div 
             @click.away="$wire.set('showDatePicker', false)" 
-            class="datepicker-modal-container bg-white w-full max-w-[700px] rounded-3xl overflow-hidden shadow-2xl border border-slate-200"
+            class="datepicker-modal-container bg-white w-full max-w-[780px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200"
         >
             <!-- Left Panel (PERIODE Presets) -->
             <div class="datepicker-left-panel bg-[#FAFBFD] p-6 text-left space-y-4 flex-shrink-0">
@@ -4439,7 +4478,7 @@
             </div>
 
             <!-- Right Panel (Calendar Grid) -->
-            <div class="flex-1 min-h-0 p-6 flex flex-col justify-between">
+            <div class="datepicker-right-panel flex-1 min-h-0 p-6 flex flex-col justify-between">
                 <div class="min-h-0">
                     <!-- Calendar Header -->
                     <div class="flex justify-between items-center mb-6">

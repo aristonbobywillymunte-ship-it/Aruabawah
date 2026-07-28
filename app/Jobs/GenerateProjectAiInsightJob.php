@@ -63,8 +63,19 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             })
             ->select('articles.title', 'articles.content', 'articles.excerpt', 'articles.source_name', 'articles.published_at', 'ai.sentiment', 'ai.summary')
             ->latest('articles.published_at')
-            ->limit(100)
+            ->limit(250)
             ->get();
+
+        $articles = $articles->filter(function ($article) use ($project) {
+            $content = implode("\n", array_filter([
+                trim((string) ($article->title ?? '')),
+                trim((string) ($article->content ?? '')),
+                trim((string) ($article->excerpt ?? '')),
+                trim((string) ($article->summary ?? '')),
+            ]));
+
+            return ! $this->shouldSkipGovernorArticleMatch($project, $content);
+        })->values()->take(100);
 
         $total = $articles->count();
 
@@ -82,6 +93,7 @@ class GenerateProjectAiInsightJob implements ShouldQueue
 
         $topTopics = $this->deriveTopTopics($articles);
         $topArticles = $this->buildTopArticlesContext($articles->take(15));
+        $viralMeta = $this->buildViralContext($articles);
 
         $renderedPrompt = $this->renderTemplatePrompt($template, [
             'project_name' => (string) $project->name,
@@ -101,7 +113,20 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             'top_sources' => $topSources !== '' ? $topSources : '-',
             'top_topics' => $topTopics !== '' ? $topTopics : '-',
             'top_articles' => $topArticles !== '' ? $topArticles : '-',
+            'viral_status' => $viralMeta['viral_status'],
+            'viral_desc' => $viralMeta['viral_desc'],
+            'viral_recent_7d' => (string) $viralMeta['recent_7d'],
+            'viral_basis' => $viralMeta['viral_basis'],
         ]);
+
+        $renderedPrompt .= "\n\nDATA KONDISI VIRAL TAMBAHAN:\n"
+            . "- Status Viral: {$viralMeta['viral_status']}\n"
+            . "- Penjelasan Viral: {$viralMeta['viral_desc']}\n"
+            . "- Penyebutan 7 Hari Terakhir: {$viralMeta['recent_7d']}\n"
+            . "- Dasar Penilaian Viral: {$viralMeta['viral_basis']}\n"
+            . "\nATURAN TAMBAHAN:\n"
+            . "7. Sertakan penilaian khusus tentang kondisi viral ke dalam key viral_condition.\n"
+            . "8. Penilaian viral harus menyebut status, alasan, dan implikasi reputasinya secara singkat tapi jelas.";
 
         try {
             $router = app(AiProviderRouter::class);
@@ -142,6 +167,7 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             $project->forceFill([
                 'ai_insight_summary' => $normalized['summary'],
                 'ai_insight_recommendations' => $normalized['recommendations'],
+                'ai_insight_viral_summary' => $normalized['viral_condition'],
                 'ai_insight_updated_at' => now(),
             ])->save();
         } catch (RateLimitRetryException $e) {
@@ -184,8 +210,9 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             ?? $decoded['action_items']
             ?? $decoded['insight_recommendations']
             ?? [];
+        $viralCondition = trim((string) ($decoded['viral_condition'] ?? $decoded['viral'] ?? $decoded['viral_summary'] ?? ''));
 
-        if ($summary === '') {
+        if ($summary === '' || $viralCondition === '') {
             return null;
         }
 
@@ -217,19 +244,64 @@ class GenerateProjectAiInsightJob implements ShouldQueue
         return [
             'summary' => $summary,
             'recommendations' => $recommendations,
+            'viral_condition' => $viralCondition,
         ];
     }
 
     protected function buildValidationRetryPrompt(string $systemPrompt, string $rawText, string $originalPrompt): string
     {
-        return "Output sebelumnya belum valid untuk disimpan. Ubah hasil berikut menjadi JSON murni yang hanya berisi dua key: summary dan recommendations.\n\n"
+        return "Output sebelumnya belum valid untuk disimpan. Ubah hasil berikut menjadi JSON murni yang hanya berisi tiga key: summary, recommendations, dan viral_condition.\n\n"
             . "Aturan:\n"
             . "- summary harus berupa narasi isu berita yang spesifik, fokus ke pemberitaan, framing media, dan dampak reputasi.\n"
             . "- recommendations harus berupa array berisi minimal 3 butir tindakan respons isu yang spesifik.\n"
+            . "- viral_condition harus berupa satu paragraf khusus yang menilai kondisi viral secara eksplisit.\n"
             . "- Jangan tambahkan markdown, penjelasan, atau teks di luar JSON.\n\n"
             . "System prompt:\n{$systemPrompt}\n\n"
             . "Prompt asli:\n{$originalPrompt}\n\n"
             . "Output sebelumnya:\n{$rawText}";
+    }
+
+    protected function buildViralContext($articles): array
+    {
+        $periodEnd = $articles->max('published_at')
+            ? \Carbon\Carbon::parse($articles->max('published_at'))->endOfDay()
+            : now()->endOfDay();
+        $cutoff = $periodEnd->copy()->subDays(7);
+
+        $recent7d = $articles->filter(function ($article) use ($cutoff, $periodEnd) {
+            if (empty($article->published_at)) {
+                return false;
+            }
+
+            $publishedAt = \Carbon\Carbon::parse($article->published_at);
+
+            return $publishedAt->betweenIncluded($cutoff, $periodEnd);
+        })->count();
+
+        if ($recent7d >= 100) {
+            return [
+                'viral_status' => 'Sangat Viral',
+                'viral_desc' => 'Lonjakan percakapan sangat tinggi',
+                'recent_7d' => $recent7d,
+                'viral_basis' => 'Penyebutan 7 hari terakhir berada di atas ambang sangat viral.',
+            ];
+        }
+
+        if ($recent7d >= 30) {
+            return [
+                'viral_status' => 'Mulai Viral',
+                'viral_desc' => 'Ada peningkatan atensi',
+                'recent_7d' => $recent7d,
+                'viral_basis' => 'Penyebutan 7 hari terakhir menunjukkan kenaikan atensi yang konsisten.',
+            ];
+        }
+
+        return [
+            'viral_status' => 'Normal',
+            'viral_desc' => 'Volume berita stabil',
+            'recent_7d' => $recent7d,
+            'viral_basis' => 'Penyebutan 7 hari terakhir belum melewati ambang viral.',
+        ];
     }
 
     protected function renderTemplatePrompt(AiPromptTemplate $template, array $context): string
@@ -248,6 +320,10 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             '{top_sources}' => trim((string) ($context['top_sources'] ?? '-')),
             '{top_topics}' => trim((string) ($context['top_topics'] ?? '-')),
             '{top_articles}' => trim((string) ($context['top_articles'] ?? '-')),
+            '{viral_status}' => trim((string) ($context['viral_status'] ?? 'Normal')),
+            '{viral_desc}' => trim((string) ($context['viral_desc'] ?? 'Volume berita stabil')),
+            '{viral_recent_7d}' => trim((string) ($context['viral_recent_7d'] ?? '0')),
+            '{viral_basis}' => trim((string) ($context['viral_basis'] ?? '')),
         ];
 
         return strtr((string) $template->user_prompt_template, $replacements);
@@ -311,5 +387,39 @@ class GenerateProjectAiInsightJob implements ShouldQueue
         $source = trim($source);
 
         return $source !== '' ? $source : 'Sumber tidak diketahui';
+    }
+
+    /**
+     * Prevent governor projects from absorbing wagub-only articles just because
+     * they share a broad regional keyword such as "Kalimantan Timur".
+     */
+    protected function shouldSkipGovernorArticleMatch(Project $project, string $content): bool
+    {
+        $projectName = Str::lower($project->name ?? '');
+        $contentLower = Str::lower($content);
+
+        if (! Str::contains($projectName, 'gubernur')) {
+            return false;
+        }
+
+        $hasWagubSignal = Str::contains($contentLower, [
+            'wakil gubernur',
+            'wagub',
+            'seno aji',
+        ]);
+
+        if (! $hasWagubSignal) {
+            return false;
+        }
+
+        $hasStrongGovernorSignal = preg_match('/(?<!wakil\s)gubernur\s+kaltim/iu', $contentLower) === 1
+            || preg_match('/(?<!wakil\s)gubernur\s+kalimantan\s+timur/iu', $contentLower) === 1
+            || Str::contains($contentLower, [
+                'rudy mas',
+                'rudy mas\'ud',
+                'rudy mas’ud',
+            ]);
+
+        return ! $hasStrongGovernorSignal;
     }
 }
