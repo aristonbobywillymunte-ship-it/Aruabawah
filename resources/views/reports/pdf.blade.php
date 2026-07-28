@@ -47,17 +47,21 @@
   }
 </script>
 
-<style>
   /* ── A4 Landscape Frame for Browser Preview ── */
   .a4-landscape {
     width: 297mm;
-    height: 210mm;
+    min-height: 210mm;
     margin: 30px auto;
     background: #ffffff;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
     position: relative;
     box-sizing: border-box;
+  }
+  
+  /* ── Prevent elements from breaking mid-page ── */
+  .avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
   
   /* ── Print Styles: Forces chrome to render exactly as A4 Landscape margins 0 ── */
@@ -77,9 +81,14 @@
       margin: 0 !important;
       border: none !important;
       width: 297mm !important;
-      height: 210mm !important;
-      page-break-after: always !important;
-      overflow: hidden !important;
+      height: auto !important;
+      min-height: 210mm !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    .page-break-before {
+      page-break-before: always !important;
+      break-before: page !important;
     }
     @page {
       size: A4 landscape;
@@ -153,7 +162,7 @@
       <div class="col-span-8 flex flex-col gap-4">
         <!-- Executive Summary -->
         @if(empty($toggles) || !empty($toggles['wawasan']))
-        <div>
+        <div class="avoid-break">
           <div class="flex items-center gap-2 mb-2 border-b border-outline-variant pb-1">
             <span class="material-symbols-outlined text-primary text-[16px]">auto_graph</span>
             <h2 class="font-bold text-[10px] uppercase tracking-widest text-slate-800">Kesimpulan AI</h2>
@@ -168,7 +177,7 @@
 
         <!-- Strategic Recommendations -->
         @if(empty($toggles) || !empty($toggles['rekomendasi']))
-        <div>
+        <div class="avoid-break">
           <div class="flex items-center gap-2 mb-2 border-b border-outline-variant pb-1">
             <span class="material-symbols-outlined text-primary text-[16px]">lightbulb</span>
             <h2 class="font-bold text-[10px] uppercase tracking-widest text-slate-800">Rekomendasi AI</h2>
@@ -188,7 +197,7 @@
 
         <!-- Temporal Trends (Grafik Penyebutan) -->
         @if(empty($toggles) || !empty($toggles['grafikPenyebutan']))
-        <div>
+        <div class="avoid-break">
           <div class="flex items-center gap-2 mb-2 border-b border-outline-variant pb-1">
             <span class="material-symbols-outlined text-primary text-[16px]">query_stats</span>
             <h2 class="font-bold text-[10px] uppercase tracking-widest text-slate-800">Grafik Penyebutan</h2>
@@ -252,6 +261,7 @@
               * Grafik ini mengukur akselerasi penyebutan proyek di media massa serta media sosial secara kuartalan. Kenaikan kurva mencerminkan efektivitas perluasan jangkauan publikasi komunikasi.
             </div>
           </div>
+        </div>
         </div>
         @endif
       </div>
@@ -528,7 +538,7 @@
 
   <!-- ==================== HALAMAN 2 (Hanya dirender jika ada komponen halaman 2 yang aktif) ==================== -->
   @if(empty($toggles) || !empty($toggles['sumberBerita']) || !empty($toggles['sumberMedsos']) || !empty($toggles['konteks']) || !empty($toggles['perKataKunci']) || !empty($toggles['beritaPopuler']) || !empty($toggles['beritaTerbaru']))
-  <div class="a4-landscape flex flex-col p-10 justify-between">
+  <div class="a4-landscape flex flex-col p-10 justify-between page-break-before">
     <!-- Main Content Grid -->
     <div class="grid grid-cols-12 gap-6 flex-grow overflow-hidden">
       <!-- Column 1: Sources & Viral Potential (33%) -->
