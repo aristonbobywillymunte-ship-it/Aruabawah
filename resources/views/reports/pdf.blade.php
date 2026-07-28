@@ -268,25 +268,22 @@
       </div>
 
       <!-- Right Column: Metrics (33%) -->
-      <div class="col-span-4 flex flex-col gap-4 border-l border-outline-variant/60 pl-6 justify-start overflow-hidden">
+      <div class="col-span-4 flex flex-col gap-2 border-l border-outline-variant/60 pl-5 justify-start overflow-hidden text-[10px]">
         <!-- AI Viral Assessment -->
         @if(empty($toggles) || !empty($toggles['statistik']))
         <div>
-          <div class="flex items-center gap-1.5 mb-1 border-b border-outline-variant pb-0.5">
-            <span class="material-symbols-outlined text-{{ $viralMeta['viral_color'] }}-500 text-[14px]">local_fire_department</span>
-            <h2 class="font-bold text-[9px] uppercase tracking-widest text-slate-800">Kondisi Viral</h2>
+          <div class="flex items-center gap-1 mb-0.5 border-b border-outline-variant pb-0.5">
+            <span class="material-symbols-outlined text-{{ $viralMeta['viral_color'] }}-500 text-[12px]">local_fire_department</span>
+            <h2 class="font-bold text-[8.5px] uppercase tracking-widest text-slate-800">Kondisi Viral</h2>
           </div>
-          <div class="glass-panel rounded-xl p-3 shadow-sm bg-white border-glow">
-            <div class="flex items-center justify-between gap-3">
+          <div class="glass-panel rounded-xl p-2 bg-white border-glow">
+            <div class="flex items-center justify-between gap-2">
               <div class="min-w-0">
-                <div class="text-[8px] font-black uppercase tracking-widest text-{{ $viralMeta['viral_color'] }}-600">{{ $viralMeta['viral_status'] }}</div>
-                <div class="text-[10px] font-semibold text-slate-500 mt-0.5">{{ $viralMeta['viral_desc'] }}</div>
+                <div class="text-[7.5px] font-black uppercase tracking-widest text-{{ $viralMeta['viral_color'] }}-600">{{ $viralMeta['viral_status'] }}</div>
+                <div class="text-[9px] font-semibold text-slate-500 mt-0.5">{{ \Illuminate\Support\Str::limit($viralMeta['viral_desc'], 45) }}</div>
               </div>
-              <span class="inline-flex items-center rounded-full bg-{{ $viralMeta['viral_color'] }}-50 px-2 py-0.5 text-[8px] font-black text-{{ $viralMeta['viral_color'] }}-600 border border-{{ $viralMeta['viral_color'] }}-100 shrink-0">AI</span>
+              <span class="inline-flex items-center rounded-full bg-{{ $viralMeta['viral_color'] }}-50 px-1.5 py-0.5 text-[7px] font-black text-{{ $viralMeta['viral_color'] }}-600 border border-{{ $viralMeta['viral_color'] }}-100 shrink-0">AI</span>
             </div>
-            <p class="mt-2 text-[10px] leading-relaxed text-slate-600">
-              {{ $viralInsightSummary ?: $viralMeta['viral_desc'] }}
-            </p>
           </div>
         </div>
         @endif
@@ -298,30 +295,30 @@
           $igCount     = $socialMediaItems->filter(fn($item) => in_array(strtolower($item->platform), ['instagram', 'ig'], true))->count();
           $fbCount     = $socialMediaItems->filter(fn($item) => in_array(strtolower($item->platform), ['facebook', 'fb'], true))->count();
           $tiktokCount = $socialMediaItems->filter(fn($item) => in_array(strtolower($item->platform), ['tiktok', 'tik tok'], true))->count();
+
           $channelBreakdown = [
-            ['label' => 'Portal', 'count' => $portalCount, 'color' => '#0284c7', 'textClass' => 'text-primary', 'borderClass' => 'border-t-primary'],
-            ['label' => 'Instagram', 'count' => $igCount, 'color' => '#ec4899', 'textClass' => 'text-pink-600', 'borderClass' => 'border-t-pink-500'],
-            ['label' => 'Facebook', 'count' => $fbCount, 'color' => '#2563eb', 'textClass' => 'text-blue-600', 'borderClass' => 'border-t-blue-600'],
-            ['label' => 'TikTok', 'count' => $tiktokCount, 'color' => '#1e293b', 'textClass' => 'text-slate-800', 'borderClass' => 'border-t-slate-800'],
+            ['label' => 'Portal', 'count' => $portalCount, 'color' => '#0284c7', 'borderClass' => 'border-t-sky-500', 'textClass' => 'text-sky-600'],
+            ['label' => 'Instagram', 'count' => $igCount, 'color' => '#ec4899', 'borderClass' => 'border-t-pink-500', 'textClass' => 'text-pink-600'],
+            ['label' => 'Facebook', 'count' => $fbCount, 'color' => '#2563eb', 'borderClass' => 'border-t-blue-600', 'textClass' => 'text-blue-600'],
+            ['label' => 'TikTok', 'count' => $tiktokCount, 'color' => '#1e293b', 'borderClass' => 'border-t-slate-800', 'textClass' => 'text-slate-700'],
           ];
+
           $channelTotal = max(array_sum(array_column($channelBreakdown, 'count')), 1);
           $circ = 2 * M_PI * 14;
-          $donutCirc = 2 * M_PI * 26;
-          $donutOffset = 0;
         @endphp
         <div>
-          <div class="flex items-center gap-1.5 mb-1 border-b border-outline-variant pb-0.5">
-            <span class="material-symbols-outlined text-primary text-[14px]">bar_chart</span>
-            <h2 class="font-bold text-[9px] uppercase tracking-widest text-slate-800">Ringkasan Statistik</h2>
+          <div class="flex items-center gap-1 mb-0.5 border-b border-outline-variant pb-0.5">
+            <span class="material-symbols-outlined text-primary text-[12px]">bar_chart</span>
+            <h2 class="font-bold text-[8.5px] uppercase tracking-widest text-slate-800">Ringkasan Statistik</h2>
           </div>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-2 gap-1.5">
             @foreach($channelBreakdown as $segment)
-            <div class="glass-panel rounded-lg p-2 flex items-center justify-between border-t-4 {{ $segment['borderClass'] }} shadow-sm">
-              <div class="text-left min-w-0 pr-2">
-                <div class="text-[7.5px] {{ $segment['textClass'] }} uppercase tracking-wider font-bold">{{ $segment['label'] }}</div>
-                <div class="text-[15px] font-black text-slate-900 leading-none mt-1">{{ number_format($segment['count'], 0, ',', '.') }}</div>
+            <div class="glass-panel rounded-lg p-1.5 flex items-center justify-between border-t-2 {{ $segment['borderClass'] }} shadow-sm">
+              <div class="text-left min-w-0 pr-1.5">
+                <div class="text-[7px] {{ $segment['textClass'] }} uppercase tracking-wider font-bold">{{ $segment['label'] }}</div>
+                <div class="text-[13px] font-black text-slate-900 leading-none mt-0.5">{{ number_format($segment['count'], 0, ',', '.') }}</div>
               </div>
-              <svg class="w-6 h-6 shrink-0" viewBox="0 0 36 36">
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 36 36">
                 <circle cx="18" cy="18" r="14" fill="none" stroke="#e2e8f0" stroke-width="3.5"/>
                 @if($segment['count'] > 0)
                 <circle cx="18" cy="18" r="14" fill="none" stroke="{{ $segment['color'] }}" stroke-width="3.5"
@@ -344,12 +341,12 @@
           $negPercent = round(($negative / $total_s) * 100);
         @endphp
         <div>
-          <div class="flex items-center gap-1.5 mb-1.5 border-b border-outline-variant pb-0.5 justify-center">
-            <span class="material-symbols-outlined text-primary text-[15px]">pie_chart</span>
-            <h2 class="font-bold text-[9.5px] uppercase tracking-widest text-slate-800">Grafik Sentimen</h2>
+          <div class="flex items-center gap-1 mb-0.5 border-b border-outline-variant pb-0.5">
+            <span class="material-symbols-outlined text-primary text-[12px]">pie_chart</span>
+            <h2 class="font-bold text-[8.5px] uppercase tracking-widest text-slate-800">Grafik Sentimen</h2>
           </div>
-          <div class="glass-panel rounded-xl p-3 flex items-center justify-between border-glow shadow-sm bg-white">
-            <div class="relative w-16 h-16 shrink-0">
+          <div class="glass-panel rounded-xl p-2 flex items-center justify-between border-glow shadow-sm bg-white">
+            <div class="relative w-12 h-12 shrink-0">
               @php
                 $r = 38; $cx = 50; $cy = 50;
                 $circLarge = 2 * M_PI * $r;
@@ -379,27 +376,27 @@
                 @endforeach
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span class="text-[10px] font-black text-slate-800 leading-none">{{ $total }}</span>
-                <span class="text-[5px] font-bold text-slate-400 mt-0.5">TOTAL</span>
+                <span class="text-[9px] font-black text-slate-800 leading-none">{{ $total }}</span>
+                <span class="text-[4px] font-bold text-slate-400 mt-0.5">TOTAL</span>
               </div>
             </div>
-            <div class="space-y-1 flex-grow pl-4 text-[10px]">
-              <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded px-2 py-0.5">
-                <div class="flex items-center gap-1.5">
+            <div class="space-y-0.5 flex-grow pl-3 text-[9px]">
+              <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5">
+                <div class="flex items-center gap-1">
                   <span class="w-1.5 h-1.5 rounded-full bg-positive"></span>
                   <span class="font-medium text-slate-600">Positif</span>
                 </div>
                 <span class="font-extrabold text-slate-800">{{ $posPercent }}%</span>
               </div>
-              <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded px-2 py-0.5">
-                <div class="flex items-center gap-1.5">
+              <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5">
+                <div class="flex items-center gap-1">
                   <span class="w-1.5 h-1.5 rounded-full bg-neutral"></span>
                   <span class="font-medium text-slate-600">Netral</span>
                 </div>
                 <span class="font-extrabold text-slate-800">{{ $neuPercent }}%</span>
               </div>
-              <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded px-2 py-0.5">
-                <div class="flex items-center gap-1.5">
+              <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5">
+                <div class="flex items-center gap-1">
                   <span class="w-1.5 h-1.5 rounded-full bg-negative"></span>
                   <span class="font-medium text-slate-600">Negatif</span>
                 </div>
@@ -413,18 +410,18 @@
         <!-- Keyword Analysis -->
         @if(empty($toggles) || !empty($toggles['perKataKunci']))
         <div>
-          <div class="flex items-center gap-1.5 mb-1.5 border-b border-outline-variant pb-0.5">
-            <span class="material-symbols-outlined text-primary text-[14px]">list_alt</span>
-            <h2 class="font-bold text-[9.5px] uppercase tracking-widest text-slate-800">Analisis Kata Kunci</h2>
+          <div class="flex items-center gap-1 mb-0.5 border-b border-outline-variant pb-0.5">
+            <span class="material-symbols-outlined text-primary text-[12px]">list_alt</span>
+            <h2 class="font-bold text-[8.5px] uppercase tracking-widest text-slate-800">Analisis Kata Kunci</h2>
           </div>
-          <div class="glass-panel rounded-xl p-2.5 flex flex-col items-center border-glow shadow-sm bg-white font-sans">
+          <div class="glass-panel rounded-xl p-2 flex flex-col items-center border-glow shadow-sm bg-white font-sans">
             @php
               $kwColors = ['#0ea5e9', '#7c3aed', '#059669', '#ea580c', '#3b82f6'];
               $topKeywords = array_slice($keywordsTable, 0, 5, true);
               $totalKw = max(array_sum($topKeywords), 1);
             @endphp
-            <div class="w-full flex items-center justify-between gap-3">
-              <div class="relative w-12 h-12 shrink-0">
+            <div class="w-full flex items-center justify-between gap-2.5">
+              <div class="relative w-9 h-9 shrink-0">
                 <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
                   <circle cx="50" cy="50" r="38" fill="none" stroke="#e2e8f0" stroke-width="12"/>
                   @php
@@ -446,7 +443,7 @@
                   @endforeach
                 </svg>
               </div>
-              <div class="flex-grow space-y-0.5 text-[8.5px]">
+              <div class="flex-grow space-y-0.5 text-[8px]">
                 @foreach($topKeywords as $kw => $cnt)
                   @php
                     $c = $kwColors[$loop->index % count($kwColors)];
@@ -459,7 +456,7 @@
                     </div>
                     <div class="text-right shrink-0 ml-1">
                       <span class="font-extrabold text-slate-900">{{ $cnt }}</span>
-                      <span class="text-slate-400 text-[7px] ml-0.5">({{ $pct }}%)</span>
+                      <span class="text-slate-400 text-[6.5px] ml-0.5">({{ $pct }}%)</span>
                     </div>
                   </div>
                 @endforeach
@@ -472,18 +469,18 @@
         <!-- Penyebutan Per Sumber -->
         @if(empty($toggles) || !empty($toggles['sumberBerita']) || !empty($toggles['sumberMedsos']))
         <div>
-          <div class="flex items-center gap-1.5 mb-1.5 border-b border-outline-variant pb-0.5">
-            <span class="material-symbols-outlined text-primary text-[14px]">analytics</span>
-            <h2 class="font-bold text-[9.5px] uppercase tracking-widest text-slate-800">Penyebutan Per Sumber</h2>
+          <div class="flex items-center gap-1 mb-0.5 border-b border-outline-variant pb-0.5">
+            <span class="material-symbols-outlined text-primary text-[12px]">analytics</span>
+            <h2 class="font-bold text-[8.5px] uppercase tracking-widest text-slate-800">Penyebutan Per Sumber</h2>
           </div>
-          <div class="glass-panel rounded-xl p-2.5 flex flex-col items-center border-glow shadow-sm bg-white font-sans">
+          <div class="glass-panel rounded-xl p-2 flex flex-col items-center border-glow shadow-sm bg-white font-sans">
             @php
               $srcColors = ['#0ea5e9', '#7c3aed', '#059669', '#ea580c', '#3b82f6'];
               $topSources = array_slice($sourceCounts, 0, 5, true);
               $totalSrc = max(array_sum($topSources), 1);
             @endphp
-            <div class="w-full flex items-center justify-between gap-3">
-              <div class="relative w-12 h-12 shrink-0">
+            <div class="w-full flex items-center justify-between gap-2.5">
+              <div class="relative w-9 h-9 shrink-0">
                 <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
                   <circle cx="50" cy="50" r="38" fill="none" stroke="#e2e8f0" stroke-width="12"/>
                   @php
@@ -505,7 +502,7 @@
                   @endforeach
                 </svg>
               </div>
-              <div class="flex-grow space-y-0.5 text-[8.5px]">
+              <div class="flex-grow space-y-0.5 text-[8px]">
                 @foreach($topSources as $src => $cnt)
                   @php
                     $c = $srcColors[$loop->index % count($srcColors)];
@@ -517,8 +514,8 @@
                       <span class="text-slate-700 font-bold break-all leading-none">{{ $src }}</span>
                     </div>
                     <div class="text-right shrink-0 ml-1">
-                      <span class="font-extrabold text-slate-900 text-[8.5px]">{{ $cnt }}</span>
-                      <span class="text-slate-400 text-[7px] ml-0.5">({{ $pct }}%)</span>
+                      <span class="font-extrabold text-slate-900 text-[8px]">{{ $cnt }}</span>
+                      <span class="text-slate-400 text-[6.5px] ml-0.5">({{ $pct }}%)</span>
                     </div>
                   </div>
                 @endforeach
