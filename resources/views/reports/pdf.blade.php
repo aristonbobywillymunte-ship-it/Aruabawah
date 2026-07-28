@@ -47,6 +47,7 @@
   }
 </script>
 
+<style>
   /* ── A4 Landscape Frame for Browser Preview ── */
   .a4-landscape {
     width: 297mm;
