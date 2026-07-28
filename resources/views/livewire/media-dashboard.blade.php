@@ -1352,18 +1352,18 @@
 
                     <!-- SVGs Line Chart (Daily trend) -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm text-left space-y-4" x-data="{ trendMode: 'harian', activePoint: null }">
-                            <div class="flex justify-between items-center pb-2 border-b border-slate-100/85">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-slate-100/85">
                                 <div class="space-y-0.5 text-left">
-                                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <h3 class="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                                         <span class="material-symbols-outlined text-[18px] text-[#1fa387]">show_chart</span>
                                         Grafik Tren Kinerja Proyek
                                     </h3>
-                                    <p class="text-[11px] text-slate-400">Memantau fluktuasi volume data artikel yang berhasil dihimpun oleh scraper.</p>
+                                    <p class="text-[10px] text-slate-450 mt-1 leading-snug">Memantau fluktuasi volume data artikel yang berhasil dihimpun oleh scraper.</p>
                                 </div>
-                                <div class="bg-slate-100 p-0.5 rounded-xl flex gap-1 text-[10px] font-bold text-slate-500 shadow-inner">
-                                    <button @click="trendMode = 'harian'" class="px-4 py-1.5 rounded-lg transition cursor-pointer" :class="trendMode == 'harian' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Harian</button>
-                                    <button @click="trendMode = 'mingguan'" class="px-4 py-1.5 rounded-lg transition cursor-pointer" :class="trendMode == 'mingguan' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Mingguan</button>
-                                    <button @click="trendMode = 'bulanan'" class="px-4 py-1.5 rounded-lg transition cursor-pointer" :class="trendMode == 'bulanan' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Bulanan</button>
+                                <div class="bg-slate-100 p-0.5 rounded-xl flex gap-1 text-[10px] font-bold text-slate-500 shadow-inner w-full sm:w-auto justify-center">
+                                    <button @click="trendMode = 'harian'" class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg transition cursor-pointer" :class="trendMode == 'harian' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Harian</button>
+                                    <button @click="trendMode = 'mingguan'" class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg transition cursor-pointer" :class="trendMode == 'mingguan' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Mingguan</button>
+                                    <button @click="trendMode = 'bulanan'" class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg transition cursor-pointer" :class="trendMode == 'bulanan' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Bulanan</button>
                                 </div>
                             </div>
                             
