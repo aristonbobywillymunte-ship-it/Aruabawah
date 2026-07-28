@@ -916,10 +916,10 @@ new class extends Component
                                     @error('name') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>
 
-                                <!-- Telegram Chat ID (Wajib) -->
+                                <!-- Telegram Chat ID -->
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between">
-                                        <label class="text-sm font-bold text-slate-800 block">Telegram Chat ID (Wajib)</label>
+                                        <label class="text-sm font-bold text-slate-800 block">Telegram Chat ID</label>
                                         <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
                                     </div>
                                     <p class="text-xs text-slate-400 leading-tight">Masukkan ID chat/group Telegram tanpa menggunakan tanda minus di depan (contoh: 10022334455).</p>
@@ -1483,10 +1483,10 @@ new class extends Component
                                 @error('editName') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>
 
-                                <!-- Telegram Chat ID (Wajib) -->
+                                <!-- Telegram Chat ID -->
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between">
-                                        <label class="text-sm font-bold text-slate-800 block">Telegram Chat ID (Wajib)</label>
+                                        <label class="text-sm font-bold text-slate-800 block">Telegram Chat ID</label>
                                         <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
                                     </div>
                                     <p class="text-xs text-slate-400 leading-tight">Masukkan ID chat/group Telegram tanpa menggunakan tanda minus di depan (contoh: 10022334455).</p>

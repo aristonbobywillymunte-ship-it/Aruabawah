@@ -14,6 +14,8 @@ Date: 2026-07-28
 - The Laporan PDF button in `MediaDashboard` now prepares AI insight first, shows a loading overlay, and opens the PDF only after the AI report is ready.
 - `GenerateProjectAiInsightJob` now forces persistence of `ai_insight_summary`, `ai_insight_recommendations`, and `ai_insight_updated_at` so the AI result is not blocked by mass-assignment rules.
 - The AI prompt for report insight was rewritten to emphasize berita/isu, framing media, reputational risk, and issue-specific recommendations.
+- The report prompt is now sourced from the admin-managed `AI Prompt Templates` record with `source_type=report`, so the report AI flow reads prompt data from the database instead of a hardcoded fallback.
+- A default report template named `Laporan AI Media Intelligence` is seeded to keep the report prompt available in admin and production environments.
 
 ## Verification
 - PHP syntax check passed for the modified files.

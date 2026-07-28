@@ -116,7 +116,7 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             $decoded = $this->decodeAiJson($rawText);
 
             if (! $decoded) {
-                $retryPrompt = $this->buildValidationRetryPrompt(trim((string) $template->system_prompt), trim($renderedPrompt), $rawText, $template);
+                $retryPrompt = $this->buildValidationRetryPrompt(trim((string) $template->system_prompt), $rawText, trim($renderedPrompt));
                 $retryResult = $router->execute(
                     trim((string) $template->system_prompt),
                     $retryPrompt,
@@ -220,13 +220,14 @@ class GenerateProjectAiInsightJob implements ShouldQueue
         ];
     }
 
-    protected function buildValidationRetryPrompt(string $originalPrompt, string $rawText): string
+    protected function buildValidationRetryPrompt(string $systemPrompt, string $rawText, string $originalPrompt): string
     {
         return "Output sebelumnya belum valid untuk disimpan. Ubah hasil berikut menjadi JSON murni yang hanya berisi dua key: summary dan recommendations.\n\n"
             . "Aturan:\n"
             . "- summary harus berupa narasi isu berita yang spesifik, fokus ke pemberitaan, framing media, dan dampak reputasi.\n"
             . "- recommendations harus berupa array berisi minimal 3 butir tindakan respons isu yang spesifik.\n"
             . "- Jangan tambahkan markdown, penjelasan, atau teks di luar JSON.\n\n"
+            . "System prompt:\n{$systemPrompt}\n\n"
             . "Prompt asli:\n{$originalPrompt}\n\n"
             . "Output sebelumnya:\n{$rawText}";
     }
