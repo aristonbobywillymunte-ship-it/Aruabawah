@@ -1683,7 +1683,7 @@
                                     <p class="text-[10px] text-slate-400">Pengelompokan penyebutan berita berdasarkan klasifikasi topik.</p>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-3 flex-grow overflow-y-auto pr-1">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-grow overflow-y-auto pr-1">
                                 <!-- News -->
                                 <div class="group relative rounded-2xl p-[1px] bg-gradient-to-br from-emerald-400/40 via-emerald-200/20 to-teal-400/30 hover:-translate-y-1 hover:shadow-[0_8px_30px_-6px_rgba(16,185,129,0.25)] transition-all duration-300 cursor-pointer">
                                     <div class="relative bg-white rounded-[15px] p-3.5 flex items-center gap-3.5 h-[80px] overflow-hidden">
