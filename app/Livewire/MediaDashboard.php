@@ -1723,7 +1723,9 @@ class MediaDashboard extends Component
                 $recs[] = "Gunakan influencer lokal untuk memperkuat pesan positif di kanal media sosial utama.";
             }
             // Top categories
-            $categories = (clone $baseQuery)->select('category', \DB::raw('count(*) as total'))
+            $categoriesQuery = clone $baseQuery;
+            $categoriesQuery->getQuery()->columns = []; // RESET SELECT COLUMNS
+            $categories = $categoriesQuery->select(['category', \DB::raw('count(*) as total')])
                 ->groupBy('category')
                 ->orderByDesc('total')
                 ->limit(5)
@@ -1731,23 +1733,34 @@ class MediaDashboard extends Component
                 ->toArray();
 
             // Top sources with sentiment breakdown
-            $sources = (clone $baseQuery)->leftJoin('ai_analysis_results as ai', function ($join) {
+            $sourcesQuery = clone $baseQuery;
+            $sourcesQuery->getQuery()->columns = []; // RESET SELECT COLUMNS
+            $sources = $sourcesQuery->leftJoin('ai_analysis_results as ai', function ($join) {
                 $join->on('articles.id', '=', 'ai.article_id')
                      ->where('ai.analysis_status', '=', 'success');
             })
-            ->select('articles.source_name', \DB::raw('count(articles.id) as total'))
-            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive")
-            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral")
-            ->selectRaw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
+            ->select([
+                'articles.source_name',
+                \DB::raw('count(articles.id) as total'),
+                \DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive"),
+                \DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral"),
+                \DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
+            ])
             ->groupBy('articles.source_name')
             ->orderByDesc('total')
             ->limit(5)
             ->get()
             ->toArray();
 
-            $negativeIssues = (clone $baseQueryWithAI)
+            $negativeIssuesQuery = clone $baseQueryWithAI;
+            $negativeIssuesQuery->getQuery()->columns = []; // RESET SELECT COLUMNS
+            $negativeIssues = $negativeIssuesQuery
                 ->where('ai.sentiment', 'negative')
-                ->selectRaw('COALESCE(ai.main_issue, articles.category, articles.title) as issue, COUNT(*) as total, MIN(articles.url) as url')
+                ->select([
+                    \Illuminate\Support\Facades\DB::raw('COALESCE(ai.main_issue, articles.category, articles.title) as issue'),
+                    \Illuminate\Support\Facades\DB::raw('COUNT(*) as total'),
+                    \Illuminate\Support\Facades\DB::raw('MIN(articles.url) as url')
+                ])
                 ->groupBy('issue')
                 ->orderByDesc('total')
                 ->limit(5)
@@ -1760,13 +1773,15 @@ class MediaDashboard extends Component
                 ])
                 ->toArray();
 
-            $riskTriggers = (clone $baseQueryWithAI)
+            $riskTriggersQuery = clone $baseQueryWithAI;
+            $riskTriggersQuery->getQuery()->columns = []; // RESET SELECT COLUMNS
+            $riskTriggers = $riskTriggersQuery
                 ->whereIn('ai.risk_level', ['high', 'critical'])
                 ->orderByRaw("CASE ai.risk_level WHEN 'critical' THEN 2 WHEN 'high' THEN 1 ELSE 0 END DESC")
                 ->orderByDesc('ai.project_estimated_readers')
                 ->orderByDesc('articles.published_at')
             ->limit(5)
-            ->get([
+            ->select([
                 'articles.id',
                 'articles.title',
                 'articles.source_name',
@@ -1777,6 +1792,7 @@ class MediaDashboard extends Component
                 'ai.sentiment',
                 'ai.project_estimated_readers',
             ])
+            ->get()
             ->map(fn ($row) => [
                 'title' => Str::limit((string) $row->title, 86),
                 'source' => $row->source_name ?: 'Sumber tidak diketahui',
