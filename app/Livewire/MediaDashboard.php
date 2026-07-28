@@ -484,6 +484,7 @@ class MediaDashboard extends Component
 
     public function updatedKeywordSearch()
     {
+        $this->limit = 5;
         $this->resetPage();
     }
 
@@ -497,44 +498,52 @@ class MediaDashboard extends Component
 
     public function updatedStartDate()
     {
+        $this->limit = 5;
         $this->resetPage();
         $this->rebuildKeywordsTable();
     }
 
     public function updatedEndDate()
     {
+        $this->limit = 5;
         $this->resetPage();
         $this->rebuildKeywordsTable();
     }
 
     public function updatedSelectedSentiment()
     {
+        $this->limit = 5;
         $this->resetPage();
     }
 
     public function updatedSelectedSources()
     {
+        $this->limit = 5;
         $this->resetPage();
     }
 
     public function updatedSelectedCategory()
     {
+        $this->limit = 5;
         $this->resetPage();
     }
 
     public function updatedStartDay()
     {
+        $this->limit = 5;
         $this->resetPage();
     }
 
     public function updatedEndDay()
     {
+        $this->limit = 5;
         $this->resetPage();
     }
 
     public function setSort($sort)
     {
         $this->sortBy = $sort;
+        $this->limit = 5;
         $this->resetPage();
     }
 

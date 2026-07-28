@@ -3560,17 +3560,61 @@
                         </div>
                     </div>
                     
-                    <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
+                    @php
+                        $contentArticlesList = $this->getArticles();
+                        $contentArticlesCount = $contentArticlesList->count();
+                        $contentTotalArticlesCount = $this->getTotalArticlesCount();
+                        $contentFeedSignature = md5(json_encode([
+                            'project' => $projectId,
+                            'sources' => $selectedSources,
+                            'sentiment' => $selectedSentiment,
+                            'search' => $search,
+                            'start' => $startDate,
+                            'end' => $endDate,
+                            'sort' => $sortBy,
+                        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+                    @endphp
 
+                    <div
+                        style="height: calc(100vh - 250px);"
+                        class="overflow-y-auto pr-4 space-y-6"
+                        wire:key="content-feed-scroll-shell-{{ $contentFeedSignature }}"
+                        data-total-count="{{ $contentTotalArticlesCount }}"
+                        x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
+                        x-init="
+                            const feedEl = $el;
+                            const triggerLoadMore = () => {
+                                const total = parseInt(feedEl.getAttribute('data-total-count') || '0', 10);
+                                const loaded = feedEl.querySelectorAll('[data-content-card]').length;
+                                if (loaded >= total) return;
+                                const usesWindowScroll = feedEl.scrollHeight <= (feedEl.clientHeight + 4);
+                                const nearBottom = usesWindowScroll
+                                    ? (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 220)
+                                    : (feedEl.scrollTop + feedEl.clientHeight >= feedEl.scrollHeight - 220);
+                                if (!nearBottom) return;
+                                if (Date.now() - lastLoadMoreAt < 1200) return;
+                                lastLoadMoreAt = Date.now();
+                                Promise.resolve($wire.loadMore())
+                                    .catch(() => {})
+                                    .finally(() => setTimeout(() => { lastLoadMoreAt = 0; }, 900));
+                            };
+                            const onScroll = () => requestAnimationFrame(triggerLoadMore);
+                            feedEl.addEventListener('scroll', onScroll, { passive: true });
+                            window.addEventListener('scroll', onScroll, { passive: true });
+                            window.addEventListener('resize', onScroll);
+                            if (loadMoreTimer) {
+                                clearInterval(loadMoreTimer);
+                            }
+                            loadMoreTimer = setInterval(triggerLoadMore, 900);
+                            triggerLoadMore();
+                        "
+                    >
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                        @php
-                            $articlesList = $this->getArticles();
-                        @endphp
-                        @forelse($articlesList as $article)
+                        @forelse($contentArticlesList as $article)
                             @php
                                 $articleReachDisp = $this->getProjectReachDisplayData($article);
                             @endphp
-                            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-[0_4px_15px_-3px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_25px_-5px_rgba(31,163,135,0.1)] hover:border-[#1fa387]/30 transition-all flex flex-col group">
+                            <div data-content-card class="bg-white rounded-2xl border border-slate-200 p-5 shadow-[0_4px_15px_-3px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_25px_-5px_rgba(31,163,135,0.1)] hover:border-[#1fa387]/30 transition-all flex flex-col group">
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center gap-2">
                                         <span class="text-[10px] font-extrabold px-3 py-1.5 rounded-lg uppercase tracking-wider {{ $this->getValidAiResult($article)?->sentiment_score ?? 0 >= 0.3 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : ($this->getValidAiResult($article)?->sentiment_score ?? 0 <= -0.3 ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-50 text-slate-600 border border-slate-100') }}">
@@ -3685,11 +3729,7 @@
                     </div>
 
                     <!-- Infinite Scroll / Load More -->
-                    @php
-                        $totalArticlesCount = $this->getTotalArticlesCount();
-                    @endphp
-
-                    @if($articlesList->count() < $totalArticlesCount)
+                    @if($contentArticlesCount < $contentTotalArticlesCount)
                         <div class="py-6 text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-2">
                             <svg class="animate-spin h-4 w-4 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -3698,12 +3738,13 @@
                             <span>Memuat data lainnya...</span>
                         </div>
                     @else
-                        @if($articlesList->count() > 0)
+                        @if($contentArticlesCount > 0)
                         <div class="py-6 mt-4 border-t border-slate-100 text-center text-xs text-slate-400 font-medium">
                             <p class="text-slate-500 font-semibold">Semua konten telah dimuat</p>
                         </div>
                         @endif
                     @endif
+                    </div>
                     </div>
                 </section>
 
@@ -3719,24 +3760,45 @@
                     </div>
                     
                     @php
-                        $contentArticlesList = $this->getArticles();
-                        $contentArticlesCount = $contentArticlesList->count();
-                        $contentTotalArticlesCount = $this->getTotalArticlesCount();
+                        $sourceArticlesList = $this->getArticles();
+                        $sourceArticlesCount = $sourceArticlesList->count();
+                        $sourceTotalArticlesCount = $this->getTotalArticlesCount();
+                        $sourceFeedSignature = md5(json_encode([
+                            'project' => $projectId,
+                            'sources' => $selectedSources,
+                            'sentiment' => $selectedSentiment,
+                            'search' => $search,
+                            'start' => $startDate,
+                            'end' => $endDate,
+                            'sort' => $sortBy,
+                        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                     @endphp
                     <div
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-6"
+                        wire:key="source-feed-scroll-shell-{{ $sourceFeedSignature }}"
+                        data-total-count="{{ $sourceTotalArticlesCount }}"
                         x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
                         x-init="
                             const feedEl = $el;
                             const triggerLoadMore = () => {
-                                if (feedEl.scrollTop + feedEl.clientHeight < feedEl.scrollHeight - 200) return;
-                                if ({{ $contentArticlesCount }} >= {{ $contentTotalArticlesCount }}) return;
+                                const total = parseInt(feedEl.getAttribute('data-total-count') || '0', 10);
+                                const loaded = feedEl.querySelectorAll('[data-source-card]').length;
+                                if (loaded >= total) return;
+                                const usesWindowScroll = feedEl.scrollHeight <= (feedEl.clientHeight + 4);
+                                const nearBottom = usesWindowScroll
+                                    ? (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 220)
+                                    : (feedEl.scrollTop + feedEl.clientHeight >= feedEl.scrollHeight - 220);
+                                if (!nearBottom) return;
                                 if (Date.now() - lastLoadMoreAt < 1200) return;
                                 lastLoadMoreAt = Date.now();
-                                $wire.loadMore();
+                                Promise.resolve($wire.loadMore())
+                                    .catch(() => {})
+                                    .finally(() => setTimeout(() => { lastLoadMoreAt = 0; }, 900));
                             };
                             feedEl.addEventListener('scroll', triggerLoadMore, { passive: true });
+                            window.addEventListener('scroll', triggerLoadMore, { passive: true });
+                            window.addEventListener('resize', triggerLoadMore);
                             if (feedEl.loadMoreTimer) {
                                 clearInterval(feedEl.loadMoreTimer);
                             }
@@ -3814,7 +3876,7 @@
                                                 $logoBg = 'bg-slate-50';
                                             }
                                         @endphp
-                                        <tr class="hover:bg-slate-50/60 transition-all duration-200 group">
+                                        <tr data-source-card class="hover:bg-slate-50/60 transition-all duration-200 group">
                                             <!-- Logo & Name -->
                                             <td class="py-3 px-4 rounded-l-2xl border-y border-l border-slate-100/60 group-hover:border-slate-200/80">
                                                 <div class="flex items-center gap-3">
