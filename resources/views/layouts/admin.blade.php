@@ -29,19 +29,19 @@
         <aside class="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto z-40">
             <div class="flex flex-col h-full">
                 <!-- Brand logo + Mobile Menu Toggle Button -->
-                <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 lg:border-none lg:py-5 shrink-0">
-                    <a href="{{ url('/admin') }}" class="flex items-center gap-1.5">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 lg:border-none lg:py-6 shrink-0">
+                    <a href="{{ url('/admin') }}" class="flex items-center gap-3">
                         @if($customLogo = \App\Helpers\AppBrandingHelper::getAppLogoPath())
-                            <img src="{{ asset('storage/' . $customLogo) }}" class="h-5 max-w-[60px] object-contain shrink-0">
+                            <img src="{{ asset('storage/' . $customLogo) }}" class="h-7 max-w-[80px] object-contain shrink-0">
                         @else
-                            <svg width="14" height="14" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0">
-                                <polygon points="21,4 39,38 3,38" fill="none" stroke="#c0392b" stroke-width="4" stroke-linejoin="round"/>
-                                <line x1="11" y1="28" x2="31" y2="28" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>
+                            <svg width="24" height="24" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0">
+                                <polygon points="21,4 39,38 3,38" fill="none" stroke="#1fa387" stroke-width="4.5" stroke-linejoin="round"/>
+                                <line x1="11" y1="28" x2="31" y2="28" stroke="#1fa387" stroke-width="4.5" stroke-linecap="round"/>
                             </svg>
                         @endif
                         <div class="leading-none text-left">
-                            <div class="text-[10px] font-black leading-none tracking-wider text-slate-900 uppercase">{{ \App\Helpers\AppBrandingHelper::getAppName() }}</div>
-                            <div class="mt-0.5 text-[10px] font-black leading-none tracking-wider text-slate-400">Media Intelligence</div>
+                            <div class="text-[13px] font-black leading-none tracking-widest text-slate-900 uppercase">{{ \App\Helpers\AppBrandingHelper::getAppName() }}</div>
+                            <div class="mt-1 text-[9px] font-bold leading-none tracking-[0.16em] text-slate-400 uppercase">Media Intelligence</div>
                         </div>
                     </a>
                     <button @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden flex items-center justify-center p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500">
