@@ -555,10 +555,10 @@
                     <!-- Section Title & Sort Selector -->
                     <div class="flex items-center justify-between gap-3 pb-2.5 border-b border-slate-100">
                         <div>
-                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-[#1fa387] text-[20px]">forum</span>Penyebutan
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
+                                <span class="material-symbols-outlined text-[#1fa387] text-[20px] sm:text-[22px]">forum</span>Penyebutan
                             </h2>
-                            <p class="text-[10px] sm:text-xs text-slate-400 mt-1">
+                            <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 text-left leading-relaxed">
                                 Pantau percakapan media proyek <span class="hidden sm:inline font-bold text-[#1fa387]">{{ $projectName }}</span>
                             </p>
                         </div>
@@ -1036,8 +1036,10 @@
                 <!-- TAB 2: Analisis (Redesigned matching screenshots) -->
                 <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:key="dashboard-analysis-section">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-900 mb-0.5 text-left flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">analytics</span>Analisis</h2>
-                        <p class="text-xs text-slate-500 text-left">Pantau ringkasan performa dan wawasan data yang relevan untuk proyek aktif.</p>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
+                            <span class="material-symbols-outlined text-[#1fa387] text-[20px] sm:text-[22px]">analytics</span>Analisis
+                        </h2>
+                        <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 text-left leading-relaxed">Pantau ringkasan performa dan wawasan data yang relevan untuk proyek aktif.</p>
                     </div>
                     @php
                         $analysisArticlesList = $this->getArticles();
@@ -2288,8 +2290,10 @@
                 <section class="flex-1 min-w-0 pr-1 relative z-10" wire:key="dashboard-keyword-section">
                     <div class="flex items-center justify-between text-left shrink-0">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2"><span class="material-symbols-outlined text-[#1fa387] text-[22px]">vpn_key</span>Pengaturan dan Analisis Kata Kunci</h2>
-                            <p class="text-xs text-slate-500">Pantau performa tren pencarian untuk proyek <span class="text-[#1fa387] font-bold uppercase">{{ $projectName }}</span></p>
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
+                                <span class="material-symbols-outlined text-[#1fa387] text-[20px] sm:text-[22px]">vpn_key</span>Pengaturan dan Analisis Kata Kunci
+                            </h2>
+                            <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 text-left leading-relaxed">Pantau performa tren pencarian untuk proyek <span class="text-[#1fa387] font-bold uppercase">{{ $projectName }}</span></p>
                         </div>
                     </div>
 
@@ -3148,10 +3152,10 @@
                     <!-- Header -->
                     <div class="flex justify-between items-start text-left">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[#1fa387] text-[22px]">assignment</span>Konfigurasi Laporan
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
+                                <span class="material-symbols-outlined text-[#1fa387] text-[20px] sm:text-[22px]">assignment</span>Konfigurasi Laporan
                             </h2>
-                            <p class="text-xs text-slate-500">Pilih komponen data yang akan disertakan dalam dokumen.</p>
+                            <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 text-left leading-relaxed">Pilih komponen data yang akan disertakan dalam dokumen.</p>
                         </div>
                     </div>
 
@@ -3575,10 +3579,10 @@
                 <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <div class="flex items-center justify-between shrink-0">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[#1fa387] text-[22px]">article</span>Manajemen Konten
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
+                                <span class="material-symbols-outlined text-[#1fa387] text-[20px] sm:text-[22px]">article</span>Manajemen Konten
                             </h2>
-                            <p class="text-xs text-slate-500">Galeri konten artikel dan postingan yang berhasil dikumpulkan.</p>
+                            <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 text-left leading-relaxed">Galeri konten artikel dan postingan yang berhasil dikumpulkan.</p>
                         </div>
                     </div>
                     
@@ -3774,10 +3778,10 @@
                 <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <div class="flex items-center justify-between shrink-0">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[#1fa387] text-[22px]">public</span>Sumber Data
+                            <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
+                                <span class="material-symbols-outlined text-[#1fa387] text-[20px] sm:text-[22px]">public</span>Sumber Data
                             </h2>
-                            <p class="text-xs text-slate-500">Statistik dan daftar sumber portal yang menyebut proyek ini.</p>
+                            <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 text-left leading-relaxed">Statistik dan daftar sumber portal yang menyebut proyek ini.</p>
                         </div>
                     </div>
                     
