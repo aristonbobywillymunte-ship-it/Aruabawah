@@ -32,55 +32,9 @@ class ContentMatchingService
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
         return Cache::remember($cacheKey, 300, function () use ($project) {
-            $primaryKeywords = $project->scrapeKeywordVariants();
-            $contextKeywords = $project->scrapeContextKeywordVariants();
-            $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
-            $excludeKeywords = $project->scrapeExcludeKeywords();
-
-            if ($matchKeywords === []) {
-                return ['articles' => 0, 'social' => 0];
-            }
-
-            $articleCount = 0;
-            Article::query()
-                ->select(['id', 'title', 'content'])
-                ->chunkById(250, function ($articles) use ($matchKeywords, $excludeKeywords, &$articleCount) {
-                    foreach ($articles as $article) {
-                        $content = ($article->title ?? '') . "\n" . ($article->content ?? '');
-
-                        if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
-                            continue;
-                        }
-
-                        if ($this->matchesAnyKeyword($matchKeywords, $content)) {
-                            $articleCount++;
-                        }
-                    }
-                });
-
-            $socialCount = 0;
-            SocialMediaItem::query()
-                ->select(['id', 'author_name', 'content', 'raw_json'])
-                ->chunkById(250, function ($items) use ($matchKeywords, $excludeKeywords, &$socialCount) {
-                    foreach ($items as $item) {
-                        $content = $this->buildSocialMatchText(
-                            $item->content ?? null,
-                            $item->raw_json ?? null,
-                        );
-
-                        if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
-                            continue;
-                        }
-
-                        if ($this->matchesAnyKeyword($matchKeywords, $content)) {
-                            $socialCount++;
-                        }
-                    }
-                });
-
             return [
-                'articles' => $articleCount,
-                'social' => $socialCount,
+                'articles' => (int) $project->articles()->count(),
+                'social' => (int) $project->socialMediaItems()->count(),
             ];
         });
     }
@@ -184,7 +138,6 @@ class ContentMatchingService
         if (! $project || ! $project->is_active || $project->trashed()) {
             return [
                 'articles_linked' => 0,
-                'social_linked' => 0,
                 'skipped' => true,
                 'reason' => 'project_inactive_or_deleted',
             ];
@@ -196,18 +149,18 @@ class ContentMatchingService
         $excludeKeywords = $project->scrapeExcludeKeywords();
 
         if ($matchKeywords === []) {
+            $project->articles()->sync([]);
             return [
                 'articles_linked' => 0,
-                'social_linked' => 0,
                 'skipped' => true,
                 'reason' => 'no_keywords',
             ];
         }
 
-        $articlesLinked = 0;
+        $matchedIds = [];
         Article::query()
             ->select(['id', 'title', 'content'])
-            ->chunkById(250, function ($articles) use ($project, $matchKeywords, $excludeKeywords, &$articlesLinked) {
+            ->chunkById(250, function ($articles) use ($project, $matchKeywords, $excludeKeywords, &$matchedIds) {
                 foreach ($articles as $article) {
                     $content = ($article->title ?? '') . "\n" . ($article->content ?? '');
                     if ($this->shouldSkipGovernorArticleMatch($project, $content)) {
@@ -219,50 +172,30 @@ class ContentMatchingService
                     }
 
                     if ($this->matchesAnyKeyword($matchKeywords, $content)) {
-                        $articlesLinked++;
+                        $matchedIds[] = $article->id;
                     }
                 }
             });
 
-        $socialLinked = 0;
-        SocialMediaItem::query()
-            ->select(['id', 'author_name', 'content', 'raw_json'])
-            ->chunkById(250, function ($items) use ($project, $matchKeywords, $excludeKeywords, &$socialLinked) {
-                foreach ($items as $item) {
-                    $content = $this->buildSocialMatchText(
-                        $item->content ?? null,
-                        $item->raw_json ?? null,
-                    );
-                    if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
-                        continue;
-                    }
+        $matchedIds = array_values(array_unique($matchedIds));
+        $project->articles()->sync($matchedIds);
 
-                    if ($this->matchesAnyKeyword($matchKeywords, $content)) {
-                        $socialLinked++;
-                    }
-                }
-            });
-
-        Log::info('[Project Matching] Existing content evaluated for project filter.', [
+        Log::info('[Project Matching] Existing portal articles matched and synced to pivot table.', [
             'project_id' => $project->id,
             'project_name' => $project->name,
-            'primary_keywords' => $primaryKeywords,
-            'exclude_keywords' => $excludeKeywords,
-            'articles_linked' => $articlesLinked,
-            'social_linked' => $socialLinked,
+            'articles_linked' => count($matchedIds),
         ]);
 
         return [
-            'articles_linked' => $articlesLinked,
-            'social_linked' => $socialLinked,
+            'articles_linked' => count($matchedIds),
             'skipped' => false,
             'reason' => null,
         ];
     }
 
     /**
-     * Re-evaluate social-media matches for a project filter without writing
-     * relationship records.
+     * Re-evaluate social-media matches for a project filter and sync
+     * relationship records to the project_social_media_items pivot table.
      */
     public function syncProjectSocialContent(Project $project): array
     {
@@ -283,6 +216,7 @@ class ContentMatchingService
         $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
 
         if ($primaryKeywords === []) {
+            $project->socialMediaItems()->sync([]);
             return [
                 'detached' => 0,
                 'attached' => 0,
@@ -312,6 +246,14 @@ class ContentMatchingService
         });
 
         $matchedIds = array_values(array_unique($matchedIds));
+        $project->socialMediaItems()->sync($matchedIds);
+
+        Log::info('[Project Matching] Existing social media items matched and synced to pivot table.', [
+            'project_id' => $project->id,
+            'project_name' => $project->name,
+            'social_linked' => count($matchedIds),
+        ]);
+
         return [
             'detached' => 0,
             'attached' => count($matchedIds),

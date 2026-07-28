@@ -31,6 +31,22 @@ class Project extends Model
         'first_news_scrape_attempt_at' => 'datetime',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saved(function ($project) {
+            // Jika kata kunci diedit, jalankan re-sync pivot data secara real-time
+            if ($project->wasChanged(['topics', 'context_keywords', 'exclude_keywords'])) {
+                try {
+                    app(\App\Services\ContentMatchingService::class)->resyncProjectContent($project);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('[Project Saved Sync Error] ' . $e->getMessage());
+                }
+            }
+        });
+    }
+
     // ─── Relations ───────────────────────────────────────────────────────
 
     public function articles(): BelongsToMany

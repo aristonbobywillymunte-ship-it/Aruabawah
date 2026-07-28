@@ -286,60 +286,12 @@ class MediaDashboard extends Component
         abort_unless($this->projectId, 403, 'Project belum dipilih.');
 
         $project = $this->resolveProjectOrFail($this->projectId);
-        $hashtagKeywords = array_values(array_unique(array_filter(array_merge(
-            $project->scrapeKeywordHashtagVariants(),
-            $project->scrapeContextKeywordVariants()
-        ))));
-        $plainKeywords = array_values(array_unique(array_filter(array_merge(
-            $project->scrapeKeywordPlainVariants(),
-            $project->scrapeContextKeywords()
-        ))));
-        $excludeKeywords = $project->scrapeExcludeKeywords();
 
-        if ($hashtagKeywords === [] && $plainKeywords === []) {
-            return \App\Models\Article::query()
-                ->with(['aiAnalysisResult'])
-                ->whereRaw('1 = 0');
-        }
-
-        $query = \App\Models\Article::query()
+        return $project->articles()
             ->with(['aiAnalysisResult'])
             ->whereHas('aiAnalysisResult', function ($ai) {
                 $ai->completeOfficialAiResult();
             });
-
-        $query->where(function ($contentQuery) use ($hashtagKeywords, $plainKeywords) {
-            $groups = [$hashtagKeywords, $plainKeywords];
-
-            foreach ($groups as $groupIndex => $keywords) {
-                if ($keywords === []) {
-                    continue;
-                }
-
-                $groupMethod = $groupIndex === 0 ? 'where' : 'orWhere';
-                $contentQuery->{$groupMethod}(function ($groupQuery) use ($keywords) {
-                    foreach ($keywords as $index => $keyword) {
-                        $method = $index === 0 ? 'where' : 'orWhere';
-                        $matchSql = $this->buildSourceAwareSearchSql($keyword);
-                        $groupQuery->{$method}(function ($q) use ($matchSql) {
-                            $q->whereRaw($matchSql['sql'], $matchSql['bindings']);
-                        });
-                    }
-                });
-            }
-        });
-
-        if ($excludeKeywords !== []) {
-            foreach ($excludeKeywords as $keyword) {
-                $query->where(function ($q) use ($keyword) {
-                    $q->whereNull('title')
-                      ->orWhereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
-                      ->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
-                });
-            }
-        }
-
-        return $query;
     }
 
     public function mount($projectId = null)

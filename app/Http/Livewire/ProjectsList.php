@@ -321,26 +321,8 @@ class ProjectsList extends Component
                         $contextKeywords = $project->scrapeContextKeywordVariants();
                         $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
 
-                        $articleQuery = Article::query()
-                            ->withCompleteOfficialAiResult()
-                            ->where(function ($contentQuery) use ($matchKeywords) {
-                                foreach ($matchKeywords as $index => $keyword) {
-                                    $method = $index === 0 ? 'where' : 'orWhere';
-                                    $contentQuery->{$method}(function ($inner) use ($keyword) {
-                                        $inner->where('title', 'ilike', '%' . $keyword . '%')
-                                            ->orWhere('content', 'ilike', '%' . $keyword . '%')
-                                            ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
-                                            ->orWhere('articles.summary', 'ilike', '%' . $keyword . '%');
-                                    });
-                                }
-                            });
-
-                        foreach ($project->scrapeExcludeKeywords() as $keyword) {
-                            $articleQuery->where(function ($q) use ($keyword) {
-                                $q->whereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
-                                  ->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
-                            });
-                        }
+                        $articleQuery = $project->articles()
+                            ->withCompleteOfficialAiResult();
 
                         $pendingAi = DB::table('ai_analysis_dispatch_states')
                             ->where('project_id', $project->id)
@@ -386,25 +368,7 @@ class ProjectsList extends Component
                         $reach = $officialReach > 0 ? number_format($officialReach, 0, ',', '.') : 'Belum tersedia';
 
                         $lastPortalTime = (clone $articleQuery)->max('published_at');
-                        $lastMedsosTime = \App\Models\SocialMediaItem::query()
-                            ->where(function ($contentQuery) use ($project) {
-                                foreach ($project->scrapeKeywordVariants() as $index => $keyword) {
-                                    $method = $index === 0 ? 'where' : 'orWhere';
-                                    $contentQuery->{$method}(function ($inner) use ($keyword) {
-                                        $inner->where('content', 'ilike', '%' . $keyword . '%')
-                                            ->orWhere('raw_json', 'ilike', '%' . $keyword . '%')
-                                            ->orWhere('author_name', 'ilike', '%' . $keyword . '%');
-                                    });
-                                }
-                            })
-                            ->where(function ($q) use ($project) {
-                                foreach ($project->scrapeExcludeKeywords() as $keyword) {
-                                    $q->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
-                                      ->whereRaw('LOWER(COALESCE(raw_json, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
-                                      ->whereRaw('LOWER(COALESCE(author_name, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
-                                }
-                            })
-                            ->max('posted_at');
+                        $lastMedsosTime = $project->socialMediaItems()->max('posted_at');
 
                         $lastPortalScanTime = $this->latestPortalScanForProject($project->id);
                         $lastPortalUpdate = $lastPortalScanTime
