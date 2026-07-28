@@ -11,14 +11,6 @@
     @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
-    <style>
-        @media (min-width: 1024px) {
-            html, body {
-                height: 100vh;
-                overflow: hidden !important;
-            }
-        }
-    </style>
 </head>
 <body class="min-h-screen bg-[#f7f9ff] text-slate-800 font-sans">
     <div class="flex min-h-screen flex-col lg:flex-row" x-data="{ mobileMenuOpen: false }">
@@ -83,9 +75,9 @@
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex min-w-0 flex-1 flex-col lg:h-screen lg:overflow-hidden">
+        <div class="flex min-w-0 flex-1 flex-col">
             <!-- Header -->
-            <header class="sticky top-0 z-50 w-full border-b border-slate-200 bg-white shrink-0">
+            <header class="sticky top-0 z-30 w-full border-b border-slate-200 bg-white">
                 <!-- Upper Header (Navbar) -->
                 <div class="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-6 border-b border-slate-100">
                     <div class="text-sm font-semibold text-slate-500">@yield('title', 'Admin Panel')</div>
@@ -128,13 +120,10 @@
                 @endif
             </header>
 
-            <!-- Scrollable Content Container -->
-            <div class="flex-1 overflow-y-auto min-h-0">
-                <!-- Main Panel -->
-                <main class="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pt-8">
-                    @yield('content')
-                </main>
-            </div>
+            <!-- Main Panel -->
+            <main class="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pt-8">
+                @yield('content')
+            </main>
         </div>
     </div>
     <x-admin-toast />
