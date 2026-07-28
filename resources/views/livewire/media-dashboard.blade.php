@@ -3469,64 +3469,22 @@
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="pdfToggles.rekomendasi ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-end pt-6 border-t border-slate-100">
-                                <button
-                                    type="button"
-                                    @click="$wire.preparePdfReport(JSON.stringify(pdfToggles))"
-                                    wire:loading.attr="disabled"
-                                    wire:target="preparePdfReport"
-                                    class="bg-[#c0392b] hover:bg-[#a93226] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-xs px-6 py-3 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-                                >
-                                    <svg wire:loading.remove wire:target="preparePdfReport" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                    <svg wire:loading wire:target="preparePdfReport" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
-                                    <span>⬇ Unduh Laporan PDF</span>
-                                </button>
-                            </div>
-
-                            <div wire:loading.flex wire:target="preparePdfReport" class="fixed inset-0 z-[90] items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-                                <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-6 text-center">
-                                    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1fa387]/10 text-[#1fa387]">
-                                        <svg class="h-7 w-7 animate-spin" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
+                                    <div class="flex justify-end pt-6 border-t border-slate-100">
+                                        <button
+                                            type="button"
+                                            @click="$wire.preparePdfReport(JSON.stringify(pdfToggles))"
+                                            wire:loading.attr="disabled"
+                                            wire:target="preparePdfReport"
+                                            class="bg-[#c0392b] hover:bg-[#a93226] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-xs px-6 py-3 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                        >
+                                            <svg wire:loading.remove wire:target="preparePdfReport" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                            <svg wire:loading wire:target="preparePdfReport" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
+                                            <span>⬇ Unduh Laporan PDF</span>
+                                        </button>
                                     </div>
-                                    <h3 class="text-base font-extrabold text-slate-900">Menyusun AI Report</h3>
-                                    <p class="mt-2 text-sm text-slate-500">AI sedang menyiapkan kesimpulan dan rekomendasi berdasarkan isu berita terbaru. Mohon tunggu sebentar.</p>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div
-                            x-show="reportFeedbackOpen"
-                            x-transition:enter="transition ease-out duration-200"
-                            x-transition:enter-start="opacity-0 scale-95"
-                            x-transition:enter-end="opacity-100 scale-100"
-                            x-transition:leave="transition ease-in duration-150"
-                            x-transition:leave-start="opacity-100 scale-100"
-                            x-transition:leave-end="opacity-0 scale-95"
-                            class="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4"
-                            style="display:none;"
-                        >
-                            <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-6 text-center">
-                                <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-                                     :class="reportFeedbackType === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]'">
-                                    <span class="material-symbols-outlined text-[28px]" x-text="reportFeedbackType === 'error' ? 'error' : 'check_circle'"></span>
-                                </div>
-                                <h3 class="text-base font-extrabold text-slate-900" x-text="reportFeedbackTitle"></h3>
-                                <p class="mt-2 text-sm leading-relaxed text-slate-500" x-text="reportFeedbackMessage"></p>
-                                <button
-                                    type="button"
-                                    @click="reportFeedbackOpen = false"
-                                    class="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-slate-100 px-5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
-                                >
-                                    Tutup
-                                </button>
-                            </div>
+/div>
                         </div>
 
                         <!-- Excel Option List -->
@@ -4881,6 +4839,48 @@
                 </div>
             </div>
         </div>
+    <!-- Global AI PDF Report Generation Modal Overlay -->
+    <div wire:loading.flex wire:target="preparePdfReport" class="fixed inset-0 z-[9999] items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-6 text-center">
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1fa387]/10 text-[#1fa387]">
+                <svg class="h-7 w-7 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            <h3 class="text-base font-extrabold text-slate-900">Menyusun AI Report</h3>
+            <p class="mt-2 text-sm text-slate-500">AI sedang menyiapkan kesimpulan dan rekomendasi berdasarkan isu berita terbaru. Mohon tunggu sebentar.</p>
+        </div>
     </div>
+
+    <!-- Global AI PDF Report Feedback Modal Overlay -->
+    <div
+        x-show="reportFeedbackOpen"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4"
+        style="display:none;"
+    >
+        <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-6 text-center">
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
+                 :class="reportFeedbackType === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]'">
+                <span class="material-symbols-outlined text-[28px]" x-text="reportFeedbackType === 'error' ? 'error' : 'check_circle'"></span>
+            </div>
+            <h3 class="text-base font-extrabold text-slate-900" x-text="reportFeedbackTitle"></h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-500" x-text="reportFeedbackMessage"></p>
+            <button
+                type="button"
+                @click="reportFeedbackOpen = false"
+                class="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-slate-100 px-5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+            >
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
 </div>
 </div>
