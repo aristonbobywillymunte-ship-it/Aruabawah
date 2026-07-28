@@ -57,7 +57,7 @@
                     <input 
                         wire:model="default_chat_id" 
                         type="text" 
-                        placeholder="Contoh: -100123456789" 
+                        placeholder="Contoh: 100123456789" 
                         autocomplete="off"
                         autocapitalize="off"
                         autocorrect="off"
@@ -65,6 +65,12 @@
                         inputmode="numeric"
                         class="h-10 w-full rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition font-mono"
                     />
+                    <p class="mt-1.5 text-[10px] text-slate-400 leading-relaxed">
+                        Hanya angka, tanpa tanda <span class="font-mono font-semibold text-slate-600">-</span>.
+                        Chat ID grup/channel biasanya dimulai dengan <span class="font-mono font-semibold text-slate-600">100...</span>
+                        &mdash; Cara mendapatkan: forward pesan ke <span class="font-mono font-semibold text-slate-600">@RawDataBot</span> lalu salin angka <span class="font-mono font-semibold text-slate-600">chat.id</span>-nya.
+                        Untuk banyak ID, pisahkan dengan koma.
+                    </p>
                     @error('default_chat_id') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -218,7 +224,12 @@
 
                     <div>
                         <label class="mb-1.5 block text-xs font-bold text-slate-700">Group / Chat ID Telegram Khusus</label>
-                        <input wire:model="chat_id" placeholder="Contoh: -100987654321" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition font-mono">
+                        <input wire:model="chat_id" placeholder="Contoh: 100987654321" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="numeric" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition font-mono">
+                        <p class="mt-1.5 text-[10px] text-slate-400 leading-relaxed">
+                            Hanya angka, tanpa tanda <span class="font-mono font-semibold text-slate-600">-</span>.
+                            Chat ID grup/channel biasanya dimulai dengan <span class="font-mono font-semibold text-slate-600">100...</span>
+                            &mdash; Cara mendapatkan: forward pesan ke <span class="font-mono font-semibold text-slate-600">@RawDataBot</span> lalu salin angka <span class="font-mono font-semibold text-slate-600">chat.id</span>-nya.
+                        </p>
                         @error('chat_id') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
@@ -253,7 +264,11 @@
                 <form wire:submit.prevent="runTestSend" class="p-6 space-y-4">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold text-slate-700">Chat ID Tujuan Uji</label>
-                        <input wire:model="test_chat_id" placeholder="Contoh: -100123456789" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="numeric" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition font-mono">
+                        <input wire:model="test_chat_id" placeholder="Contoh: 100123456789" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="numeric" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition font-mono">
+                        <p class="mt-1.5 text-[10px] text-slate-400 leading-relaxed">
+                            Hanya angka, tanpa tanda <span class="font-mono font-semibold text-slate-600">-</span>.
+                            Chat ID grup/channel biasanya dimulai dengan <span class="font-mono font-semibold text-slate-600">100...</span>
+                        </p>
                         @error('test_chat_id') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
