@@ -86,6 +86,18 @@ class ProjectsList extends Component
         return array_values(array_unique($items));
     }
 
+    protected function parseMultiChatIds(string $value): array
+    {
+        $normalized = str_replace([';', ' '], ',', $value);
+        $items = array_map('trim', explode(',', $normalized));
+        $items = array_map(function($item) {
+            return ltrim($item, '-');
+        }, $items);
+        $items = array_filter($items);
+
+        return array_values(array_unique($items));
+    }
+
     protected function hydratePortalScanState(): void
     {
         if ($this->portalScanTimes !== null && $this->portalRunningProjectIds !== null) {
@@ -501,12 +513,12 @@ class ProjectsList extends Component
             'sources' => array_values(array_unique(array_filter($this->selectedSources))),
         ]);
 
-        // Save telegram recipient without minus (-) sign
-        $cleanChatId = ltrim(trim($this->telegramChatId), '-');
-        if ($cleanChatId !== '') {
+        // Save telegram recipients without minus (-) sign (supporting multi chat ids)
+        $chatIds = $this->parseMultiChatIds((string) $this->telegramChatId);
+        foreach ($chatIds as $cId) {
             DB::table('project_telegram_recipients')->insert([
                 'project_id' => $project->id,
-                'chat_id' => $cleanChatId,
+                'chat_id' => $cId,
                 'is_active' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -541,8 +553,8 @@ class ProjectsList extends Component
         $this->excludeKeywords = implode(', ', $project->exclude_keywords ?? []);
         $this->selectedSources = $project->sources ?? ['Instagram', 'TikTok', 'Facebook', 'Portal'];
         
-        $recipient = DB::table('project_telegram_recipients')->where('project_id', $project->id)->first();
-        $this->telegramChatId = $recipient ? $recipient->chat_id : '';
+        $recipients = DB::table('project_telegram_recipients')->where('project_id', $project->id)->pluck('chat_id')->toArray();
+        $this->telegramChatId = implode(', ', $recipients);
         
         $this->showEditModal = true;
     }
@@ -586,17 +598,17 @@ class ProjectsList extends Component
             'sources' => array_values(array_unique(array_filter($this->selectedSources))),
         ]);
 
-        // Save or update telegram recipient without minus (-) sign
-        $cleanChatId = ltrim(trim($this->telegramChatId), '-');
-        if ($cleanChatId !== '') {
-            DB::table('project_telegram_recipients')->updateOrInsert(
-                ['project_id' => $project->id],
-                [
-                    'chat_id' => $cleanChatId,
-                    'is_active' => true,
-                    'updated_at' => now(),
-                ]
-            );
+        // Save or update telegram recipients without minus (-) sign (supporting multi chat ids)
+        DB::table('project_telegram_recipients')->where('project_id', $project->id)->delete();
+        $chatIds = $this->parseMultiChatIds((string) $this->telegramChatId);
+        foreach ($chatIds as $cId) {
+            DB::table('project_telegram_recipients')->insert([
+                'project_id' => $project->id,
+                'chat_id' => $cId,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
 
         $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
