@@ -1155,7 +1155,9 @@ class MediaDashboard extends Component
 
             // Single aggregation query instead of 8 separate COUNT queries
             $socialSql = $this->buildSocialSourceSql();
-            $rawRows = (clone $sourceQuery)
+            $sourceQueryClean = clone $sourceQuery;
+            $sourceQueryClean->getQuery()->columns = []; // RESET SELECT COLUMNS
+            $rawRows = $sourceQueryClean
                 ->select([
                     \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN lower(coalesce(source_name,'')) like 'instagram%' THEN 1 ELSE 0 END) as instagram_count"),
                     \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN lower(coalesce(source_name,'')) like 'tiktok%' THEN 1 ELSE 0 END) as tiktok_count"),
@@ -1187,7 +1189,9 @@ class MediaDashboard extends Component
                 ->whereNotNull('ai.sentiment')
                 ->whereNotNull('ai.risk_level');
 
-            $agg = $sentimentQueryWithAI->select([
+            $sentimentQueryWithAIClean = clone $sentimentQueryWithAI;
+            $sentimentQueryWithAIClean->getQuery()->columns = []; // RESET SELECT COLUMNS
+            $agg = $sentimentQueryWithAIClean->select([
                 \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as pos_count"),
                 \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu_count"),
                 \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as neg_count"),
@@ -1556,9 +1560,10 @@ class MediaDashboard extends Component
         }
 
         return $this->projectSourcesMemo[$cacheKey] = Cache::remember($cacheKey, 120, function () {
-            // Keep the source breakdown stable even if sentiment analysis is not yet available.
             $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['sentiment']);
-            $rawSources = (clone $baseQuery)
+            $rawSourcesClean = clone $baseQuery;
+            $rawSourcesClean->getQuery()->columns = []; // RESET SELECT COLUMNS
+            $rawSources = $rawSourcesClean
                 ->leftJoin('ai_analysis_results as ai', function ($join) {
                     $join->on('articles.id', '=', 'ai.article_id')
                          ->where('ai.analysis_status', '=', 'success');
