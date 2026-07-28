@@ -161,21 +161,6 @@
     <div class="grid grid-cols-12 gap-6 flex-grow my-4 overflow-hidden">
       <!-- Left Column: Narrative (66%) -->
       <div class="col-span-8 flex flex-col gap-4">
-        <!-- Executive Summary -->
-        @if(empty($toggles) || !empty($toggles['wawasan']))
-        <div class="avoid-break">
-          <div class="flex items-center gap-2 mb-2 border-b border-outline-variant pb-1">
-            <span class="material-symbols-outlined text-primary text-[16px]">auto_graph</span>
-            <h2 class="font-bold text-[10px] uppercase tracking-widest text-slate-800">Kesimpulan AI</h2>
-          </div>
-          <div class="glass-panel rounded-xl p-4 border-glow">
-            <p class="text-on-surface-variant leading-relaxed text-[12px] text-justify break-words">
-              {!! preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', $wawasanSummary) !!}
-            </p>
-          </div>
-        </div>
-        @endif
-
         <!-- Strategic Recommendations -->
         @if(empty($toggles) || !empty($toggles['rekomendasi']))
         <div class="avoid-break">
@@ -192,6 +177,21 @@
                 </li>
               @endforeach
             </ul>
+          </div>
+        </div>
+        @endif
+
+        <!-- Executive Summary -->
+        @if(empty($toggles) || !empty($toggles['wawasan']))
+        <div class="avoid-break">
+          <div class="flex items-center gap-2 mb-2 border-b border-outline-variant pb-1">
+            <span class="material-symbols-outlined text-primary text-[16px]">auto_graph</span>
+            <h2 class="font-bold text-[10px] uppercase tracking-widest text-slate-800">Kesimpulan AI</h2>
+          </div>
+          <div class="glass-panel rounded-xl p-4 border-glow">
+            <p class="text-on-surface-variant leading-relaxed text-[12px] text-justify break-words">
+              {!! preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', $wawasanSummary) !!}
+            </p>
           </div>
         </div>
         @endif
