@@ -3732,10 +3732,10 @@
                                             {{ Js::from($articleReachDisp['hasOfficialProjectReach'] ? $articleReachDisp['scoreValue'] . '/10' : ($articleReachDisp['hasReadableAiReach'] ? 'Belum tersedia' : 'Belum dinilai AI')) }},
                                             {{ Js::from($article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d/m/y') : 'Baru saja') }}
                                         )" 
-                                        class="text-[10px] sm:text-[11px] font-bold text-white bg-[#1fa387] hover:bg-[#178a70] px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-colors shadow-sm flex items-center gap-1 cursor-pointer shrink-0"
+                                        class="text-[9px] sm:text-xs font-bold text-white bg-[#1fa387] hover:bg-[#178a70] px-2 py-1 sm:px-4 sm:py-2 rounded-xl transition-colors shadow-sm flex items-center gap-0.5 cursor-pointer shrink-0"
                                     >
                                         Selengkapnya
-                                        <span class="material-symbols-outlined text-[12px]">arrow_forward</span>
+                                        <span class="material-symbols-outlined text-[10px] sm:text-[12px]">arrow_forward</span>
                                     </button>
                                 </div>
                             </div>
