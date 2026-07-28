@@ -2288,7 +2288,7 @@
             @elseif($this->isTab('katakunci'))
                 <!-- TAB 3: Kata Kunci Configuration Page -->
                 <section class="flex-1 min-w-0 pr-1 relative z-10" wire:key="dashboard-keyword-section">
-                    <div class="flex items-center justify-between text-left shrink-0">
+                    <div class="flex items-center justify-between text-left shrink-0 pb-2.5 border-b border-slate-100">
                         <div>
                             <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
                                 <span class="material-symbols-outlined text-[#1fa387] text-[20px] sm:text-[22px]">vpn_key</span>Pengaturan dan Analisis Kata Kunci
