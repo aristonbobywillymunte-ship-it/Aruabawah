@@ -623,7 +623,7 @@
                 </div>
             </div>
 
-            <h1 class="login-title">Selamat Datang 👋</h1>
+            <h1 class="login-title">Selamat Datang</h1>
             <p class="login-subtitle">Masuk ke akun {{ \App\Helpers\AppBrandingHelper::getAppName() }} Anda untuk melanjutkan</p>
 
             <!-- Error messages -->
