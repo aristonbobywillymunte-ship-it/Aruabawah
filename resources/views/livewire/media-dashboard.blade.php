@@ -3636,10 +3636,10 @@
                             @php
                                 $articleReachDisp = $this->getProjectReachDisplayData($article);
                             @endphp
-                            <div data-content-card class="bg-white rounded-2xl border border-slate-200 p-5 shadow-[0_4px_15px_-3px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_25px_-5px_rgba(31,163,135,0.1)] hover:border-[#1fa387]/30 transition-all flex flex-col group">
-                                <div class="flex items-center justify-between mb-4">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-[10px] font-extrabold px-3 py-1.5 rounded-lg uppercase tracking-wider {{ $this->getValidAiResult($article)?->sentiment_score ?? 0 >= 0.3 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : ($this->getValidAiResult($article)?->sentiment_score ?? 0 <= -0.3 ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-50 text-slate-600 border border-slate-100') }}">
+                            <div data-content-card class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-[0_4px_15px_-3px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_25px_-5px_rgba(31,163,135,0.1)] hover:border-[#1fa387]/30 transition-all flex flex-col group">
+                                <div class="flex items-start sm:items-center justify-between gap-2 mb-3 sm:mb-4">
+                                    <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                        <span class="text-[8.5px] sm:text-[10px] font-extrabold px-2 py-0.5 sm:px-3 sm:py-1.5 rounded-lg uppercase tracking-wider {{ $this->getValidAiResult($article)?->sentiment_score ?? 0 >= 0.3 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : ($this->getValidAiResult($article)?->sentiment_score ?? 0 <= -0.3 ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-50 text-slate-600 border border-slate-100') }}">
                                             {{ $this->getValidAiResult($article)?->sentiment_score ?? 0 >= 0.3 ? 'Positif' : ($this->getValidAiResult($article)?->sentiment_score ?? 0 <= -0.3 ? 'Negatif' : 'Netral') }}
                                         </span>
                                         
@@ -3661,22 +3661,22 @@
                                                 {{ Js::from($articleReachDisp['hasOfficialProjectReach'] ? $articleReachDisp['scoreValue'] . '/10' : ($articleReachDisp['hasReadableAiReach'] ? 'Belum tersedia' : 'Belum dinilai AI')) }},
                                                 {{ Js::from($article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d/m/y') : 'Baru saja') }}
                                             ); showAiSummaryModal = true;"
-                                            class="inline-flex items-center gap-1 text-[9px] font-bold px-2.5 py-1 bg-emerald-55 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 rounded-lg uppercase tracking-wider transition-colors cursor-pointer"
+                                            class="inline-flex items-center gap-1 text-[8.5px] sm:text-[9px] font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 bg-emerald-55 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 rounded-lg uppercase tracking-wider transition-colors cursor-pointer"
                                             style="background-color: #ecfdf5; border-color: #a7f3d0;"
                                         >
-                                            <span class="material-symbols-outlined text-[12px] text-emerald-600">auto_awesome</span>
+                                            <span class="material-symbols-outlined text-[10px] sm:text-[12px] text-emerald-600">auto_awesome</span>
                                             <span>Ringkasan AI</span>
                                         </button>
                                     </div>
-                                    <div class="flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                                        <span class="material-symbols-outlined text-[14px]">schedule</span>
-                                        {{ \Carbon\Carbon::parse($article->published_at)->format('d M Y, H:i') }} ({{ \Carbon\Carbon::parse($article->published_at)->diffForHumans() }})
+                                    <div class="flex items-center gap-1 text-[8.5px] xs:text-[9.5px] sm:text-xs font-bold text-slate-400 bg-slate-50 px-1.5 xs:px-2.5 py-1 rounded-lg border border-slate-100 leading-tight">
+                                        <span class="material-symbols-outlined text-[12px] sm:text-[14px]">schedule</span>
+                                        {{ \Carbon\Carbon::parse($article->published_at)->format('d M Y, H:i') }}
                                     </div>
                                 </div>
-                                <h3 class="text-sm font-black text-slate-900 leading-snug mb-3 line-clamp-2 group-hover:text-[#1fa387] transition-colors">
+                                <h3 class="text-[13px] sm:text-sm font-black text-slate-900 leading-snug mb-2 sm:mb-3 line-clamp-2 group-hover:text-[#1fa387] transition-colors tracking-tight">
                                     <a href="{{ $article->url }}" target="_blank">{{ $article->title }}</a>
                                 </h3>
-                                <p class="text-[13px] text-slate-500 line-clamp-3 mb-5 leading-relaxed flex-grow font-medium">
+                                <p class="text-[11px] sm:text-[13px] text-slate-500 line-clamp-3 mb-4 sm:mb-5 leading-relaxed flex-grow font-medium font-sans">
                                     {{ Str::limit(strip_tags($article->content), 120) }}
                                 </p>
                                 <div class="flex items-center justify-between pt-4 border-t border-slate-100 mt-auto">
