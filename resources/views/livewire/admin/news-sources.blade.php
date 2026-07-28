@@ -64,10 +64,10 @@
     </div>
 @endsection
 
-<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
+<div class="mx-auto w-full max-w-7xl flex flex-col flex-1 min-h-0 space-y-6 font-sans pb-4">
 
     <!-- News Sources Table Card -->
-    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left relative">
+    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left relative flex flex-col flex-1 min-h-0">
         <!-- Premium Modal-style Loading Overlay covering entire card body -->
         <div wire:loading wire:target="search, previousPage, nextPage, gotoPage" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/10 backdrop-blur-[2px] rounded-3xl transition-all duration-300">
             <div class="w-full max-w-[280px] rounded-3xl bg-white/95 border border-slate-100 p-5 shadow-2xl text-center space-y-3.5 flex flex-col items-center justify-center">
@@ -84,12 +84,12 @@
             </div>
         </div>
 
-        <div class="border-b border-slate-100 px-6 py-4">
+        <div class="border-b border-slate-100 px-6 py-4 shrink-0">
             <h2 class="text-sm font-bold text-slate-800">Daftar Portal Berita</h2>
             <p class="text-[10px] text-slate-400 mt-0.5">Kelola portal manual dalam satu alur: isi data, minta AI, cek, lalu simpan.</p>
         </div>
 
-        <div class="overflow-x-auto min-h-[200px]">
+        <div class="overflow-x-auto overflow-y-auto flex-1 min-h-[300px]">
 
             <table class="w-full border-collapse text-xs text-slate-700">
                 <thead class="bg-slate-50/75 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -210,7 +210,7 @@
         </div>
 
         @if($sources->hasPages())
-            <div wire:loading.remove wire:target="search, previousPage, nextPage, gotoPage" class="border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30 rounded-b-[24px]">
+            <div wire:loading.remove wire:target="search, previousPage, nextPage, gotoPage" class="border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30 rounded-b-[24px] shrink-0">
                 <div class="text-xs font-bold text-slate-500">
                     Menampilkan <span class="text-slate-800 font-black">{{ $sources->firstItem() }}</span> - <span class="text-slate-800 font-black">{{ $sources->lastItem() }}</span> dari <span class="text-slate-800 font-black">{{ $sources->total() }}</span> portal
                 </div>
