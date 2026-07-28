@@ -3160,13 +3160,13 @@
                     <!-- Main Config Card -->
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-6 text-left">
                         <!-- Tab Toggles -->
-                        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-                            <div class="flex gap-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                            <div class="flex gap-3 w-full sm:w-auto">
                                 <!-- PDF Tab -->
                                 <button 
                                     type="button"
                                     @click="reportType = 'pdf'"
-                                    class="flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl border transition cursor-pointer"
+                                    class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl border transition cursor-pointer"
                                     :class="reportType === 'pdf' ? 'bg-[#1fa387]/5 border-[#1fa387] text-[#1fa387]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700'"
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
@@ -3176,7 +3176,7 @@
                                 <button 
                                     type="button"
                                     @click="reportType = 'excel'"
-                                    class="flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl border transition cursor-pointer"
+                                    class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl border transition cursor-pointer"
                                     :class="reportType === 'excel' ? 'bg-[#1fa387]/5 border-[#1fa387] text-[#1fa387]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700'"
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -3187,7 +3187,7 @@
                             <button 
                                 type="button"
                                 @click="pilihSemua()"
-                                class="bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                class="bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm w-full sm:w-auto"
                             >
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                                 <span>Pilih Semua</span>
