@@ -1665,12 +1665,14 @@ class MediaDashboard extends Component
                 ->whereNotNull('ai.risk_level');
             $total = (clone $baseQuery)->count();
 
-            $sentimentCounts = (clone $baseQueryWithAI)
-                ->selectRaw("
-                    SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive,
-                    SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral,
-                    SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative
-                ")
+            $sentimentCountsClean = clone $baseQueryWithAI;
+            $sentimentCountsClean->getQuery()->columns = []; // RESET SELECT COLUMNS
+            $sentimentCounts = $sentimentCountsClean
+                ->select([
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
+                ])
                 ->first();
             $pos = (int) ($sentimentCounts->positive ?? 0);
             $neu = (int) ($sentimentCounts->neutral ?? 0);
