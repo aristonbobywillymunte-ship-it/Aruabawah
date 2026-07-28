@@ -99,46 +99,6 @@ class SystemMaintenance extends Component
         $this->notify('success', 'Cache Laravel berhasil dibersihkan.');
     }
 
-    public function startReverb(): void
-    {
-        $this->adminOnly();
-
-        if (\App\Helpers\ReverbManager::start()) {
-            Log::info('[Reverb Maintenance] Started Reverb server', [
-                'triggered_by' => auth()->user()?->email,
-            ]);
-
-            $this->maintenanceSummary = [
-                'title' => 'Server Reverb Dinyalakan',
-                'detail' => 'Proses daemon Laravel Reverb berhasil dimulai di background.',
-            ];
-
-            $this->notify('success', 'Server Reverb berhasil dinyalakan.');
-        } else {
-            $this->notify('error', 'Gagal menyalakan server Reverb.');
-        }
-    }
-
-    public function stopReverb(): void
-    {
-        $this->adminOnly();
-
-        if (\App\Helpers\ReverbManager::stop()) {
-            Log::info('[Reverb Maintenance] Stopped Reverb server', [
-                'triggered_by' => auth()->user()?->email,
-            ]);
-
-            $this->maintenanceSummary = [
-                'title' => 'Server Reverb Dimatikan',
-                'detail' => 'Proses daemon Laravel Reverb berhasil dihentikan.',
-            ];
-
-            $this->notify('success', 'Server Reverb berhasil dimatikan.');
-        } else {
-            $this->notify('error', 'Gagal mematikan server Reverb.');
-        }
-    }
-
     protected function notify(string $type, string $message): void
     {
         $this->flashType = $type;
@@ -160,8 +120,6 @@ class SystemMaintenance extends Component
     {
         $this->adminOnly();
 
-        return view('livewire.admin.system-maintenance', [
-            'isReverbRunning' => \App\Helpers\ReverbManager::isRunning(),
-        ]);
+        return view('livewire.admin.system-maintenance');
     }
 }
