@@ -40,8 +40,8 @@
                             </svg>
                         @endif
                         <div class="leading-none text-left">
-                            <div class="text-[13px] font-black leading-none tracking-widest text-slate-900 uppercase">{{ \App\Helpers\AppBrandingHelper::getAppName() }}</div>
-                            <div class="mt-1 text-[9px] font-bold leading-none tracking-[0.16em] text-slate-400 uppercase">Media Intelligence</div>
+                            <div class="text-[16px] font-black leading-none tracking-widest text-slate-900 uppercase">{{ \App\Helpers\AppBrandingHelper::getAppName() }}</div>
+                            <div class="mt-1 text-[10px] font-bold leading-none tracking-[0.16em] text-slate-400 uppercase">Media Intelligence</div>
                         </div>
                     </a>
                     <button @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden flex items-center justify-center p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500">
