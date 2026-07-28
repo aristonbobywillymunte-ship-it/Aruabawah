@@ -349,13 +349,13 @@ class ProjectsList extends Component
                             ->whereNotNull('ai.summary')
                             ->whereNotNull('ai.sentiment')
                             ->whereNotNull('ai.risk_level')
-                            ->selectRaw("
-                                COUNT(*) as total_ai_valid,
-                                SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive_count,
-                                SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative_count,
-                                SUM(CASE WHEN ai.risk_level IN ('high','critical') THEN 1 ELSE 0 END) as high_risk_count,
-                                COALESCE(SUM(ai.project_estimated_readers), 0) as total_reach
-                            ")
+                            ->select([
+                                \Illuminate\Support\Facades\DB::raw("COUNT(*) as total_ai_valid"),
+                                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive_count"),
+                                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative_count"),
+                                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level IN ('high','critical') THEN 1 ELSE 0 END) as high_risk_count"),
+                                \Illuminate\Support\Facades\DB::raw("COALESCE(SUM(ai.project_estimated_readers), 0) as total_reach")
+                            ])
                             ->first();
 
                         $totalAiValid     = (int) ($aggRow->total_ai_valid ?? 0);
