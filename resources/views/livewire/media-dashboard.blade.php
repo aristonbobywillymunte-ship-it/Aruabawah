@@ -3840,7 +3840,112 @@
                             </div>
                         </div>
 
-                        <div class="overflow-x-auto">
+                        <div class="block sm:hidden space-y-3" wire:key="source-mobile-list">
+                            @forelse($projectSourcesList as $src)
+                                @php
+                                    $srcName = data_get($src, 'source_name', 'Sumber tidak diketahui') ?: 'Sumber tidak diketahui';
+                                    $srcLower = strtolower($srcName);
+                                    
+                                    $isSocial = in_array($srcLower, self::SOCIAL_SOURCE_NAMES, true) 
+                                        || str_contains($srcLower, 'instagram') 
+                                        || str_contains($srcLower, 'tiktok') 
+                                        || str_contains($srcLower, 'facebook') 
+                                        || str_contains($srcLower, 'twitter')
+                                        || str_contains($srcLower, 'youtube')
+                                        || str_contains($srcLower, 'threads');
+                                        
+                                    $mediaType = $isSocial ? 'Media Sosial' : 'Portal Berita';
+                                    $typeColor = $isSocial ? 'bg-indigo-50 text-indigo-700 border-indigo-100/60' : 'bg-sky-50 text-sky-700 border-sky-100/60';
+                                    
+                                    $srcTotal = (int) data_get($src, 'total', 0);
+                                    $sovPct = $grandTotal > 0 ? round(($srcTotal / $grandTotal) * 100) : 0;
+                                    
+                                    $sPos = (int) data_get($src, 'positive', 0);
+                                    $sNeu = (int) data_get($src, 'neutral', 0);
+                                    $sNeg = (int) data_get($src, 'negative', 0);
+                                    $sTotal = $sPos + $sNeu + $sNeg;
+                                    
+                                    $posPct = $sTotal > 0 ? round(($sPos / $sTotal) * 100) : 0;
+                                    $neuPct = $sTotal > 0 ? round(($sNeu / $sTotal) * 100) : 0;
+                                    $negPct = $sTotal > 0 ? round(($sNeg / $sTotal) * 100) : 0;
+                                    
+                                    if (str_contains($srcLower, 'instagram') || $srcLower === 'ig') {
+                                        $logoBg = 'bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400';
+                                    } elseif (str_contains($srcLower, 'tiktok') || $srcLower === 'tk') {
+                                        $logoBg = 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800';
+                                    } elseif (str_contains($srcLower, 'facebook') || $srcLower === 'fb') {
+                                        $logoBg = 'bg-gradient-to-br from-blue-600 to-blue-700';
+                                    } else {
+                                        $logoBg = 'bg-white';
+                                    }
+
+                                    $faviconDomain = str_replace(' ', '', $srcLower);
+                                    if (!str_contains($faviconDomain, '.')) {
+                                        $faviconDomain .= '.com';
+                                    }
+                                @endphp
+                                <div class="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 space-y-3.5 text-left">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-sm flex-shrink-0 {{ $logoBg }} border border-slate-200/40 p-0.5">
+                                                @if(str_contains($srcLower, 'facebook') || $srcLower === 'fb')
+                                                    <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
+                                                @elseif(str_contains($srcLower, 'instagram') || $srcLower === 'ig')
+                                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-linecap="round"></line></svg>
+                                                @elseif(str_contains($srcLower, 'tiktok') || $srcLower === 'tk')
+                                                    <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24"><path d="M12.525.01c1.306-.022 2.615-.011 3.921-.012.08 1.836 1.011 3.5 2.501 4.485.006 1.341-.004 2.683-.004 4.024-1.57-.107-3.067-.932-3.955-2.247-.008 2.827-.003 5.657-.005 8.486-.098 3.546-3.13 6.643-6.726 6.467-3.526-.067-6.523-3.18-6.241-6.722.215-3.327 3.012-6.104 6.347-5.992v4.06c-1.393-.16-2.775.76-3.085 2.112-.397 1.488.583 3.125 2.1 3.328 1.455.234 2.924-.766 3.14-2.224.048-2.617.02-5.237.03-7.856.002-3.834-.002-7.67.002-11.504z"></path></svg>
+                                                @else
+                                                    <div class="relative w-full h-full flex items-center justify-center" x-data="{ imgFailedMob: false }">
+                                                        <img x-show="!imgFailedMob" 
+                                                             src="{{ 'https://www.google.com/s2/favicons?domain=' . $faviconDomain }}&sz=64" 
+                                                             x-on:error="imgFailedMob = true"
+                                                             class="w-4.5 h-4.5 object-contain" 
+                                                             alt="{{ $srcName }}" />
+                                                        <div x-show="imgFailedMob" class="absolute inset-0 w-full h-full bg-slate-50 flex items-center justify-center">
+                                                            <span class="material-symbols-outlined text-[13px] text-slate-400">feed</span>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="flex flex-col text-left min-w-0">
+                                                <span class="text-xs font-bold text-slate-800 truncate leading-snug">{{ $srcName }}</span>
+                                                <span class="text-[9px] text-slate-400 truncate mt-0.5">{{ $isSocial ? '@' . $srcLower : $srcLower }}</span>
+                                            </div>
+                                        </div>
+                                        <span class="px-2 py-0.5 text-[8.5px] font-bold rounded border {{ $typeColor }} uppercase tracking-wider scale-90">
+                                            {{ $mediaType }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center justify-between border-t border-slate-100 pt-2.5">
+                                        <div class="flex flex-col">
+                                            <span class="text-[11px] font-black text-slate-800">{{ number_format($srcTotal, 0, ',', '.') }}</span>
+                                            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Penyebutan (SOV: {{ $sovPct }}%)</span>
+                                        </div>
+                                        <div class="flex items-center gap-1 text-[8.5px] font-bold">
+                                            <span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100/40">+{{ $posPct }}%</span>
+                                            <span class="text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-150">±{{ $neuPct }}%</span>
+                                            <span class="text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100/40">-{{ $negPct }}%</span>
+                                        </div>
+                                    </div>
+                                    <div class="border-t border-slate-100 pt-2.5 space-y-1">
+                                        <div class="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden flex shadow-inner">
+                                            <div class="bg-emerald-500 h-full" style="width: {{ $posPct }}%"></div>
+                                            <div class="bg-slate-400 h-full" style="width: {{ $neuPct }}%"></div>
+                                            <div class="bg-rose-500 h-full" style="width: {{ $negPct }}%"></div>
+                                        </div>
+                                        <div class="flex justify-between text-[7.5px] text-slate-400 font-bold px-0.5">
+                                            <span>{{ $sPos }} Positif</span>
+                                            <span>{{ $sNeu }} Netral</span>
+                                            <span>{{ $sNeg }} Negatif</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="py-8 text-center text-slate-450 text-xs font-semibold italic">Belum ada portal berita atau akun media sosial yang melacak proyek ini.</div>
+                            @endforelse
+                        </div>
+
+                        <div class="hidden sm:block overflow-x-auto">
                             <table class="w-full text-left text-sm border-separate border-spacing-y-1">
                                 <thead>
                                     <tr class="bg-slate-50/75 rounded-2xl text-slate-500 text-xs font-semibold">
@@ -3980,11 +4085,6 @@
                                     @endforelse
                                 </tbody>
                             </table>
-                        </div>
-                        </div>
-                    </div>
-                    </div>
-                </section>
             @endif
 
             <!-- Mobile Filter Backdrop -->
