@@ -1563,12 +1563,14 @@ class MediaDashboard extends Component
                     $join->on('articles.id', '=', 'ai.article_id')
                          ->where('ai.analysis_status', '=', 'success');
                 })
-                ->selectRaw('lower(coalesce(articles.source_name, \'\')) as source_key')
-                ->selectRaw('MIN(COALESCE(NULLIF(articles.canonical_url, \'\'), NULLIF(articles.url, \'\'))) as sample_url')
-                ->selectRaw('count(articles.id) as total')
-                ->selectRaw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive")
-                ->selectRaw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral")
-                ->selectRaw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
+                ->select([
+                    \Illuminate\Support\Facades\DB::raw("lower(coalesce(articles.source_name, '')) as source_key"),
+                    \Illuminate\Support\Facades\DB::raw("MIN(COALESCE(NULLIF(articles.canonical_url, ''), NULLIF(articles.url, ''))) as sample_url"),
+                    \Illuminate\Support\Facades\DB::raw("count(articles.id) as total"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
+                ])
                 ->groupBy('source_key')
                 ->orderByDesc('total')
                 ->get();
