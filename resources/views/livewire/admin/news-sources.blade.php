@@ -64,7 +64,7 @@
     </div>
 @endsection
 
-<div class="mx-auto w-full max-w-7xl flex flex-col flex-1 min-h-0 space-y-6 font-sans pb-4">
+<div class="mx-auto w-full max-w-7xl flex flex-col flex-1 min-h-0 space-y-6 font-sans pb-4 h-full">
 
     <!-- News Sources Table Card -->
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left relative flex flex-col flex-1 min-h-0">
