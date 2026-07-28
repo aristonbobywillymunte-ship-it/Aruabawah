@@ -12,28 +12,28 @@
 >
     <!-- Top Header -->
     <header class="w-full bg-white border-b border-slate-200 sticky top-0 z-50 flex-shrink-0">
-        <div class="max-w-[1400px] mx-auto px-6 h-20 flex flex-row flex-nowrap items-center justify-between gap-6">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 sm:h-20 flex flex-row flex-nowrap items-center justify-between gap-2 sm:gap-6">
             <!-- Brand -->
-            <div class="flex items-center gap-6 h-full justify-self-start">
+            <div class="flex items-center gap-2 sm:gap-6 h-full justify-self-start">
                 <!-- Brand Logo Arusbawah -->
-                <div class="flex items-center gap-2.5 font-sans">
+                <div class="flex items-center gap-1.5 sm:gap-2.5 font-sans">
                     <!-- Back Arrow on Mobile -->
-                    <a href="/" class="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-slate-50 border border-slate-200 text-slate-600 mr-1" title="Kembali">
+                    <a href="/" class="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-slate-50 border border-slate-200 text-slate-600 mr-0.5 sm:mr-1" title="Kembali">
                         <span class="material-symbols-outlined text-[18px]">arrow_back</span>
                     </a>
                     
-                    <a href="{{ route('home') }}" class="flex items-center gap-2 cursor-pointer">
+                    <a href="{{ route('home') }}" class="flex items-center gap-1.5 sm:gap-2 cursor-pointer">
                         @if($customLogo = \App\Helpers\AppBrandingHelper::getAppLogoPath())
-                            <img src="{{ asset('storage/' . $customLogo) }}" class="h-8 max-w-[120px] object-contain transition-transform hover:scale-105 duration-300">
+                            <img src="{{ asset('storage/' . $customLogo) }}" class="h-7 sm:h-8 max-w-[100px] sm:max-w-[120px] object-contain transition-transform hover:scale-105 duration-300">
                         @else
-                            <svg width="28" height="28" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" class="transition-transform hover:scale-105 duration-300">
+                            <svg width="24" height="24" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" class="transition-transform hover:scale-105 duration-300">
                                 <polygon points="21,4 39,38 3,38" fill="none" stroke="#c0392b" stroke-width="4" stroke-linejoin="round"/>
                                 <line x1="11" y1="28" x2="31" y2="28" stroke="#c0392b" stroke-width="4" stroke-linecap="round"/>
                             </svg>
                         @endif
                         <div class="flex flex-col text-left">
-                            <span class="text-sm font-black tracking-wider leading-none text-slate-800 uppercase">{{ \App\Helpers\AppBrandingHelper::getAppName() }}</span>
-                            <span class="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Media Intelligence</span>
+                            <span class="text-xs sm:text-sm font-black tracking-wider leading-none text-slate-800 uppercase">{{ \App\Helpers\AppBrandingHelper::getAppName() }}</span>
+                            <span class="text-[7px] sm:text-[7.5px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Media Intelligence</span>
                         </div>
                     </a>
                 </div>
