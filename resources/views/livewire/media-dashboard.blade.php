@@ -2304,7 +2304,7 @@
                         </div>
                     @endif
 
-                    <div style="height: calc(100vh - 270px) !important; overflow-y: auto !important;" class="flex-1 min-h-0 pr-4 pb-24 space-y-6">
+                    <div style="height: calc(100vh - 270px) !important; overflow-y: auto !important;" class="flex-1 min-h-0 pr-4 pb-24 space-y-6 mt-5">
 
                     <!-- Manajemen Kata Kunci Card -->
                     <!-- Manajemen Kata Kunci Card -->
