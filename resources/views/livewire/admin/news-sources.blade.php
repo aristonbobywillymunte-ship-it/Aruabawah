@@ -1,6 +1,6 @@
-<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
+@section('page-header')
     <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div class="text-left">
             <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
             <h1 class="text-2xl font-black text-slate-900 mt-1">Manajemen Sumber Berita</h1>
@@ -38,6 +38,9 @@
             </button>
         </div>
     </div>
+@endsection
+
+<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
 
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-4">
         <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Alur Portal Manual</p>
