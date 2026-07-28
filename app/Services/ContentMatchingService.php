@@ -91,22 +91,21 @@ class ContentMatchingService
         }
 
         foreach ($projectKeywordMap as $projectId => $keywordSets) {
-            $matchKeywords = array_values(array_unique(array_filter(array_merge($keywordSets['primary'], $keywordSets['context']))));
-
             if ($this->matchesExcludeKeywords($keywordSets['exclude'], $contentToMatch)) {
                 continue;
             }
 
-            if (! $this->matchesAnyKeyword($matchKeywords, $contentToMatch)) {
+            // Must match primary keywords
+            if (!$this->matchesAnyKeyword($keywordSets['primary'], $contentToMatch)) {
                 continue;
             }
 
-            foreach ($matchKeywords as $kw) {
-                if ($this->isStrictMatch($kw, $contentToMatch)) {
-                    $matchedProjectIds[] = $projectId;
-                    break;
-                }
+            // If context keywords exist, must match at least one context keyword as well
+            if (!empty($keywordSets['context']) && !$this->matchesAnyKeyword($keywordSets['context'], $contentToMatch)) {
+                continue;
             }
+
+            $matchedProjectIds[] = $projectId;
         }
 
         if ($discoveryProjectId && $isArticle && ! in_array($discoveryProjectId, $matchedProjectIds, true)) {
@@ -145,10 +144,9 @@ class ContentMatchingService
 
         $primaryKeywords = $project->scrapeKeywordVariants();
         $contextKeywords = $project->scrapeContextKeywordVariants();
-        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
         $excludeKeywords = $project->scrapeExcludeKeywords();
 
-        if ($matchKeywords === []) {
+        if ($primaryKeywords === []) {
             $project->articles()->sync([]);
             return [
                 'articles_linked' => 0,
@@ -160,7 +158,7 @@ class ContentMatchingService
         $matchedIds = [];
         Article::query()
             ->select(['id', 'title', 'content'])
-            ->chunkById(250, function ($articles) use ($project, $matchKeywords, $excludeKeywords, &$matchedIds) {
+            ->chunkById(250, function ($articles) use ($project, $primaryKeywords, $contextKeywords, $excludeKeywords, &$matchedIds) {
                 foreach ($articles as $article) {
                     $content = ($article->title ?? '') . "\n" . ($article->content ?? '');
                     if ($this->shouldSkipGovernorArticleMatch($project, $content)) {
@@ -171,9 +169,17 @@ class ContentMatchingService
                         continue;
                     }
 
-                    if ($this->matchesAnyKeyword($matchKeywords, $content)) {
-                        $matchedIds[] = $article->id;
+                    // Must match primary keywords
+                    if (!$this->matchesAnyKeyword($primaryKeywords, $content)) {
+                        continue;
                     }
+
+                    // Must match context keywords if they are configured
+                    if (!empty($contextKeywords) && !$this->matchesAnyKeyword($contextKeywords, $content)) {
+                        continue;
+                    }
+
+                    $matchedIds[] = $article->id;
                 }
             });
 
@@ -213,7 +219,6 @@ class ContentMatchingService
         $primaryKeywords = $project->scrapeKeywordVariants();
         $contextKeywords = $project->scrapeContextKeywordVariants();
         $excludeKeywords = $project->scrapeExcludeKeywords();
-        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
 
         if ($primaryKeywords === []) {
             $project->socialMediaItems()->sync([]);
@@ -228,7 +233,7 @@ class ContentMatchingService
         $matchedIds = [];
         SocialMediaItem::query()
             ->select(['id', 'author_name', 'content', 'raw_json'])
-            ->chunkById(250, function ($items) use ($matchKeywords, $excludeKeywords, &$matchedIds) {
+            ->chunkById(250, function ($items) use ($primaryKeywords, $contextKeywords, $excludeKeywords, &$matchedIds) {
                 foreach ($items as $item) {
                     $content = $this->buildSocialMatchText(
                         $item->content ?? null,
@@ -239,9 +244,17 @@ class ContentMatchingService
                         continue;
                     }
 
-                    if ($this->matchesAnyKeyword($matchKeywords, $content)) {
-                        $matchedIds[] = $item->id;
+                    // Must match primary keywords
+                    if (!$this->matchesAnyKeyword($primaryKeywords, $content)) {
+                        continue;
                     }
+
+                    // Must match context keywords if configured
+                    if (!empty($contextKeywords) && !$this->matchesAnyKeyword($contextKeywords, $content)) {
+                        continue;
+                    }
+
+                    $matchedIds[] = $item->id;
                 }
         });
 
