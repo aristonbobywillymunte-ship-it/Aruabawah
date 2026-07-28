@@ -3564,7 +3564,7 @@
 
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
                         @php
-                            $articlesList = $analysisArticlesList;
+                            $articlesList = $this->getArticles();
                         @endphp
                         @forelse($articlesList as $article)
                             @php
@@ -3956,8 +3956,6 @@
                 Kembali ke atas
             </button>
         </div>
-    </div>
-
     <!-- Date Range Picker Modal -->
     <div 
         x-data="{ 
