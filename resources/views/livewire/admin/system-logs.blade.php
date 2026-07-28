@@ -1,4 +1,4 @@
-<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
+@section('page-header')
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
         <div class="text-left">
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Log Filters Panel -->
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm font-sans text-left">
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm font-sans text-left mt-4">
         <div class="grid gap-4 lg:grid-cols-6 items-end">
             <div class="lg:col-span-2 text-left">
                 <label class="mb-1.5 block text-xs font-bold text-slate-700">Jenis Log</label>
@@ -110,6 +110,9 @@
             </div>
         </div>
     </div>
+@endsection
+
+<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
 
     <!-- Terminal Output -->
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left flex flex-col">
