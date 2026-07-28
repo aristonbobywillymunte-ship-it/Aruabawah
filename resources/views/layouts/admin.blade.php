@@ -30,7 +30,7 @@
             <div class="flex flex-col h-full">
                 <!-- Brand logo + Mobile Menu Toggle Button -->
                 <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 lg:border-none lg:py-6 shrink-0">
-                    <a href="{{ url('/admin') }}" class="flex items-center gap-3">
+                    <a href="{{ url('/admin') }}" class="flex items-center gap-2">
                         @if($customLogo = \App\Helpers\AppBrandingHelper::getAppLogoPath())
                             <img src="{{ asset('storage/' . $customLogo) }}" class="h-7 max-w-[80px] object-contain shrink-0">
                         @else
