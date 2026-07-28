@@ -33,7 +33,7 @@
          document.body.style.overflow = shouldLock ? 'hidden' : '';
          document.documentElement.style.overflow = shouldLock ? 'hidden' : '';
      "
-     x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 900; }); window.addEventListener('open-report-pdf', event => { if (event.detail?.url) window.open(event.detail.url, '_blank'); }); window.addEventListener('report-download-feedback', event => { const detail = event.detail || {}; reportFeedbackType = detail.type || 'info'; reportFeedbackTitle = detail.title || 'Informasi laporan'; reportFeedbackMessage = detail.message || ''; reportFeedbackOpen = true; setTimeout(() => { reportFeedbackOpen = false; }, reportFeedbackType === 'error' ? 5000 : 2800); }); isMobile = window.innerWidth < 900;"
+     x-init="window.addEventListener('scroll', () => { scrolledDown = window.scrollY > 700 }, { passive: true }); window.addEventListener('resize', () => { isMobile = window.innerWidth < 900; }); window.addEventListener('open-report-pdf', event => { if (event.detail?.url) window.open(event.detail.url, '_blank'); }); window.addEventListener('report-download-feedback', event => { const detail = event.detail || {}; reportFeedbackType = detail.type || 'info'; reportFeedbackTitle = detail.title || 'Informasi laporan'; reportFeedbackMessage = detail.message || ''; reportFeedbackOpen = true; }); isMobile = window.innerWidth < 900;"
 >
     <!-- Top Header -->
     <header class="w-full bg-white border-b border-slate-200 sticky top-0 z-50 flex-shrink-0">
@@ -2123,17 +2123,24 @@
                                                     </div>
                                                 @endif
                                             </div>
-                                            <div class="min-w-0">
-                                                <h4 class="text-sm font-extrabold text-slate-800 truncate">
-                                                    @if(strtolower($popArt->source_name) == 'twitter')
-                                                        x.com
-                                                    @elseif(str_contains($popArt->source_name, '.'))
-                                                        {{ strtolower($popArt->source_name) }}
-                                                    @else
-                                                        {{ strtolower($popArt->source_name) }}.com
-                                                    @endif
-                                                </h4>
-                                                <p class="text-[10px] font-semibold text-slate-400 mt-0.5">{{ $popArt->published_at ? \Carbon\Carbon::parse($popArt->published_at)->format('d M Y, H:i') : 'Baru saja' }}</p>
+                                            <div class="min-w-0 flex items-start gap-1.5">
+                                                @if(str_contains($srcLower, 'tiktok') || $srcLower === 'tk')
+                                                    <span class="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-500 mt-0.5">
+                                                        <span class="material-symbols-outlined text-[9px] leading-none">person</span>
+                                                    </span>
+                                                @endif
+                                                <div class="min-w-0">
+                                                    <h4 class="text-sm font-extrabold text-slate-800 truncate">
+                                                        @if(strtolower($popArt->source_name) == 'twitter')
+                                                            x.com
+                                                        @elseif(str_contains($popArt->source_name, '.'))
+                                                            {{ strtolower($popArt->source_name) }}
+                                                        @else
+                                                            {{ strtolower($popArt->source_name) }}.com
+                                                        @endif
+                                                    </h4>
+                                                    <p class="text-[10px] font-semibold text-slate-400 mt-0.5">{{ $popArt->published_at ? \Carbon\Carbon::parse($popArt->published_at)->format('d M Y, H:i') : 'Baru saja' }}</p>
+                                                </div>
                                             </div>
                                         </div>
                                         
@@ -2243,17 +2250,24 @@
                                                     </div>
                                                 @endif
                                             </div>
-                                            <div class="min-w-0">
-                                                <h4 class="text-sm font-extrabold text-slate-800 truncate">
-                                                    @if(strtolower($newArt->source_name) == 'twitter')
-                                                        x.com
-                                                    @elseif(str_contains($newArt->source_name, '.'))
-                                                        {{ strtolower($newArt->source_name) }}
-                                                    @else
-                                                        {{ strtolower($newArt->source_name) }}.com
-                                                    @endif
-                                                </h4>
-                                                <p class="text-[10px] font-semibold text-slate-400 mt-0.5">{{ $newArt->published_at ? \Carbon\Carbon::parse($newArt->published_at)->format('d M Y, H:i') : 'Baru saja' }}</p>
+                                            <div class="min-w-0 flex items-start gap-1.5">
+                                                @if(str_contains($srcLowerNew, 'tiktok') || $srcLowerNew === 'tk')
+                                                    <span class="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-500 mt-0.5">
+                                                        <span class="material-symbols-outlined text-[9px] leading-none">person</span>
+                                                    </span>
+                                                @endif
+                                                <div class="min-w-0">
+                                                    <h4 class="text-sm font-extrabold text-slate-800 truncate">
+                                                        @if(strtolower($newArt->source_name) == 'twitter')
+                                                            x.com
+                                                        @elseif(str_contains($newArt->source_name, '.'))
+                                                            {{ strtolower($newArt->source_name) }}
+                                                        @else
+                                                            {{ strtolower($newArt->source_name) }}.com
+                                                        @endif
+                                                    </h4>
+                                                    <p class="text-[10px] font-semibold text-slate-400 mt-0.5">{{ $newArt->published_at ? \Carbon\Carbon::parse($newArt->published_at)->format('d M Y, H:i') : 'Baru saja' }}</p>
+                                                </div>
                                             </div>
                                         </div>
                                         
@@ -4655,7 +4669,14 @@
                                     <span class="text-[8px] font-bold px-2 py-0.5 rounded-full {{ $article->sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700' : ($article->sentiment === 'negative' ? 'bg-rose-50 text-rose-700' : 'bg-slate-50 text-slate-700') }}">{{ $sentimentLabel }}</span>
                                 </div>
                             </div>
-                            <h4 class="text-sm font-bold text-slate-800 leading-snug">{{ $article->title }}</h4>
+                            <h4 class="text-sm font-bold text-slate-800 leading-snug flex items-start gap-1.5">
+                                @if(str_contains(strtolower($article->source_name), 'tiktok') || strtolower($article->source_name) === 'tk')
+                                    <span class="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-500 mt-0.5">
+                                        <span class="material-symbols-outlined text-[9px] leading-none">person</span>
+                                    </span>
+                                @endif
+                                <span class="min-w-0">{{ $article->title }}</span>
+                            </h4>
                             <p class="text-xs text-slate-500 mt-2 line-clamp-2">{{ $this->formatArticleExcerpt($article, 140) }}</p>
                         </div>
                     @endforeach
