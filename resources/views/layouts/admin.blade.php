@@ -130,7 +130,7 @@
             </header>
 
             <!-- Main Panel (Hanya area ini yang dapat di-scroll secara independen) -->
-            <main class="w-full flex-1 overflow-y-auto px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pt-8 min-h-0">
+            <main class="w-full flex-1 overflow-y-auto px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pt-8 min-h-0 focus:outline-none outline-none">
                 <div class="mx-auto w-full max-w-[1440px]">
                     @yield('content')
                 </div>
