@@ -1523,7 +1523,7 @@
                         </div>
 
                     <!-- Row 3: Word Cloud & Category Breakdowns side by side -->
-                    <div class="grid grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Word Cloud -->
                         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col text-left h-[360px] relative overflow-hidden transition-all duration-300 hover:shadow-md">
                             <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-3.5 relative z-10 w-full">
@@ -1795,9 +1795,9 @@
                             </div>
                             <span class="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded border border-slate-200">Analisis Relasi</span>
                         </div>
-                        <div class="grid grid-cols-3 gap-6 items-start" x-data="{ netTab: 'topik' }">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start" x-data="{ netTab: 'topik' }">
                             <!-- Visual Network SVG Graph (Left 2 cols) -->
-                            <div class="col-span-2 border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-between bg-slate-50 h-[350px] relative overflow-hidden select-none shadow-sm"
+                            <div class="lg:col-span-2 border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-between bg-slate-50 h-[350px] relative overflow-hidden select-none shadow-sm"
                                  x-data="{
                                      scale: 1,
                                      translateX: 0,
@@ -2030,7 +2030,7 @@
                     </div>
 
                     <!-- Row 5: Popular vs New Mentions side by side -->
-                    <div class="grid grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Left Column: Penyebutan Populer -->
                         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm text-left space-y-4">
                             <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4">
