@@ -1070,7 +1070,7 @@
                                     <p class="text-[10px] text-slate-400">Kinerja metrik utama dan distribusi penyebutan pada setiap saluran media.</p>
                                 </div>
                             </div>
-                        <div class="grid grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <!-- Card 1: Total Artikel Ditemukan -->
                             <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[100px]">
                                 <div class="space-y-1.5 text-left">
@@ -1104,7 +1104,7 @@
                         </div>
 
                         <!-- Row 2: Publication Channels breakdown metrics cards (Instagram, TikTok, Facebook, Portal Berita) -->
-                        <div class="grid grid-cols-4 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             <!-- Instagram -->
                             <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[155px]">
                                 <div class="flex items-center justify-between w-full">
@@ -1244,7 +1244,7 @@
                         </div>
 
                         <!-- Row 3: Sentiment breakdown cards (Full width 2 columns) -->
-                        <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
                             <!-- Sentimen Sosmed -->
                             <div class="border border-slate-200 bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 space-y-3">
                                 <div class="flex justify-between items-center pb-2 border-b border-slate-100/85">
