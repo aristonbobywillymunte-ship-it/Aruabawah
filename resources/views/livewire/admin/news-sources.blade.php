@@ -38,11 +38,8 @@
             </button>
         </div>
     </div>
-@endsection
 
-<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
-
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-4">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-4 mt-4">
         <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Alur Portal Manual</p>
         <div class="mt-3 grid gap-3 md:grid-cols-2">
             <div class="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 border border-slate-100">
@@ -65,6 +62,9 @@
             </div>
         </div>
     </div>
+@endsection
+
+<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
 
     <!-- News Sources Table Card -->
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left relative">
