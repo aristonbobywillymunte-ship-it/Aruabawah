@@ -269,16 +269,18 @@
                                         @error('priority') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
-                                <div class="grid gap-4 {{ $platform === 'Facebook' ? 'sm:grid-cols-2' : 'sm:grid-cols-3' }}">
+                                @if($platform !== 'Facebook')
+                                <div class="grid gap-4 sm:grid-cols-2">
                                     <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Aktif</label>
-                                        <input wire:model.defer="defaultLimit" type="number" min="0" inputmode="numeric" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil (Jumlah Item)</label>
+                                        <input wire:model.defer="defaultLimit" type="number" min="1" inputmode="numeric" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                         <p class="mt-1 text-[10px] font-semibold text-slate-400">
-                                            <span class="font-mono">maxItems</span> = <span class="font-semibold text-slate-600">Batas Hasil Aktif</span>.
+                                            Jumlah maksimum item yang diambil per run aktor.
                                         </p>
                                         @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
+                                @endif
                             </div>
                         </div>
 
@@ -407,11 +409,6 @@
                                 <div class="border-t border-slate-100 bg-emerald-50/30 p-4 space-y-4 rounded-b-2xl">
                                     <div class="grid gap-4 sm:grid-cols-2">
                                         <div>
-                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil Aktif</label>
-                                            <input wire:model="defaultLimit" type="number" min="1" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
-                                            <p class="mt-1 text-[10px] text-slate-400"><span class="font-mono">maxItems</span> = <span class="font-semibold text-slate-600">Batas Hasil Aktif</span>.</p>
-                                            @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                                        </div>
                                         <div>
                                             <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Use Apify Proxy</label>
                                             <label class="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
