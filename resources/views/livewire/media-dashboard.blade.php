@@ -3673,10 +3673,10 @@
                                         {{ \Carbon\Carbon::parse($article->published_at)->format('d M Y, H:i') }}
                                     </div>
                                 </div>
-                                <h3 class="text-[13px] sm:text-sm font-black text-slate-900 leading-snug mb-2 sm:mb-3 line-clamp-2 group-hover:text-[#1fa387] transition-colors tracking-tight">
+                                <h3 class="text-xs sm:text-sm md:text-[17px] font-extrabold text-slate-900 leading-snug mb-2 sm:mb-3 line-clamp-2 group-hover:text-[#1fa387] transition-colors tracking-tight">
                                     <a href="{{ $article->url }}" target="_blank">{{ $article->title }}</a>
                                 </h3>
-                                <p class="text-[11px] sm:text-[13px] text-slate-500 line-clamp-3 mb-4 sm:mb-5 leading-relaxed flex-grow font-medium font-sans">
+                                <p class="text-[11px] sm:text-sm text-slate-600 line-clamp-3 mb-4 sm:mb-5 leading-relaxed flex-grow font-medium">
                                     {{ Str::limit(strip_tags($article->content), 120) }}
                                 </p>
                                 <div class="flex items-center justify-between gap-3 pt-3.5 border-t border-slate-100 mt-auto min-w-0">
