@@ -2726,7 +2726,7 @@
                     }
                 @endphp
                 <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
-                    <div class="flex items-center justify-between shrink-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 text-left">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
                                 <span class="material-symbols-outlined text-indigo-600 text-[22px]">psychology</span>Wawasan & Ringkasan AI
@@ -2742,7 +2742,7 @@
                             wire:click="generateAiInsights"
                             wire:loading.attr="disabled"
                             wire:target="generateAiInsights"
-                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-4 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                         >
                             <svg wire:loading.remove wire:target="generateAiInsights" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                             <svg wire:loading wire:target="generateAiInsights" class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -2754,7 +2754,7 @@
                     <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
                     <!-- Top Analytics KPI Grid -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                         <!-- Card 1: Reputation Index -->
                         <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[110px]">
                             <div class="space-y-1.5 text-left">
