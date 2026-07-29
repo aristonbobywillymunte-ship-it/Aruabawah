@@ -285,13 +285,31 @@ class RunApifyScraping extends Command
                     //       Jika tidak ada antrean → skip tanpa membuang run.
                     // =========================================================
                     if (strtolower((string) $actor->function_type) === 'comment scraper') {
+                        // Ambil URL artikel TikTok dari "Penyebutan"
+                        $articleUrls = \App\Models\Article::query()
+                            ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
+                            ->where('project_articles.project_id', $project->id)
+                            ->where(function ($q) {
+                                $q->where('articles.source_name', 'like', '%tiktok%')
+                                  ->orWhere('articles.url', 'like', '%tiktok.com%');
+                            })
+                            ->get(['articles.url', 'articles.canonical_url'])
+                            ->flatMap(function($article) {
+                                return [$article->url, $article->canonical_url];
+                            })
+                            ->filter()
+                            ->unique()
+                            ->values()
+                            ->toArray();
+
                         // Ambil semua postingan TikTok dari proyek aktif ini,
-                        // hanya yang URL-nya adalah URL video valid (bukan hashtag/search).
+                        // hanya yang URL-nya adalah URL video valid dan tampil di Penyebutan
                         $candidateItems = \App\Models\SocialMediaItem::where('project_id', $project->id)
                             ->where('platform', $actor->platform)
                             ->whereNotNull('post_url')
                             ->where('post_url', 'like', '%tiktok.com/@%')
                             ->where('post_url', 'like', '%/video/%')
+                            ->whereIn('post_url', $articleUrls)
                             ->orderBy('posted_at', 'desc')
                             ->orderBy('id', 'desc')
                             ->get(['id', 'post_url']);

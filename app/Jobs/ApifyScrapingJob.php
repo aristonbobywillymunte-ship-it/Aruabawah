@@ -174,9 +174,26 @@ class ApifyScrapingJob implements ShouldQueue
                 $state->update([
                     'status' => 'queued',
                     'queued_at' => $now,
+                    'started_at' => null,
+                    'completed_at' => null,
                     'next_retry_at' => null,
                     'attempts' => $state->attempts + 1,
-                    'last_error_message' => null
+                    'last_error_code' => null,
+                    'last_error_message' => null,
+                    'run_id' => null,
+                ]);
+            } elseif (! $state->wasRecentlyCreated && $forceDispatch) {
+                // Force dispatch reuses the same state key for social actors, so
+                // stale timing/error fields must be cleared before the next run.
+                $state->update([
+                    'status' => 'queued',
+                    'queued_at' => $now,
+                    'started_at' => null,
+                    'completed_at' => null,
+                    'next_retry_at' => null,
+                    'last_error_code' => null,
+                    'last_error_message' => null,
+                    'run_id' => null,
                 ]);
             }
 
@@ -251,7 +268,13 @@ class ApifyScrapingJob implements ShouldQueue
         if ($dispatchStateId) {
             $state = \App\Models\ApifyDispatchState::find($dispatchStateId);
             if ($state) {
-                $state->update(['status' => 'processing', 'started_at' => now()]);
+                $state->update([
+                    'status' => 'processing',
+                    'started_at' => now(),
+                    'completed_at' => null,
+                    'last_error_code' => null,
+                    'last_error_message' => null,
+                ]);
             }
         }
 
@@ -961,11 +984,29 @@ class ApifyScrapingJob implements ShouldQueue
         if (strtolower((string) $actor->function_type) === 'comment scraper') {
             $hasMoreQueue = false;
             if ($projectId) {
+                // Ambil URL artikel TikTok dari "Penyebutan"
+                $articleUrls = \App\Models\Article::query()
+                    ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
+                    ->where('project_articles.project_id', $projectId)
+                    ->where(function ($q) {
+                        $q->where('articles.source_name', 'like', '%tiktok%')
+                          ->orWhere('articles.url', 'like', '%tiktok.com%');
+                    })
+                    ->get(['articles.url', 'articles.canonical_url'])
+                    ->flatMap(function($article) {
+                        return [$article->url, $article->canonical_url];
+                    })
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->toArray();
+
                 $candidateItems = \App\Models\SocialMediaItem::where('project_id', $projectId)
                     ->where('platform', $platform)
                     ->whereNotNull('post_url')
                     ->where('post_url', 'like', '%tiktok.com/@%')
                     ->where('post_url', 'like', '%/video/%')
+                    ->whereIn('post_url', $articleUrls)
                     ->get(['post_url']);
 
                 foreach ($candidateItems as $candidateItem) {
