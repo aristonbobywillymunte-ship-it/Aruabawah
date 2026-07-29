@@ -179,6 +179,38 @@ class ApifyScrapingJob implements ShouldQueue
 
     // hasPendingDuplicate and cleanupStaleJobs replaced by State tracking
 
+    /**
+     * Dipanggil otomatis oleh Laravel ketika job gagal karena exception / timeout.
+     * Hapus tanda "dalam proses" agar URL bisa masuk antrean lagi.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        $keywords = array_values(array_filter(array_map(
+            static fn ($value) => trim((string) $value),
+            (array) ($this->params['keywords'] ?? [])
+        )));
+        $keyword = trim((string) ($this->params['keyword'] ?? ''));
+        if ($keywords === [] && $keyword !== '') {
+            $keywords = [$keyword];
+        }
+
+        $actorId  = $this->params['actor_id'] ?? null;
+        $actor    = $actorId ? ApifyActor::find($actorId) : null;
+
+        if ($actor && strtolower((string) $actor->function_type) === 'comment scraper') {
+            foreach ($keywords as $url) {
+                if (filled($url)) {
+                    Cache::forget('comments_scraping_in_progress:' . md5((string) $url));
+                }
+            }
+            Log::warning('[Apify] Comment Scraper job failed. In-progress marks cleared for retry.', [
+                'actor_id' => $actorId,
+                'urls'     => $keywords,
+                'error'    => $exception->getMessage(),
+            ]);
+        }
+    }
+
     public function handle(): void
     {
         $socialLog = Log::channel('social_media');
@@ -539,7 +571,7 @@ class ApifyScrapingJob implements ShouldQueue
 
         foreach ($items as $item) {
             // Normalise fields across platforms
-            $rawPostUrl = $item['webVideoUrl'] ?? $item['url'] ?? $item['facebookUrl'] ?? $item['topLevelUrl'] ?? $item['post_url'] ?? $item['postUrl'] ?? $item['link'] ?? null;
+            $rawPostUrl = $item['videoWebUrl'] ?? $item['submittedVideoUrl'] ?? $item['webVideoUrl'] ?? $item['url'] ?? $item['facebookUrl'] ?? $item['topLevelUrl'] ?? $item['post_url'] ?? $item['postUrl'] ?? $item['link'] ?? null;
             $postUrl    = $this->normalizeSocialPostUrl($rawPostUrl);
             $content    = $item['message'] ?? $item['text'] ?? $item['caption'] ?? $item['description'] ?? $item['title'] ?? '';
             $authorFallback = $platform === 'TikTok' ? 'TikTok' : 'Unknown Author';
@@ -692,6 +724,74 @@ class ApifyScrapingJob implements ShouldQueue
                 ]);
             }
 
+            // Logika Khusus Penyimpanan Data Komentar (Comment Scraper)
+            if (strtolower((string) $actor->function_type) === 'comment scraper') {
+                if (empty($postUrl)) {
+                    Log::warning("[Apify] Skipped comment item: missing postUrl/post_url");
+                    continue;
+                }
+
+                $mainPost = SocialMediaItem::where('post_url', $postUrl)->first();
+                if ($mainPost) {
+                    $rawJsonDecoded = json_decode($mainPost->raw_json, true) ?: [];
+
+                    if (!isset($rawJsonDecoded['comments']) || !is_array($rawJsonDecoded['comments'])) {
+                        $rawJsonDecoded['comments'] = [];
+                    }
+
+                    $commentId = $item['cid'] ?? $item['id'] ?? $item['commentId'] ?? md5(json_encode($item));
+                    $exists = false;
+                    foreach ($rawJsonDecoded['comments'] as $c) {
+                        $existingId = $c['cid'] ?? $c['id'] ?? $c['commentId'] ?? null;
+                        if ($existingId === $commentId) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+
+                    if (!$exists) {
+                        $rawJsonDecoded['comments'][] = $item;
+                    }
+
+                    $mainPost->update([
+                        'raw_json' => json_encode($rawJsonDecoded),
+                        'comment_count' => count($rawJsonDecoded['comments'])
+                    ]);
+
+                    Log::info("[Apify] Komentar berhasil ditambahkan ke postingan utama.", [
+                        'post_url' => $postUrl,
+                        'comment_id' => $commentId,
+                        'total_comments' => count($rawJsonDecoded['comments'])
+                    ]);
+
+                    $saved++;
+                } else {
+                    $rawJsonDecoded = [
+                        'post_url' => $postUrl,
+                        'platform' => $platform,
+                        'comments' => [$item]
+                    ];
+
+                    SocialMediaItem::create([
+                        'project_id'    => $projectId ?: null,
+                        'platform'       => $platform,
+                        'author_name'    => $author,
+                        'author_url'     => $authorUrl,
+                        'content'        => '[Menunggu postingan utama] ' . $content,
+                        'posted_at'      => $postedAtCarbon,
+                        'like_count'     => 0,
+                        'comment_count'  => 1,
+                        'share_count'    => 0,
+                        'view_count'     => 0,
+                        'follower_count' => 0,
+                        'raw_json'       => json_encode($rawJsonDecoded),
+                    ]);
+                    $saved++;
+                }
+
+                continue;
+            }
+
             $record = SocialMediaItem::updateOrCreate(
                 ['post_url' => $postUrl ?? ('apify-' . md5($content . $platform))],
                 [
@@ -818,12 +918,59 @@ class ApifyScrapingJob implements ShouldQueue
         ]);
         Cache::forget("apify_actor_retry_at:{$actor->id}");
 
+        // Tandai link postingan yang sudah di-scrape komentarnya agar tidak di-scrape ulang.
+        // Sekaligus hapus tanda "dalam proses" yang dipasang saat dispatch.
+        if (strtolower((string) $actor->function_type) === 'comment scraper') {
+            foreach ($keywords as $url) {
+                if (filled($url)) {
+                    $urlHash = md5((string) $url);
+                    Cache::forever('comments_scraped_for_post:' . $urlHash, true);
+                    Cache::forget('comments_scraping_in_progress:' . $urlHash);
+                }
+            }
+        }
+
         if ($state) {
             $state->update([
                 'status' => 'success',
                 'completed_at' => now(),
                 'last_error_message' => $costLimitReached ? $costLimitNote : ($pollTimeoutReached ? $pollTimeoutNote : null),
             ]);
+        }
+
+        // Logic Self-Chaining: Jika ini comment scraper dan masih ada URL tersisa dalam antrean proyek aktif,
+        // langsung picu run berikutnya secara instan agar proses scraping terus berjalan tanpa henti.
+        if (strtolower((string) $actor->function_type) === 'comment scraper') {
+            $hasMoreQueue = false;
+            if ($projectId) {
+                $candidateItems = \App\Models\SocialMediaItem::where('project_id', $projectId)
+                    ->where('platform', $platform)
+                    ->whereNotNull('post_url')
+                    ->where('post_url', 'like', '%tiktok.com/@%')
+                    ->where('post_url', 'like', '%/video/%')
+                    ->get(['post_url']);
+
+                foreach ($candidateItems as $candidateItem) {
+                    $urlHash = md5((string) $candidateItem->post_url);
+                    $doneKey       = 'comments_scraped_for_post:' . $urlHash;
+                    $inProgressKey = 'comments_scraping_in_progress:' . $urlHash;
+
+                    if (!Cache::has($doneKey) && !Cache::has($inProgressKey)) {
+                        $hasMoreQueue = true;
+                        break;
+                    }
+                }
+            }
+
+            if ($hasMoreQueue) {
+                Log::info("[Apify] Antrean komentar masih ada untuk project={$projectId}. Memicu siklus scraping berikutnya secara instan.");
+                \Illuminate\Support\Facades\Artisan::queue('scraping:run-apify', [
+                    '--platform' => $platform,
+                    '--project-id' => $projectId,
+                    '--force-dispatch' => true,
+                    '--no-telegram' => $suppressTelegram,
+                ]);
+            }
         }
     }
 

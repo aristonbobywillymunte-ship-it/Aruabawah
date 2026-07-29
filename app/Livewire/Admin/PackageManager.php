@@ -31,6 +31,9 @@ class PackageManager extends Component
 
     // ─── Confirmation ─────────────────────────────────────────────────────
     public ?int $confirmDeleteId = null;
+    public ?int $confirmActorToggleId = null;
+    public string $confirmActorToggleName = '';
+    public bool $confirmActorToggleTargetState = false;
     public string $flash = '';
     public string $flashType = 'success'; // success | error
 
@@ -230,6 +233,36 @@ class PackageManager extends Component
         }
     }
 
+    // ─── Toggle Actor Confirmation ───────────────────────────────────────
+
+    public function initiateActorToggle(int $actorId, string $actorName): void
+    {
+        $this->confirmActorToggleId = $actorId;
+        $this->confirmActorToggleName = $actorName;
+        $this->confirmActorToggleTargetState = !($this->actorConfig[$actorId]['is_enabled'] ?? false);
+    }
+
+    public function cancelActorToggle(): void
+    {
+        $this->confirmActorToggleId = null;
+        $this->confirmActorToggleName = '';
+    }
+
+    public function confirmActorToggle(): void
+    {
+        if ($this->confirmActorToggleId) {
+            $actorId = $this->confirmActorToggleId;
+            $newState = $this->confirmActorToggleTargetState;
+            $this->actorConfig[$actorId]['is_enabled'] = $newState;
+            
+            $actionWord = $newState ? 'diaktifkan' : 'dinonaktifkan';
+            $this->setFlash("Actor '{$this->confirmActorToggleName}' berhasil {$actionWord} sementara di paket ini.", 'success');
+            
+            $this->confirmActorToggleId = null;
+            $this->confirmActorToggleName = '';
+        }
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────────
 
     protected function resetForm(): void
@@ -270,7 +303,7 @@ class PackageManager extends Component
         $packages = Package::query()
             ->when($this->search, fn($q) => $q->where('name', 'ilike', "%{$this->search}%")
                 ->orWhere('description', 'ilike', "%{$this->search}%"))
-            ->withCount(['projects', 'actors' => fn($q) => $q->wherePivot('is_enabled', true)])
+            ->withCount(['projects', 'enabledActors as actors_count'])
             ->orderBy('name')
             ->paginate(10);
 

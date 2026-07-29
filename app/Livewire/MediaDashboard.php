@@ -1174,6 +1174,7 @@ class MediaDashboard extends Component
             ?: data_get($item, 'userName')
             ?: data_get($item, 'authorName')
             ?: data_get($item, 'ownerUsername')
+            ?: data_get($item, 'uniqueId')  // clockworks/tiktok-comments-scraper
             ?: ''
         ));
 
@@ -1193,6 +1194,7 @@ class MediaDashboard extends Component
             ?: data_get($item, 'author.avatar')
             ?: data_get($item, 'user.avatarThumb')
             ?: data_get($item, 'user.avatar')
+            ?: data_get($item, 'avatarThumbnail')  // clockworks/tiktok-comments-scraper
             ?: data_get($item, 'avatar')
             ?: data_get($item, 'avatar_url')
             ?: data_get($item, 'profilePic')

@@ -118,15 +118,34 @@
                 </div>
             </div>
             @empty
-            <div class="col-span-full bg-white rounded-3xl border border-slate-200/80 p-16 text-center shadow-sm">
-                <div class="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-300 mx-auto border border-slate-100 mb-4">
-                    <span class="material-symbols-outlined text-4xl">inventory_2</span>
+            <div class="col-span-full bg-gradient-to-br from-slate-50/50 via-white to-slate-50/30 rounded-3xl border border-slate-200/80 p-12 text-center shadow-[0_4px_20px_-2px_rgba(0,0,0,0.02)]">
+                <div class="relative w-20 h-20 rounded-3xl bg-gradient-to-tr from-[#1fa387]/10 to-emerald-500/5 flex items-center justify-center text-[#1fa387] mx-auto mb-6 border border-[#1fa387]/10 shadow-sm">
+                    <span class="material-symbols-outlined text-4xl animate-pulse" style="animation-duration: 3s;">inventory_2</span>
+                    <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white animate-pulse"></span>
                 </div>
-                <h4 class="text-sm font-black text-slate-800 mb-1">Belum Ada Paket Tersedia</h4>
-                <p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed mb-6">Paket membantu memetakan actor Apify dan biaya per proyek secara modular.</p>
+                
+                <h4 class="text-base font-black text-slate-800 tracking-tight">Belum Ada Paket Scraping Aktif</h4>
+                <p class="text-xs text-slate-450 max-w-sm mx-auto leading-relaxed mt-2">Buat bundel konfigurasi actor Apify dan kustomisasi biaya per run secara modular untuk proyek Anda.</p>
+                
+                <div class="max-w-sm mx-auto my-8 p-5 rounded-2xl bg-white border border-slate-200/50 text-left space-y-3.5 shadow-sm">
+                    <div class="flex items-center gap-3 text-slate-600 text-[11px] font-bold">
+                        <span class="w-5 h-5 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600"><span class="material-symbols-outlined text-[14px]">check_circle</span></span>
+                        <span>Modular multi-actor Apify per proyek</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-slate-600 text-[11px] font-bold">
+                        <span class="w-5 h-5 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600"><span class="material-symbols-outlined text-[14px]">check_circle</span></span>
+                        <span>Override limit biaya maksimal per run</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-slate-600 text-[11px] font-bold">
+                        <span class="w-5 h-5 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600"><span class="material-symbols-outlined text-[14px]">check_circle</span></span>
+                        <span>Kontrol penuh atas setelan portal berita</span>
+                    </div>
+                </div>
+
                 <button wire:click="createPackage"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1fa387] text-white text-xs font-bold hover:bg-[#178a71] transition-all cursor-pointer">
-                    <span class="material-symbols-outlined text-[16px]">add</span> Buat Paket Pertama
+                    class="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#1fa387] to-[#178a71] text-white text-xs font-black hover:shadow-lg hover:shadow-[#1fa387]/25 transition-all duration-200 cursor-pointer active:scale-95">
+                    <span class="material-symbols-outlined text-[18px]">add_box</span>
+                    <span>Buat Paket Pertama</span>
                 </button>
             </div>
             @endforelse
@@ -144,71 +163,82 @@
     {{-- VIEW: FORM (Create / Edit)                                          --}}
     {{-- ═══════════════════════════════════════════════════════════════════ --}}
     @elseif($view === 'form')
-    <div class="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-sm flex items-center justify-center p-4" wire:click.self="cancelForm">
-        <div class="w-full max-w-5xl max-h-[90vh] bg-white rounded-[28px] border border-slate-200/80 shadow-[0_24px_70px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden">
-            <div class="flex items-start justify-between gap-4 px-8 py-6 border-b border-slate-100 shrink-0">
+    <div class="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4" wire:click.self="cancelForm">
+        <div class="w-full max-w-5xl bg-white rounded-3xl border border-slate-200 shadow-[0_24px_70px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-fade-in" style="height: 85vh; max-height: 720px;">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between gap-4 px-8 py-5 border-b border-slate-100 shrink-0 bg-white" style="flex-shrink: 0;">
                 <div class="flex items-center gap-4">
-                    <button wire:click="cancelForm" class="p-2.5 rounded-2xl bg-white border border-slate-200 text-slate-500 hover:text-slate-900 hover:border-slate-350 hover:shadow-sm transition-all duration-200 cursor-pointer">
-                        <span class="material-symbols-outlined text-[20px] block">arrow_back</span>
+                    <button wire:click="cancelForm" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-[#1fa387] hover:border-[#1fa387]/50 transition-all duration-200 cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px] block">arrow_back</span>
                     </button>
                     <div>
-                        <h1 class="text-2xl font-black text-slate-900 tracking-tight">
+                        <h2 class="text-lg font-black text-slate-900 tracking-tight">
                             {{ $editingPackageId ? 'Edit Parameter Paket' : 'Buat Paket Baru' }}
-                        </h1>
-                        <p class="text-xs text-slate-500 mt-1">Konfigurasikan informasi dasar paket di bawah ini.</p>
+                        </h2>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Konfigurasikan informasi dasar paket dan biaya override di bawah ini.</p>
                     </div>
                 </div>
-                <button wire:click="cancelForm" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all duration-150 cursor-pointer">
-                    <span class="material-symbols-outlined text-[20px] block">close</span>
+                <button wire:click="cancelForm" class="p-2 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-all duration-150 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px] block">close</span>
                 </button>
             </div>
 
-            <div class="overflow-y-auto px-8 py-6 space-y-6">
-            {{-- Nama --}}
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <label class="text-xs font-black text-slate-700 uppercase tracking-wider">Nama Paket</label>
-                    <span class="text-[9px] font-black text-red-500 bg-red-50 border border-red-100 rounded-full px-2 py-0.5">Wajib</span>
-                </div>
-                <input wire:model="name" type="text" placeholder="Contoh: Paket VIP Scraping Medsos"
-                    class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387] transition-all @error('name') border-red-300 bg-red-50/50 @enderror" />
-                @error('name') <p class="text-red-500 text-xs font-semibold mt-1.5">{{ $message }}</p> @enderror
-            </div>
+            <!-- Scrollable Content Area -->
+            <div class="flex-grow overflow-y-auto p-8 space-y-6 text-left" style="flex: 1 1 auto;">
+                
+                <!-- Section 1: Informasi Dasar (Grid untuk Nama & Deskripsi) -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
+                    {{-- Nama --}}
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-[10px] font-black text-slate-700 uppercase tracking-wider">Nama Paket</label>
+                            <span class="text-[9px] font-black text-red-500 bg-red-50 border border-red-100 rounded-full px-2.5 py-0.5">Wajib</span>
+                        </div>
+                        <input wire:model="name" type="text" placeholder="Contoh: Paket VIP Scraping Medsos"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387] transition-all bg-white @error('name') border-red-300 bg-red-50/50 @enderror" />
+                        @error('name') <p class="text-red-500 text-xs font-semibold mt-1.5">{{ $message }}</p> @enderror
+                    </div>
 
-            {{-- Deskripsi --}}
-            <div>
-                <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Deskripsi Paket</label>
-                <textarea wire:model="description" rows="4" placeholder="Opsional — berikan rincian singkat mengenai fungsionalitas paket ini..."
-                    class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387] transition-all"></textarea>
-                @error('description') <p class="text-red-500 text-xs font-semibold mt-1.5">{{ $message }}</p> @enderror
-            </div>
-
-            {{-- Status Switch --}}
-            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <div class="text-left">
-                    <div class="text-xs font-black text-slate-800">Paket Aktif</div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">Hanya paket aktif yang dapat dipetakan ke Proyek monitoring.</div>
+                    {{-- Deskripsi --}}
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-700 uppercase tracking-wider mb-2">Deskripsi Paket</label>
+                        <textarea wire:model="description" rows="2" placeholder="Opsional — berikan rincian singkat mengenai fungsionalitas paket ini..."
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387] transition-all bg-white" style="height: 42px;"></textarea>
+                        @error('description') <p class="text-red-500 text-xs font-semibold mt-1.5">{{ $message }}</p> @enderror
+                    </div>
                 </div>
-                <button type="button" wire:click="$toggle('is_active')"
-                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none
-                    {{ $is_active ? 'bg-[#1fa387]' : 'bg-slate-200' }}">
-                    <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out
-                        {{ $is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
-                </button>
-            </div>
 
-            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <div class="text-left">
-                    <div class="text-xs font-black text-slate-800">Portal News Paket</div>
-                    <div class="text-[10px] text-slate-400 mt-0.5">User bisa menentukan apakah paket ini ikut menjalankan portal atau hanya actor medsos.</div>
+                <!-- Section 2: Switch Status & Pengaturan (Grid Horizontal) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Status Switch --}}
+                    <div class="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                        <div class="text-left">
+                            <div class="text-xs font-black text-slate-800">Status Paket</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Aktifkan paket agar dapat dipilih di form Proyek.</div>
+                        </div>
+                        <button type="button" wire:click="$toggle('is_active')"
+                            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none
+                            {{ $is_active ? 'bg-[#1fa387]' : 'bg-slate-200' }}">
+                            <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out
+                                {{ $is_active ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                        </button>
+                    </div>
+
+                    {{-- Portal News Switch --}}
+                    <div class="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                        <div class="text-left">
+                            <div class="text-xs font-black text-slate-800">Portal News Paket</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Tentukan apakah paket ini menjalankan portal scraper.</div>
+                        </div>
+                        <button type="button" wire:click="$toggle('use_portal')"
+                            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none
+                            {{ $use_portal ? 'bg-[#1fa387]' : 'bg-slate-200' }}">
+                            <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out
+                                {{ $use_portal ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                        </button>
+                    </div>
                 </div>
-                <button type="button" wire:click="$toggle('use_portal')"
-                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out
-                    {{ $use_portal ? 'bg-[#1fa387]' : 'bg-slate-200' }}">
-                    <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out
-                        {{ $use_portal ? 'translate-x-5' : 'translate-x-0' }}"></span>
-                </button>
-            </div>
 
             <div class="space-y-4 pt-2">
                 <div class="flex items-center justify-between">
@@ -241,15 +271,13 @@
                                 @php $config = $actorConfig[$actor->id] ?? ['is_enabled' => false, 'cost_per_run_usd' => '']; @endphp
                                 <div wire:key="package-form-actor-{{ $actor->id }}" class="px-5 py-4 bg-white grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_180px_170px] gap-4 items-center">
                                     <div class="flex items-start gap-3">
-                                        <label class="relative mt-0.5 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center">
-                                            <input
-                                                type="checkbox"
-                                                wire:model.live="actorConfig.{{ $actor->id }}.is_enabled"
-                                                class="peer sr-only"
-                                            />
-                                            <span class="absolute inset-0 rounded-full bg-slate-200 transition-colors duration-200 ease-in-out peer-checked:bg-[#1fa387]"></span>
-                                            <span class="relative inline-block h-5 w-5 translate-x-0 rounded-full bg-white shadow-md transition duration-200 ease-in-out peer-checked:translate-x-5"></span>
-                                        </label>
+                                        <button
+                                            type="button"
+                                            wire:click="initiateActorToggle({{ $actor->id }}, '{{ addslashes($actor->actor_name) }}')"
+                                            class="relative mt-0.5 inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ ($config['is_enabled'] ?? false) ? 'bg-[#1fa387]' : 'bg-slate-200' }}"
+                                        >
+                                            <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out {{ ($config['is_enabled'] ?? false) ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                                        </button>
                                         <div class="min-w-0">
                                             <div class="text-sm font-black text-slate-800 leading-tight">{{ $actor->actor_name }}</div>
                                             <div class="text-[11px] text-slate-500 mt-1 break-all">{{ $actor->actor_slug }}</div>
@@ -298,8 +326,9 @@
             </div>
 
             {{-- Actions --}}
-            <div class="flex gap-3 px-8 py-5 border-t border-slate-100 justify-end shrink-0 bg-white">
-                <button wire:click="cancelForm" class="px-5 py-3 rounded-xl text-xs font-bold text-slate-650 bg-slate-100 hover:bg-slate-200 transition-all duration-150 active:scale-95 cursor-pointer">
+            <div class="flex gap-3 px-8 py-5 border-t border-slate-100 justify-end shrink-0 bg-white" style="flex-shrink: 0;">
+                <button type="button" wire:click="cancelForm"
+                    class="px-5 py-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer active:scale-95">
                     Batal
                 </button>
                 <button wire:click="savePackage" class="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black text-white bg-[#1fa387] hover:bg-[#178a71] shadow-lg shadow-[#1fa387]/20 transition-all duration-200 active:scale-95 cursor-pointer">
@@ -362,16 +391,13 @@
             @foreach($actors as $actor)
             @php $config = $actorConfig[$actor->id] ?? ['is_enabled' => false, 'cost_per_run_usd' => '']; @endphp
             <div wire:key="package-actors-actor-{{ $actor->id }}" class="flex items-center gap-4 px-6 py-5 border-b border-slate-100 hover:bg-slate-50/50 transition-colors last:border-b-0 group">
-                {{-- Custom Toggle --}}
-                <label class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center">
-                    <input
-                        type="checkbox"
-                        wire:model.live="actorConfig.{{ $actor->id }}.is_enabled"
-                        class="peer sr-only"
-                    />
-                    <span class="absolute inset-0 rounded-full bg-slate-200 transition-colors duration-200 ease-in-out peer-checked:bg-[#1fa387]"></span>
-                    <span class="relative inline-block h-4 w-4 translate-x-0 rounded-full bg-white shadow-sm transition duration-200 ease-in-out peer-checked:translate-x-5"></span>
-                </label>
+                <button
+                    type="button"
+                    wire:click="initiateActorToggle({{ $actor->id }}, '{{ addslashes($actor->actor_name) }}')"
+                    class="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ ($config['is_enabled'] ?? false) ? 'bg-[#1fa387]' : 'bg-slate-200' }}"
+                >
+                    <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out {{ ($config['is_enabled'] ?? false) ? 'translate-x-5' : 'translate-x-0' }}"></span>
+                </button>
 
                 {{-- Info Actor --}}
                 <div class="flex-1 min-w-0">
@@ -430,6 +456,32 @@
                 <span class="material-symbols-outlined text-[18px]">save</span>
                 <span>Simpan Konfigurasi</span>
             </button>
+        </div>
+    </div>
+    @endif
+
+    {{-- ─── ACTOR TOGGLE CONFIRM MODAL ───────────────────────────────────── --}}
+    @if($confirmActorToggleId)
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-md transition-all duration-300" wire:click.self="cancelActorToggle">
+        <div class="bg-white/95 rounded-3xl shadow-2xl p-8 w-full max-w-md mx-4 border border-slate-100/80 transform scale-100 transition-all">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 shadow-sm border border-amber-100/50">
+                    <span class="material-symbols-outlined text-[26px]">swap_horiz</span>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-800 tracking-tight">Ubah Akses Actor?</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Konfirmasi Perubahan</p>
+                </div>
+            </div>
+            <p class="text-slate-600 text-xs mb-6 leading-relaxed">
+                Apakah Anda yakin ingin <strong>{{ $confirmActorToggleTargetState ? 'mengaktifkan' : 'menonaktifkan' }}</strong> actor <strong>{{ $confirmActorToggleName }}</strong> untuk paket ini?
+            </p>
+            <div class="flex gap-3 justify-end">
+                <button wire:click="cancelActorToggle" class="px-5 py-3 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all duration-200 active:scale-95 cursor-pointer">Batal</button>
+                <button wire:click="confirmActorToggle" class="px-5 py-3 rounded-xl text-xs font-black text-white bg-[#1fa387] hover:bg-[#178a71] transition-all duration-200 shadow-lg shadow-[#1fa387]/20 active:scale-95 flex items-center gap-2 cursor-pointer">
+                    Ya, Ubah
+                </button>
+            </div>
         </div>
     </div>
     @endif

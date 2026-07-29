@@ -917,6 +917,13 @@ new class extends Component
                                     </div>
 
                                     <!-- Pilih Paket - Desain Card Selection Grid Premium -->
+                                    @php
+                                        $activePackages = \App\Models\Package::where('is_active', true)
+                                            ->withCount('enabledActors as actors_count')
+                                            ->orderBy('name')
+                                            ->get();
+                                    @endphp
+                                    @if($activePackages->isNotEmpty())
                                     <div class="space-y-3">
                                         <div class="flex items-center justify-between">
                                             <div>
@@ -926,28 +933,8 @@ new class extends Component
                                         </div>
                                         
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <!-- Opsi Default (Tanpa Paket) -->
-                                            <div 
-                                                wire:click="$set('packageId', null)"
-                                                class="cursor-pointer rounded-2xl border p-4 flex flex-col justify-between transition-all duration-200 hover:shadow-md hover:scale-[1.01] active:scale-[0.99]
-                                                {{ is_null($packageId) || $packageId === '' ? 'border-[#1fa387] bg-[#1fa387]/5 ring-2 ring-[#1fa387]/10' : 'border-slate-200 bg-white hover:border-slate-350' }}"
-                                            >
-                                                <div>
-                                                    <div class="flex items-center justify-between mb-2">
-                                                        <span class="text-xs font-black text-slate-800">Default Scraper</span>
-                                                        <span class="material-symbols-outlined text-[16px] {{ is_null($packageId) || $packageId === '' ? 'text-[#1fa387]' : 'text-slate-355' }}">
-                                                            {{ is_null($packageId) || $packageId === '' ? 'check_circle' : 'radio_button_unchecked' }}
-                                                        </span>
-                                                    </div>
-                                                    <p class="text-[10px] text-slate-400 leading-normal">Menggunakan semua actor global yang aktif secara default.</p>
-                                                </div>
-                                                <div class="mt-4 pt-2 border-t border-slate-100 flex items-center gap-1 text-[10px] font-bold text-slate-550">
-                                                    <span class="material-symbols-outlined text-[14px]">globe</span> Global Active Actors
-                                                </div>
-                                            </div>
-
                                             <!-- Opsi Paket-paket dari DB -->
-                                            @foreach(\App\Models\Package::where('is_active', true)->withCount(['actors' => fn($q) => $q->wherePivot('is_enabled', true)])->orderBy('name')->get() as $p)
+                                            @foreach($activePackages as $p)
                                             <div 
                                                 wire:click="$set('packageId', {{ $p->id }})"
                                                 class="cursor-pointer rounded-2xl border p-4 flex flex-col justify-between transition-all duration-200 hover:shadow-md hover:scale-[1.01] active:scale-[0.99]
@@ -970,6 +957,7 @@ new class extends Component
                                         </div>
                                         @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                     </div>
+                                    @endif
 
                                     <!-- Telegram Chat ID -->
                                     <div class="space-y-2">
@@ -1071,98 +1059,6 @@ new class extends Component
                                         <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
                                     </div>
 
-                                    <!-- Pengaturan Lanjutan Accordion -->
-                                    <div x-data="{ open: false }" class="border border-slate-200 rounded-2xl overflow-hidden bg-[#F8F9FA]/40">
-                                        <button 
-                                            type="button"
-                                            @click="open = !open" 
-                                            class="w-full flex items-center justify-between p-5 hover:bg-slate-50 transition-colors text-left cursor-pointer"
-                                        >
-                                            <span class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                                                <span>Pengaturan Lanjutan</span>
-                                            </span>
-                                            <svg class="w-4 h-4 text-[#1fa387] transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </button>
-                                        
-                                        <div x-show="open" class="p-6 space-y-6 border-t border-slate-100 bg-white">
-                                            <!-- Sumber Data Section -->
-                                            <div class="space-y-4">
-                                                <div class="flex items-start justify-between gap-4">
-                                                    <div>
-                                                        <h4 class="text-xs font-bold text-slate-800">Sumber Data</h4>
-                                                        <p class="text-[10px] text-slate-400">Pilih satu atau lebih sumber media yang ingin dipantau</p>
-                                                    </div>
-                                                    <button type="button" @click="$wire.selectedSources = []" class="text-xs text-red-500 font-bold hover:underline cursor-pointer">Hapus Semua</button>
-                                                </div>
-
-                                                <div class="space-y-4" x-data="{
-                                                    toggleSource(source) {
-                                                        let list = [...$wire.selectedSources];
-                                                        if (list.includes(source)) {
-                                                            list = list.filter(s => s !== source);
-                                                        } else {
-                                                            list.push(source);
-                                                        }
-                                                        $wire.selectedSources = list;
-                                                    }
-                                                }">
-                                                    <label class="flex items-center justify-between gap-3 cursor-pointer group">
-                                                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                            <input wire:model.live="selectedSources" value="Instagram" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
-                                                            <div class="w-10 h-10 rounded-xl bg-fuchsia-500 shadow-sm shadow-fuchsia-500/20 flex items-center justify-center shrink-0" style="background-color: #e1306c;">
-                                                                <svg class="w-5 h-5" fill="none" stroke="#ffffff" stroke-width="1.8" viewBox="0 0 24 24">
-                                                                    <rect x="4.25" y="4.25" width="15.5" height="15.5" rx="5"></rect>
-                                                                    <circle cx="12" cy="12" r="3.15"></circle>
-                                                                    <circle cx="17.1" cy="6.9" r="1.05" fill="#ffffff" stroke="none"></circle>
-                                                                </svg>
-                                                            </div>
-                                                            <span class="text-sm font-semibold text-slate-700 truncate">Instagram</span>
-                                                        </div>
-                                                    </label>
-
-                                                    <label class="flex items-center justify-between gap-3 cursor-pointer group">
-                                                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                            <input wire:model.live="selectedSources" value="TikTok" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
-                                                            <div class="w-10 h-10 rounded-xl bg-slate-950 shadow-sm shadow-slate-900/20 flex items-center justify-center shrink-0" style="background-color: #000000;">
-                                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24">
-                                                                     <path fill="#ffffff" d="M15.8 5.2c.7.8 1.7 1.4 2.8 1.6v2.7c-1 0-2-.2-2.9-.6v5.1c0 2.9-2.4 5.3-5.3 5.3S5.1 17 5.1 14.1s2.4-5.3 5.3-5.3c.2 0 .4 0 .6.1v2.8c-.2 0-.4-.1-.6-.1-1.3 0-2.3 1.1-2.3 2.4s1 2.4 2.3 2.4 2.4-1 2.4-2.4V4.4h2.9c.1.3.1.5.1.8z"/>
-                                                                     <path fill="#ffffff" d="M15.6 4.4c.2.9.7 1.8 1.4 2.5.8.7 1.6 1.2 2.6 1.4V5.6c-.7-.2-1.3-.5-1.8-.9-.5-.4-1-.9-1.3-1.5h-.9z"/>
-                                                                 </svg>
-                                                            </div>
-                                                            <span class="text-sm font-semibold text-slate-700 truncate">TikTok</span>
-                                                        </div>
-                                                    </label>
-
-                                                    <label class="flex items-center justify-between gap-3 cursor-pointer group">
-                                                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                            <input wire:model.live="selectedSources" value="Facebook" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
-                                                            <div class="w-10 h-10 rounded-xl bg-blue-600 shadow-sm shadow-blue-600/20 flex items-center justify-center shrink-0">
-                                                                <svg class="w-5 h-5 fill-current text-white" viewBox="0 0 24 24">
-                                                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
-                                                                </svg>
-                                                            </div>
-                                                            <span class="text-sm font-semibold text-slate-700 truncate">Facebook</span>
-                                                        </div>
-                                                    </label>
-
-                                                    <label class="flex items-center justify-between gap-3 cursor-pointer group">
-                                                        <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                            <input wire:model.live="selectedSources" value="Portal" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
-                                                            <div class="w-10 h-10 rounded-xl bg-emerald-500 shadow-sm shadow-emerald-500/20 flex items-center justify-center shrink-0">
-                                                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
-                                                                </svg>
-                                                            </div>
-                                                            <span class="text-sm font-semibold text-slate-700 truncate">Portal News</span>
-                                                        </div>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </form>
                             </div>
 
@@ -1545,6 +1441,13 @@ new class extends Component
                                 </div>
 
                                 <!-- Pilih Paket - Desain Card Selection Grid Premium -->
+                                @php
+                                    $activePackagesEdit = \App\Models\Package::where('is_active', true)
+                                        ->withCount('enabledActors as actors_count')
+                                        ->orderBy('name')
+                                        ->get();
+                                @endphp
+                                @if($activePackagesEdit->isNotEmpty())
                                 <div class="space-y-3">
                                     <div class="flex items-center justify-between">
                                         <div>
@@ -1554,28 +1457,8 @@ new class extends Component
                                     </div>
                                     
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <!-- Opsi Default (Tanpa Paket) -->
-                                        <div 
-                                            wire:click="$set('packageId', null)"
-                                            class="cursor-pointer rounded-2xl border p-4 flex flex-col justify-between transition-all duration-200 hover:shadow-md hover:scale-[1.01] active:scale-[0.99]
-                                            {{ is_null($packageId) || $packageId === '' ? 'border-[#1fa387] bg-[#1fa387]/5 ring-2 ring-[#1fa387]/10' : 'border-slate-200 bg-white hover:border-slate-350' }}"
-                                        >
-                                            <div>
-                                                <div class="flex items-center justify-between mb-2">
-                                                    <span class="text-xs font-black text-slate-800">Default Scraper</span>
-                                                    <span class="material-symbols-outlined text-[16px] {{ is_null($packageId) || $packageId === '' ? 'text-[#1fa387]' : 'text-slate-355' }}">
-                                                        {{ is_null($packageId) || $packageId === '' ? 'check_circle' : 'radio_button_unchecked' }}
-                                                    </span>
-                                                </div>
-                                                <p class="text-[10px] text-slate-400 leading-normal">Menggunakan semua actor global yang aktif secara default.</p>
-                                            </div>
-                                            <div class="mt-4 pt-2 border-t border-slate-100 flex items-center gap-1 text-[10px] font-bold text-slate-550">
-                                                <span class="material-symbols-outlined text-[14px]">globe</span> Global Active Actors
-                                            </div>
-                                        </div>
-
                                         <!-- Opsi Paket-paket dari DB -->
-                                        @foreach(\App\Models\Package::where('is_active', true)->withCount(['actors' => fn($q) => $q->wherePivot('is_enabled', true)])->orderBy('name')->get() as $p)
+                                        @foreach($activePackagesEdit as $p)
                                         <div 
                                             wire:click="$set('packageId', {{ $p->id }})"
                                             class="cursor-pointer rounded-2xl border p-4 flex flex-col justify-between transition-all duration-200 hover:shadow-md hover:scale-[1.01] active:scale-[0.99]
@@ -1598,6 +1481,7 @@ new class extends Component
                                     </div>
                                     @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>
+                                @endif
 
                                 <!-- Telegram Chat ID -->
                                 <div class="space-y-2">
@@ -1694,88 +1578,6 @@ new class extends Component
                                 <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
                                 </div>
 
-                            <!-- Advanced Settings Accordion -->
-                                <div x-data="{ open: false }" class="border border-slate-200 rounded-2xl overflow-hidden text-left bg-white shadow-sm">
-                                <button 
-                                    type="button"
-                                    @click="open = !open" 
-                                    class="w-full flex items-center justify-between px-6 py-4 bg-[#F8F9FA] text-[#1fa387] hover:text-[#1fa387]/90 text-sm font-semibold transition-all border-b border-slate-100 cursor-pointer"
-                                >
-                                    <span class="flex items-center gap-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                                        <span>Pengaturan Lanjutan</span>
-                                    </span>
-                                    <svg class="w-4 h-4 text-[#1fa387] transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </button>
-                                
-                                <div x-show="open" class="p-6 space-y-6">
-                                    <!-- Sumber Data Section -->
-                                    <div class="space-y-4">
-                                        <div class="flex items-start justify-between gap-4">
-                                            <div>
-                                                <h4 class="text-xs font-bold text-slate-800">Sumber Data</h4>
-                                                <p class="text-[10px] text-slate-400">Pilih satu atau lebih sumber media yang ingin dipantau</p>
-                                            </div>
-                                            <button type="button" @click="$wire.selectedSources = []" class="text-xs text-red-500 font-bold hover:underline cursor-pointer">Hapus Semua</button>
-                                        </div>
-
-                                        <div class="space-y-4">
-                                            <label class="flex items-center justify-between gap-3 cursor-pointer group">
-                                                <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                    <input wire:model.live="selectedSources" value="Instagram" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
-                                                    <div class="w-10 h-10 rounded-xl bg-fuchsia-500 shadow-sm shadow-fuchsia-500/20 flex items-center justify-center shrink-0" style="background-color: #e1306c;">
-                                                        <svg class="w-5 h-5" fill="none" stroke="#ffffff" stroke-width="1.8" viewBox="0 0 24 24">
-                                                            <rect x="4.25" y="4.25" width="15.5" height="15.5" rx="5"></rect>
-                                                            <circle cx="12" cy="12" r="3.15"></circle>
-                                                            <circle cx="17.1" cy="6.9" r="1.05" fill="#ffffff" stroke="none"></circle>
-                                                        </svg>
-                                                    </div>
-                                                    <span class="text-sm font-semibold text-slate-700 truncate">Instagram</span>
-                                                </div>
-                                            </label>
-
-                                            <label class="flex items-center justify-between gap-3 cursor-pointer group">
-                                                <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                    <input wire:model.live="selectedSources" value="TikTok" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
-                                                    <div class="w-10 h-10 rounded-xl bg-slate-950 shadow-sm shadow-slate-900/20 flex items-center justify-center shrink-0" style="background-color: #000000;">
-                                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24">
-                                                             <path fill="#ffffff" d="M15.8 5.2c.7.8 1.7 1.4 2.8 1.6v2.7c-1 0-2-.2-2.9-.6v5.1c0 2.9-2.4 5.3-5.3 5.3S5.1 17 5.1 14.1s2.4-5.3 5.3-5.3c.2 0 .4 0 .6.1v2.8c-.2 0-.4-.1-.6-.1-1.3 0-2.3 1.1-2.3 2.4s1 2.4 2.3 2.4 2.4-1 2.4-2.4V4.4h2.9c.1.3.1.5.1.8z"/>
-                                                             <path fill="#ffffff" d="M15.6 4.4c.2.9.7 1.8 1.4 2.5.8.7 1.6 1.2 2.6 1.4V5.6c-.7-.2-1.3-.5-1.8-.9-.5-.4-1-.9-1.3-1.5h-.9z"/>
-                                                         </svg>
-                                                    </div>
-                                                    <span class="text-sm font-semibold text-slate-700 truncate">TikTok</span>
-                                                </div>
-                                            </label>
-
-                                            <label class="flex items-center justify-between gap-3 cursor-pointer group">
-                                                <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                    <input wire:model.live="selectedSources" value="Facebook" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
-                                                    <div class="w-10 h-10 rounded-xl bg-blue-600 shadow-sm shadow-blue-600/20 flex items-center justify-center shrink-0">
-                                                        <svg class="w-5 h-5 fill-current text-white" viewBox="0 0 24 24">
-                                                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
-                                                        </svg>
-                                                    </div>
-                                                    <span class="text-sm font-semibold text-slate-700 truncate">Facebook</span>
-                                                </div>
-                                            </label>
-
-                                            <label class="flex items-center justify-between gap-3 cursor-pointer group">
-                                                <div class="flex items-center gap-3 min-w-0 flex-1">
-                                                    <input wire:model.live="selectedSources" value="Portal" type="checkbox" class="rounded border-blue-300 text-blue-600 focus:ring-blue-500 w-5 h-5 cursor-pointer">
-                                                    <div class="w-10 h-10 rounded-xl bg-emerald-500 shadow-sm shadow-emerald-500/20 flex items-center justify-center shrink-0">
-                                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
-                                                        </svg>
-                                                    </div>
-                                                    <span class="text-sm font-semibold text-slate-700 truncate">Portal News</span>
-                                                </div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                </div>
                             </div>
 
                             <!-- Footer buttons -->

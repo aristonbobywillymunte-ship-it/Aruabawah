@@ -184,24 +184,27 @@ class RunApifyScraping extends Command
             }
 
             foreach ($projectActors as $actor) {
-                // Pastikan platform ini dipilih dalam setelan sumber data proyek
-                $projectSources = $project->sources ?? ['Instagram', 'TikTok', 'Facebook', 'Portal'];
-                // Normalize label Portal ke Portal News jika perlu, tapi actor platform biasanya TikTok, Instagram, Facebook
-                if (!in_array($actor->platform, $projectSources, true)) {
-                    $this->line("Skipping {$actor->platform} — platform tidak dipilih dalam setelan sumber data proyek ini.");
-                    $socialLog->info('[Social] Actor skipped: platform not selected in project sources.', [
-                        'project_id' => $project->id,
-                        'project_name' => $project->name,
-                        'platform' => $actor->platform,
-                        'project_sources' => $projectSources,
-                    ]);
-                    continue;
-                }
-
                 $lastProjectActorRunAt = $this->latestProjectActorRunAt($project->id, $actor->platform);
 
-                // Check if interval has passed since the last run for this project + platform
-                if ($lastProjectActorRunAt && $actor->interval_minutes) {
+                $isCommentScraper = (strtolower((string) $actor->function_type) === 'comment scraper');
+                $hasQueue = false;
+                if ($isCommentScraper) {
+                    $candidateCount = \App\Models\SocialMediaItem::where('project_id', $project->id)
+                        ->where('platform', $actor->platform)
+                        ->whereNotNull('post_url')
+                        ->where('post_url', 'like', '%tiktok.com/@%')
+                        ->where('post_url', 'like', '%/video/%')
+                        ->get(['post_url'])
+                        ->filter(function ($item) {
+                            $urlHash = md5((string) $item->post_url);
+                            return !\Illuminate\Support\Facades\Cache::has('comments_scraped_for_post:' . $urlHash)
+                                && !\Illuminate\Support\Facades\Cache::has('comments_scraping_in_progress:' . $urlHash);
+                        })->count();
+                    $hasQueue = ($candidateCount > 0);
+                }
+
+                // Check if interval has passed since the last run for this project + platform (Bypass if comment scraper has queue)
+                if ($lastProjectActorRunAt && $actor->interval_minutes && !$hasQueue) {
                     $nextRunAt = $lastProjectActorRunAt->copy()->addMinutes($actor->interval_minutes);
                     if (now()->lessThan($nextRunAt) && !$filterPlatform) {
                         $this->line("Skipping {$actor->platform} — next run at {$nextRunAt->format('H:i')}");
@@ -272,6 +275,77 @@ class RunApifyScraping extends Command
                     if ($overrideKeyword !== '') {
                         $dispatchKeywords = [$overrideKeyword];
                     }
+
+                    // =========================================================
+                    // LOGIKA KHUSUS COMMENT SCRAPER
+                    // Alur: Ambil semua URL video TikTok dari proyek aktif →
+                    //       urut dari terbaru → ambil maks 3 yang belum dicek →
+                    //       tandai "dalam proses" → kirim ke Apify →
+                    //       setelah selesai, tandai "selesai" (permanen).
+                    //       Jika tidak ada antrean → skip tanpa membuang run.
+                    // =========================================================
+                    if (strtolower((string) $actor->function_type) === 'comment scraper') {
+                        // Ambil semua postingan TikTok dari proyek aktif ini,
+                        // hanya yang URL-nya adalah URL video valid (bukan hashtag/search).
+                        $candidateItems = \App\Models\SocialMediaItem::where('project_id', $project->id)
+                            ->where('platform', $actor->platform)
+                            ->whereNotNull('post_url')
+                            ->where('post_url', 'like', '%tiktok.com/@%')
+                            ->where('post_url', 'like', '%/video/%')
+                            ->orderBy('posted_at', 'desc')
+                            ->orderBy('id', 'desc')
+                            ->get(['id', 'post_url']);
+
+                        // Filter: ambil URL yang belum ditandai "selesai" DAN belum "dalam proses"
+                        $unprocessedUrls = [];
+                        foreach ($candidateItems as $candidateItem) {
+                            $urlHash = md5((string) $candidateItem->post_url);
+                            $doneKey       = 'comments_scraped_for_post:' . $urlHash;
+                            $inProgressKey = 'comments_scraping_in_progress:' . $urlHash;
+
+                            if (!Cache::has($doneKey) && !Cache::has($inProgressKey)) {
+                                $unprocessedUrls[] = $candidateItem->post_url;
+                                if (count($unprocessedUrls) >= 3) {
+                                    break; // Maksimal 3 URL per run
+                                }
+                            }
+                        }
+
+                        // Jika tidak ada antrean → skip, tidak perlu kirim ke Apify
+                        if (empty($unprocessedUrls)) {
+                            $this->line("Skipping Comment Scraper: [{$actor->platform}] project={$project->name} — tidak ada URL baru yang perlu di-scrape komentarnya.");
+                            $socialLog->info('[Social] Comment Scraper skipped: no unprocessed URLs in queue.', [
+                                'project_id'   => $project->id,
+                                'project_name' => $project->name,
+                                'platform'     => $actor->platform,
+                                'actor_id'     => $actor->id,
+                                'total_candidates' => $candidateItems->count(),
+                            ]);
+                            continue;
+                        }
+
+                        // Tandai URL sebagai "dalam proses" (TTL 30 menit) SEBELUM dispatch
+                        // agar run berikutnya tidak mendispatch URL yang sama ke Apify lagi.
+                        foreach ($unprocessedUrls as $urlToMark) {
+                            Cache::put(
+                                'comments_scraping_in_progress:' . md5((string) $urlToMark),
+                                true,
+                                now()->addMinutes(30)
+                            );
+                        }
+
+                        $this->line("Comment Scraper [{$actor->platform}] project={$project->name} — antrean: " . count($unprocessedUrls) . " URL.");
+                        $socialLog->info('[Social] Comment Scraper queue ready.', [
+                            'project_id'   => $project->id,
+                            'project_name' => $project->name,
+                            'platform'     => $actor->platform,
+                            'actor_id'     => $actor->id,
+                            'queued_urls'  => $unprocessedUrls,
+                        ]);
+
+                        $dispatchKeywords = $unprocessedUrls;
+                    }
+
 
                     $wasDispatched = ApifyScrapingJob::dispatchSafely([
                         'platform'    => $actor->platform,

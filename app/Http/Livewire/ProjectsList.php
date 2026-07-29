@@ -37,7 +37,6 @@ class ProjectsList extends Component
     public $topicsString = ''; // Reset default to empty string
     public $contextKeywords = '';
     public $excludeKeywords = '';
-    public $selectedSources = ['Instagram', 'TikTok', 'Facebook', 'Portal'];
     public $telegramChatId = '';
     public $isCreatingProject = false;
     public $showSuccessModal = false;
@@ -511,7 +510,6 @@ class ProjectsList extends Component
             'topics' => array_values($topics),
             'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
-            'sources' => array_values(array_unique(array_filter($this->selectedSources))),
             'package_id' => $this->packageId ?: null,
         ]);
 
@@ -542,7 +540,6 @@ class ProjectsList extends Component
         session()->flash('message', 'Proyek berhasil dibuat.');
         
         $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords', 'telegramChatId', 'packageId']);
-        $this->selectedSources = ['Instagram', 'TikTok', 'Facebook', 'Portal'];
     }
 
     public function editProject($id)
@@ -553,7 +550,6 @@ class ProjectsList extends Component
         $this->editTopicsString = implode(', ', $project->topics ?? []);
         $this->contextKeywords = implode(', ', $project->context_keywords ?? []);
         $this->excludeKeywords = implode(', ', $project->exclude_keywords ?? []);
-        $this->selectedSources = $project->sources ?? ['Instagram', 'TikTok', 'Facebook', 'Portal'];
         $this->packageId = $project->package_id;
         
         $recipients = DB::table('project_telegram_recipients')->where('project_id', $project->id)->pluck('chat_id')->toArray();
@@ -598,7 +594,6 @@ class ProjectsList extends Component
             'topics' => $topics,
             'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
-            'sources' => array_values(array_unique(array_filter($this->selectedSources))),
             'package_id' => $this->packageId ?: null,
         ]);
 
