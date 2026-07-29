@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class SocialMediaItem extends Model
@@ -41,5 +42,10 @@ class SocialMediaItem extends Model
     public function aiAnalysisResult(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(AiAnalysisResult::class);
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(SocialMediaComment::class);
     }
 }

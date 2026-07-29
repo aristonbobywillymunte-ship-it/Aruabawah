@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\ApifyActor;
 use App\Models\ApifySetting;
 use App\Models\Project;
+use App\Models\SocialMediaComment;
 use App\Models\SocialMediaItem;
 use App\Services\AiAnalysisDispatchStateService;
 use Illuminate\Bus\Queueable;
@@ -46,6 +47,96 @@ class ApifyScrapingJob implements ShouldQueue
             rtrim($trimmed, '/'),
             rtrim($trimmed, '/') . '/',
         ]));
+    }
+
+    protected function normalizeSocialCommentItem(array $item, string $platform): array
+    {
+        $authorName = trim((string) (
+            data_get($item, 'author.name')
+            ?: data_get($item, 'user.nickname')
+            ?: data_get($item, 'user.uniqueId')
+            ?: data_get($item, 'user.name')
+            ?: data_get($item, 'user.username')
+            ?: data_get($item, 'nickname')
+            ?: data_get($item, 'userName')
+            ?: data_get($item, 'authorName')
+            ?: data_get($item, 'ownerUsername')
+            ?: data_get($item, 'uniqueId')
+            ?: data_get($item, 'username')
+            ?: ''
+        ));
+
+        $content = trim((string) (
+            data_get($item, 'text')
+            ?: data_get($item, 'content')
+            ?: data_get($item, 'commentText')
+            ?: data_get($item, 'desc')
+            ?: data_get($item, 'message')
+            ?: data_get($item, 'replyText')
+            ?: data_get($item, 'textContent')
+            ?: ''
+        ));
+
+        $avatarUrl = trim((string) (
+            data_get($item, 'author.avatarThumb')
+            ?: data_get($item, 'author.avatar')
+            ?: data_get($item, 'user.avatarThumb')
+            ?: data_get($item, 'user.avatar')
+            ?: data_get($item, 'avatarThumbnail')
+            ?: data_get($item, 'avatar')
+            ?: data_get($item, 'avatar_url')
+            ?: data_get($item, 'profilePic')
+            ?: data_get($item, 'ownerProfilePicUrl')
+            ?: data_get($item, 'owner.profilePicUrl')
+            ?: ''
+        ));
+
+        $postedAtRaw = data_get($item, 'createTime')
+            ?: data_get($item, 'createTimeISO')
+            ?: data_get($item, 'timestamp')
+            ?: data_get($item, 'date')
+            ?: data_get($item, 'createdAt')
+            ?: data_get($item, 'postedAt')
+            ?: data_get($item, 'time');
+
+        $postedAt = null;
+        if ($postedAtRaw !== null && $postedAtRaw !== '') {
+            try {
+                if (is_numeric($postedAtRaw)) {
+                    $timestamp = (int) $postedAtRaw;
+                    $postedAt = strlen((string) $timestamp) >= 13
+                        ? \Carbon\Carbon::createFromTimestampMs($timestamp)
+                        : \Carbon\Carbon::createFromTimestamp($timestamp);
+                } else {
+                    $postedAt = \Carbon\Carbon::parse($postedAtRaw);
+                }
+            } catch (\Throwable) {
+                $postedAt = null;
+            }
+        }
+
+        return [
+            'platform' => $platform,
+            'comment_id' => (string) ($item['cid'] ?? $item['id'] ?? $item['commentId'] ?? md5(json_encode($item))),
+            'parent_comment_id' => (string) ($item['parentCommentId'] ?? $item['parentId'] ?? '') ?: null,
+            'author_name' => $authorName !== '' ? $authorName : null,
+            'author_url' => data_get($item, 'author.url')
+                ?? data_get($item, 'profileUrl')
+                ?? data_get($item, 'ownerProfileUrl')
+                ?? null,
+            'avatar_url' => $avatarUrl !== '' ? $avatarUrl : null,
+            'content' => $content !== '' ? $content : 'Tidak ada teks komentar.',
+            'like_count' => (int) (
+                data_get($item, 'diggCount')
+                ?: data_get($item, 'likeCount')
+                ?: data_get($item, 'likesCount')
+                ?: data_get($item, 'likes')
+                ?: data_get($item, 'like_count')
+                ?: 0
+            ),
+            'posted_at' => $postedAt,
+            'raw_json' => json_encode($item),
+        ];
     }
 
     public static function dispatchSafely(array $params, int $staleAfterMinutes = 30): bool
@@ -839,6 +930,15 @@ class ApifyScrapingJob implements ShouldQueue
                     $updatedPayload = json_encode($rawJsonDecoded);
                     $updatedCommentCount = count($rawJsonDecoded['comments']);
 
+                    $normalizedComment = $this->normalizeSocialCommentItem($item, $platform);
+                    SocialMediaComment::updateOrCreate(
+                        [
+                            'social_media_item_id' => $mainPost->id,
+                            'comment_id' => $normalizedComment['comment_id'],
+                        ],
+                        $normalizedComment
+                    );
+
                     $mainPost->update([
                         'raw_json' => $updatedPayload,
                         'comment_count' => $updatedCommentCount
@@ -888,6 +988,15 @@ class ApifyScrapingJob implements ShouldQueue
                             'raw_json' => json_encode($rawJsonDecoded),
                             'comment_count' => 1,
                         ]);
+
+                    $normalizedComment = $this->normalizeSocialCommentItem($item, $platform);
+                    SocialMediaComment::updateOrCreate(
+                        [
+                            'social_media_item_id' => $mainPost->id,
+                            'comment_id' => $normalizedComment['comment_id'],
+                        ],
+                        $normalizedComment
+                    );
 
                     $saved++;
                 }

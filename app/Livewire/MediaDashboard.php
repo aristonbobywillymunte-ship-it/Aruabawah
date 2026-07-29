@@ -9,6 +9,7 @@ use Livewire\Attributes\Url;
 use App\Models\Article;
 use App\Models\AiAnalysisResult;
 use App\Models\NewsSource;
+use App\Models\SocialMediaComment;
 use App\Models\SocialMediaItem;
 use App\Models\Project;
 use App\Services\NewsSourceIconResolver;
@@ -988,8 +989,7 @@ class MediaDashboard extends Component
         }
 
         $socialItem = $this->resolveSocialMediaItemForArticle($article);
-        $decodedPayload = $socialItem ? $this->decodeSocialPayload($socialItem->raw_json) : [];
-        $comments = $this->extractTikTokComments($decodedPayload);
+        $comments = $this->resolveCommentsForSocialItem($socialItem);
 
         $this->tikTokCommentsModalMeta = [
             'article_id' => $article->id,
@@ -1042,8 +1042,7 @@ class MediaDashboard extends Component
         }
 
         $socialItem = $this->resolveSocialMediaItemForArticle($article);
-        $decodedPayload = $socialItem ? $this->decodeSocialPayload($socialItem->raw_json) : [];
-        $comments = $this->extractTikTokComments($decodedPayload);
+        $comments = $this->resolveCommentsForSocialItem($socialItem);
 
         $this->instagramCommentsModalMeta = [
             'article_id' => $article->id,
@@ -1173,6 +1172,37 @@ class MediaDashboard extends Component
         $decoded = json_decode($rawJson, true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    protected function resolveCommentsForSocialItem(?SocialMediaItem $socialItem): array
+    {
+        if (! $socialItem) {
+            return [];
+        }
+
+        $databaseComments = SocialMediaComment::query()
+            ->where('social_media_item_id', $socialItem->id)
+            ->orderByDesc('posted_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(function (SocialMediaComment $comment) {
+                return [
+                    'author_name' => $comment->author_name ?: 'Pengguna',
+                    'content' => $comment->content ?: 'Tidak ada teks komentar.',
+                    'avatar_url' => $comment->avatar_url,
+                    'posted_at' => $comment->posted_at?->translatedFormat('d M Y, H:i'),
+                    'like_count' => (int) $comment->like_count,
+                ];
+            })
+            ->all();
+
+        if ($databaseComments !== []) {
+            return $databaseComments;
+        }
+
+        $decodedPayload = $this->decodeSocialPayload($socialItem->raw_json);
+
+        return $this->extractTikTokComments($decodedPayload);
     }
 
     protected function extractTikTokComments(mixed $payload): array
