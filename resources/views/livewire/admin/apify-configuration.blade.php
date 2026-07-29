@@ -148,9 +148,6 @@
                                 <td class="px-3 py-3 align-top font-semibold text-slate-600">
                                     <div>{{ $actor->memory_limit }} MB RAM</div>
                                     <div class="text-[10px] text-slate-400 mt-0.5">{{ $actor->interval_minutes }} menit</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">
-                                        Max ${{ number_format((float) ($actor->maximum_cost_per_run_usd ?? 0), 2) }}/run
-                                    </div>
                                 </td>
                                 <td class="px-3 py-3 align-top font-bold text-slate-700">
                                     <div class="uppercase truncate">{{ $actor->range_mode }}</div>
@@ -338,7 +335,7 @@
                                 Run Options
                             </h3>
                             <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-5">
-                                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Build</label>
                                         <select wire:model="build" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition">
@@ -361,10 +358,6 @@
                                             <option value="2048">2 GB</option>
                                             <option value="4096">4 GB</option>
                                         </select>
-                                    </div>
-                                    <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Maximum cost per run (USD)</label>
-                                        <input wire:model="maximum_cost_per_run_usd" type="number" step="0.01" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition" placeholder="0.02">
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">

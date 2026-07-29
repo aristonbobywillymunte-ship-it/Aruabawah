@@ -12,10 +12,12 @@ class Package extends Model
         'name',
         'description',
         'is_active',
+        'use_portal',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'use_portal' => 'boolean',
     ];
 
     /**

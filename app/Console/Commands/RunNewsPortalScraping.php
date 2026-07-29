@@ -140,6 +140,16 @@ class RunNewsPortalScraping extends Command
         $this->seenCanonicalUrls = [];
 
         foreach ($projects as $project) {
+            if ($project->package && ! ($project->package->use_portal ?? true)) {
+                $this->line("Skipping project [{$project->name}] — Portal News dimatikan dari paket.");
+                $portalLog->info('[Portal] Project skipped: package disables portal.', [
+                    'project_id' => $project->id,
+                    'project_name' => $project->name,
+                    'package_id' => $project->package_id,
+                ]);
+                continue;
+            }
+
             // Pastikan Portal News (Portal) dipilih dalam setelan sumber data proyek
             $projectSources = $project->sources ?? ['Instagram', 'TikTok', 'Facebook', 'Portal'];
             if (!in_array('Portal', $projectSources, true)) {

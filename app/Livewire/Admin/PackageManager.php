@@ -23,6 +23,7 @@ class PackageManager extends Component
     public string $name = '';
     public string $description = '';
     public bool $is_active = true;
+    public bool $use_portal = true;
 
     // ─── Actor Configuration (per paket) ─────────────────────────────────
     /** @var array<int, array{is_enabled: bool, cost_per_run_usd: string}> keyed by apify_actor_id */
@@ -42,6 +43,7 @@ class PackageManager extends Component
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'is_active'   => 'boolean',
+            'use_portal'  => 'boolean',
         ];
     }
 
@@ -57,6 +59,7 @@ class PackageManager extends Component
     public function createPackage(): void
     {
         $this->resetForm();
+        $this->loadDefaultActorConfig();
         $this->editingPackageId = null;
         $this->view = 'form';
     }
@@ -68,6 +71,8 @@ class PackageManager extends Component
         $this->name        = $pkg->name;
         $this->description = $pkg->description ?? '';
         $this->is_active   = $pkg->is_active;
+        $this->use_portal  = (bool) ($pkg->use_portal ?? true);
+        $this->loadActorConfig($id);
         $this->view = 'form';
     }
 
@@ -81,16 +86,20 @@ class PackageManager extends Component
                 'name'        => trim($this->name),
                 'description' => trim($this->description) ?: null,
                 'is_active'   => $this->is_active,
+                'use_portal'  => $this->use_portal,
             ]);
             $this->setFlash('Paket berhasil diperbarui.', 'success');
         } else {
-            Package::create([
+            $pkg = Package::create([
                 'name'        => trim($this->name),
                 'description' => trim($this->description) ?: null,
                 'is_active'   => $this->is_active,
+                'use_portal'  => $this->use_portal,
             ]);
             $this->setFlash('Paket baru berhasil dibuat.', 'success');
         }
+
+        $this->syncActorConfig($pkg);
 
         $this->view = 'list';
         $this->resetForm();
@@ -159,9 +168,20 @@ class PackageManager extends Component
         }
     }
 
-    public function saveActors(): void
+    protected function loadDefaultActorConfig(): void
     {
-        $pkg = Package::findOrFail($this->managingActorsPackageId);
+        $this->actorConfig = [];
+
+        foreach (ApifyActor::orderBy('platform')->orderBy('actor_name')->get() as $actor) {
+            $this->actorConfig[$actor->id] = [
+                'is_enabled' => false,
+                'cost_per_run_usd' => '',
+            ];
+        }
+    }
+
+    protected function syncActorConfig(Package $pkg): void
+    {
         $syncData = [];
 
         foreach ($this->actorConfig as $actorId => $config) {
@@ -170,12 +190,18 @@ class PackageManager extends Component
                 : null;
 
             $syncData[(int) $actorId] = [
-                'is_enabled'       => (bool) $config['is_enabled'],
+                'is_enabled'       => (bool) ($config['is_enabled'] ?? false),
                 'cost_per_run_usd' => $cost,
             ];
         }
 
         $pkg->actors()->sync($syncData);
+    }
+
+    public function saveActors(): void
+    {
+        $pkg = Package::findOrFail($this->managingActorsPackageId);
+        $this->syncActorConfig($pkg);
         $this->setFlash('Konfigurasi actor berhasil disimpan.', 'success');
         $this->view = 'list';
         $this->managingActorsPackageId = null;
@@ -211,6 +237,8 @@ class PackageManager extends Component
         $this->name            = '';
         $this->description     = '';
         $this->is_active       = true;
+        $this->use_portal      = true;
+        $this->actorConfig     = [];
         $this->editingPackageId = null;
         $this->resetValidation();
     }

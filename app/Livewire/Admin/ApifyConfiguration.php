@@ -52,7 +52,6 @@ class ApifyConfiguration extends Component
     public int $memory_limit = 1024;
     public string $range_mode = '7d';
     public int $priority = 1;
-    public float $maximum_cost_per_run_usd = 0.0000;
 
     public bool $showTestModal = false;
     public ?int $testingActorId = null;
@@ -286,7 +285,6 @@ class ApifyConfiguration extends Component
                 $this->memory_limit = (int) $facebook['memory_limit'];
                 $this->interval_minutes = (int) $facebook['interval_minutes'];
                 $this->range_mode = (string) $facebook['range_mode'];
-                $this->maximum_cost_per_run_usd = (float) ($facebook['maximum_cost_per_run_usd'] ?? 0);
             }
         } elseif ($value === 'Instagram') {
             $definition = $this->resolveInstagramActorDefinition($this->actorSlug ?: null)
@@ -377,7 +375,6 @@ class ApifyConfiguration extends Component
         $this->memory_limit = $actor->memory_limit;
         $this->range_mode = $actor->range_mode;
         $this->priority = $actor->priority;
-        $this->maximum_cost_per_run_usd = (float) ($actor->maximum_cost_per_run_usd ?? 0);
 
         // Reset platform-specific state to avoid leakages
         $this->facebook_max_posts = null;
@@ -418,7 +415,6 @@ class ApifyConfiguration extends Component
                 'memory_limit' => ['required', 'integer'],
                 'range_mode' => ['required', 'string'],
                 'priority' => ['required', 'integer'],
-                'maximum_cost_per_run_usd' => ['nullable', 'numeric'],
                 'facebook_max_posts' => ['required_if:platform,Facebook', 'nullable', 'integer'],
                 'facebook_post_time_range' => ['required_if:platform,Facebook', 'nullable', 'string'],
                 'facebook_use_apify_proxy' => ['required_if:platform,Facebook', 'accepted'],
@@ -505,7 +501,7 @@ class ApifyConfiguration extends Component
             'memory_limit' => $data['memory_limit'],
             'range_mode' => $data['range_mode'],
             'priority' => $data['priority'],
-            'maximum_cost_per_run_usd' => $data['maximum_cost_per_run_usd'] ?? 0,
+            'maximum_cost_per_run_usd' => 0,
         ];
 
         if (Schema::hasColumn('apify_actors', 'build')) {
@@ -742,7 +738,6 @@ class ApifyConfiguration extends Component
         $this->interval_minutes = 240;
         $this->memory_limit = 1024;
         $this->range_mode = '7d';
-        $this->maximum_cost_per_run_usd = 0.0000;
         $this->facebook_post_time_range = '24h';
         $this->facebook_use_apify_proxy = true;
         $this->facebook_max_posts = null;
@@ -928,7 +923,6 @@ class ApifyConfiguration extends Component
         $this->memory_limit = (int) ($definition['memory_limit'] ?? $this->memory_limit ?: 1024);
         $this->range_mode = (string) ($definition['range_mode'] ?? $this->range_mode ?: '7d');
         $this->priority = (int) ($definition['priority'] ?? $this->priority ?: 1);
-        $this->maximum_cost_per_run_usd = (float) ($definition['maximum_cost_per_run_usd'] ?? $this->maximum_cost_per_run_usd ?: 0);
     }
 
     protected function loadTikTokPayloadDefaults(?string $actorSlug = null): void
