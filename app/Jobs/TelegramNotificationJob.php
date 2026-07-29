@@ -133,10 +133,7 @@ class TelegramNotificationJob implements ShouldQueue
                     sleep(60);
                 }
 
-                $formattedChatId = $targetChatId;
-                if (is_numeric($targetChatId) && !str_starts_with($targetChatId, '-')) {
-                    $formattedChatId = '-' . $targetChatId;
-                }
+                $formattedChatId = trim((string) $targetChatId);
 
                 Log::channel('telegram')->info('[Pipeline] Sending alert message to Telegram Chat ID: ' . $formattedChatId);
 
