@@ -712,10 +712,12 @@ class ApifyScrapingJob implements ShouldQueue
                     ]);
                 }
 
+                $isCommentScraper = (strtolower((string) $actor->function_type) === 'comment scraper');
                 $isInstagramHashtagPosts = ($actor->actor_slug === 'apify/instagram-hashtag-scraper' && (($input['resultsType'] ?? '') === 'posts'));
 
                 if (
                     !$isInstagramHashtagPosts
+                    && !$isCommentScraper
                     && $postedAtCarbon
                     && $postedAtCarbon->lessThan(now()->subDays(7)->startOfDay())
                 ) {
@@ -784,7 +786,11 @@ class ApifyScrapingJob implements ShouldQueue
                     continue;
                 }
 
-                $mainPost = SocialMediaItem::where('post_url', $postUrl)->first();
+                $mainPost = SocialMediaItem::where(function($q) use ($postUrl) {
+                    $q->where('post_url', $postUrl)
+                      ->orWhere('post_url', rtrim($postUrl, '/'))
+                      ->orWhere('post_url', rtrim($postUrl, '/') . '/');
+                })->first();
                 if ($mainPost) {
                     $rawJsonDecoded = json_decode($mainPost->raw_json, true) ?: [];
 
@@ -977,7 +983,11 @@ class ApifyScrapingJob implements ShouldQueue
             foreach ($keywords as $url) {
                 if (filled($url)) {
                     $urlHash = md5((string) $url);
-                    $mainPost = \App\Models\SocialMediaItem::where('post_url', $url)->first();
+                    $mainPost = \App\Models\SocialMediaItem::where(function($q) use ($url) {
+                        $q->where('post_url', $url)
+                          ->orWhere('post_url', rtrim($url, '/'))
+                          ->orWhere('post_url', rtrim($url, '/') . '/');
+                    })->first();
                     $actualCommentsCount = 0;
                     if ($mainPost) {
                         $rawJsonDecoded = json_decode($mainPost->raw_json, true) ?: [];
