@@ -49,6 +49,25 @@ class ApifyActorRegistry
                 'priority' => 2,
                 'maximum_cost_per_run_usd' => 0.1500,
             ],
+            'instagram-comments' => [
+                'platform' => 'Instagram',
+                'actor_name' => 'Instagram Comment Scraper',
+                'actor_slug' => 'apify/instagram-comment-scraper',
+                'function_type' => 'Comment Scraper',
+                'default_keyword' => null,
+                'default_limit' => 20,
+                'status' => 'active',
+                'keyword_field_mapping' => 'directUrls',
+                'output_mapping' => '{"directUrls":["{keyword}"],"resultsLimit":"{limit}","includeNestedComments":false}',
+                'build' => 'latest',
+                'timeout_seconds' => 10000,
+                'no_timeout' => false,
+                'interval_minutes' => 720,
+                'memory_limit' => 1024,
+                'range_mode' => '7d',
+                'priority' => 3,
+                'maximum_cost_per_run_usd' => 0.1500,
+            ],
             'tiktok' => [
                 'platform' => 'TikTok',
                 'actor_name' => 'TikTok Hashtag Scraper',
@@ -67,6 +86,25 @@ class ApifyActorRegistry
                 'range_mode' => '7d',
                 'priority' => 3,
                 'maximum_cost_per_run_usd' => 0.1500,
+            ],
+            'tiktok-comments' => [
+                'platform' => 'TikTok',
+                'actor_name' => 'TikTok Comments Scraper',
+                'actor_slug' => 'clockworks/tiktok-comments-scraper',
+                'function_type' => 'Comment Scraper',
+                'default_keyword' => null,
+                'default_limit' => 20,
+                'status' => 'active',
+                'keyword_field_mapping' => 'postURLs',
+                'output_mapping' => '{"postURLs":["{keyword}"],"commentsPerPost":"{limit}","proxyConfiguration":{"useApifyProxy":true}}',
+                'build' => 'latest',
+                'timeout_seconds' => 10000,
+                'no_timeout' => false,
+                'interval_minutes' => 720,
+                'memory_limit' => 2048,
+                'range_mode' => '7d',
+                'priority' => 4,
+                'maximum_cost_per_run_usd' => 0.2000,
             ],
         ];
     }
@@ -128,16 +166,6 @@ class ApifyActorRegistry
                     )
                 ));
             }
-        }
-
-        foreach ($this->primaryActors() as $actor) {
-            ApifyActor::query()
-                ->where('platform', $actor['platform'])
-                ->where('actor_slug', '!=', $actor['actor_slug'])
-                ->update([
-                    'status' => 'inactive',
-                    'updated_at' => now(),
-                ]);
         }
 
         foreach ($this->legacyActors() as $actor) {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Arr;
@@ -24,6 +25,7 @@ class Project extends Model
         'ai_insight_viral_summary',
         'ai_insight_updated_at',
         'is_active',
+        'package_id',
     ];
 
     protected $casts = [
@@ -55,6 +57,11 @@ class Project extends Model
     }
 
     // ─── Relations ───────────────────────────────────────────────────────
+
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(Package::class);
+    }
 
     public function articles(): BelongsToMany
     {

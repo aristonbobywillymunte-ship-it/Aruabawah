@@ -916,6 +916,26 @@ new class extends Component
                                     @error('name') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>
 
+                                <!-- Pilih Paket (Hanya jika admin) -->
+                                @if(auth()->user()?->isAdmin())
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800 block">Paket Scraper Apify</label>
+                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 rounded-full">Admin Only</span>
+                                    </div>
+                                    <select 
+                                        wire:model="packageId" 
+                                        class="w-full bg-[#F8F9FA] border border-slate-355 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 transition"
+                                    >
+                                        <option value="">-- Pilih Paket (Semua Actor Global) --</option>
+                                        @foreach(\App\Models\Package::where('is_active', true)->orderBy('name')->get() as $p)
+                                            <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                </div>
+                                @endif
+
                                 <!-- Telegram Chat ID -->
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between">
@@ -1482,6 +1502,26 @@ new class extends Component
                                     >
                                 @error('editName') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>
+
+                                <!-- Pilih Paket (Hanya jika admin) -->
+                                @if(auth()->user()?->isAdmin())
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800 block">Paket Scraper Apify</label>
+                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 rounded-full">Admin Only</span>
+                                    </div>
+                                    <select 
+                                        wire:model="packageId" 
+                                        class="w-full bg-[#F8F9FA] border border-slate-355 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 transition"
+                                    >
+                                        <option value="">-- Pilih Paket (Semua Actor Global) --</option>
+                                        @foreach(\App\Models\Package::where('is_active', true)->orderBy('name')->get() as $p)
+                                            <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                </div>
+                                @endif
 
                                 <!-- Telegram Chat ID -->
                                 <div class="space-y-2">

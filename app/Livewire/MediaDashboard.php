@@ -9,6 +9,7 @@ use Livewire\Attributes\Url;
 use App\Models\Article;
 use App\Models\AiAnalysisResult;
 use App\Models\NewsSource;
+use App\Models\SocialMediaItem;
 use App\Models\Project;
 use App\Services\NewsSourceIconResolver;
 use Livewire\WithPagination;
@@ -231,6 +232,9 @@ class MediaDashboard extends Component
     public $showDatePicker = false;
     public $showAddKeywordModal = false;
     public $socialMediaItemsCache = null;
+    public bool $showTikTokCommentsModal = false;
+    public array $tikTokCommentsModalMeta = [];
+    public array $tikTokCommentsModalItems = [];
 
     protected function currentUser()
     {
@@ -893,34 +897,14 @@ class MediaDashboard extends Component
 
     public function getLikesAndComments($article): array
     {
-        $srcLower = strtolower($article->source_name);
-        $isSocial = str_contains($srcLower, 'facebook') || str_contains($srcLower, 'fb') || 
-                    str_contains($srcLower, 'instagram') || $srcLower === 'ig' || 
-                    str_contains($srcLower, 'tiktok') || $srcLower === 'tk' || 
-                    str_contains($srcLower, 'twitter') || $srcLower === 'x.com';
+        $isSocial = $this->isSocialArticle($article);
         
         $likes = 0;
         $comments = 0;
         
         if ($isSocial) {
-            if ($this->socialMediaItemsCache === null) {
-                // Pre-fetch all social media items for this project's articles in one query to avoid N+1 query
-                $urls = $this->projectArticlesQuery()->pluck('canonical_url')->merge(
-                    $this->projectArticlesQuery()->pluck('url')
-                )->filter()->unique()->toArray();
-                
-                if (!empty($urls)) {
-                    $this->socialMediaItemsCache = \App\Models\SocialMediaItem::whereIn('post_url', $urls)
-                        ->get()
-                        ->keyBy('post_url');
-                } else {
-                    $this->socialMediaItemsCache = collect();
-                }
-            }
-            
-            $item = $this->socialMediaItemsCache->get($article->canonical_url) 
-                ?? $this->socialMediaItemsCache->get($article->url);
-                
+            $item = $this->resolveSocialMediaItemForArticle($article);
+
             if ($item) {
                 $likes = $item->like_count ?? 0;
                 $comments = $item->comment_count ?? 0;
@@ -977,6 +961,314 @@ class MediaDashboard extends Component
         }
 
         return trim($title) !== '' ? trim($title) : 'Penyebutan sosial';
+    }
+
+    public function openTikTokCommentsModal(int $articleId): void
+    {
+        $this->showTikTokCommentsModal = false;
+        $this->tikTokCommentsModalMeta = [];
+        $this->tikTokCommentsModalItems = [];
+
+        $article = $this->projectArticlesQuery()
+            ->whereKey($articleId)
+            ->first();
+
+        if (! $article) {
+            $article = Article::query()
+                ->with(['aiAnalysisResult'])
+                ->find($articleId);
+        }
+
+        if (! $article || ! $this->isTikTokArticle($article)) {
+            return;
+        }
+
+        $socialItem = $this->resolveSocialMediaItemForArticle($article);
+        $decodedPayload = $socialItem ? $this->decodeSocialPayload($socialItem->raw_json) : [];
+        $comments = $this->extractTikTokComments($decodedPayload);
+
+        $this->tikTokCommentsModalMeta = [
+            'article_id' => $article->id,
+            'title' => $this->displayArticleTitle($article),
+            'source_name' => (string) ($article->source_name ?? 'TikTok'),
+            'post_url' => (string) ($socialItem?->post_url ?: $article->canonical_url ?: $article->url ?: ''),
+            'author_name' => (string) ($socialItem?->author_name ?? ''),
+            'published_at' => $article->published_at ? \Carbon\Carbon::parse($article->published_at)->translatedFormat('d M Y, H:i') : 'Baru saja',
+            'comment_count' => (int) ($socialItem?->comment_count ?? 0),
+            'like_count' => (int) ($socialItem?->like_count ?? 0),
+        ];
+        $this->tikTokCommentsModalItems = $comments;
+        $this->showTikTokCommentsModal = true;
+    }
+
+    public function closeTikTokCommentsModal(): void
+    {
+        $this->showTikTokCommentsModal = false;
+        $this->tikTokCommentsModalMeta = [];
+        $this->tikTokCommentsModalItems = [];
+    }
+
+    protected function isTikTokArticle($article): bool
+    {
+        $source = strtolower(trim((string) ($article->source_name ?? '')));
+
+        return $source === 'tiktok'
+            || str_contains($source, 'tiktok')
+            || str_contains($source, 'tk');
+    }
+
+    protected function resolveSocialMediaItemForArticle($article): ?SocialMediaItem
+    {
+        if (! $this->isSocialArticle($article)) {
+            return null;
+        }
+
+        if ($this->socialMediaItemsCache === null) {
+            $urls = $this->projectArticlesQuery()->pluck('canonical_url')->merge(
+                $this->projectArticlesQuery()->pluck('url')
+            )->filter()->unique()->values()->all();
+
+            if (! empty($urls)) {
+                $this->socialMediaItemsCache = SocialMediaItem::whereIn('post_url', $urls)
+                    ->get()
+                    ->keyBy('post_url');
+            } else {
+                $this->socialMediaItemsCache = collect();
+            }
+        }
+
+        $candidateUrls = array_values(array_filter(array_unique([
+            trim((string) ($article->canonical_url ?? '')),
+            trim((string) ($article->url ?? '')),
+        ])));
+
+        foreach ($candidateUrls as $candidateUrl) {
+            if ($candidateUrl === '') {
+                continue;
+            }
+
+            $directMatch = SocialMediaItem::query()
+                ->where('post_url', $candidateUrl)
+                ->first();
+
+            if ($directMatch instanceof SocialMediaItem) {
+                return $directMatch;
+            }
+
+            $cached = $this->socialMediaItemsCache->get($candidateUrl);
+            if ($cached instanceof SocialMediaItem) {
+                return $cached;
+            }
+        }
+
+        foreach ($this->socialMediaItemsCache as $cachedItem) {
+            if (! $cachedItem instanceof SocialMediaItem) {
+                continue;
+            }
+
+            if (in_array(trim((string) $cachedItem->post_url), $candidateUrls, true)) {
+                return $cachedItem;
+            }
+        }
+
+        return null;
+    }
+
+    protected function decodeSocialPayload(mixed $rawJson): array
+    {
+        if (is_array($rawJson)) {
+            return $rawJson;
+        }
+
+        if (! is_string($rawJson) || trim($rawJson) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($rawJson, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    protected function extractTikTokComments(mixed $payload): array
+    {
+        if (! is_array($payload) || $payload === []) {
+            return [];
+        }
+
+        $comments = [];
+
+        if (array_is_list($payload)) {
+            foreach ($payload as $item) {
+                $normalized = $this->normalizeTikTokCommentItem($item);
+                if ($normalized !== null) {
+                    $comments[] = $normalized;
+                }
+            }
+            return $this->deduplicateCommentItems($comments);
+        }
+
+        $this->walkTikTokCommentPayload($payload, $comments, 0);
+
+        return $this->deduplicateCommentItems($comments);
+    }
+
+    protected function walkTikTokCommentPayload(array $node, array &$comments, int $depth = 0): void
+    {
+        if ($depth > 6) {
+            return;
+        }
+
+        foreach ($node as $key => $value) {
+            $normalizedKey = strtolower(trim((string) $key));
+            if (! is_array($value)) {
+                continue;
+            }
+
+            if ($this->isTikTokCommentListKey($normalizedKey)) {
+                foreach ($value as $commentItem) {
+                    $normalized = $this->normalizeTikTokCommentItem($commentItem);
+                    if ($normalized !== null) {
+                        $comments[] = $normalized;
+                    }
+                }
+            }
+
+            $this->walkTikTokCommentPayload($value, $comments, $depth + 1);
+        }
+    }
+
+    protected function isTikTokCommentListKey(string $key): bool
+    {
+        return in_array($key, [
+            'comments',
+            'comment',
+            'commentlist',
+            'comment_list',
+            'commentdata',
+            'comment_data',
+            'commentitems',
+            'comment_items',
+            'aweme_comments',
+            'replies',
+            'reply_list',
+            'replys',
+            'items',
+            'list',
+            'data',
+        ], true);
+    }
+
+    protected function normalizeTikTokCommentItem(mixed $item): ?array
+    {
+        if (! is_array($item)) {
+            return null;
+        }
+
+        $authorName = trim((string) (
+            data_get($item, 'author.name')
+            ?: data_get($item, 'user.nickname')
+            ?: data_get($item, 'user.uniqueId')
+            ?: data_get($item, 'user.name')
+            ?: data_get($item, 'user.username')
+            ?: data_get($item, 'nickname')
+            ?: data_get($item, 'userName')
+            ?: data_get($item, 'authorName')
+            ?: data_get($item, 'ownerUsername')
+            ?: ''
+        ));
+
+        $content = trim((string) (
+            data_get($item, 'text')
+            ?: data_get($item, 'content')
+            ?: data_get($item, 'commentText')
+            ?: data_get($item, 'desc')
+            ?: data_get($item, 'message')
+            ?: data_get($item, 'replyText')
+            ?: data_get($item, 'textContent')
+            ?: ''
+        ));
+
+        $avatarUrl = trim((string) (
+            data_get($item, 'author.avatarThumb')
+            ?: data_get($item, 'author.avatar')
+            ?: data_get($item, 'user.avatarThumb')
+            ?: data_get($item, 'user.avatar')
+            ?: data_get($item, 'avatar')
+            ?: data_get($item, 'avatar_url')
+            ?: data_get($item, 'profilePic')
+            ?: ''
+        ));
+
+        $postedAtRaw = data_get($item, 'createTime')
+            ?: data_get($item, 'createTimeISO')
+            ?: data_get($item, 'timestamp')
+            ?: data_get($item, 'date')
+            ?: data_get($item, 'createdAt')
+            ?: data_get($item, 'postedAt')
+            ?: data_get($item, 'time');
+
+        $postedAt = $this->normalizeTikTokCommentDate($postedAtRaw);
+        $likeCount = (int) (
+            data_get($item, 'diggCount')
+            ?: data_get($item, 'likeCount')
+            ?: data_get($item, 'likes')
+            ?: data_get($item, 'like_count')
+            ?: 0
+        );
+
+        if ($authorName === '' && $content === '') {
+            return null;
+        }
+
+        return [
+            'author_name' => $authorName !== '' ? $authorName : 'Pengguna TikTok',
+            'content' => $content !== '' ? $content : 'Tidak ada teks komentar.',
+            'avatar_url' => $avatarUrl,
+            'posted_at' => $postedAt,
+            'like_count' => $likeCount,
+        ];
+    }
+
+    protected function normalizeTikTokCommentDate(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        try {
+            if (is_numeric($value)) {
+                $timestamp = (int) $value;
+                $carbon = strlen((string) $value) >= 13
+                    ? \Carbon\Carbon::createFromTimestampMs($timestamp)
+                    : \Carbon\Carbon::createFromTimestamp($timestamp);
+
+                return $carbon->translatedFormat('d M Y, H:i');
+            }
+
+            return \Carbon\Carbon::parse((string) $value)->translatedFormat('d M Y, H:i');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    protected function deduplicateCommentItems(array $comments): array
+    {
+        $seen = [];
+
+        return array_values(array_filter($comments, function (array $comment) use (&$seen) {
+            $signature = md5(implode('|', [
+                strtolower(trim((string) ($comment['author_name'] ?? ''))),
+                strtolower(trim((string) ($comment['content'] ?? ''))),
+                strtolower(trim((string) ($comment['posted_at'] ?? ''))),
+            ]));
+
+            if (isset($seen[$signature])) {
+                return false;
+            }
+
+            $seen[$signature] = true;
+            return true;
+        }));
     }
 
     public function analyzeSentiment($text)

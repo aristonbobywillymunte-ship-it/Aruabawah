@@ -57,6 +57,7 @@
                                 ['route' => 'admin.dashboard', 'icon' => 'dashboard', 'label' => 'Dashboard'],
                                 ['route' => 'admin.users', 'icon' => 'groups', 'label' => 'Kelola User'],
                                 ['route' => 'admin.apify', 'icon' => 'smart_toy', 'label' => 'Apify'],
+                                ['route' => 'admin.packages', 'icon' => 'inventory_2', 'label' => 'Paket'],
                                 ['route' => 'admin.ai-providers', 'icon' => 'psychology', 'label' => 'AI Provider'],
                                 ['route' => 'admin.scraping-settings', 'icon' => 'settings', 'label' => 'Scraping Settings'],
                                 ['route' => 'admin.branding', 'icon' => 'palette', 'label' => 'Branding Aplikasi'],

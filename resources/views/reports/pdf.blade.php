@@ -150,7 +150,7 @@
           <div class="font-semibold text-right opacity-60">Proyek:</div>
           <div class="text-slate-900 font-bold">{{ strtoupper($projectName) }}</div>
           <div class="font-semibold text-right opacity-60">Periode:</div>
-          <div class="text-slate-900 font-bold">{{ $startDate ?? 'Semua Data' }} - {{ $endDate ?? now()->format('d/m/Y') }}</div>
+          <div class="text-slate-900 font-bold">{{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d/m/Y') : 'Semua Data' }} - {{ $endDate ? \Carbon\Carbon::parse($endDate)->format('d/m/Y') : now()->format('d/m/Y') }}</div>
           <div class="font-semibold text-right opacity-60">Dibuat:</div>
           <div class="text-slate-900 font-bold">{{ now()->format('d/m/Y H:i') }} WIB</div>
         </div>

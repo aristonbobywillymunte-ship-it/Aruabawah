@@ -20,6 +20,7 @@
      x-data="{
          isMobile: window.innerWidth < 900,
          openMobileMenu: false,
+         showTikTokCommentsModal: @entangle('showTikTokCommentsModal').live,
          reportFeedbackOpen: false,
          reportFeedbackType: 'success',
          reportFeedbackTitle: '',
@@ -29,7 +30,12 @@
          }
      }"
      x-effect="
-         const shouldLock = !isMobile || (typeof detailModalOpen !== 'undefined' && detailModalOpen) || (typeof showViralModal !== 'undefined' && showViralModal) || openMobileMenu || reportFeedbackOpen;
+         const shouldLock = !isMobile
+             || (typeof detailModalOpen !== 'undefined' && detailModalOpen)
+             || (typeof showViralModal !== 'undefined' && showViralModal)
+             || (typeof showTikTokCommentsModal !== 'undefined' && showTikTokCommentsModal)
+             || openMobileMenu
+             || (typeof reportFeedbackOpen !== 'undefined' && reportFeedbackOpen);
          document.body.style.overflow = shouldLock ? 'hidden' : '';
          document.documentElement.style.overflow = shouldLock ? 'hidden' : '';
      "
@@ -894,10 +900,22 @@
                                         </div>
                                         <div class="px-1.5 py-0.5 border-t sm:border-t-0 sm:border-l border-slate-200/60 pt-2 sm:pt-0.5">
                                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Komen</span>
-                                            <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                                                <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">comment</span>
-                                                <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
-                                            </div>
+                                            @if($this->isTikTokArticle($article))
+                                                <button
+                                                    type="button"
+                                                    wire:click.prevent="openTikTokCommentsModal({{ $article->id }})"
+                                                    class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#17856e] transition-colors cursor-pointer"
+                                                    title="Lihat komentar TikTok"
+                                                >
+                                                    <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">comment</span>
+                                                    <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
+                                                </button>
+                                            @else
+                                                <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
+                                                    <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">comment</span>
+                                                    <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
+                                                </div>
+                                            @endif
                                         </div>
                                         @endif
                                     </div>
@@ -3257,34 +3275,34 @@
                     <!-- Main Config Card -->
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-6 text-left">
                         <!-- Tab Toggles -->
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                            <div class="flex gap-3 w-full sm:w-auto">
-                                <!-- PDF Tab -->
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                            <!-- Premium Segmented Control -->
+                            <div class="flex bg-slate-100 p-1 rounded-2xl w-full md:w-auto">
                                 <button 
                                     type="button"
                                     @click="reportType = 'pdf'"
-                                    class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl border transition cursor-pointer"
-                                    :class="reportType === 'pdf' ? 'bg-[#1fa387]/5 border-[#1fa387] text-[#1fa387]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700'"
+                                    class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer"
+                                    :class="reportType === 'pdf' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'"
                                 >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                    <svg class="w-3.5 h-3.5 text-[#1fa387]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                                     <span>Laporan PDF</span>
                                 </button>
-                                <!-- Excel Tab -->
                                 <button 
                                     type="button"
                                     @click="reportType = 'excel'"
-                                    class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl border transition cursor-pointer"
-                                    :class="reportType === 'excel' ? 'bg-[#1fa387]/5 border-[#1fa387] text-[#1fa387]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700'"
+                                    class="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer"
+                                    :class="reportType === 'excel' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'"
                                 >
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                     <span>Laporan Excel</span>
                                 </button>
                             </div>
 
+                            <!-- Pilih Semua Button -->
                             <button 
                                 type="button"
                                 @click="pilihSemua()"
-                                class="bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm w-full sm:w-auto"
+                                class="bg-[#1fa387] hover:bg-[#168870] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm w-full md:w-auto"
                             >
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
                                 <span>Pilih Semua</span>
@@ -4242,7 +4260,7 @@
             show: @entangle('showDatePicker'),
             localStart: @entangle('startDate'), 
             localEnd: @entangle('endDate'),
-            periodMode: 'daily',
+            periodMode: 'custom',
             month: new Date().getMonth(),
             year: new Date().getFullYear(),
             monthNames: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
@@ -4266,43 +4284,58 @@
                 today.setHours(0,0,0,0);
 
                 const sameDay = start.toDateString() === end.toDateString();
-                const monday = new Date(start);
-                monday.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-                monday.setHours(0,0,0,0);
-                const sunday = new Date(monday);
-                sunday.setDate(monday.getDate() + 6);
-                const monthStart = new Date(start.getFullYear(), start.getMonth(), 1);
-                const yearStart = new Date(start.getFullYear(), 0, 1);
+                const yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
 
-                if (sameDay) {
-                    this.periodMode = 'daily';
+                const diffTime = Math.abs(end - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (sameDay && start.toDateString() === today.toDateString()) {
+                    this.periodMode = 'today';
+                    return;
+                }
+                if (sameDay && start.toDateString() === yesterday.toDateString()) {
+                    this.periodMode = 'yesterday';
+                    return;
+                }
+                if (diffDays === 7 && end.toDateString() === today.toDateString()) {
+                    this.periodMode = '7days';
+                    return;
+                }
+                if (diffDays === 30 && end.toDateString() === today.toDateString()) {
+                    this.periodMode = '30days';
+                    return;
+                }
+                
+                // 3 months ago
+                const threeMonthsAgo = new Date(today);
+                threeMonthsAgo.setMonth(today.getMonth() - 3);
+                if (start.toDateString() === threeMonthsAgo.toDateString() && end.toDateString() === today.toDateString()) {
+                    this.periodMode = '3months';
                     return;
                 }
 
-                if (start.toDateString() === monday.toDateString() && end.toDateString() === (today < sunday ? today : sunday).toDateString()) {
-                    this.periodMode = 'weekly';
-                    return;
-                }
-
-                if (start.toDateString() === monthStart.toDateString()) {
-                    this.periodMode = 'monthly';
-                    return;
-                }
-
-                if (start.toDateString() === yearStart.toDateString()) {
-                    this.periodMode = 'yearly';
+                // last year
+                const oneYearAgo = new Date(today);
+                oneYearAgo.setFullYear(today.getFullYear() - 1);
+                if (start.toDateString() === oneYearAgo.toDateString() && end.toDateString() === today.toDateString()) {
+                    this.periodMode = 'lastyear';
                     return;
                 }
 
                 this.periodMode = 'custom';
             },
-            get no_of_days() {
-                let daysInMonth = new Date(this.year, this.month + 1, 0).getDate();
-                return Array.from({length: daysInMonth}, (_, i) => i + 1);
-            },
-            get blankdays() {
+            get calendarDays() {
                 let blankdays = new Date(this.year, this.month, 1).getDay();
-                return Array.from({length: blankdays}, (_, i) => i + 1);
+                let daysInMonth = new Date(this.year, this.month + 1, 0).getDate();
+                let days = [];
+                for (let i = 0; i < blankdays; i++) {
+                    days.push({ day: null, isBlank: true });
+                }
+                for (let i = 1; i <= daysInMonth; i++) {
+                    days.push({ day: i, isBlank: false });
+                }
+                return days;
             },
             formatDate(dateObj) {
                 let d = dateObj.getDate();
@@ -4317,13 +4350,23 @@
             },
             selectDate(day) {
                 if (this.isFuture(day)) return;
-                let selected = new Date(this.year, this.month, day);
-                let selectedStr = this.formatDate(selected);
-                this.periodMode = 'daily';
-                this.localStart = selectedStr;
-                this.localEnd = selectedStr;
-                this.month = selected.getMonth();
-                this.year = selected.getFullYear();
+                let clickedDate = new Date(this.year, this.month, day);
+                let clickedStr = this.formatDate(clickedDate);
+                
+                if (!this.localStart || (this.localStart && this.localEnd)) {
+                    // Start new range selection
+                    this.localStart = clickedStr;
+                    this.localEnd = null;
+                    this.periodMode = 'custom';
+                } else {
+                    // Start date is already set, select end date
+                    if (clickedStr < this.localStart) {
+                        this.localStart = clickedStr;
+                    } else {
+                        this.localEnd = clickedStr;
+                        this.periodMode = 'custom';
+                    }
+                }
             },
             isStart(day) {
                 return this.localStart === this.formatDate(new Date(this.year, this.month, day));
@@ -4334,7 +4377,7 @@
             isInRange(day) {
                 if (this.localStart && this.localEnd) {
                     let d = this.formatDate(new Date(this.year, this.month, day));
-                    return d > this.localStart && d < this.localEnd;
+                    return d >= this.localStart && d <= this.localEnd;
                 }
                 return false;
             },
@@ -4355,19 +4398,24 @@
                 let start = new Date(today);
                 let end = new Date(today);
 
-                if (mode === 'daily') {
-                    this.periodMode = 'daily';
-                } else if (mode === 'weekly') {
-                    this.periodMode = 'weekly';
-                    const offset = (today.getDay() + 6) % 7;
-                    start = new Date(today);
-                    start.setDate(today.getDate() - offset);
-                } else if (mode === 'monthly') {
-                    this.periodMode = 'monthly';
-                    start = new Date(today.getFullYear(), today.getMonth(), 1);
-                } else if (mode === 'yearly') {
-                    this.periodMode = 'yearly';
-                    start = new Date(today.getFullYear(), 0, 1);
+                if (mode === 'today') {
+                    this.periodMode = 'today';
+                } else if (mode === 'yesterday') {
+                    this.periodMode = 'yesterday';
+                    start.setDate(today.getDate() - 1);
+                    end.setDate(today.getDate() - 1);
+                } else if (mode === '7days') {
+                    this.periodMode = '7days';
+                    start.setDate(today.getDate() - 6);
+                } else if (mode === '30days') {
+                    this.periodMode = '30days';
+                    start.setDate(today.getDate() - 29);
+                } else if (mode === '3months') {
+                    this.periodMode = '3months';
+                    start.setMonth(today.getMonth() - 3);
+                } else if (mode === 'lastyear') {
+                    this.periodMode = 'lastyear';
+                    start.setFullYear(today.getFullYear() - 1);
                 } else {
                     this.periodMode = 'custom';
                     return;
@@ -4375,8 +4423,8 @@
 
                 this.localStart = this.formatDate(start);
                 this.localEnd = this.formatDate(end);
-                this.month = start.getMonth();
-                this.year = start.getFullYear();
+                this.month = end.getMonth();
+                this.year = end.getFullYear();
             },
             clearPeriod() {
                 this.periodMode = 'custom';
@@ -4419,34 +4467,30 @@
             class="datepicker-modal-container bg-white w-full max-w-[780px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200"
         >
             <!-- Left Panel (PERIODE Presets) -->
-            <div class="datepicker-left-panel bg-[#FAFBFD] p-6 text-left space-y-4 flex-shrink-0">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">MODE PERIODE</span>
-                <div class="grid grid-cols-2 gap-2.5">
-                    <button type="button" @click="setPeriod('daily')" :class="periodMode === 'daily' ? 'border-[#1fa387] bg-[#1fa387]/5 text-[#1fa387]' : 'border-slate-200 bg-white text-slate-600'" class="rounded-2xl border px-3 py-3 text-left transition">
-                        <div class="text-[10px] font-black uppercase tracking-widest">Harian</div>
-                        <div class="text-[11px] mt-1 font-semibold">Pilih 1 tanggal</div>
-                    </button>
-                    <button type="button" @click="setPeriod('weekly')" :class="periodMode === 'weekly' ? 'border-[#1fa387] bg-[#1fa387]/5 text-[#1fa387]' : 'border-slate-200 bg-white text-slate-600'" class="rounded-2xl border px-3 py-3 text-left transition">
-                        <div class="text-[10px] font-black uppercase tracking-widest">Mingguan</div>
-                        <div class="text-[11px] mt-1 font-semibold">Senin sampai hari ini</div>
-                    </button>
-                    <button type="button" @click="setPeriod('monthly')" :class="periodMode === 'monthly' ? 'border-[#1fa387] bg-[#1fa387]/5 text-[#1fa387]' : 'border-slate-200 bg-white text-slate-600'" class="rounded-2xl border px-3 py-3 text-left transition">
-                        <div class="text-[10px] font-black uppercase tracking-widest">Bulanan</div>
-                        <div class="text-[11px] mt-1 font-semibold">Awal bulan sampai hari ini</div>
-                    </button>
-                    <button type="button" @click="setPeriod('yearly')" :class="periodMode === 'yearly' ? 'border-[#1fa387] bg-[#1fa387]/5 text-[#1fa387]' : 'border-slate-200 bg-white text-slate-600'" class="rounded-2xl border px-3 py-3 text-left transition">
-                        <div class="text-[10px] font-black uppercase tracking-widest">Tahunan</div>
-                        <div class="text-[11px] mt-1 font-semibold">Awal tahun sampai hari ini</div>
-                    </button>
+            <div class="datepicker-left-panel bg-[#FAFBFD] p-6 text-left flex flex-col justify-between flex-shrink-0">
+                <div class="space-y-1">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-4">PERIODE</span>
+                    <div class="flex flex-col gap-1">
+                        <button type="button" @click="setPeriod('today')" :class="periodMode === 'today' ? 'bg-[#1fa387]/5 text-[#1fa387] font-extrabold' : 'text-slate-600 hover:bg-slate-100/50'" class="w-full text-left text-xs py-2 px-3 rounded-xl transition font-bold">
+                            Hari ini
+                        </button>
+                        <button type="button" @click="setPeriod('yesterday')" :class="periodMode === 'yesterday' ? 'bg-[#1fa387]/5 text-[#1fa387] font-extrabold' : 'text-slate-600 hover:bg-slate-100/50'" class="w-full text-left text-xs py-2 px-3 rounded-xl transition font-bold">
+                            Kemarin
+                        </button>
+                        <button type="button" @click="setPeriod('7days')" :class="periodMode === '7days' ? 'bg-[#1fa387]/5 text-[#1fa387] font-extrabold' : 'text-slate-600 hover:bg-slate-100/50'" class="w-full text-left text-xs py-2 px-3 rounded-xl transition font-bold">
+                            7 hari terakhir
+                        </button>
+                        <button type="button" @click="setPeriod('30days')" :class="periodMode === '30days' ? 'bg-[#1fa387]/5 text-[#1fa387] font-extrabold' : 'text-slate-600 hover:bg-slate-100/50'" class="w-full text-left text-xs py-2 px-3 rounded-xl transition font-bold">
+                            30 hari terakhir
+                        </button>
+                        <button type="button" @click="setPeriod('3months')" :class="periodMode === '3months' ? 'bg-[#1fa387]/5 text-[#1fa387] font-extrabold' : 'text-slate-600 hover:bg-slate-100/50'" class="w-full text-left text-xs py-2 px-3 rounded-xl transition font-bold">
+                            3 bulan terakhir
+                        </button>
+                        <button type="button" @click="setPeriod('lastyear')" :class="periodMode === 'lastyear' ? 'bg-[#1fa387]/5 text-[#1fa387] font-extrabold' : 'text-slate-600 hover:bg-slate-100/50'" class="w-full text-left text-xs py-2 px-3 rounded-xl transition font-bold">
+                            Tahun lalu
+                        </button>
+                    </div>
                 </div>
-                
-                <button 
-                    type="button" 
-                    @click="clearPeriod()" 
-                    class="w-full text-xs text-slate-500 hover:text-[#1fa387] hover:font-bold text-left font-semibold pt-2 border-t border-slate-200 mt-1"
-                >
-                    Semua Waktu
-                </button>
             </div>
 
             <!-- Right Panel (Calendar Grid) -->
@@ -4455,25 +4499,22 @@
                     <!-- Calendar Header -->
                     <div class="flex justify-between items-center mb-6">
                         <h4 class="text-sm font-bold text-slate-800">Tanggal khusus</h4>
-                        <span class="px-3 py-1 bg-[#FAFBFD] text-xs font-semibold text-slate-650 rounded-full border border-slate-200">
-                            <span x-text="periodMode === 'daily' ? 'Harian' : (periodMode === 'weekly' ? 'Mingguan' : (periodMode === 'monthly' ? 'Bulanan' : (periodMode === 'yearly' ? 'Tahunan' : 'Khusus')))"></span>
-                            <span class="ml-2 font-bold text-slate-500" x-text="formatDisplayDate(localStart)"></span>
-                            <span x-show="localEnd && localEnd !== localStart" x-text="' - ' + formatDisplayDate(localEnd)"></span>
+                        <span class="px-3.5 py-1.5 bg-[#FAFBFD] text-xs font-bold text-slate-650 rounded-full border border-slate-200 shadow-sm flex items-center gap-1.5">
+                            <span x-text="formatDisplayDate(localStart)"></span>
+                            <span x-show="localEnd && localEnd !== localStart" class="text-slate-400 font-normal">s/d</span>
+                            <span x-show="localEnd && localEnd !== localStart" x-text="formatDisplayDate(localEnd)"></span>
                         </span>
                     </div>
 
-                    <!-- Calendar Body (Juni 2026) -->
+                    <!-- Calendar Body (Juli 2026) -->
                     <div class="space-y-4">
                         <div class="flex justify-between items-center px-2">
                             <div class="flex flex-col">
                                 <span class="text-xs font-bold text-slate-700" x-text="monthNames[month] + ' ' + year"></span>
-                                <span class="text-[10px] text-slate-400 font-semibold mt-0.5">
-                                    Mode: <span class="text-[#1fa387]" x-text="periodMode === 'daily' ? 'Harian' : (periodMode === 'weekly' ? 'Mingguan' : (periodMode === 'monthly' ? 'Bulanan' : (periodMode === 'yearly' ? 'Tahunan' : 'Khusus')))"></span>
-                                </span>
                             </div>
                             <div class="flex gap-2 text-slate-400">
-                                <span @click="prevMonth()" class="material-symbols-outlined text-sm cursor-pointer hover:text-slate-750">chevron_left</span>
-                                <span @click="nextMonth()" class="material-symbols-outlined text-sm cursor-pointer hover:text-slate-750">chevron_right</span>
+                                <span @click="prevMonth()" class="material-symbols-outlined text-sm cursor-pointer hover:text-slate-750 p-1">chevron_left</span>
+                                <span @click="nextMonth()" class="material-symbols-outlined text-sm cursor-pointer hover:text-slate-750 p-1">chevron_right</span>
                             </div>
                         </div>
 
@@ -4484,47 +4525,60 @@
 
                         <!-- Interactive Days Grid -->
                         <div class="grid grid-cols-7 gap-y-2 text-center text-xs font-semibold text-slate-750">
-                            <template x-for="blankday in blankdays">
-                                <div class="w-8 h-8"></div>
-                            </template>
-                            <template x-for="day in no_of_days" :key="day">
-                                <div class="flex items-center justify-center">
-                                    <button 
-                                        type="button"
-                                        @click="selectDate(day)"
-                                        :disabled="isFuture(day)"
-                                        class="w-8 h-8 rounded-full flex items-center justify-center transition-all font-bold text-xs"
-                                        :class="{
-                                            'bg-[#1fa387] text-white': isStart(day) || isEnd(day),
-                                            'bg-[#1fa387]/15 text-[#1fa387]': isInRange(day),
-                                            'hover:bg-slate-100 text-slate-700 cursor-pointer': !isStart(day) && !isEnd(day) && !isInRange(day) && !isFuture(day),
-                                            'opacity-30 cursor-not-allowed text-slate-400': isFuture(day)
-                                        }"
-                                    >
-                                        <span x-text="day"></span>
-                                    </button>
-                                </div>
-                            </template>
+                            <div style="display: contents;">
+                                <template x-for="(item, index) in calendarDays" :key="index">
+                                    <div class="flex items-center justify-center">
+                                        <template x-if="item.isBlank">
+                                            <div class="w-9 h-9"></div>
+                                        </template>
+                                        <template x-if="!item.isBlank">
+                                            <button 
+                                                type="button"
+                                                @click="selectDate(item.day)"
+                                                :disabled="isFuture(item.day)"
+                                                class="w-9 h-9 rounded-full flex items-center justify-center transition-all font-bold text-xs"
+                                                :class="{
+                                                    'bg-[#1fa387] text-white shadow-sm': isStart(item.day) || isEnd(item.day),
+                                                    'bg-[#1fa387]/15 text-[#1fa387]': isInRange(item.day) && !isStart(item.day) && !isEnd(item.day),
+                                                    'hover:bg-slate-100 text-slate-700 cursor-pointer': !isStart(item.day) && !isEnd(item.day) && !isInRange(item.day) && !isFuture(item.day),
+                                                    'opacity-20 cursor-not-allowed text-slate-400': isFuture(item.day)
+                                                }"
+                                            >
+                                                <span x-text="item.day"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Footer Action Controls -->
-                <div class="flex justify-end items-center gap-3 pt-6 border-t border-slate-100 flex-shrink-0">
+                <div class="flex justify-between items-center pt-6 border-t border-slate-100 flex-shrink-0 mt-6">
                     <button 
                         type="button" 
-                        @click="$wire.set('showDatePicker', false)" 
-                        class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs transition"
+                        @click="clearPeriod(); applyFilter()" 
+                        class="text-xs text-slate-500 hover:text-[#1fa387] font-bold transition cursor-pointer"
                     >
-                        Batal
+                        Semua Waktu
                     </button>
-                    <button 
-                        type="button" 
-                        @click="applyFilter()" 
-                        class="px-5 py-2 bg-[#1fa387] hover:bg-[#1a8b73] text-white font-bold rounded-full text-xs transition"
-                    >
-                        Terapkan
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <button 
+                            type="button" 
+                            @click="$wire.set('showDatePicker', false)" 
+                            class="px-5 py-2 bg-slate-150 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs transition cursor-pointer"
+                        >
+                            Batal
+                        </button>
+                        <button 
+                            type="button" 
+                            @click="applyFilter()" 
+                            class="px-5 py-2 bg-[#1fa387] hover:bg-[#1a8b73] text-white font-bold rounded-full text-xs transition cursor-pointer"
+                        >
+                            Terapkan
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -4838,7 +4892,121 @@
                     <div class="text-sm md:text-base text-slate-800 leading-relaxed space-y-5 whitespace-pre-line overflow-y-auto flex-grow pr-3 pb-8 font-sans" x-text="detailContent"></div>
                 </div>
             </div>
+    </div>
+
+    @if($showTikTokCommentsModal)
+        @php
+            $tikTokCommentsModalMeta = $tikTokCommentsModalMeta ?? [];
+            $tikTokCommentsModalItems = $tikTokCommentsModalItems ?? [];
+        @endphp
+        <template x-teleport="body">
+        <div
+            class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            @keydown.escape.window="$wire.closeTikTokCommentsModal()"
+            @click.self="$wire.closeTikTokCommentsModal()"
+        >
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
+                <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#1fa387]">Komentar TikTok</p>
+                        <h3 class="mt-1 text-xl font-black text-slate-900 leading-tight">
+                            {{ $tikTokCommentsModalMeta['title'] ?? 'TikTok' }}
+                        </h3>
+                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 font-semibold">
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-50 border border-slate-200 px-3 py-1">
+                                <span class="material-symbols-outlined text-[14px] text-[#1fa387]">forum</span>
+                                {{ number_format((int) ($tikTokCommentsModalMeta['comment_count'] ?? 0), 0, ',', '.') }} komentar
+                            </span>
+                            @if(!empty($tikTokCommentsModalMeta['posted_at']))
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-50 border border-slate-200 px-3 py-1">
+                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387]">calendar_month</span>
+                                    {{ $tikTokCommentsModalMeta['posted_at'] }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        wire:click="closeTikTokCommentsModal"
+                        class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
+                        title="Tutup"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+                    <div class="flex flex-col gap-2 text-xs md:text-sm text-slate-600">
+                        <div class="flex flex-wrap gap-x-4 gap-y-1">
+                            <span><span class="font-bold text-slate-800">Sumber:</span> TikTok</span>
+                            @if(!empty($tikTokCommentsModalMeta['author_name']))
+                                <span><span class="font-bold text-slate-800">Akun:</span> {{ $tikTokCommentsModalMeta['author_name'] }}</span>
+                            @endif
+                        </div>
+                        @if(!empty($tikTokCommentsModalMeta['post_url']))
+                            <a href="{{ $tikTokCommentsModalMeta['post_url'] }}" target="_blank" class="text-[#1fa387] font-bold hover:underline break-all">
+                                {{ $tikTokCommentsModalMeta['post_url'] }}
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-6 py-5">
+                    @if(empty($tikTokCommentsModalItems))
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                            <span class="material-symbols-outlined text-[30px] text-slate-300">comment</span>
+                            <p class="mt-3 text-sm font-bold text-slate-700">Belum ada daftar komentar yang terbaca.</p>
+                            <p class="mt-1 text-xs text-slate-500">Data komentar bisa saja belum tersimpan di payload Apify, atau struktur responsnya berbeda.</p>
+                        </div>
+                    @else
+                        <div class="space-y-3">
+                            @foreach($tikTokCommentsModalItems as $comment)
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                            @if(!empty($comment['avatar_url']))
+                                                <img src="{{ $comment['avatar_url'] }}" alt="{{ $comment['author_name'] }}" class="w-full h-full object-cover">
+                                            @else
+                                                <span class="material-symbols-outlined text-[18px] text-slate-400">person</span>
+                                            @endif
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <p class="font-black text-slate-900 text-sm">{{ $comment['author_name'] ?? 'Pengguna TikTok' }}</p>
+                                                @if(!empty($comment['posted_at']))
+                                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $comment['posted_at'] }}</span>
+                                                @endif
+                                                @if(isset($comment['like_count']))
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 px-2 py-0.5 text-[10px] font-bold">
+                                                        <span class="material-symbols-outlined text-[12px]">favorite</span>
+                                                        {{ number_format((int) $comment['like_count'], 0, ',', '.') }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <p class="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ $comment['content'] ?? '' }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                <div class="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
+                    <button
+                        type="button"
+                        wire:click="closeTikTokCommentsModal"
+                        class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition"
+                    >
+                        Tutup
+                    </button>
+                </div>
+            </div>
         </div>
+        </template>
+    @endif
+
+
     <!-- Global AI PDF Report Generation Modal Overlay -->
     <div wire:loading.flex wire:target="preparePdfReport" class="fixed inset-0 z-[9999] items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-6 text-center">
@@ -4855,7 +5023,7 @@
 
     <!-- Global AI PDF Report Feedback Modal Overlay -->
     <div
-        x-show="reportFeedbackOpen"
+        x-show="typeof reportFeedbackOpen !== 'undefined' && reportFeedbackOpen"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 scale-95"
         x-transition:enter-end="opacity-100 scale-100"

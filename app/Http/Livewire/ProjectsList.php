@@ -42,6 +42,7 @@ class ProjectsList extends Component
     public $isCreatingProject = false;
     public $showSuccessModal = false;
     public $lastCreatedProjectName = '';
+    public $packageId = null; // Tambahkan properti paket (package_id)
  
     // Edit project state
     public $showEditModal = false;
@@ -511,6 +512,7 @@ class ProjectsList extends Component
             'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
             'sources' => array_values(array_unique(array_filter($this->selectedSources))),
+            'package_id' => $this->packageId ?: null,
         ]);
 
         // Save telegram recipients without minus (-) sign (supporting multi chat ids)
@@ -539,7 +541,7 @@ class ProjectsList extends Component
         $this->showSuccessModal = true;
         session()->flash('message', 'Proyek berhasil dibuat.');
         
-        $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords', 'telegramChatId']);
+        $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords', 'telegramChatId', 'packageId']);
         $this->selectedSources = ['Instagram', 'TikTok', 'Facebook', 'Portal'];
     }
 
@@ -552,6 +554,7 @@ class ProjectsList extends Component
         $this->contextKeywords = implode(', ', $project->context_keywords ?? []);
         $this->excludeKeywords = implode(', ', $project->exclude_keywords ?? []);
         $this->selectedSources = $project->sources ?? ['Instagram', 'TikTok', 'Facebook', 'Portal'];
+        $this->packageId = $project->package_id;
         
         $recipients = DB::table('project_telegram_recipients')->where('project_id', $project->id)->pluck('chat_id')->toArray();
         $this->telegramChatId = implode(', ', $recipients);
@@ -596,6 +599,7 @@ class ProjectsList extends Component
             'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
             'sources' => array_values(array_unique(array_filter($this->selectedSources))),
+            'package_id' => $this->packageId ?: null,
         ]);
 
         // Save or update telegram recipients without minus (-) sign (supporting multi chat ids)
@@ -632,6 +636,7 @@ class ProjectsList extends Component
         $this->showConfirmModal = false;
         $this->isCreatingProject = false;
         $this->telegramChatId = '';
+        $this->packageId = null;
         $this->resetConfirmState();
         $this->redirect(request()->header('Referer') ?: '/');
     }

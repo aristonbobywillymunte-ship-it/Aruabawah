@@ -174,7 +174,16 @@ class RunApifyScraping extends Command
                 continue;
             }
 
-            foreach ($actors as $actor) {
+            // Tentukan actors yang digunakan untuk project ini (jika punya paket, pakai actor paket. Jika tidak, pakai global)
+            $projectActors = $actors;
+            if ($project->package_id && $project->package) {
+                $projectActors = $project->package->enabledActors()
+                    ->when($filterPlatform, fn($q) => $q->where('platform', $filterPlatform))
+                    ->orderBy('priority')
+                    ->get();
+            }
+
+            foreach ($projectActors as $actor) {
                 // Pastikan platform ini dipilih dalam setelan sumber data proyek
                 $projectSources = $project->sources ?? ['Instagram', 'TikTok', 'Facebook', 'Portal'];
                 // Normalize label Portal ke Portal News jika perlu, tapi actor platform biasanya TikTok, Instagram, Facebook

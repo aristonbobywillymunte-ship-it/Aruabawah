@@ -34,6 +34,7 @@ class ApifyConfiguration extends Component
     public string $defaultLimit = '';
     public string $instagram_results_type = 'posts';
     public ?int $instagram_results_limit = null;
+    public bool $instagram_include_nested_comments = false;
     public ?string $dateFrom = null;
     public ?string $dateTo = null;
     public string $actorStatus = 'active';
@@ -138,6 +139,8 @@ class ApifyConfiguration extends Component
             'setting' => $this->setting(),
             'primaryActorDefs' => $this->registry()->primaryActors(),
             'legacyActorDefs' => $this->registry()->legacyActors(),
+            'instagramActorDefs' => $this->instagramActorDefinitions(),
+            'tiktokActorDefs' => $this->tikTokActorDefinitions(),
         ]);
     }
 
@@ -261,27 +264,69 @@ class ApifyConfiguration extends Component
     public function updatedPlatform(string $value): void
     {
         if ($value === 'TikTok') {
-            $this->loadTikTokPayloadDefaults();
-            $this->keyword_field_mapping = 'hashtags';
+            $definition = $this->resolveTikTokActorDefinition($this->actorSlug ?: null)
+                ?? $this->resolveTikTokActorDefinition();
+
+            if ($definition) {
+                if (! $this->editingActor) {
+                    $this->applyActorDefinitionDefaults($definition);
+                } else {
+                    $this->loadTikTokPayloadDefaults($this->actorSlug ?: $definition['actor_slug']);
+                }
+            }
         } elseif ($value === 'Facebook') {
             $this->loadFacebookPayloadDefaults();
             $this->keyword_field_mapping = 'searchQueries';
-        } elseif ($value === 'Instagram') {
-            $this->loadInstagramPayloadDefaults();
-            $this->keyword_field_mapping = 'hashtags';
             if (! $this->editingActor) {
-                $instagram = $this->registry()->primaryActors()['instagram'];
-                $this->actorName = $instagram['actor_name'];
-                $this->actorSlug = $instagram['actor_slug'];
-                $this->functionType = $instagram['function_type'];
-                $this->actorStatus = (string) ($instagram['status'] ?? 'active');
-                $this->memory_limit = (int) $instagram['memory_limit'];
-                $this->interval_minutes = (int) $instagram['interval_minutes'];
-                $this->range_mode = (string) $instagram['range_mode'];
-                $this->maximum_cost_per_run_usd = (float) ($instagram['maximum_cost_per_run_usd'] ?? 0);
+                $facebook = $this->registry()->primaryActors()['facebook'];
+                $this->actorName = $facebook['actor_name'];
+                $this->actorSlug = $facebook['actor_slug'];
+                $this->functionType = $facebook['function_type'];
+                $this->actorStatus = (string) ($facebook['status'] ?? 'active');
+                $this->memory_limit = (int) $facebook['memory_limit'];
+                $this->interval_minutes = (int) $facebook['interval_minutes'];
+                $this->range_mode = (string) $facebook['range_mode'];
+                $this->maximum_cost_per_run_usd = (float) ($facebook['maximum_cost_per_run_usd'] ?? 0);
+            }
+        } elseif ($value === 'Instagram') {
+            $definition = $this->resolveInstagramActorDefinition($this->actorSlug ?: null)
+                ?? $this->resolveInstagramActorDefinition();
+
+            if ($definition) {
+                if (! $this->editingActor) {
+                    $this->applyActorDefinitionDefaults($definition);
+                }
+
+                $this->loadInstagramPayloadDefaults($definition['output_mapping'] ?? null);
             }
         }
 
+    }
+
+    public function updatedActorSlug(string $value): void
+    {
+        if ($this->platform === 'Instagram') {
+            $definition = $this->resolveInstagramActorDefinition($value);
+
+            if ($definition) {
+                $this->applyActorDefinitionDefaults($definition);
+                $this->loadInstagramPayloadDefaults($definition['output_mapping'] ?? null);
+            } else {
+                $this->loadInstagramPayloadDefaults();
+            }
+            return;
+        }
+
+        if ($this->platform !== 'TikTok') {
+            return;
+        }
+
+        $definition = $this->resolveTikTokActorDefinition($value);
+        if ($definition) {
+            $this->applyActorDefinitionDefaults($definition);
+        } else {
+            $this->loadTikTokPayloadDefaults($value);
+        }
     }
 
     public function updatedDefaultLimit($value): void
@@ -300,7 +345,7 @@ class ApifyConfiguration extends Component
     {
         if (in_array($propertyName, ['facebook_max_posts', 'facebook_post_time_range', 'facebook_use_apify_proxy'], true)) {
             $this->output_mapping = $this->buildFacebookOutputMapping([]);
-        } elseif (in_array($propertyName, ['defaultKeyword', 'instagram_results_type', 'instagram_results_limit'], true)) {
+        } elseif (in_array($propertyName, ['defaultKeyword', 'instagram_results_type', 'instagram_results_limit', 'instagram_include_nested_comments'], true)) {
             $this->output_mapping = $this->buildInstagramOutputMapping([]);
         }
     }
@@ -342,18 +387,8 @@ class ApifyConfiguration extends Component
             $this->loadFacebookPayloadDefaults($actor->output_mapping);
         } elseif ($actor->platform === 'Instagram') {
             $this->loadInstagramPayloadDefaults($actor->output_mapping);
-            $instagram = $this->registry()->primaryActors()['instagram'];
-            $this->actorName = $instagram['actor_name'];
-            $this->actorSlug = $instagram['actor_slug'];
-            $this->functionType = $instagram['function_type'];
-            $this->actorStatus = (string) ($instagram['status'] ?? 'active');
         } elseif ($actor->platform === 'TikTok') {
-            $this->loadTikTokPayloadDefaults();
-            $tiktok = $this->registry()->primaryActors()['tiktok'];
-            $this->actorName = $tiktok['actor_name'];
-            $this->actorSlug = $tiktok['actor_slug'];
-            $this->functionType = $tiktok['function_type'];
-            $this->actorStatus = (string) ($tiktok['status'] ?? 'active');
+            $this->loadTikTokPayloadDefaults($actor->actor_slug);
         }
 
         $this->showActorModal = true;
@@ -387,8 +422,9 @@ class ApifyConfiguration extends Component
                 'facebook_max_posts' => ['required_if:platform,Facebook', 'nullable', 'integer'],
                 'facebook_post_time_range' => ['required_if:platform,Facebook', 'nullable', 'string'],
                 'facebook_use_apify_proxy' => ['required_if:platform,Facebook', 'accepted'],
-                'instagram_results_type' => ['required_if:platform,Instagram', 'nullable', 'in:posts,reels'],
-                'instagram_results_limit' => ['required_if:platform,Instagram', 'nullable', 'integer'],
+                'instagram_results_type' => ['nullable', 'in:posts,reels'],
+                'instagram_results_limit' => ['nullable', 'integer'],
+                'instagram_include_nested_comments' => ['boolean'],
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Illuminate\Support\Facades\Log::error('Apify actor validation failed', [
@@ -406,9 +442,12 @@ class ApifyConfiguration extends Component
             $data['range_mode'] = $this->facebook_post_time_range ?: $data['range_mode'];
             $this->range_mode = $data['range_mode'];
         } elseif ($data['platform'] === 'Instagram') {
-            // `defaultLimit` is the source of truth from the modal; keep the IG-specific
-            // limit in sync even when the field is submitted via `wire:model.defer`.
             $this->instagram_results_limit = $data['defaultLimit'];
+            if ($this->isInstagramCommentsActor()) {
+                $data['keyword_field_mapping'] = 'directUrls';
+            } else {
+                $data['keyword_field_mapping'] = 'hashtags';
+            }
         }
 
         $data['build'] = $this->build;
@@ -430,7 +469,15 @@ class ApifyConfiguration extends Component
             $resolvedOutputMapping = $this->buildInstagramOutputMapping($data);
             $this->output_mapping = $resolvedOutputMapping;
         } elseif ($data['platform'] === 'TikTok') {
-            $resolvedOutputMapping = $this->buildTikTokOutputMapping($data);
+            $definition = $this->resolveTikTokActorDefinition($data['actorSlug']);
+            if ($definition) {
+                $data['keyword_field_mapping'] = $definition['keyword_field_mapping'];
+                if ((int) $data['defaultLimit'] < 1) {
+                    $data['defaultLimit'] = (int) ($definition['default_limit'] ?? 1);
+                }
+            }
+
+            $resolvedOutputMapping = $this->buildTikTokOutputMapping($data, $definition);
             $this->output_mapping = $resolvedOutputMapping;
         }
 
@@ -683,6 +730,7 @@ class ApifyConfiguration extends Component
         $this->defaultLimit = '';
         $this->instagram_results_type = 'posts';
         $this->instagram_results_limit = null;
+        $this->instagram_include_nested_comments = false;
         $this->dateFrom = null;
         $this->dateTo = null;
         $this->actorStatus = 'active';
@@ -735,14 +783,26 @@ class ApifyConfiguration extends Component
 
     protected function loadInstagramPayloadDefaults(?string $outputMapping = null): void
     {
+        $definition = $this->resolveInstagramActorDefinition($this->actorSlug ?: null)
+            ?? $this->resolveInstagramActorDefinition();
+
         $template = $outputMapping ? json_decode($outputMapping, true) : null;
         if (!is_array($template)) {
-            $template = json_decode($this->registry()->primaryActors()['instagram']['output_mapping'], true) ?: [];
+            $template = json_decode((string) ($definition['output_mapping'] ?? ''), true) ?: [];
+        }
+
+        if ($this->isInstagramCommentsActor()) {
+            $this->instagram_results_type = 'posts';
+            $this->instagram_results_limit = (int) ($template['resultsLimit'] ?? ($definition['default_limit'] ?? 20));
+            $this->instagram_include_nested_comments = (bool) ($template['includeNestedComments'] ?? false);
+            $this->keyword_field_mapping = 'directUrls';
+            return;
         }
 
         $resultsType = (string) ($template['resultsType'] ?? 'posts');
         $this->instagram_results_type = in_array($resultsType, ['posts', 'reels'], true) ? $resultsType : 'posts';
-        $this->instagram_results_limit = (int) ($template['resultsLimit'] ?? $this->registry()->primaryActors()['instagram']['default_limit']);
+        $this->instagram_results_limit = (int) ($template['resultsLimit'] ?? ($definition['default_limit'] ?? 20));
+        $this->instagram_include_nested_comments = false;
         $this->keyword_field_mapping = 'hashtags';
     }
 
@@ -769,6 +829,16 @@ class ApifyConfiguration extends Component
 
     protected function buildInstagramOutputMapping(array $data): string
     {
+        if ($this->isInstagramCommentsActor()) {
+            $payload = [
+                'directUrls' => ['{keyword}'],
+                'resultsLimit' => max(1, (int) ($this->instagram_results_limit ?? $this->defaultLimit ?? 1)),
+                'includeNestedComments' => (bool) $this->instagram_include_nested_comments,
+            ];
+
+            return json_encode($payload, JSON_UNESCAPED_SLASHES);
+        }
+
         $payload = [
             'hashtags' => ['{keyword}'],
             'resultsType' => in_array($this->instagram_results_type, ['posts', 'reels'], true) ? $this->instagram_results_type : 'posts',
@@ -778,22 +848,173 @@ class ApifyConfiguration extends Component
         return json_encode($payload, JSON_UNESCAPED_SLASHES);
     }
 
-    protected function loadTikTokPayloadDefaults(): void
+    protected function tikTokActorDefinitions(): array
     {
-        $this->keyword_field_mapping = 'hashtags';
+        return array_values(array_filter(
+            $this->registry()->primaryActors(),
+            static fn (array $actor): bool => ($actor['platform'] ?? null) === 'TikTok'
+        ));
     }
 
-    protected function buildTikTokOutputMapping(array $data): string
+    protected function instagramActorDefinitions(): array
     {
+        return array_values(array_filter(
+            $this->registry()->primaryActors(),
+            static fn (array $actor): bool => ($actor['platform'] ?? null) === 'Instagram'
+        ));
+    }
+
+    protected function resolveInstagramActorDefinition(?string $slug = null): ?array
+    {
+        $definitions = $this->instagramActorDefinitions();
+
+        if ($slug) {
+            foreach ($definitions as $definition) {
+                if (($definition['actor_slug'] ?? null) === $slug) {
+                    return $definition;
+                }
+            }
+        }
+
+        foreach ($definitions as $definition) {
+            if ((string) ($definition['function_type'] ?? '') === 'Search Post') {
+                return $definition;
+            }
+        }
+
+        return $definitions[0] ?? null;
+    }
+
+    protected function isInstagramCommentsActor(): bool
+    {
+        return str_contains(strtolower((string) $this->actorSlug), 'instagram-comment-scraper')
+            || str_contains(strtolower((string) $this->functionType), 'comment');
+    }
+
+    protected function resolveTikTokActorDefinition(?string $slug = null): ?array
+    {
+        $definitions = $this->tikTokActorDefinitions();
+
+        if ($slug) {
+            foreach ($definitions as $definition) {
+                if (($definition['actor_slug'] ?? null) === $slug) {
+                    return $definition;
+                }
+            }
+        }
+
+        foreach ($definitions as $definition) {
+            if ((string) ($definition['function_type'] ?? '') === 'Comment Scraper') {
+                return $definition;
+            }
+        }
+
+        return $definitions[0] ?? null;
+    }
+
+    protected function applyActorDefinitionDefaults(array $definition): void
+    {
+        $this->actorName = (string) ($definition['actor_name'] ?? $this->actorName);
+        $this->actorSlug = (string) ($definition['actor_slug'] ?? $this->actorSlug);
+        $this->functionType = (string) ($definition['function_type'] ?? $this->functionType);
+        $this->actorStatus = (string) ($definition['status'] ?? $this->actorStatus);
+        $this->defaultLimit = (string) (int) ($definition['default_limit'] ?? $this->defaultLimit ?: 1);
+        $this->keyword_field_mapping = (string) ($definition['keyword_field_mapping'] ?? $this->keyword_field_mapping ?: 'hashtags');
+        $this->output_mapping = (string) ($definition['output_mapping'] ?? $this->output_mapping ?: '');
+        $this->build = (string) ($definition['build'] ?? $this->build ?: 'latest');
+        $this->timeout_seconds = (int) ($definition['timeout_seconds'] ?? $this->timeout_seconds ?: 10000);
+        $this->no_timeout = (bool) ($definition['no_timeout'] ?? $this->no_timeout ?: false);
+        $this->interval_minutes = (int) ($definition['interval_minutes'] ?? $this->interval_minutes ?: 240);
+        $this->memory_limit = (int) ($definition['memory_limit'] ?? $this->memory_limit ?: 1024);
+        $this->range_mode = (string) ($definition['range_mode'] ?? $this->range_mode ?: '7d');
+        $this->priority = (int) ($definition['priority'] ?? $this->priority ?: 1);
+        $this->maximum_cost_per_run_usd = (float) ($definition['maximum_cost_per_run_usd'] ?? $this->maximum_cost_per_run_usd ?: 0);
+    }
+
+    protected function loadTikTokPayloadDefaults(?string $actorSlug = null): void
+    {
+        $definition = $this->resolveTikTokActorDefinition($actorSlug);
+
+        $this->keyword_field_mapping = (string) ($definition['keyword_field_mapping'] ?? 'hashtags');
+    }
+
+    protected function buildTikTokOutputMapping(array $data, ?array $definition = null): string
+    {
+        $definition ??= $this->resolveTikTokActorDefinition($data['actorSlug'] ?? null);
+        $keywordField = (string) ($definition['keyword_field_mapping'] ?? $this->keyword_field_mapping ?? 'hashtags');
+
+        if ($keywordField === 'postURLs') {
+            $payload = [
+                'postURLs' => ['{keyword}'],
+                'commentsPerPost' => max(1, (int) ($data['defaultLimit'] ?? $this->defaultLimit ?? 20)),
+                'proxyConfiguration' => [
+                    'useApifyProxy' => true,
+                ],
+            ];
+
+            return json_encode($payload, JSON_UNESCAPED_SLASHES);
+        }
+
         $payload = [
             'customMapFunction' => '(object) => { return {...object} }',
             'endPage' => 1,
             'extendOutputFunction' => '($) => { return {} }',
-            'maxItems' => max(1, (int) ($this->defaultLimit ?? 1)),
+            'maxItems' => max(1, (int) ($data['defaultLimit'] ?? $this->defaultLimit ?? 1)),
             'hashtags' => ['{keyword}'],
         ];
 
         return json_encode($payload, JSON_UNESCAPED_SLASHES);
+    }
+
+    public function previewActorPayloadJson(): string
+    {
+        $definition = null;
+        $outputMapping = null;
+
+        if ($this->platform === 'Facebook') {
+            $outputMapping = $this->buildFacebookOutputMapping([
+                'defaultLimit' => (int) $this->defaultLimit,
+            ]);
+        } elseif ($this->platform === 'Instagram') {
+            $outputMapping = $this->buildInstagramOutputMapping([
+                'defaultLimit' => (int) $this->defaultLimit,
+            ]);
+        } elseif ($this->platform === 'TikTok') {
+            $definition = $this->resolveTikTokActorDefinition($this->actorSlug);
+            $outputMapping = $this->buildTikTokOutputMapping([
+                'actorSlug' => $this->actorSlug,
+                'defaultLimit' => (int) $this->defaultLimit,
+            ], $definition);
+        }
+
+        $actor = new ApifyActor([
+            'platform' => $this->platform,
+            'actor_slug' => $this->actorSlug,
+            'keyword_field_mapping' => $this->keyword_field_mapping,
+            'output_mapping' => $outputMapping,
+            'default_limit' => (int) ($this->defaultLimit ?: 0),
+            'default_keyword' => $this->defaultKeyword ?: null,
+        ]);
+
+        $previewKeyword = $this->defaultKeyword ?: null;
+        if ($this->platform === 'TikTok' && $definition && ($definition['function_type'] ?? null) === 'Comment Scraper' && blank($previewKeyword)) {
+            $previewKeyword = 'https://www.tiktok.com/@user/video/1234567890';
+        }
+        if ($this->platform === 'Instagram' && $this->isInstagramCommentsActor() && blank($previewKeyword)) {
+            $previewKeyword = 'https://www.instagram.com/p/Cx123456789/';
+        }
+        if ($this->platform !== 'TikTok' && blank($previewKeyword)) {
+            $previewKeyword = 'wagub kaltim';
+        }
+
+        $payload = $actor->buildInputPayload(
+            $previewKeyword,
+            max(1, (int) ($this->defaultLimit ?: 1)),
+            $this->dateFrom,
+            $this->dateTo
+        );
+
+        return json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}';
     }
 
     protected function notify(string $type, string $message): void

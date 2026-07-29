@@ -134,7 +134,16 @@
                                 <td class="px-3 py-3 align-top overflow-hidden">
                                     <div class="font-bold text-slate-900 truncate">{{ $actor->actor_name }}</div>
                                     <div class="text-[10px] text-slate-400 mt-0.5 truncate">{{ $actor->actor_slug }}</div>
-                                    <div class="mt-1 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 whitespace-nowrap">Bawaan Sistem</div>
+                                    <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                        <div class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 whitespace-nowrap">
+                                            {{ $actor->platform === 'TikTok' && str_contains(strtolower((string) $actor->actor_slug), 'tiktok-comments-scraper') ? 'TikTok Comments' : 'Bawaan Sistem' }}
+                                        </div>
+                                        @if($actor->platform === 'TikTok')
+                                            <div class="inline-flex items-center rounded-full {{ str_contains(strtolower((string) $actor->actor_slug), 'tiktok-comments-scraper') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100' }} border px-2 py-0.5 text-[10px] font-bold whitespace-nowrap">
+                                                {{ str_contains(strtolower((string) $actor->actor_slug), 'tiktok-comments-scraper') ? 'Comment Scraper' : 'Hashtag Scraper' }}
+                                            </div>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-3 py-3 align-top font-semibold text-slate-600">
                                     <div>{{ $actor->memory_limit }} MB RAM</div>
@@ -223,6 +232,18 @@
                     <div class="flex-1 min-h-0 space-y-5 overflow-y-auto p-6">
                         <div class="space-y-6">
                         @php
+                            $instagramActors = collect($instagramActorDefs ?? []);
+                            $selectedInstagramActor = $instagramActors->firstWhere('actor_slug', $actorSlug)
+                                ?? $instagramActors->firstWhere('function_type', 'Search Post')
+                                ?? $instagramActors->first();
+                            $isInstagramCommentsActor = data_get($selectedInstagramActor, 'function_type') === 'Comment Scraper';
+
+                            $tiktokActors = collect($tiktokActorDefs ?? []);
+                            $selectedTikTokActor = $tiktokActors->firstWhere('actor_slug', $actorSlug)
+                                ?? $tiktokActors->firstWhere('function_type', 'Comment Scraper')
+                                ?? $tiktokActors->first();
+                            $isTikTokCommentsActor = data_get($selectedTikTokActor, 'function_type') === 'Comment Scraper';
+
                             $actorGuidance = match ($platform) {
                                 'Facebook' => [
                                     'judul' => 'Panduan Singkat Facebook',
@@ -234,19 +255,31 @@
                                 ],
                                 'TikTok' => [
                                     'judul' => 'Panduan Singkat TikTok',
-                                    'isi' => [
-                                        'Isi daftar keyword di <span class="font-semibold text-slate-800">keywords</span>.',
-                                        'Gunakan actor <span class="font-semibold text-slate-800">clockworks/tiktok-hashtag-scraper</span> sebagai sumber payload.',
-                                        'Isi <span class="font-semibold text-slate-800">maxItems</span> sebagai batas total hasil per aktor, lalu sistem kirim ke Apify apa adanya.',
-                                    ],
+                                    'isi' => $isTikTokCommentsActor
+                                        ? [
+                                            'Isi daftar URL video di <span class="font-semibold text-slate-800">postURLs</span>.',
+                                            'Gunakan actor <span class="font-semibold text-slate-800">clockworks/tiktok-comments-scraper</span> sebagai sumber payload.',
+                                            'Isi <span class="font-semibold text-slate-800">commentsPerPost</span> sebagai batas komentar per video.',
+                                        ]
+                                        : [
+                                            'Isi daftar keyword di <span class="font-semibold text-slate-800">keywords</span>.',
+                                            'Gunakan actor <span class="font-semibold text-slate-800">clockworks/tiktok-hashtag-scraper</span> sebagai sumber payload.',
+                                            'Isi <span class="font-semibold text-slate-800">maxItems</span> sebagai batas total hasil per aktor, lalu sistem kirim ke Apify apa adanya.',
+                                        ],
                                 ],
                                 'Instagram' => [
                                     'judul' => 'Panduan Singkat Instagram',
-                                    'isi' => [
-                                        'Isi hashtag di <span class="font-semibold text-slate-800">hashtags</span> dengan teks dipisah koma.',
-                                        'Pilih <span class="font-semibold text-slate-800">resultsType</span> untuk posts atau reels.',
-                                        'Isi <span class="font-semibold text-slate-800">resultsLimit</span> sebagai batas hasil per hashtag.',
-                                    ],
+                                    'isi' => $isInstagramCommentsActor
+                                        ? [
+                                            'Isi URL post di <span class="font-semibold text-slate-800">directUrls</span> dengan link Instagram post yang valid.',
+                                            'Gunakan actor <span class="font-semibold text-slate-800">apify/instagram-comment-scraper</span> untuk mengambil komentar.',
+                                            'Isi <span class="font-semibold text-slate-800">resultsLimit</span> sebagai batas jumlah komentar yang diambil.',
+                                        ]
+                                        : [
+                                            'Isi hashtag di <span class="font-semibold text-slate-800">hashtags</span> dengan teks dipisah koma.',
+                                            'Pilih <span class="font-semibold text-slate-800">resultsType</span> untuk posts atau reels.',
+                                            'Isi <span class="font-semibold text-slate-800">resultsLimit</span> sebagai batas hasil per hashtag.',
+                                        ],
                                 ],
                                 default => null,
                             };
@@ -405,16 +438,87 @@
                                 </div>
                             </details>
                         @elseif($platform === 'Instagram')
-                            <div wire:key="instagram-form-{{ $editingActorId ?? 'new' }}" class="rounded-2xl border border-slate-200 bg-white p-4 space-y-4">
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Interval Actor (Menit)</label>
-                                        <input wire:model="interval_minutes" type="number" min="1" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition">
-                                        <p class="mt-1 text-[10px] text-slate-400">Jeda minimal sebelum Instagram actor ini bisa dijalankan lagi.</p>
-                                        @error('interval_minutes') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                            <details open class="rounded-2xl border border-slate-200 bg-white" wire:key="instagram-form-{{ $editingActorId ?? 'new' }}">
+                                <summary class="cursor-pointer list-none px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded bg-pink-50 flex items-center justify-center text-pink-500"><span class="material-symbols-outlined text-[13px]">schema</span></span>
+                                    Konfigurasi Khusus Instagram
+                                </summary>
+                                <div class="border-t border-slate-100 bg-pink-50/30 p-4 space-y-4 rounded-b-2xl">
+                                    <div class="grid gap-4 sm:grid-cols-2">
+                                        <div>
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Pilih Actor Instagram</label>
+                                            <select wire:model="actorSlug" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                                @forelse($instagramActors as $definition)
+                                                    <option value="{{ $definition['actor_slug'] }}">
+                                                        {{ $definition['actor_name'] }} — {{ $definition['function_type'] }}
+                                                    </option>
+                                                @empty
+                                                    <option value="">Instagram Actor tidak ditemukan</option>
+                                                @endforelse
+                                            </select>
+                                            @error('actorSlug') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">
+                                                {{ $isInstagramCommentsActor ? 'Default Post URL (Opsional)' : 'Default Hashtag (Opsional)' }}
+                                            </label>
+                                            <input
+                                                wire:model="defaultKeyword"
+                                                placeholder="{{ $isInstagramCommentsActor ? 'Contoh: https://www.instagram.com/p/Cx123456789/' : 'Contoh: gubernurkaltim' }}"
+                                                type="text"
+                                                class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm"
+                                            >
+                                            @error('defaultKeyword') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                        </div>
                                     </div>
+
+                                    @if($isInstagramCommentsActor)
+                                        <div class="grid gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Komentar per Post</label>
+                                                <input wire:model="defaultLimit" type="number" min="1" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                                <p class="mt-1 text-[10px] text-slate-400">Disimpan sebagai <span class="font-mono">resultsLimit</span> untuk actor komentar Instagram.</p>
+                                                @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                            </div>
+                                            <div class="flex items-end">
+                                                <label class="flex items-center gap-2.5 cursor-pointer group rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm min-h-[40px] w-full">
+                                                    <input wire:model="instagram_include_nested_comments" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
+                                                    <span class="text-[11px] font-bold text-slate-700">Include Nested Comments</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="rounded-xl border border-pink-100 bg-white/80 p-3 text-[11px] text-slate-600 space-y-1">
+                                            <p class="font-bold text-pink-700">Aturan isi Instagram Comment Scraper:</p>
+                                            <p><span class="font-mono">directUrls</span> adalah URL post Instagram.</p>
+                                            <p><span class="font-mono">resultsLimit</span> mengikuti batas komentar yang disimpan di modal ini.</p>
+                                            <p><span class="font-mono">includeNestedComments</span> aktif jika komentar turunan juga ingin diambil.</p>
+                                        </div>
+                                    @else
+                                        <div class="grid gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Content Type</label>
+                                                <select wire:model="instagram_results_type" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                                    <option value="posts">Scrape posts</option>
+                                                    <option value="reels">Scrape reels</option>
+                                                </select>
+                                                @error('instagram_results_type') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                            </div>
+                                            <div>
+                                                <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Maximum posts or reels per hashtag</label>
+                                                <input wire:model="defaultLimit" type="number" min="1" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                                <p class="mt-1 text-[10px] text-slate-400">Disimpan sebagai <span class="font-mono">resultsLimit</span> untuk actor hashtag Instagram.</p>
+                                                @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                            </div>
+                                        </div>
+                                        <div class="rounded-xl border border-pink-100 bg-white/80 p-3 text-[11px] text-slate-600 space-y-1">
+                                            <p class="font-bold text-pink-700">Aturan isi Instagram Hashtag Scraper:</p>
+                                            <p><span class="font-mono">hashtags</span> diisi sistem dari keyword proyek atau default hashtag cadangan.</p>
+                                            <p><span class="font-mono">resultsType</span> menentukan apakah ambil posts atau reels.</p>
+                                            <p><span class="font-mono">resultsLimit</span> adalah batas hasil per hashtag.</p>
+                                        </div>
+                                    @endif
                                 </div>
-                            </div>
+                            </details>
                         @elseif($platform === 'TikTok')
                             <details open class="rounded-2xl border border-slate-200 bg-white">
                                 <summary class="cursor-pointer list-none px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -424,13 +528,37 @@
                                 <div class="border-t border-slate-100 bg-emerald-50/30 p-4 space-y-4 rounded-b-2xl">
                                     <div class="grid gap-4 sm:grid-cols-2">
                                         <div>
-                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Default Keyword (Opsional)</label>
-                                            <input wire:model="defaultKeyword" placeholder="Contoh: indonesia" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Pilih Actor TikTok</label>
+                                            <select wire:model="actorSlug" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
+                                                @forelse($tiktokActors as $definition)
+                                                    <option value="{{ $definition['actor_slug'] }}">
+                                                        {{ $definition['actor_name'] }} — {{ $definition['function_type'] }}
+                                                    </option>
+                                                @empty
+                                                    <option value="">TikTok Actor tidak ditemukan</option>
+                                                @endforelse
+                                            </select>
+                                            @error('actorSlug') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">
+                                                {{ $isTikTokCommentsActor ? 'Default Video URL (Opsional)' : 'Default Keyword (Opsional)' }}
+                                            </label>
+                                            <input
+                                                wire:model="defaultKeyword"
+                                                placeholder="{{ $isTikTokCommentsActor ? 'Contoh: https://www.tiktok.com/@user/video/1234567890' : 'Contoh: indonesia' }}"
+                                                type="text"
+                                                class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm"
+                                            >
                                             @error('defaultKeyword') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                         </div>
-                                        <div class="rounded-xl border border-emerald-100 bg-white px-3.5 py-3 text-[11px] text-slate-600 shadow-sm">
+                                        <div class="rounded-xl border border-emerald-100 bg-white px-3.5 py-3 text-[11px] text-slate-600 shadow-sm sm:col-span-2">
                                             <p class="font-bold text-emerald-700">Catatan TikTok</p>
-                                            <p class="mt-1">Opsi run tambahan mengikuti pengaturan umum di atas dan tidak perlu diatur ulang di sini.</p>
+                                            @if($isTikTokCommentsActor)
+                                                <p class="mt-1">Mode komentar memakai URL video pada <span class="font-semibold text-slate-800">postURLs</span> dan batas komentar per video pada <span class="font-semibold text-slate-800">commentsPerPost</span>.</p>
+                                            @else
+                                                <p class="mt-1">Mode hashtag memakai daftar kata kunci pada <span class="font-semibold text-slate-800">hashtags</span> dan batas hasil pada <span class="font-semibold text-slate-800">maxItems</span>.</p>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -457,6 +585,19 @@
                                 </div>
                             </details>
                         @endif
+
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Preview Payload Aktif</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">JSON ini mengikuti actor dan field yang sedang dipilih.</p>
+                                </div>
+                                <span class="inline-flex items-center rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-200">
+                                    {{ $platform }}{{ $platform === 'TikTok' && str_contains(strtolower((string) $actorSlug), 'tiktok-comments-scraper') ? ' · Comments' : '' }}
+                                </span>
+                            </div>
+                            <pre class="max-h-64 overflow-auto rounded-xl bg-slate-900 px-4 py-3 text-[11px] leading-relaxed text-slate-100 font-mono shadow-inner whitespace-pre-wrap break-words">{{ $this->previewActorPayloadJson() }}</pre>
+                        </div>
 
                         </div>
                     </div>
@@ -550,6 +691,12 @@
 
     <!-- Test Run Modal -->
     @if($showTestModal)
+        @php
+            $testingActor = $testingActorId ? $actors->firstWhere('id', $testingActorId) : null;
+            $isTestingTikTokComments = $testingActor
+                && $testingActor->platform === 'TikTok'
+                && str_contains(strtolower((string) $testingActor->actor_slug), 'tiktok-comments-scraper');
+        @endphp
         <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
             <div class="w-full max-w-lg overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain">
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
@@ -564,8 +711,15 @@
                 
                 <form wire:submit.prevent="runTest" class="p-6 space-y-4">
                     <div>
-                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Keyword Uji</label>
-                        <input wire:model="testKeyword" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                        <label class="mb-1.5 block text-xs font-bold text-slate-700">
+                            {{ $isTestingTikTokComments ? 'Video URL Uji' : 'Keyword Uji' }}
+                        </label>
+                        <input
+                            wire:model="testKeyword"
+                            type="text"
+                            placeholder="{{ $isTestingTikTokComments ? 'Contoh: https://www.tiktok.com/@user/video/1234567890' : 'Contoh: wagub kaltim' }}"
+                            class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition"
+                        >
                         @error('testKeyword') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                     </div>
 

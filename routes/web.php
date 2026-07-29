@@ -118,6 +118,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/apify', function () {
         return view('admin.apify');
     })->middleware('admin')->name('admin.apify');
+    Route::get('/admin/packages', function () {
+        return view('admin.packages');
+    })->middleware('admin')->name('admin.packages');
     Route::get('/admin/ai-providers', function () {
         return view('admin.ai-providers');
     })->middleware('admin')->name('admin.ai-providers');

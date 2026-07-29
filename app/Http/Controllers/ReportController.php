@@ -432,7 +432,7 @@ class ReportController extends Controller
         ]);
         $sheet->getRowDimension(2)->setRowHeight(24);
 
-        $period = $startDate && $endDate ? "{$startDate} s/d {$endDate}" : 'Semua Data';
+        $period = $startDate && $endDate ? Carbon::parse($startDate)->format('d/m/Y') . ' s/d ' . Carbon::parse($endDate)->format('d/m/Y') : 'Semua Data';
         $sheet->mergeCells('A3:F3');
         $sheet->setCellValue('A3', "Periode: {$period}   |   Dibuat: " . now()->format('d/m/Y H:i'));
         $sheet->getStyle('A3')->applyFromArray([

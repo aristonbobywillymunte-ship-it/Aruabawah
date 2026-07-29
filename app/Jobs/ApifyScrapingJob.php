@@ -297,6 +297,12 @@ class ApifyScrapingJob implements ShouldQueue
         }
 
         $maximumCostPerRun = (float) ($actor->maximum_cost_per_run_usd ?? 0);
+        if ($project && $project->package) {
+            $effectiveCost = $project->package->getEffectiveCostForActor($actor);
+            if ($effectiveCost !== null) {
+                $maximumCostPerRun = (float) $effectiveCost;
+            }
+        }
         if ($maximumCostPerRun > 0) {
             $runQuery['maxTotalChargeUsd'] = round($maximumCostPerRun, 4);
         }
@@ -948,7 +954,9 @@ class ApifyScrapingJob implements ShouldQueue
         return match ($platform) {
             'Facebook' => ['maxPosts', isset($input['maxPosts']) ? (int) $input['maxPosts'] : null],
             'Instagram' => ['resultsLimit', isset($input['resultsLimit']) ? (int) $input['resultsLimit'] : null],
-            'TikTok' => ['maxItems', isset($input['maxItems']) ? (int) $input['maxItems'] : null],
+            'TikTok' => isset($input['commentsPerPost'])
+                ? ['commentsPerPost', (int) $input['commentsPerPost']]
+                : ['maxItems', isset($input['maxItems']) ? (int) $input['maxItems'] : null],
             default => ['limit', null],
         };
     }

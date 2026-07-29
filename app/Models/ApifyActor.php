@@ -135,6 +135,10 @@ class ApifyActor extends Model
         }
 
         if ($this->platform === 'TikTok') {
+            if ($this->isTikTokCommentsActor()) {
+                return $this->buildTikTokCommentsInputPayload($keyword, $keywords, $resolvedLimit, $dateFrom, $dateTo);
+            }
+
             return $this->buildTikTokInputPayload($keyword, $keywords, $resolvedLimit, $dateFrom, $dateTo);
         }
 
@@ -143,6 +147,10 @@ class ApifyActor extends Model
         }
 
         if ($this->platform === 'Instagram') {
+            if ($this->isInstagramCommentsActor()) {
+                return $this->buildInstagramCommentsInputPayload($keyword, $keywords, $resolvedLimit, $dateFrom, $dateTo);
+            }
+
             return $this->buildInstagramInputPayload($keyword, $keywords, $resolvedLimit, $dateFrom, $dateTo);
         }
 
@@ -246,6 +254,40 @@ class ApifyActor extends Model
         ];
     }
 
+    protected function buildInstagramCommentsInputPayload(?string $keyword, ?array $keywords, int $limit, ?string $dateFrom = null, ?string $dateTo = null): array
+    {
+        $directUrls = array_values(array_filter(array_map(
+            fn ($value) => $this->normalizeInstagramDirectUrl((string) $value),
+            $keywords ?? [$keyword]
+        )));
+
+        if ($directUrls === []) {
+            $directUrls = array_values(array_filter([
+                $this->normalizeInstagramDirectUrl((string) ($keyword ?: $this->default_keyword)),
+            ]));
+        }
+
+        $config = [];
+        if (filled($this->output_mapping)) {
+            $decoded = json_decode($this->output_mapping, true);
+            if (is_array($decoded)) {
+                $config = $decoded;
+            }
+        }
+
+        $configuredResultsLimit = data_get($config, 'resultsLimit', null);
+        $resolvedResultsLimit = (int) $configuredResultsLimit;
+        if ($resolvedResultsLimit < 1 || str_contains((string) $configuredResultsLimit, '{limit}')) {
+            $resolvedResultsLimit = (int) ($this->default_limit ?? $limit);
+        }
+
+        return [
+            'directUrls' => $directUrls,
+            'resultsLimit' => max(1, $resolvedResultsLimit),
+            'includeNestedComments' => (bool) data_get($config, 'includeNestedComments', false),
+        ];
+    }
+
     protected function buildTikTokInputPayload(?string $keyword, ?array $keywords, int $limit, ?string $dateFrom = null, ?string $dateTo = null): array
     {
         $keywords = array_values(array_filter(array_map(
@@ -268,6 +310,33 @@ class ApifyActor extends Model
             'extendOutputFunction' => '($) => { return {} }',
             'maxItems' => $configuredTotalLimit,
             'hashtags' => $keywords,
+            'proxyConfiguration' => [
+                'useApifyProxy' => true,
+            ],
+        ];
+    }
+
+    protected function buildTikTokCommentsInputPayload(?string $keyword, ?array $keywords, int $limit, ?string $dateFrom = null, ?string $dateTo = null): array
+    {
+        $postUrls = array_values(array_filter(array_map(
+            fn ($value) => $this->normalizeTikTokCommentUrl((string) $value),
+            $keywords ?? [$keyword]
+        )));
+
+        if ($postUrls === []) {
+            $postUrls = array_values(array_filter([
+                $this->normalizeTikTokCommentUrl((string) ($keyword ?: $this->default_keyword)),
+            ]));
+        }
+
+        $configuredCommentsPerPost = (int) ($this->default_limit ?? $limit);
+        if ($configuredCommentsPerPost < 1) {
+            $configuredCommentsPerPost = max(1, $limit);
+        }
+
+        return [
+            'postURLs' => $postUrls,
+            'commentsPerPost' => $configuredCommentsPerPost,
             'proxyConfiguration' => [
                 'useApifyProxy' => true,
             ],
@@ -299,6 +368,53 @@ class ApifyActor extends Model
         return $this->normalizeInstagramPayloadHashtag($value);
     }
 
+    protected function normalizeTikTokCommentUrl(string $value): string
+    {
+        $value = trim($value);
+        $value = trim($value, " \t\n\r\0\x0B\"'`");
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (! preg_match('~^https?://~i', $value)) {
+            return '';
+        }
+
+        if (! filter_var($value, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $host = parse_url($value, PHP_URL_HOST);
+        if (! is_string($host) || $host === '') {
+            return '';
+        }
+
+        if (! str_contains(Str::lower($host), 'tiktok.com')) {
+            return '';
+        }
+
+        return $value;
+    }
+
+    protected function isTikTokCommentsActor(): bool
+    {
+        return $this->platform === 'TikTok'
+            && (
+                Str::contains(Str::lower((string) $this->actor_slug), 'tiktok-comments-scraper')
+                || Str::lower((string) $this->function_type) === 'comment scraper'
+            );
+    }
+
+    protected function isInstagramCommentsActor(): bool
+    {
+        return $this->platform === 'Instagram'
+            && (
+                Str::contains(Str::lower((string) $this->actor_slug), 'instagram-comment-scraper')
+                || Str::lower((string) $this->function_type) === 'comment scraper'
+            );
+    }
+
     protected function sanitizeInstagramHashtag(string $value): string
     {
         return $this->normalizeInstagramPayloadHashtag($value);
@@ -318,6 +434,41 @@ class ApifyActor extends Model
     protected function normalizeInstagramPayloadHashtag(string $value): string
     {
         return $this->normalizeInstagramSearchKeyword($value);
+    }
+
+    protected function normalizeInstagramDirectUrl(string $value): string
+    {
+        $value = trim($value);
+        $value = trim($value, " \t\n\r\0\x0B\"'`");
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (! preg_match('~^https?://~i', $value)) {
+            return '';
+        }
+
+        if (! filter_var($value, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $host = parse_url($value, PHP_URL_HOST);
+        if (! is_string($host) || $host === '') {
+            return '';
+        }
+
+        $normalizedHost = Str::lower($host);
+        if (! str_contains($normalizedHost, 'instagram.com')) {
+            return '';
+        }
+
+        $path = (string) parse_url($value, PHP_URL_PATH);
+        if (! preg_match('~/(p|reel|tv)/[^/]+/?$~i', rtrim($path, '/') . '/')) {
+            return '';
+        }
+
+        return $value;
     }
 
     public function resolveDatePayload(?string $dateFrom = null, ?string $dateTo = null): array
