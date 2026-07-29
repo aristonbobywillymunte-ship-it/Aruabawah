@@ -59,6 +59,24 @@ class ApifyScrapingJob implements ShouldQueue
             if ($actor && $actor->interval_minutes) {
                 $intervalMinutes = max(1, (int) $actor->interval_minutes);
             }
+            
+            $isCommentScraper = $actor && (strtolower((string) $actor->function_type) === 'comment scraper');
+            if ($isCommentScraper) {
+                $candidateCount = \App\Models\SocialMediaItem::where('project_id', $projectId)
+                    ->where('platform', $platform)
+                    ->whereNotNull('post_url')
+                    ->where('post_url', 'like', '%tiktok.com/@%')
+                    ->where('post_url', 'like', '%/video/%')
+                    ->get(['post_url'])
+                    ->filter(function ($item) {
+                        $urlHash = md5((string) $item->post_url);
+                        return !\Illuminate\Support\Facades\Cache::has('comments_scraped_for_post:' . $urlHash)
+                            && !\Illuminate\Support\Facades\Cache::has('comments_scraping_in_progress:' . $urlHash);
+                    })->count();
+                if ($candidateCount > 0) {
+                    $forceDispatch = true;
+                }
+            }
         }
 
         // Calculate the start of the current interval window to allow execution once per interval period
@@ -963,13 +981,22 @@ class ApifyScrapingJob implements ShouldQueue
             }
 
             if ($hasMoreQueue) {
-                Log::info("[Apify] Antrean komentar masih ada untuk project={$projectId}. Memicu siklus scraping berikutnya secara instan.");
-                \Illuminate\Support\Facades\Artisan::queue('scraping:run-apify', [
-                    '--platform' => $platform,
-                    '--project-id' => $projectId,
-                    '--force-dispatch' => true,
-                    '--no-telegram' => $suppressTelegram,
-                ]);
+                // PROTEKSI: Cek apakah sudah ada job comment scraper lain yang sedang aktif
+                $activeCommentScrapersCount = \App\Models\ApifyDispatchState::whereIn('status', ['queued', 'processing'])
+                    ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')->pluck('id'))
+                    ->count();
+
+                if ($activeCommentScrapersCount > 0) {
+                    Log::info("[Apify] Pemicuan antrean instan dilewati karena masih ada job comment scraper lain yang aktif di worker.");
+                } else {
+                    Log::info("[Apify] Antrean komentar masih ada untuk project={$projectId}. Memicu siklus scraping berikutnya secara instan.");
+                    \Illuminate\Support\Facades\Artisan::queue('scraping:run-apify', [
+                        '--platform' => $platform,
+                        '--project-id' => $projectId,
+                        '--force-dispatch' => true,
+                        '--no-telegram' => $suppressTelegram,
+                    ]);
+                }
             }
         }
     }

@@ -296,6 +296,22 @@ class RunApifyScraping extends Command
                             ->orderBy('id', 'desc')
                             ->get(['id', 'post_url']);
 
+                        // PROTEKSI: Jangan kirim ke Apify jika masih ada job comment scraper lain yang sedang aktif
+                        $activeCommentScrapersCount = \App\Models\ApifyDispatchState::whereIn('status', ['queued', 'processing'])
+                            ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')->pluck('id'))
+                            ->count();
+
+                        if ($activeCommentScrapersCount > 0) {
+                            $this->line("Skipping Comment Scraper: [{$actor->platform}] project={$project->name} — masih ada job comment scraper aktif di worker.");
+                            $socialLog->info('[Social] Comment Scraper skipped: another comment scraper job is active.', [
+                                'project_id'   => $project->id,
+                                'project_name' => $project->name,
+                                'platform'     => $actor->platform,
+                                'actor_id'     => $actor->id,
+                            ]);
+                            continue;
+                        }
+
                         // Filter: ambil URL yang belum ditandai "selesai" DAN belum "dalam proses"
                         $unprocessedUrls = [];
                         foreach ($candidateItems as $candidateItem) {

@@ -40,4 +40,9 @@ class ApifyDispatchState extends Model
     {
         return $this->belongsTo(Project::class);
     }
+
+    public function actor()
+    {
+        return $this->belongsTo(ApifyActor::class);
+    }
 }
