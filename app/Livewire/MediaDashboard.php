@@ -1110,22 +1110,26 @@ class MediaDashboard extends Component
         }
         $candidateUrls = array_values(array_filter(array_unique($candidateUrls)));
 
+        $matches = collect();
+
         foreach ($candidateUrls as $candidateUrl) {
             if ($candidateUrl === '') {
                 continue;
             }
 
-            $directMatch = SocialMediaItem::query()
+            $directMatches = SocialMediaItem::query()
                 ->where('post_url', $candidateUrl)
-                ->first();
+                ->get();
 
-            if ($directMatch instanceof SocialMediaItem) {
-                return $directMatch;
+            foreach ($directMatches as $directMatch) {
+                if ($directMatch instanceof SocialMediaItem) {
+                    $matches->push($directMatch);
+                }
             }
 
             $cached = $this->socialMediaItemsCache->get($candidateUrl);
             if ($cached instanceof SocialMediaItem) {
-                return $cached;
+                $matches->push($cached);
             }
         }
 
@@ -1135,11 +1139,25 @@ class MediaDashboard extends Component
             }
 
             if (in_array(trim((string) $cachedItem->post_url), $candidateUrls, true)) {
-                return $cachedItem;
+                $matches->push($cachedItem);
             }
         }
 
-        return null;
+        return $matches
+            ->unique('id')
+            ->sortByDesc(function (SocialMediaItem $item) {
+                $payload = $this->decodeSocialPayload($item->raw_json);
+                $comments = data_get($payload, 'comments');
+                $hasStoredComments = is_array($comments) && count($comments) > 0;
+
+                return sprintf(
+                    '%d-%010d-%010d',
+                    $hasStoredComments ? 1 : 0,
+                    (int) ($item->comment_count ?? 0),
+                    (int) $item->id
+                );
+            })
+            ->first();
     }
 
     protected function decodeSocialPayload(mixed $rawJson): array

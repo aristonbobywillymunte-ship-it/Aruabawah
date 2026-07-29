@@ -34,6 +34,20 @@ class ApifyScrapingJob implements ShouldQueue
         $this->queue = 'apify';
     }
 
+    protected function socialPostUrlVariants(string $postUrl): array
+    {
+        $trimmed = trim($postUrl);
+        if ($trimmed === '') {
+            return [];
+        }
+
+        return array_values(array_unique([
+            $trimmed,
+            rtrim($trimmed, '/'),
+            rtrim($trimmed, '/') . '/',
+        ]));
+    }
+
     public static function dispatchSafely(array $params, int $staleAfterMinutes = 30): bool
     {
         $platform = (string) ($params['platform'] ?? '');
@@ -796,11 +810,11 @@ class ApifyScrapingJob implements ShouldQueue
                     continue;
                 }
 
-                $mainPost = SocialMediaItem::where(function($q) use ($postUrl) {
-                    $q->where('post_url', $postUrl)
-                      ->orWhere('post_url', rtrim($postUrl, '/'))
-                      ->orWhere('post_url', rtrim($postUrl, '/') . '/');
-                })->first();
+                $postUrlVariants = $this->socialPostUrlVariants($postUrl);
+                $mainPost = SocialMediaItem::whereIn('post_url', $postUrlVariants)
+                    ->orderByDesc('comment_count')
+                    ->orderByDesc('id')
+                    ->first();
                 if ($mainPost) {
                     $rawJsonDecoded = json_decode($mainPost->raw_json, true) ?: [];
 
@@ -822,15 +836,27 @@ class ApifyScrapingJob implements ShouldQueue
                         $rawJsonDecoded['comments'][] = $item;
                     }
 
+                    $updatedPayload = json_encode($rawJsonDecoded);
+                    $updatedCommentCount = count($rawJsonDecoded['comments']);
+
                     $mainPost->update([
-                        'raw_json' => json_encode($rawJsonDecoded),
-                        'comment_count' => count($rawJsonDecoded['comments'])
+                        'raw_json' => $updatedPayload,
+                        'comment_count' => $updatedCommentCount
                     ]);
+
+                    SocialMediaItem::whereIn('post_url', $postUrlVariants)
+                        ->whereKeyNot($mainPost->id)
+                        ->update([
+                            'raw_json' => $updatedPayload,
+                            'comment_count' => $updatedCommentCount,
+                        ]);
+
+                    $mainPost->refresh();
 
                     Log::info("[Apify] Komentar berhasil ditambahkan ke postingan utama.", [
                         'post_url' => $postUrl,
                         'comment_id' => $commentId,
-                        'total_comments' => count($rawJsonDecoded['comments'])
+                        'total_comments' => $updatedCommentCount
                     ]);
 
                     $saved++;
@@ -841,7 +867,7 @@ class ApifyScrapingJob implements ShouldQueue
                         'comments' => [$item]
                     ];
 
-                    SocialMediaItem::create([
+                    $mainPost = SocialMediaItem::create([
                         'project_id'    => $projectId ?: null,
                         'platform'       => $platform,
                         'author_name'    => $author,
@@ -855,6 +881,14 @@ class ApifyScrapingJob implements ShouldQueue
                         'follower_count' => 0,
                         'raw_json'       => json_encode($rawJsonDecoded),
                     ]);
+
+                    SocialMediaItem::whereIn('post_url', $postUrlVariants)
+                        ->whereKeyNot($mainPost->id)
+                        ->update([
+                            'raw_json' => json_encode($rawJsonDecoded),
+                            'comment_count' => 1,
+                        ]);
+
                     $saved++;
                 }
 
