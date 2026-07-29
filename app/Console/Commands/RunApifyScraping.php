@@ -190,7 +190,9 @@ class RunApifyScraping extends Command
                 $hasQueue = false;
                 if ($isCommentScraper) {
                     $platformLower = strtolower((string) $actor->platform);
-                    $preCheckQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
+                    $preCheckQuery = \App\Models\SocialMediaItem::where(function($q) use ($project) {
+                            $q->where('project_id', $project->id)->orWhereNull('project_id');
+                        })
                         ->where('platform', $actor->platform)
                         ->whereNotNull('post_url');
 
@@ -321,12 +323,22 @@ class RunApifyScraping extends Command
                             })
                             ->filter()
                             ->unique()
+                            ->flatMap(function($url) {
+                                return [
+                                    $url,
+                                    rtrim($url, '/'),
+                                    rtrim($url, '/') . '/'
+                                ];
+                            })
+                            ->unique()
                             ->values()
                             ->toArray();
 
                         // Ambil semua postingan dari proyek aktif ini,
                         // hanya yang URL-nya valid dan tampil di Penyebutan
-                        $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
+                        $candidateQuery = \App\Models\SocialMediaItem::where(function($q) use ($project) {
+                                $q->where('project_id', $project->id)->orWhereNull('project_id');
+                            })
                             ->where('platform', $actor->platform)
                             ->whereNotNull('post_url');
 

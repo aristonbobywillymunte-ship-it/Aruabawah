@@ -1095,10 +1095,20 @@ class MediaDashboard extends Component
             }
         }
 
-        $candidateUrls = array_values(array_filter(array_unique([
+        $rawCandidateUrls = array_values(array_filter(array_unique([
             trim((string) ($article->canonical_url ?? '')),
             trim((string) ($article->url ?? '')),
         ])));
+
+        $candidateUrls = [];
+        foreach ($rawCandidateUrls as $url) {
+            if ($url !== '') {
+                $candidateUrls[] = $url;
+                $candidateUrls[] = rtrim($url, '/');
+                $candidateUrls[] = $url . '/';
+            }
+        }
+        $candidateUrls = array_values(array_filter(array_unique($candidateUrls)));
 
         foreach ($candidateUrls as $candidateUrl) {
             if ($candidateUrl === '') {

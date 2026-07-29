@@ -62,11 +62,23 @@ class ApifyScrapingJob implements ShouldQueue
             
             $isCommentScraper = $actor && (strtolower((string) $actor->function_type) === 'comment scraper');
             if ($isCommentScraper) {
-                $candidateCount = \App\Models\SocialMediaItem::where('project_id', $projectId)
+                $platformLower = strtolower($platform);
+                $preCheckQuery = \App\Models\SocialMediaItem::where(function($q) use ($projectId) {
+                        $q->where('project_id', $projectId)->orWhereNull('project_id');
+                    })
                     ->where('platform', $platform)
-                    ->whereNotNull('post_url')
-                    ->where('post_url', 'like', '%tiktok.com/@%')
-                    ->where('post_url', 'like', '%/video/%')
+                    ->whereNotNull('post_url');
+
+                if ($platformLower === 'tiktok') {
+                    $preCheckQuery = $preCheckQuery
+                        ->where('post_url', 'like', '%tiktok.com/@%')
+                        ->where('post_url', 'like', '%/video/%');
+                } elseif ($platformLower === 'instagram') {
+                    $preCheckQuery = $preCheckQuery
+                        ->where('post_url', 'like', '%instagram.com/%');
+                }
+
+                $candidateCount = $preCheckQuery
                     ->get(['post_url'])
                     ->filter(function ($item) {
                         $urlHash = md5((string) $item->post_url);
@@ -965,7 +977,20 @@ class ApifyScrapingJob implements ShouldQueue
             foreach ($keywords as $url) {
                 if (filled($url)) {
                     $urlHash = md5((string) $url);
-                    Cache::forever('comments_scraped_for_post:' . $urlHash, true);
+                    $mainPost = \App\Models\SocialMediaItem::where('post_url', $url)->first();
+                    $actualCommentsCount = 0;
+                    if ($mainPost) {
+                        $rawJsonDecoded = json_decode($mainPost->raw_json, true) ?: [];
+                        $savedComments = $rawJsonDecoded['comments'] ?? [];
+                        $actualCommentsCount = count($savedComments);
+                    }
+
+                    // Hanya tandai selesai (forever) jika berhasil menarik minimal 1 komentar
+                    // ATAU jika postingan tersebut memang tercatat memiliki 0 komentar di metrik utamanya.
+                    $targetCommentCount = $mainPost ? (int) $mainPost->comment_count : 0;
+                    if ($actualCommentsCount > 0 || $targetCommentCount === 0) {
+                        Cache::forever('comments_scraped_for_post:' . $urlHash, true);
+                    }
                     Cache::forget('comments_scraping_in_progress:' . $urlHash);
                 }
             }
@@ -984,29 +1009,60 @@ class ApifyScrapingJob implements ShouldQueue
         if (strtolower((string) $actor->function_type) === 'comment scraper') {
             $hasMoreQueue = false;
             if ($projectId) {
-                // Ambil URL artikel TikTok dari "Penyebutan"
-                $articleUrls = \App\Models\Article::query()
+                $platformLower = strtolower($platform);
+                $articleUrlsQuery = \App\Models\Article::query()
                     ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
-                    ->where('project_articles.project_id', $projectId)
-                    ->where(function ($q) {
+                    ->where('project_articles.project_id', $projectId);
+
+                if ($platformLower === 'tiktok') {
+                    $articleUrlsQuery->where(function ($q) {
                         $q->where('articles.source_name', 'like', '%tiktok%')
                           ->orWhere('articles.url', 'like', '%tiktok.com%');
-                    })
+                    });
+                } elseif ($platformLower === 'instagram') {
+                    $articleUrlsQuery->where(function ($q) {
+                        $q->where('articles.source_name', 'like', '%instagram%')
+                          ->orWhere('articles.url', 'like', '%instagram.com%');
+                    });
+                }
+
+                $articleUrls = $articleUrlsQuery
                     ->get(['articles.url', 'articles.canonical_url'])
                     ->flatMap(function($article) {
                         return [$article->url, $article->canonical_url];
                     })
                     ->filter()
                     ->unique()
+                    ->flatMap(function($url) {
+                        return [
+                            $url,
+                            rtrim($url, '/'),
+                            rtrim($url, '/') . '/'
+                        ];
+                    })
+                    ->unique()
                     ->values()
                     ->toArray();
 
-                $candidateItems = \App\Models\SocialMediaItem::where('project_id', $projectId)
+                $candidateQuery = \App\Models\SocialMediaItem::where(function($q) use ($projectId) {
+                        $q->where('project_id', $projectId)->orWhereNull('project_id');
+                    })
                     ->where('platform', $platform)
-                    ->whereNotNull('post_url')
-                    ->where('post_url', 'like', '%tiktok.com/@%')
-                    ->where('post_url', 'like', '%/video/%')
+                    ->whereNotNull('post_url');
+
+                if ($platformLower === 'tiktok') {
+                    $candidateQuery = $candidateQuery
+                        ->where('post_url', 'like', '%tiktok.com/@%')
+                        ->where('post_url', 'like', '%/video/%');
+                } elseif ($platformLower === 'instagram') {
+                    $candidateQuery = $candidateQuery
+                        ->where('post_url', 'like', '%instagram.com/%');
+                }
+
+                $candidateItems = $candidateQuery
                     ->whereIn('post_url', $articleUrls)
+                    ->orderBy('posted_at', 'desc')
+                    ->orderBy('id', 'desc')
                     ->get(['post_url']);
 
                 foreach ($candidateItems as $candidateItem) {

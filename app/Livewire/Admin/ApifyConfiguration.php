@@ -53,6 +53,10 @@ class ApifyConfiguration extends Component
     public string $range_mode = '7d';
     public int $priority = 1;
 
+    protected $listeners = [
+        'testConnection' => 'testConnection'
+    ];
+
     public bool $showTestModal = false;
     public ?int $testingActorId = null;
     public string $testKeyword = '';
