@@ -215,8 +215,9 @@ class RunApifyScraping extends Command
                     $hasQueue = ($candidateCount > 0);
                 }
 
-                // Check if interval has passed since the last run for this project + platform (Bypass if comment scraper has queue)
-                if ($lastProjectActorRunAt && $actor->interval_minutes && !$hasQueue) {
+                // Comment scraper must keep checking the queue every scheduler tick.
+                // Do not block it behind the long actor interval when the queue is empty.
+                if (! $isCommentScraper && $lastProjectActorRunAt && $actor->interval_minutes && !$hasQueue) {
                     $nextRunAt = $lastProjectActorRunAt->copy()->addMinutes($actor->interval_minutes);
                     if (now()->lessThan($nextRunAt) && !$filterPlatform) {
                         $this->line("Skipping {$actor->platform} — next run at {$nextRunAt->format('H:i')}");

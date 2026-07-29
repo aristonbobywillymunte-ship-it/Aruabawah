@@ -14,10 +14,12 @@ use App\Models\Article;
 use App\Models\Project;
 use App\Models\SocialMediaItem;
 use App\Models\TelegramSetting;
+use App\Services\SocialProjectScrapePriorityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Mockery;
 use Tests\TestCase;
 
 class SocialMediaPipelineTest extends TestCase
@@ -494,5 +496,200 @@ class SocialMediaPipelineTest extends TestCase
         $component->assertHasNoErrors();
         $savedActor = ApifyActor::where('actor_slug', 'scrapeflow/facebook-posts-search-scraper')->latest('id')->first();
         $this->assertEquals(20, $savedActor->default_limit);
+    }
+
+    public function test_instagram_comment_scraper_keeps_empty_text_comments()
+    {
+        Queue::fake();
+
+        ApifyActor::create([
+            'platform' => 'Instagram',
+            'actor_name' => 'Instagram Comment Scraper',
+            'actor_slug' => 'apify/instagram-comment-scraper',
+            'status' => 'active',
+            'priority' => 2,
+            'default_limit' => 20,
+            'interval_minutes' => 20,
+            'function_type' => 'Comment Scraper',
+            'output_mapping' => json_encode([
+                'directUrls' => ['{keyword}'],
+                'resultsLimit' => '{limit}',
+                'includeNestedComments' => false,
+            ]),
+        ]);
+
+        $project = Project::create([
+            'name' => 'Project Wagub',
+            'topics' => ['wagub kaltim'],
+            'is_active' => true,
+        ]);
+
+        SocialMediaItem::create([
+            'project_id' => $project->id,
+            'platform' => 'Instagram',
+            'post_url' => 'https://www.instagram.com/p/DbGTkCqpJWI',
+            'author_name' => 'akun_uji',
+            'author_url' => 'https://www.instagram.com/akun_uji',
+            'content' => 'Posting utama Instagram',
+            'posted_at' => now(),
+            'raw_json' => json_encode([
+                'post_url' => 'https://www.instagram.com/p/DbGTkCqpJWI',
+            ]),
+        ]);
+
+        Http::fake([
+            'https://api.apify.com/v2/acts/*' => Http::response([
+                'data' => [
+                    'id' => 'run-comment-1',
+                    'defaultDatasetId' => 'ds-comment-1',
+                ],
+            ], 200),
+            'https://api.apify.com/v2/actor-runs/*' => Http::response([
+                'data' => ['status' => 'SUCCEEDED'],
+            ], 200),
+            'https://api.apify.com/v2/datasets/ds-comment-1/items*' => Http::response([
+                [
+                    'url' => 'https://www.instagram.com/p/DbGTkCqpJWI',
+                    'id' => 'comment-1',
+                    'text' => '',
+                    'username' => 'komentator_a',
+                ],
+            ], 200),
+        ]);
+
+        $job = new ApifyScrapingJob([
+            'platform' => 'Instagram',
+            'keyword' => 'https://www.instagram.com/p/DbGTkCqpJWI',
+            'keywords' => ['https://www.instagram.com/p/DbGTkCqpJWI'],
+            'project_id' => $project->id,
+            'actor_id' => ApifyActor::where('actor_slug', 'apify/instagram-comment-scraper')->value('id'),
+            'limit' => 5,
+        ]);
+        $job->handle();
+
+        $item = SocialMediaItem::where('post_url', 'https://www.instagram.com/p/DbGTkCqpJWI')->firstOrFail();
+        $rawJson = json_decode((string) $item->raw_json, true);
+
+        $this->assertEquals(1, $item->comment_count);
+        $this->assertCount(1, $rawJson['comments'] ?? []);
+        $this->assertSame('comment-1', $rawJson['comments'][0]['id'] ?? null);
+        Queue::assertNotPushed(AiAnalysisJob::class);
+    }
+
+    public function test_instagram_search_post_keeps_items_older_than_seven_days()
+    {
+        Queue::fake();
+
+        $actor = ApifyActor::create([
+            'platform' => 'Instagram',
+            'actor_name' => 'Instagram Search Posts Alt',
+            'actor_slug' => 'custom/instagram-post-search',
+            'status' => 'active',
+            'priority' => 3,
+            'default_limit' => 5,
+            'interval_minutes' => 20,
+            'function_type' => 'Search Post',
+            'output_mapping' => json_encode([
+                'resultsType' => 'posts',
+                'resultsLimit' => 5,
+            ]),
+        ]);
+
+        $project = Project::create([
+            'name' => 'Project Samarinda',
+            'topics' => ['samarinda'],
+            'is_active' => true,
+        ]);
+
+        Http::fake([
+            'https://api.apify.com/v2/acts/*' => Http::response([
+                'data' => [
+                    'id' => 'run-post-1',
+                    'defaultDatasetId' => 'ds-post-1',
+                ],
+            ], 200),
+            'https://api.apify.com/v2/actor-runs/*' => Http::response([
+                'data' => ['status' => 'SUCCEEDED'],
+            ], 200),
+            'https://api.apify.com/v2/datasets/ds-post-1/items*' => Http::response([
+                [
+                    'url' => 'https://www.instagram.com/p/OLDPOST123',
+                    'caption' => 'Kabar pembangunan Samarinda',
+                    'username' => 'akun_samarinda',
+                    'timestamp' => '2026-07-11T02:23:50+00:00',
+                    'type' => 'image',
+                ],
+            ], 200),
+        ]);
+
+        $job = new ApifyScrapingJob([
+            'platform' => 'Instagram',
+            'keyword' => 'samarinda',
+            'keywords' => ['samarinda'],
+            'project_id' => $project->id,
+            'actor_id' => $actor->id,
+            'limit' => 5,
+        ]);
+        $job->handle();
+
+        $item = SocialMediaItem::where('post_url', 'https://www.instagram.com/p/OLDPOST123')->first();
+
+        $this->assertNotNull($item);
+        $this->assertSame('Instagram', $item->platform);
+        $this->assertSame('Kabar pembangunan Samarinda', $item->content);
+    }
+
+    public function test_comment_scraper_queue_is_checked_even_when_interval_not_due()
+    {
+        Queue::fake();
+
+        $priorityService = Mockery::mock(SocialProjectScrapePriorityService::class);
+        $priorityService->shouldReceive('prioritize')->andReturnUsing(fn ($projects) => $projects);
+        $this->instance(SocialProjectScrapePriorityService::class, $priorityService);
+
+        $project = Project::create([
+            'name' => 'Project Antrean',
+            'topics' => ['samarinda'],
+            'is_active' => true,
+        ]);
+
+        ApifyActor::create([
+            'platform' => 'Instagram',
+            'actor_name' => 'Instagram Comment Scraper',
+            'actor_slug' => 'apify/instagram-comment-scraper',
+            'status' => 'active',
+            'priority' => 1,
+            'default_limit' => 20,
+            'interval_minutes' => 720,
+            'function_type' => 'Comment Scraper',
+            'keyword_field_mapping' => 'directUrls',
+            'output_mapping' => json_encode([
+                'directUrls' => ['{keyword}'],
+                'resultsLimit' => '{limit}',
+                'includeNestedComments' => false,
+            ]),
+        ]);
+
+        DB::table('apify_dispatch_states')->insert([
+            'dispatch_key' => 'recent-instagram-comment-run',
+            'project_id' => $project->id,
+            'actor_id' => ApifyActor::where('actor_slug', 'apify/instagram-comment-scraper')->value('id'),
+            'platform' => 'Instagram',
+            'keyword' => 'recent',
+            'normalized_keyword' => 'recent',
+            'status' => 'success',
+            'queued_at' => now()->subMinutes(2),
+            'started_at' => now()->subMinutes(2),
+            'completed_at' => now()->subMinute(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->artisan('scraping:run-apify', [
+            '--platform' => 'Instagram',
+            '--project-id' => $project->id,
+        ])
+            ->expectsOutputToContain('tidak ada URL baru yang perlu di-scrape komentarnya.')
+            ->assertExitCode(0);
     }
 }

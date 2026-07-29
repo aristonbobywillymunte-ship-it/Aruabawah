@@ -665,29 +665,37 @@ class ApifyScrapingJob implements ShouldQueue
             $views      = $this->normalizeSocialMetric($item['playCount'] ?? $item['view_count'] ?? $item['viewsCount'] ?? $item['viewCount'] ?? $item['views'] ?? 0);
             $followers  = $this->normalizeSocialMetric($item['authorMeta']['fans'] ?? $item['follower_count'] ?? $item['followersCount'] ?? $item['followerCount'] ?? 0);
 
+            $isCommentScraper = (strtolower((string) $actor->function_type) === 'comment scraper');
+
             if ($platform === 'Instagram') {
                 if (empty($postUrl)) {
                     Log::warning("[Apify] Skipped IG item: missing url/post_url");
                     continue;
                 }
 
-                if (empty($content)) {
+                if ($isCommentScraper && trim((string) $content) === '') {
+                    $content = '[Komentar Instagram tanpa teks]';
+                }
+
+                if (! $isCommentScraper && empty($content)) {
                     Log::warning("[Apify] Skipped IG item: missing caption/content");
                     continue;
                 }
 
-                $itemType = strtolower($item['type'] ?? $item['productType'] ?? $item['product_type'] ?? 'post');
-                $allowedTypes = ['post', 'reel', 'clips', 'image', 'video', 'sidecar', 'feed', 'carousel'];
-                $isAllowedType = false;
-                foreach ($allowedTypes as $allowed) {
-                    if (str_contains($itemType, $allowed)) {
-                        $isAllowedType = true;
-                        break;
+                if (! $isCommentScraper) {
+                    $itemType = strtolower($item['type'] ?? $item['productType'] ?? $item['product_type'] ?? 'post');
+                    $allowedTypes = ['post', 'reel', 'clips', 'image', 'video', 'sidecar', 'feed', 'carousel'];
+                    $isAllowedType = false;
+                    foreach ($allowedTypes as $allowed) {
+                        if (str_contains($itemType, $allowed)) {
+                            $isAllowedType = true;
+                            break;
+                        }
                     }
-                }
-                if (!$isAllowedType) {
-                    Log::info("[Apify] Skipped IG item: type '{$itemType}' is not post/reel");
-                    continue;
+                    if (!$isAllowedType) {
+                        Log::info("[Apify] Skipped IG item: type '{$itemType}' is not post/reel");
+                        continue;
+                    }
                 }
 
                 $postedAtCarbon = null;
@@ -712,11 +720,13 @@ class ApifyScrapingJob implements ShouldQueue
                     ]);
                 }
 
-                $isCommentScraper = (strtolower((string) $actor->function_type) === 'comment scraper');
-                $isInstagramHashtagPosts = ($actor->actor_slug === 'apify/instagram-hashtag-scraper' && (($input['resultsType'] ?? '') === 'posts'));
+                $actorFunctionType = strtolower((string) $actor->function_type);
+                $isInstagramPostSearch = $platform === 'Instagram'
+                    && $actorFunctionType === 'search post'
+                    && (($input['resultsType'] ?? 'posts') === 'posts');
 
                 if (
-                    !$isInstagramHashtagPosts
+                    !$isInstagramPostSearch
                     && !$isCommentScraper
                     && $postedAtCarbon
                     && $postedAtCarbon->lessThan(now()->subDays(7)->startOfDay())
@@ -726,8 +736,8 @@ class ApifyScrapingJob implements ShouldQueue
                 }
 
                 $item['_metadata'] = [
-                    'source_mode' => $isInstagramHashtagPosts ? 'instagram_hashtag_posts' : 'posts',
-                    'recency_policy' => $isInstagramHashtagPosts ? 'ignored' : 'enforced',
+                    'source_mode' => $isInstagramPostSearch ? 'instagram_post_search' : 'posts',
+                    'recency_policy' => $isInstagramPostSearch ? 'ignored' : 'enforced',
                     'is_recent_7d' => $postedAtCarbon ? $postedAtCarbon->greaterThanOrEqualTo(now()->subDays(7)->startOfDay()) : false,
                     'keyword' => $keyword,
                 ];
