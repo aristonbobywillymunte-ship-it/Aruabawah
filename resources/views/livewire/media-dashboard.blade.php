@@ -21,6 +21,7 @@
          isMobile: window.innerWidth < 900,
          openMobileMenu: false,
          showTikTokCommentsModal: @entangle('showTikTokCommentsModal').live,
+        showInstagramCommentsModal: @entangle('showInstagramCommentsModal').live,
          reportFeedbackOpen: false,
          reportFeedbackType: 'success',
          reportFeedbackTitle: '',
@@ -34,6 +35,7 @@
              || (typeof detailModalOpen !== 'undefined' && detailModalOpen)
              || (typeof showViralModal !== 'undefined' && showViralModal)
              || (typeof showTikTokCommentsModal !== 'undefined' && showTikTokCommentsModal)
+             || (typeof showInstagramCommentsModal !== 'undefined' && showInstagramCommentsModal)
              || openMobileMenu
              || (typeof reportFeedbackOpen !== 'undefined' && reportFeedbackOpen);
          document.body.style.overflow = shouldLock ? 'hidden' : '';
@@ -827,7 +829,8 @@
                                         </div>
                                     </div>
                                     @php
-                                        $isSocial = $article->category === 'social' || $isFacebook || strtolower($article->source_name) == 'tiktok' || strtolower($article->source_name) == 'instagram' || strtolower($article->source_name) == 'twitter';
+                                        $srcLower = strtolower($article->source_name ?? '');
+                                        $isSocial = $article->category === 'social' || $isFacebook || str_contains($srcLower, 'tiktok') || str_contains($srcLower, 'instagram') || str_contains($srcLower, 'twitter') || str_contains($srcLower, 'facebook') || str_contains($srcLower, 'fb') || str_contains($srcLower, 'ig');
                                         $likesCount = 0;
                                         $commentsCount = 0;
                                         if ($isSocial) {
@@ -839,6 +842,12 @@
                                                 $commentsCount = $socialItem->comment_count ?? 0;
                                             }
                                         }
+                                        $iconColor = match(true) {
+                                            str_contains($srcLower, 'tiktok') => '#1fa387',
+                                            str_contains($srcLower, 'instagram') || str_contains($srcLower, 'ig') => '#c13584',
+                                            str_contains($srcLower, 'facebook') || str_contains($srcLower, 'fb') => '#1877f2',
+                                            default => '#64748b',
+                                        };
                                     @endphp
                                     <!-- Metrics Grid (Cleaned & Modernized) -->
                                     <div class="grid grid-cols-2 sm:grid-cols-3 {{ $isSocial ? 'lg:grid-cols-5' : 'lg:grid-cols-3' }} gap-y-3 gap-x-2 bg-slate-50/60 rounded-2xl p-3 border border-slate-100 mb-4 text-left">
@@ -892,9 +901,9 @@
                                         </div>
                                         @if($isSocial)
                                         <div class="px-1.5 py-0.5 border-l border-slate-200/60">
-                                            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">{{ strtolower($article->source_name) === 'tiktok' ? 'Love' : 'Like' }}</span>
+                                            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">{{ str_contains($srcLower, 'tiktok') ? 'Love' : 'Like' }}</span>
                                             <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                                                <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">{{ strtolower($article->source_name) === 'tiktok' ? 'favorite' : 'thumb_up' }}</span>
+                                                <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">{{ str_contains($srcLower, 'tiktok') ? 'favorite' : 'thumb_up' }}</span>
                                                 <span>{{ number_format($likesCount, 0, ',', '.') }}</span>
                                             </div>
                                         </div>
@@ -910,9 +919,19 @@
                                                     <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">comment</span>
                                                     <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
                                                 </button>
+                                            @elseif($this->isInstagramArticle($article))
+                                                <button
+                                                    type="button"
+                                                    wire:click.prevent="openInstagramCommentsModal({{ $article->id }})"
+                                                    class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#e1306c] transition-colors cursor-pointer"
+                                                    title="Lihat komentar Instagram"
+                                                >
+                                                    <span class="material-symbols-outlined text-[#c13584] text-[14px] md:text-[15px]">comment</span>
+                                                    <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
+                                                </button>
                                             @else
                                                 <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                                                    <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">comment</span>
+                                                    <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor ?? '#64748b' }}">comment</span>
                                                     <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
                                                 </div>
                                             @endif
@@ -5006,6 +5025,118 @@
         </template>
     @endif
 
+
+    @if($showInstagramCommentsModal)
+        @php
+            $instagramCommentsModalMeta = $instagramCommentsModalMeta ?? [];
+            $instagramCommentsModalItems = $instagramCommentsModalItems ?? [];
+        @endphp
+        <template x-teleport="body">
+        <div
+            class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            @keydown.escape.window="$wire.closeInstagramCommentsModal()"
+            @click.self="$wire.closeInstagramCommentsModal()"
+        >
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
+                <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#c13584]">Komentar Instagram</p>
+                        <h3 class="mt-1 text-xl font-black text-slate-900 leading-tight">
+                            {{ $instagramCommentsModalMeta['title'] ?? 'Instagram' }}
+                        </h3>
+                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 font-semibold">
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-50 border border-slate-200 px-3 py-1">
+                                <span class="material-symbols-outlined text-[14px] text-[#c13584]">forum</span>
+                                {{ number_format((int) ($instagramCommentsModalMeta['comment_count'] ?? 0), 0, ',', '.') }} komentar
+                            </span>
+                            @if(!empty($instagramCommentsModalMeta['published_at']))
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-50 border border-slate-200 px-3 py-1">
+                                    <span class="material-symbols-outlined text-[14px] text-[#c13584]">calendar_month</span>
+                                    {{ $instagramCommentsModalMeta['published_at'] }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        wire:click="closeInstagramCommentsModal"
+                        class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
+                        title="Tutup"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+                    <div class="flex flex-col gap-2 text-xs md:text-sm text-slate-600">
+                        <div class="flex flex-wrap gap-x-4 gap-y-1">
+                            <span><span class="font-bold text-slate-800">Sumber:</span> Instagram</span>
+                            @if(!empty($instagramCommentsModalMeta['author_name']))
+                                <span><span class="font-bold text-slate-800">Akun:</span> {{ $instagramCommentsModalMeta['author_name'] }}</span>
+                            @endif
+                        </div>
+                        @if(!empty($instagramCommentsModalMeta['post_url']))
+                            <a href="{{ $instagramCommentsModalMeta['post_url'] }}" target="_blank" class="text-[#c13584] font-bold hover:underline break-all">
+                                {{ $instagramCommentsModalMeta['post_url'] }}
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-6 py-5">
+                    @if(empty($instagramCommentsModalItems))
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                            <span class="material-symbols-outlined text-[30px] text-slate-300">comment</span>
+                            <p class="mt-3 text-sm font-bold text-slate-700">Belum ada daftar komentar yang terbaca.</p>
+                            <p class="mt-1 text-xs text-slate-500">Data komentar bisa saja belum tersimpan di payload Apify, atau struktur responsnya berbeda.</p>
+                        </div>
+                    @else
+                        <div class="space-y-3">
+                            @foreach($instagramCommentsModalItems as $comment)
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                            @if(!empty($comment['avatar_url']))
+                                                <img src="{{ $comment['avatar_url'] }}" alt="{{ $comment['author_name'] }}" class="w-full h-full object-cover">
+                                            @else
+                                                <span class="material-symbols-outlined text-[18px] text-slate-400">person</span>
+                                            @endif
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <p class="font-black text-slate-900 text-sm">{{ $comment['author_name'] ?? 'Pengguna Instagram' }}</p>
+                                                @if(!empty($comment['posted_at']))
+                                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $comment['posted_at'] }}</span>
+                                                @endif
+                                                @if(isset($comment['like_count']))
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 px-2 py-0.5 text-[10px] font-bold">
+                                                        <span class="material-symbols-outlined text-[12px]">favorite</span>
+                                                        {{ number_format((int) $comment['like_count'], 0, ',', '.') }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <p class="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ $comment['content'] ?? '' }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                <div class="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
+                    <button
+                        type="button"
+                        wire:click="closeInstagramCommentsModal"
+                        class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition"
+                    >
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+        </template>
+    @endif
 
     <!-- Global AI PDF Report Generation Modal Overlay -->
     <div wire:loading.flex wire:target="preparePdfReport" class="fixed inset-0 z-[9999] items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">

@@ -236,6 +236,10 @@ class MediaDashboard extends Component
     public array $tikTokCommentsModalMeta = [];
     public array $tikTokCommentsModalItems = [];
 
+    public bool $showInstagramCommentsModal = false;
+    public array $instagramCommentsModalMeta = [];
+    public array $instagramCommentsModalItems = [];
+
     protected function currentUser()
     {
         return auth()->user();
@@ -1008,6 +1012,60 @@ class MediaDashboard extends Component
         $this->tikTokCommentsModalItems = [];
     }
 
+    protected function isInstagramArticle($article): bool
+    {
+        $source = strtolower(trim((string) ($article->source_name ?? '')));
+
+        return $source === 'instagram'
+            || str_contains($source, 'instagram')
+            || str_contains($source, 'ig');
+    }
+
+    public function openInstagramCommentsModal(int $articleId): void
+    {
+        $this->showInstagramCommentsModal = false;
+        $this->instagramCommentsModalMeta = [];
+        $this->instagramCommentsModalItems = [];
+
+        $article = $this->projectArticlesQuery()
+            ->whereKey($articleId)
+            ->first();
+
+        if (! $article) {
+            $article = Article::query()
+                ->with(['aiAnalysisResult'])
+                ->find($articleId);
+        }
+
+        if (! $article || ! $this->isInstagramArticle($article)) {
+            return;
+        }
+
+        $socialItem = $this->resolveSocialMediaItemForArticle($article);
+        $decodedPayload = $socialItem ? $this->decodeSocialPayload($socialItem->raw_json) : [];
+        $comments = $this->extractTikTokComments($decodedPayload);
+
+        $this->instagramCommentsModalMeta = [
+            'article_id' => $article->id,
+            'title' => $this->displayArticleTitle($article),
+            'source_name' => (string) ($article->source_name ?? 'Instagram'),
+            'post_url' => (string) ($socialItem?->post_url ?: $article->canonical_url ?: $article->url ?: ''),
+            'author_name' => (string) ($socialItem?->author_name ?? ''),
+            'published_at' => $article->published_at ? \Carbon\Carbon::parse($article->published_at)->translatedFormat('d M Y, H:i') : 'Baru saja',
+            'comment_count' => (int) ($socialItem?->comment_count ?? 0),
+            'like_count' => (int) ($socialItem?->like_count ?? 0),
+        ];
+        $this->instagramCommentsModalItems = $comments;
+        $this->showInstagramCommentsModal = true;
+    }
+
+    public function closeInstagramCommentsModal(): void
+    {
+        $this->showInstagramCommentsModal = false;
+        $this->instagramCommentsModalMeta = [];
+        $this->instagramCommentsModalItems = [];
+    }
+
     protected function isTikTokArticle($article): bool
     {
         $source = strtolower(trim((string) ($article->source_name ?? '')));
@@ -1155,6 +1213,8 @@ class MediaDashboard extends Component
             'items',
             'list',
             'data',
+            'latestcomments',
+            'latest_comments',
         ], true);
     }
 
@@ -1198,6 +1258,8 @@ class MediaDashboard extends Component
             ?: data_get($item, 'avatar')
             ?: data_get($item, 'avatar_url')
             ?: data_get($item, 'profilePic')
+            ?: data_get($item, 'ownerProfilePicUrl')  // Instagram (apify)
+            ?: data_get($item, 'owner.profilePicUrl') // Instagram nested
             ?: ''
         ));
 
@@ -1213,6 +1275,7 @@ class MediaDashboard extends Component
         $likeCount = (int) (
             data_get($item, 'diggCount')
             ?: data_get($item, 'likeCount')
+            ?: data_get($item, 'likesCount')   // Instagram (apify)
             ?: data_get($item, 'likes')
             ?: data_get($item, 'like_count')
             ?: 0

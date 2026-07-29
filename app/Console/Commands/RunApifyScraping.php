@@ -189,11 +189,21 @@ class RunApifyScraping extends Command
                 $isCommentScraper = (strtolower((string) $actor->function_type) === 'comment scraper');
                 $hasQueue = false;
                 if ($isCommentScraper) {
-                    $candidateCount = \App\Models\SocialMediaItem::where('project_id', $project->id)
+                    $platformLower = strtolower((string) $actor->platform);
+                    $preCheckQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
                         ->where('platform', $actor->platform)
-                        ->whereNotNull('post_url')
-                        ->where('post_url', 'like', '%tiktok.com/@%')
-                        ->where('post_url', 'like', '%/video/%')
+                        ->whereNotNull('post_url');
+
+                    if ($platformLower === 'tiktok') {
+                        $preCheckQuery = $preCheckQuery
+                            ->where('post_url', 'like', '%tiktok.com/@%')
+                            ->where('post_url', 'like', '%/video/%');
+                    } elseif ($platformLower === 'instagram') {
+                        $preCheckQuery = $preCheckQuery
+                            ->where('post_url', 'like', '%instagram.com/%');
+                    }
+
+                    $candidateCount = $preCheckQuery
                         ->get(['post_url'])
                         ->filter(function ($item) {
                             $urlHash = md5((string) $item->post_url);
@@ -278,21 +288,33 @@ class RunApifyScraping extends Command
 
                     // =========================================================
                     // LOGIKA KHUSUS COMMENT SCRAPER
-                    // Alur: Ambil semua URL video TikTok dari proyek aktif →
+                    // Alur: Ambil semua URL postingan dari proyek aktif (sesuai platform) →
                     //       urut dari terbaru → ambil maks 3 yang belum dicek →
                     //       tandai "dalam proses" → kirim ke Apify →
                     //       setelah selesai, tandai "selesai" (permanen).
                     //       Jika tidak ada antrean → skip tanpa membuang run.
                     // =========================================================
                     if (strtolower((string) $actor->function_type) === 'comment scraper') {
-                        // Ambil URL artikel TikTok dari "Penyebutan"
-                        $articleUrls = \App\Models\Article::query()
+                        $platformLower = strtolower((string) $actor->platform);
+
+                        // Ambil URL artikel dari "Penyebutan" sesuai platform
+                        $articleUrlsQuery = \App\Models\Article::query()
                             ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
-                            ->where('project_articles.project_id', $project->id)
-                            ->where(function ($q) {
+                            ->where('project_articles.project_id', $project->id);
+
+                        if ($platformLower === 'tiktok') {
+                            $articleUrlsQuery->where(function ($q) {
                                 $q->where('articles.source_name', 'like', '%tiktok%')
                                   ->orWhere('articles.url', 'like', '%tiktok.com%');
-                            })
+                            });
+                        } elseif ($platformLower === 'instagram') {
+                            $articleUrlsQuery->where(function ($q) {
+                                $q->where('articles.source_name', 'like', '%instagram%')
+                                  ->orWhere('articles.url', 'like', '%instagram.com%');
+                            });
+                        }
+
+                        $articleUrls = $articleUrlsQuery
                             ->get(['articles.url', 'articles.canonical_url'])
                             ->flatMap(function($article) {
                                 return [$article->url, $article->canonical_url];
@@ -302,13 +324,22 @@ class RunApifyScraping extends Command
                             ->values()
                             ->toArray();
 
-                        // Ambil semua postingan TikTok dari proyek aktif ini,
-                        // hanya yang URL-nya adalah URL video valid dan tampil di Penyebutan
-                        $candidateItems = \App\Models\SocialMediaItem::where('project_id', $project->id)
+                        // Ambil semua postingan dari proyek aktif ini,
+                        // hanya yang URL-nya valid dan tampil di Penyebutan
+                        $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
                             ->where('platform', $actor->platform)
-                            ->whereNotNull('post_url')
-                            ->where('post_url', 'like', '%tiktok.com/@%')
-                            ->where('post_url', 'like', '%/video/%')
+                            ->whereNotNull('post_url');
+
+                        if ($platformLower === 'tiktok') {
+                            $candidateQuery = $candidateQuery
+                                ->where('post_url', 'like', '%tiktok.com/@%')
+                                ->where('post_url', 'like', '%/video/%');
+                        } elseif ($platformLower === 'instagram') {
+                            $candidateQuery = $candidateQuery
+                                ->where('post_url', 'like', '%instagram.com/%');
+                        }
+
+                        $candidateItems = $candidateQuery
                             ->whereIn('post_url', $articleUrls)
                             ->orderBy('posted_at', 'desc')
                             ->orderBy('id', 'desc')
