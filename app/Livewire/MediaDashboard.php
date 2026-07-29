@@ -454,7 +454,7 @@ class MediaDashboard extends Component
     public function generateAiInsights()
     {
         $project = $this->resolveProjectOrFail($this->projectId);
-        \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id);
+        \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id, $this->startDate, $this->endDate);
         $project->refresh();
         session()->flash('message', 'Wawasan AI berhasil diperbarui!');
     }
@@ -463,7 +463,7 @@ class MediaDashboard extends Component
     {
         try {
             $project = $this->resolveProjectOrFail($this->projectId);
-            \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id);
+            \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id, $this->startDate, $this->endDate);
             $project->refresh();
 
             if (

@@ -22,8 +22,11 @@ class GenerateProjectAiInsightJob implements ShouldQueue
 
     public $timeout = 300;
 
-    public function __construct(public int $projectId)
-    {
+    public function __construct(
+        public int $projectId,
+        public ?string $startDate = null,
+        public ?string $endDate = null
+    ) {
     }
 
     public function handle(): void
@@ -42,7 +45,7 @@ class GenerateProjectAiInsightJob implements ShouldQueue
         }
 
         // Kumpulkan data statistik terbaru
-        $articles = Article::query()
+        $articlesQuery = Article::query()
             ->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
             ->where('ai.analysis_status', 'success')
             ->where(function ($contentQuery) use ($project) {
@@ -60,7 +63,16 @@ class GenerateProjectAiInsightJob implements ShouldQueue
                             ->orWhere('ai.summary', 'ilike', '%' . $keyword . '%');
                     });
                 }
-            })
+            });
+
+        if ($this->startDate) {
+            $articlesQuery->where('articles.published_at', '>=', \Carbon\Carbon::parse($this->startDate)->startOfDay());
+        }
+        if ($this->endDate) {
+            $articlesQuery->where('articles.published_at', '<=', \Carbon\Carbon::parse($this->endDate)->endOfDay());
+        }
+
+        $articles = $articlesQuery
             ->select('articles.title', 'articles.content', 'articles.excerpt', 'articles.source_name', 'articles.published_at', 'ai.sentiment', 'ai.summary')
             ->latest('articles.published_at')
             ->limit(250)
@@ -210,7 +222,12 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             ?? $decoded['action_items']
             ?? $decoded['insight_recommendations']
             ?? [];
-        $viralCondition = trim((string) ($decoded['viral_condition'] ?? $decoded['viral'] ?? $decoded['viral_summary'] ?? ''));
+        $viralConditionRaw = $decoded['viral_condition'] ?? $decoded['viral'] ?? $decoded['viral_summary'] ?? '';
+        if (is_array($viralConditionRaw)) {
+            $viralCondition = trim((string) ($viralConditionRaw['description'] ?? $viralConditionRaw['summary'] ?? $viralConditionRaw['text'] ?? json_encode($viralConditionRaw)));
+        } else {
+            $viralCondition = trim((string) $viralConditionRaw);
+        }
 
         if ($summary === '' || $viralCondition === '') {
             return null;
