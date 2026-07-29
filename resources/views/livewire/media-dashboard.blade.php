@@ -833,13 +833,16 @@
                                         $isSocial = $article->category === 'social' || $isFacebook || str_contains($srcLower, 'tiktok') || str_contains($srcLower, 'instagram') || str_contains($srcLower, 'twitter') || str_contains($srcLower, 'facebook') || str_contains($srcLower, 'fb') || str_contains($srcLower, 'ig');
                                         $likesCount = 0;
                                         $commentsCount = 0;
+                                        $showInstagramComments = false;
                                         if ($isSocial) {
-                                            $socialItem = \App\Models\SocialMediaItem::where('post_url', $article->canonical_url)
-                                                ->orWhere('post_url', $article->url)
-                                                ->first();
+                                            $socialItem = $this->resolveSocialMediaItemForArticle($article);
                                             if ($socialItem) {
                                                 $likesCount = $socialItem->like_count ?? 0;
                                                 $commentsCount = $socialItem->comment_count ?? 0;
+                                            }
+                                            if ($this->isInstagramArticle($article)) {
+                                                $commentsCount = $this->getStoredCommentCountForArticle($article);
+                                                $showInstagramComments = $commentsCount > 0;
                                             }
                                         }
                                         $iconColor = match(true) {
@@ -920,15 +923,17 @@
                                                     <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
                                                 </button>
                                             @elseif($this->isInstagramArticle($article))
-                                                <button
-                                                    type="button"
-                                                    wire:click.prevent="openInstagramCommentsModal({{ $article->id }})"
-                                                    class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#e1306c] transition-colors cursor-pointer"
-                                                    title="Lihat komentar Instagram"
-                                                >
-                                                    <span class="material-symbols-outlined text-[#c13584] text-[14px] md:text-[15px]">comment</span>
-                                                    <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
-                                                </button>
+                                                @if($showInstagramComments)
+                                                    <button
+                                                        type="button"
+                                                        wire:click.prevent="openInstagramCommentsModal({{ $article->id }})"
+                                                        class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#e1306c] transition-colors cursor-pointer"
+                                                        title="Lihat komentar Instagram"
+                                                    >
+                                                        <span class="material-symbols-outlined text-[#c13584] text-[14px] md:text-[15px]">comment</span>
+                                                        <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
+                                                    </button>
+                                                @endif
                                             @else
                                                 <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
                                                     <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor ?? '#64748b' }}">comment</span>

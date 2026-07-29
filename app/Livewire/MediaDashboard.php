@@ -919,6 +919,29 @@ class MediaDashboard extends Component
         return [$likes, $comments];
     }
 
+    public function getStoredCommentCountForArticle($article): int
+    {
+        if (! $this->isSocialArticle($article)) {
+            return 0;
+        }
+
+        $item = $this->resolveSocialMediaItemForArticle($article);
+        if (! $item) {
+            return 0;
+        }
+
+        return count($this->resolveCommentsForSocialItem($item));
+    }
+
+    public function shouldShowInstagramCommentsForArticle($article): bool
+    {
+        if (! $this->isInstagramArticle($article)) {
+            return false;
+        }
+
+        return $this->getStoredCommentCountForArticle($article) > 0;
+    }
+
     public function getViralArticles()
     {
         return $this->applyActiveFilters($this->projectArticlesQuery())
