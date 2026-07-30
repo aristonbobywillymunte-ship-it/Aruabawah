@@ -115,17 +115,21 @@
     .swal-toast-error .swal2-title,
     .swal-toast-warning .swal2-title,
     .swal-toast-info .swal2-title {
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
         font-size: 11.5px !important;
         font-weight: 700 !important;
-        line-height: 1.3 !important;
-        margin: 0 0 0 4px !important;
+        line-height: 1.25 !important;
+        letter-spacing: -0.015em !important;
+        margin: 0 !important;
+        padding: 0 0 0 6px !important;
     }
     .swal-toast-success .swal2-icon,
     .swal-toast-error .swal2-icon,
     .swal-toast-warning .swal2-icon,
     .swal-toast-info .swal2-icon {
-        scale: 0.75 !important;
+        transform: scale(0.65) !important;
         margin: 0 !important;
+        padding: 0 !important;
     }
     .swal-toast-success {
         background-color: #1fa387 !important;
