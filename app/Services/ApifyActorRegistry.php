@@ -106,6 +106,25 @@ class ApifyActorRegistry
                 'priority' => 4,
                 'maximum_cost_per_run_usd' => 0.2000,
             ],
+            'facebook-comments' => [
+                'platform' => 'Facebook',
+                'actor_name' => 'Facebook Comments Scraper',
+                'actor_slug' => 'apify/facebook-comments-scraper',
+                'function_type' => 'Comment Scraper',
+                'default_keyword' => null,
+                'default_limit' => 20,
+                'status' => 'active',
+                'keyword_field_mapping' => 'startUrls',
+                'output_mapping' => '{"startUrls":[{"url":"{keyword}"}],"maxCommentsPerPost":"{limit}","includeReplies":true,"sortOrder":"ALL_COMMENTS","proxyConfiguration":{"useApifyProxy":true}}',
+                'build' => 'latest',
+                'timeout_seconds' => 10000,
+                'no_timeout' => false,
+                'interval_minutes' => 720,
+                'memory_limit' => 1024,
+                'range_mode' => '7d',
+                'priority' => 3,
+                'maximum_cost_per_run_usd' => 0.1500,
+            ],
         ];
     }
 
