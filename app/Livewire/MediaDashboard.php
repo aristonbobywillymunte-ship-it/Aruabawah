@@ -243,6 +243,11 @@ class MediaDashboard extends Component
     public array $instagramCommentsModalMeta = [];
     public array $instagramCommentsModalItems = [];
 
+    public bool $showFacebookCommentsModal = false;
+    public bool $loadingFacebookComments = false;
+    public array $facebookCommentsModalMeta = [];
+    public array $facebookCommentsModalItems = [];
+
     protected function currentUser()
     {
         return auth()->user();
@@ -308,9 +313,9 @@ class MediaDashboard extends Component
             ->whereHas('aiAnalysisResult', function ($ai) {
                 $ai->completeOfficialAiResult();
             })
-            // Sembunyikan postingan IG/TikTok yang komentarnya belum selesai diperiksa.
+            // Sembunyikan postingan IG/TikTok/Facebook yang komentarnya belum selesai diperiksa.
             // Artikel dihubungkan ke social_media_items lewat canonical_url/url.
-            // Kondisi: jika ada social_media_item dengan platform IG/TikTok yang url-nya cocok
+            // Kondisi: jika ada social_media_item dengan platform sosial yang url-nya cocok
             // dan comments_checked = false → artikel ini dikecualikan dari tampilan.
             ->whereNotExists(function ($sub) {
                 $sub->select(\Illuminate\Support\Facades\DB::raw(1))
@@ -319,7 +324,7 @@ class MediaDashboard extends Component
                         $q->whereColumn('social_media_items.post_url', 'articles.canonical_url')
                           ->orWhereColumn('social_media_items.post_url', 'articles.url');
                     })
-                    ->whereIn('social_media_items.platform', ['Instagram', 'TikTok'])
+                    ->whereIn('social_media_items.platform', ['Instagram', 'TikTok', 'Facebook'])
                     ->where('social_media_items.comments_checked', false);
             });
     }
@@ -1170,6 +1175,81 @@ class MediaDashboard extends Component
         $this->instagramCommentsModalItems = [];
     }
 
+    protected function isFacebookArticle($article): bool
+    {
+        $source = strtolower(trim((string) ($article->source_name ?? '')));
+
+        return $source === 'facebook'
+            || str_contains($source, 'facebook')
+            || str_contains($source, 'fb');
+    }
+
+    public function openFacebookCommentsModal(int $articleId): void
+    {
+        $this->showFacebookCommentsModal = true;
+        $this->loadingFacebookComments = true;
+        $this->facebookCommentsModalMeta = [
+            'article_id' => $articleId,
+            'title' => 'Memuat data...',
+            'source_name' => 'Facebook',
+            'post_url' => '',
+            'author_name' => '',
+            'published_at' => '',
+            'comment_count' => 0,
+            'like_count' => 0,
+        ];
+        $this->facebookCommentsModalItems = [];
+
+        $this->dispatch('load-facebook-comments', articleId: $articleId);
+    }
+
+    #[on('load-facebook-comments')]
+    public function loadFacebookCommentsData(int $articleId): void
+    {
+        if (!$this->showFacebookCommentsModal || $this->facebookCommentsModalMeta['article_id'] !== $articleId) {
+            return;
+        }
+
+        $article = $this->projectArticlesQuery()
+            ->whereKey($articleId)
+            ->first();
+
+        if (! $article) {
+            $article = Article::query()
+                ->with(['aiAnalysisResult'])
+                ->find($articleId);
+        }
+
+        if (! $article || ! $this->isFacebookArticle($article)) {
+            $this->loadingFacebookComments = false;
+            return;
+        }
+
+        $socialItem = $this->resolveSocialMediaItemForArticle($article);
+        $comments = $this->resolveCommentsForSocialItem($socialItem);
+
+        $this->facebookCommentsModalMeta = [
+            'article_id' => $article->id,
+            'title' => $this->displayArticleTitle($article),
+            'source_name' => (string) ($article->source_name ?? 'Facebook'),
+            'post_url' => (string) ($socialItem?->post_url ?: $article->canonical_url ?: $article->url ?: ''),
+            'author_name' => (string) ($socialItem?->author_name ?? ''),
+            'published_at' => $article->published_at ? \Carbon\Carbon::parse($article->published_at)->translatedFormat('d M Y, H:i') : 'Baru saja',
+            'comment_count' => count($comments),
+            'like_count' => (int) ($socialItem?->like_count ?? 0),
+        ];
+        $this->facebookCommentsModalItems = $comments;
+        $this->loadingFacebookComments = false;
+    }
+
+    public function closeFacebookCommentsModal(): void
+    {
+        $this->showFacebookCommentsModal = false;
+        $this->loadingFacebookComments = false;
+        $this->facebookCommentsModalMeta = [];
+        $this->facebookCommentsModalItems = [];
+    }
+
     protected function isTikTokArticle($article): bool
     {
         $source = strtolower(trim((string) ($article->source_name ?? '')));
@@ -1311,7 +1391,12 @@ class MediaDashboard extends Component
 
         $decodedPayload = $this->decodeSocialPayload($socialItem->raw_json);
 
-        return $this->extractTikTokComments($decodedPayload);
+        return $this->extractSocialComments($decodedPayload, (string) ($socialItem->platform ?? 'TikTok'));
+    }
+
+    protected function extractSocialComments(mixed $payload, string $platform = 'TikTok'): array
+    {
+        return $this->extractTikTokComments($payload, $platform);
     }
 
     public function getSocialHashtagsForArticle($article): array
@@ -1386,7 +1471,7 @@ class MediaDashboard extends Component
         return array_values($hashtags);
     }
 
-    protected function extractTikTokComments(mixed $payload): array
+    protected function extractTikTokComments(mixed $payload, string $platform = 'TikTok'): array
     {
         if (! is_array($payload) || $payload === []) {
             return [];
@@ -1396,7 +1481,7 @@ class MediaDashboard extends Component
 
         if (array_is_list($payload)) {
             foreach ($payload as $item) {
-                $normalized = $this->normalizeTikTokCommentItem($item);
+                $normalized = $this->normalizeTikTokCommentItem($item, $platform);
                 if ($normalized !== null) {
                     $comments[] = $normalized;
                 }
@@ -1404,12 +1489,12 @@ class MediaDashboard extends Component
             return $this->deduplicateCommentItems($comments);
         }
 
-        $this->walkTikTokCommentPayload($payload, $comments, 0);
+        $this->walkTikTokCommentPayload($payload, $comments, 0, $platform);
 
         return $this->deduplicateCommentItems($comments);
     }
 
-    protected function walkTikTokCommentPayload(array $node, array &$comments, int $depth = 0): void
+    protected function walkTikTokCommentPayload(array $node, array &$comments, int $depth = 0, string $platform = 'TikTok'): void
     {
         if ($depth > 6) {
             return;
@@ -1423,14 +1508,14 @@ class MediaDashboard extends Component
 
             if ($this->isTikTokCommentListKey($normalizedKey)) {
                 foreach ($value as $commentItem) {
-                    $normalized = $this->normalizeTikTokCommentItem($commentItem);
+                    $normalized = $this->normalizeTikTokCommentItem($commentItem, $platform);
                     if ($normalized !== null) {
                         $comments[] = $normalized;
                     }
                 }
             }
 
-            $this->walkTikTokCommentPayload($value, $comments, $depth + 1);
+            $this->walkTikTokCommentPayload($value, $comments, $depth + 1, $platform);
         }
     }
 
@@ -1457,14 +1542,21 @@ class MediaDashboard extends Component
         ], true);
     }
 
-    protected function normalizeTikTokCommentItem(mixed $item): ?array
+    protected function normalizeTikTokCommentItem(mixed $item, string $platform = 'TikTok'): ?array
     {
         if (! is_array($item)) {
             return null;
         }
 
         $authorName = trim((string) (
-            data_get($item, 'author.name')
+            data_get($item, 'from.name')
+            ?: data_get($item, 'from.username')
+            ?: data_get($item, 'from.full_name')
+            ?: data_get($item, 'from.fullName')
+            ?: data_get($item, 'from.profile_name')
+            ?: data_get($item, 'from.profileName')
+            ?: data_get($item, 'from.author_name')
+            ?: data_get($item, 'author.name')
             ?: data_get($item, 'user.nickname')
             ?: data_get($item, 'user.uniqueId')
             ?: data_get($item, 'user.name')
@@ -1489,7 +1581,13 @@ class MediaDashboard extends Component
         ));
 
         $avatarUrl = trim((string) (
-            data_get($item, 'author.avatarThumb')
+            data_get($item, 'from.profilePicture')
+            ?: data_get($item, 'from.profile_picture')
+            ?: data_get($item, 'from.picture.data.url')
+            ?: data_get($item, 'from.picture.url')
+            ?: data_get($item, 'from.avatar')
+            ?: data_get($item, 'from.avatarUrl')
+            ?: data_get($item, 'author.avatarThumb')
             ?: data_get($item, 'author.avatar')
             ?: data_get($item, 'user.avatarThumb')
             ?: data_get($item, 'user.avatar')
@@ -1503,6 +1601,8 @@ class MediaDashboard extends Component
         ));
 
         $postedAtRaw = data_get($item, 'createTime')
+            ?: data_get($item, 'created_time')
+            ?: data_get($item, 'createdTime')
             ?: data_get($item, 'createTimeISO')
             ?: data_get($item, 'timestamp')
             ?: data_get($item, 'date')
@@ -1511,12 +1611,15 @@ class MediaDashboard extends Component
             ?: data_get($item, 'time');
 
         $postedAt = $this->normalizeTikTokCommentDate($postedAtRaw);
+        $rawLikeValue = data_get($item, 'likes');
         $likeCount = (int) (
             data_get($item, 'diggCount')
             ?: data_get($item, 'likeCount')
+            ?: data_get($item, 'likes.summary.total_count')
             ?: data_get($item, 'likesCount')   // Instagram (apify)
-            ?: data_get($item, 'likes')
+            ?: (is_scalar($rawLikeValue) ? $rawLikeValue : 0)
             ?: data_get($item, 'like_count')
+            ?: data_get($item, 'totalLikes')
             ?: 0
         );
 
@@ -1524,8 +1627,10 @@ class MediaDashboard extends Component
             return null;
         }
 
+        $platformLabel = trim($platform) !== '' ? $platform : 'TikTok';
+
         return [
-            'author_name' => $authorName !== '' ? $authorName : 'Pengguna TikTok',
+            'author_name' => $authorName !== '' ? $authorName : 'Pengguna ' . $platformLabel,
             'content' => $content !== '' ? $content : 'Tidak ada teks komentar.',
             'avatar_url' => $avatarUrl,
             'posted_at' => $postedAt,

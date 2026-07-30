@@ -21,7 +21,8 @@
          isMobile: window.innerWidth < 900,
          openMobileMenu: false,
          showTikTokCommentsModal: @entangle('showTikTokCommentsModal').live,
-        showInstagramCommentsModal: @entangle('showInstagramCommentsModal').live,
+         showInstagramCommentsModal: @entangle('showInstagramCommentsModal').live,
+         showFacebookCommentsModal: @entangle('showFacebookCommentsModal').live,
          reportFeedbackOpen: false,
          reportFeedbackType: 'success',
          reportFeedbackTitle: '',
@@ -36,6 +37,7 @@
              || (typeof showViralModal !== 'undefined' && showViralModal)
              || (typeof showTikTokCommentsModal !== 'undefined' && showTikTokCommentsModal)
              || (typeof showInstagramCommentsModal !== 'undefined' && showInstagramCommentsModal)
+             || (typeof showFacebookCommentsModal !== 'undefined' && showFacebookCommentsModal)
              || openMobileMenu
              || (typeof reportFeedbackOpen !== 'undefined' && reportFeedbackOpen);
          document.body.style.overflow = shouldLock ? 'hidden' : '';
@@ -834,6 +836,7 @@
                                         $likesCount = 0;
                                         $commentsCount = 0;
                                         $instagramCommentsClickable = false;
+                                        $facebookCommentsClickable = false;
                                         if ($isSocial) {
                                             $socialItem = $this->resolveSocialMediaItemForArticle($article);
                                             if ($socialItem) {
@@ -841,8 +844,12 @@
                                                 $commentsCount = $socialItem->comment_count ?? 0;
                                             }
                                             if ($this->isInstagramArticle($article)) {
-                                                $commentsCount = $this->getStoredCommentCountForArticle($article);
+                                                $commentsCount = count($this->resolveCommentsForSocialItem($socialItem));
                                                 $instagramCommentsClickable = $commentsCount > 0;
+                                            } elseif ($this->isFacebookArticle($article)) {
+                                                $facebookResolvedComments = $this->resolveCommentsForSocialItem($socialItem);
+                                                $commentsCount = count($facebookResolvedComments);
+                                                $facebookCommentsClickable = $commentsCount > 0;
                                             }
                                         }
                                         $iconColor = match(true) {
@@ -942,6 +949,30 @@
                                                         aria-disabled="true"
                                                         class="flex items-center gap-1 text-slate-300 text-[11px] md:text-xs font-black cursor-not-allowed"
                                                         title="Belum ada komentar Instagram yang tersimpan"
+                                                    >
+                                                        <span class="material-symbols-outlined text-[14px] md:text-[15px] text-slate-300">comment</span>
+                                                        <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
+                                                    </button>
+                                                @endif
+                                            @elseif($this->isFacebookArticle($article))
+                                                @if($facebookCommentsClickable)
+                                                    <button
+                                                        type="button"
+                                                        @click="showFacebookCommentsModal = true"
+                                                        wire:click.prevent="openFacebookCommentsModal({{ $article->id }})"
+                                                        class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#1877f2] transition-colors cursor-pointer"
+                                                        title="Lihat komentar Facebook"
+                                                    >
+                                                        <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">comment</span>
+                                                        <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
+                                                    </button>
+                                                @else
+                                                    <button
+                                                        type="button"
+                                                        disabled
+                                                        aria-disabled="true"
+                                                        class="flex items-center gap-1 text-slate-300 text-[11px] md:text-xs font-black cursor-not-allowed"
+                                                        title="Belum ada komentar Facebook yang tersimpan"
                                                     >
                                                         <span class="material-symbols-outlined text-[14px] md:text-[15px] text-slate-300">comment</span>
                                                         <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
@@ -5279,6 +5310,139 @@
                     <button
                         type="button"
                         @click="showInstagramCommentsModal = false; $wire.closeInstagramCommentsModal()"
+                        class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+                    >
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+        </template>
+
+        @php
+            $facebookCommentsModalMeta = $facebookCommentsModalMeta ?? [];
+            $facebookCommentsModalItems = $facebookCommentsModalItems ?? [];
+        @endphp
+        <template x-teleport="body">
+        <div
+            x-show="showFacebookCommentsModal"
+            x-cloak
+            x-transition
+            class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            @keydown.escape.window="showFacebookCommentsModal = false; $wire.closeFacebookCommentsModal()"
+            @click.self="showFacebookCommentsModal = false; $wire.closeFacebookCommentsModal()"
+        >
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
+                <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#1877f2]">Komentar Facebook</p>
+                        <h3 class="mt-1 text-xl font-black text-slate-900 leading-tight">
+                            {{ $facebookCommentsModalMeta['title'] ?? 'Facebook' }}
+                        </h3>
+                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 font-semibold">
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-50 border border-slate-200 px-3 py-1">
+                                <span class="material-symbols-outlined text-[14px] text-[#1877f2]">forum</span>
+                                {{ number_format((int) ($facebookCommentsModalMeta['comment_count'] ?? 0), 0, ',', '.') }} komentar
+                            </span>
+                            @if(!empty($facebookCommentsModalMeta['published_at']))
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-50 border border-slate-200 px-3 py-1">
+                                    <span class="material-symbols-outlined text-[14px] text-[#1877f2]">calendar_month</span>
+                                    {{ $facebookCommentsModalMeta['published_at'] }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        @click="showFacebookCommentsModal = false; $wire.closeFacebookCommentsModal()"
+                        class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                        title="Tutup"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+                    <div class="flex flex-col gap-2 text-xs md:text-sm text-slate-600">
+                        <div class="flex flex-wrap gap-x-4 gap-y-1">
+                            <span><span class="font-bold text-slate-800">Sumber:</span> Facebook</span>
+                            @if(!empty($facebookCommentsModalMeta['author_name']))
+                                <span><span class="font-bold text-slate-800">Akun:</span> {{ $facebookCommentsModalMeta['author_name'] }}</span>
+                            @endif
+                        </div>
+                        @if(!empty($facebookCommentsModalMeta['post_url']))
+                            <a href="{{ $facebookCommentsModalMeta['post_url'] }}" target="_blank" class="text-[#1877f2] font-bold hover:underline break-all">
+                                {{ $facebookCommentsModalMeta['post_url'] }}
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-6 py-5">
+                    @if($loadingFacebookComments)
+                        <div class="space-y-3 animate-pulse">
+                            @for($i = 0; $i < 3; $i++)
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 shrink-0"></div>
+                                        <div class="flex-1 space-y-2 py-0.5">
+                                            <div class="flex items-center gap-2">
+                                                <div class="h-3.5 bg-slate-200 rounded-full w-28"></div>
+                                                <div class="h-3 bg-slate-150 rounded-full w-16"></div>
+                                            </div>
+                                            <div class="space-y-1.5 pt-1">
+                                                <div class="h-3 bg-slate-200 rounded-full w-full"></div>
+                                                <div class="h-3 bg-slate-150 rounded-full w-4/5"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endfor
+                        </div>
+                    @elseif(empty($facebookCommentsModalItems))
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                            <span class="material-symbols-outlined text-[30px] text-slate-300">comment</span>
+                            <p class="mt-3 text-sm font-bold text-slate-700">Belum ada daftar komentar yang terbaca.</p>
+                            <p class="mt-1 text-xs text-slate-500">Data komentar bisa saja belum tersimpan di payload Apify, atau struktur responsnya berbeda.</p>
+                        </div>
+                    @else
+                        <div class="space-y-3">
+                            @foreach($facebookCommentsModalItems as $comment)
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                            @if(!empty($comment['avatar_url']))
+                                                <img src="{{ $comment['avatar_url'] }}" alt="{{ $comment['author_name'] }}" class="w-full h-full object-cover">
+                                            @else
+                                                <span class="material-symbols-outlined text-[18px] text-slate-400">person</span>
+                                            @endif
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <p class="font-black text-slate-900 text-sm">{{ $comment['author_name'] ?? 'Pengguna Facebook' }}</p>
+                                                @if(!empty($comment['posted_at']))
+                                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $comment['posted_at'] }}</span>
+                                                @endif
+                                                @if(isset($comment['like_count']))
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 text-[10px] font-bold">
+                                                        <span class="material-symbols-outlined text-[12px]">favorite</span>
+                                                        {{ number_format((int) $comment['like_count'], 0, ',', '.') }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <p class="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ $comment['content'] ?? '' }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                <div class="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
+                    <button
+                        type="button"
+                        @click="showFacebookCommentsModal = false; $wire.closeFacebookCommentsModal()"
                         class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
                     >
                         Tutup

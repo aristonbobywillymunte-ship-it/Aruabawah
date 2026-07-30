@@ -1020,7 +1020,7 @@ class ApifyScrapingJob implements ShouldQueue
             // --- Tentukan apakah ada comment scraper aktif untuk platform ini ---
             // Jika ada: tunda dispatch ke AI, simpan dengan comments_checked = false
             // Jika tidak ada: langsung dispatch ke AI dan set comments_checked = true
-            $platformNeedsCommentCheck = in_array($platform, ['Instagram', 'TikTok'], true)
+            $platformNeedsCommentCheck = in_array($platform, ['Instagram', 'TikTok', 'Facebook'], true)
                 && $this->hasActiveCommentScraperForPlatform($platform, $projectId);
 
             $record = SocialMediaItem::updateOrCreate(
@@ -1085,7 +1085,7 @@ class ApifyScrapingJob implements ShouldQueue
 
             $saved++;
 
-            // Jika platform IG/TikTok dengan comment scraper aktif: TUNDA AI dispatch.
+            // Jika platform IG/TikTok/Facebook dengan comment scraper aktif: TUNDA AI dispatch.
             // AI akan dipanggil nanti setelah comment scraper selesai (dengan komentar sebagai konteks).
             if ($platformNeedsCommentCheck) {
                 Log::info('[Apify] AI dispatch ditunda: menunggu comment scraper untuk ' . $platform . '.', [
@@ -1290,13 +1290,16 @@ class ApifyScrapingJob implements ShouldQueue
             }
 
             if ($hasMoreQueue) {
-                // PROTEKSI: Cek apakah sudah ada job comment scraper lain yang sedang aktif
+                // PROTEKSI: Cek apakah sudah ada job comment scraper aktif pada platform yang sama
+                // agar Facebook, Instagram, dan TikTok tidak saling memblokir antrean komentar.
                 $activeCommentScrapersCount = \App\Models\ApifyDispatchState::whereIn('status', ['queued', 'processing'])
-                    ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')->pluck('id'))
+                    ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')
+                        ->where('platform', $platform)
+                        ->pluck('id'))
                     ->count();
 
                 if ($activeCommentScrapersCount > 0) {
-                    Log::info("[Apify] Pemicuan antrean instan dilewati karena masih ada job comment scraper lain yang aktif di worker.");
+                    Log::info("[Apify] Pemicuan antrean instan dilewati karena masih ada job comment scraper aktif pada platform yang sama.");
                 } else {
                     Log::info("[Apify] Antrean komentar masih ada untuk project={$projectId}. Memicu siklus scraping berikutnya secara instan.");
                     \Illuminate\Support\Facades\Artisan::queue('scraping:run-apify', [
@@ -1993,4 +1996,3 @@ class ApifyScrapingJob implements ShouldQueue
         }
     }
 }
-
