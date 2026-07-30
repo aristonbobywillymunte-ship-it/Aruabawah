@@ -238,22 +238,4 @@
         </div>
     @endif
 
-    {{-- Floating Toast Notification --}}
-    @if($flashMessage)
-    <div wire:key="toast-notification-{{ md5($flashMessage) }}"
-         x-data="{ show: true }"
-         x-show="show"
-         x-init="setTimeout(() => { show = false; $wire.call('dismissFlash'); }, 4000)"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="translate-y-2 opacity-0 scale-95"
-         x-transition:enter-end="translate-y-0 opacity-100 scale-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="translate-y-0 opacity-100 scale-100"
-         x-transition:leave-end="translate-y-2 opacity-0 scale-95"
-         class="fixed bottom-6 right-6 z-[300] flex items-center gap-3 rounded-2xl px-5 py-4 text-xs font-black shadow-[0_10px_35px_-5px_rgba(0,0,0,0.15)] border max-w-sm
-         {{ $flashType === 'success' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-rose-600 text-white border-rose-500' }}">
-         <span class="material-symbols-outlined text-[16px]">{{ $flashType === 'success' ? 'check_circle' : 'error' }}</span>
-         <span>{{ $flashMessage }}</span>
-    </div>
-    @endif
 </div>
