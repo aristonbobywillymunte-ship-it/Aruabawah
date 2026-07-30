@@ -213,4 +213,47 @@
             </div>
         </div>
     @endif
+
+    <!-- Status Change Confirmation Modal -->
+    @if($confirmingStatusChange)
+        <div wire:key="status-change-modal" x-data x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
+            <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain">
+                <div class="flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                        <span class="material-symbols-outlined text-[20px] block">warning</span>
+                    </span>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-amber-650">Konfirmasi Status</p>
+                        <h2 class="text-sm font-black text-slate-900 mt-0.5">{{ $targetStatusValue === 'active' ? 'Aktifkan Akun?' : 'Nonaktifkan Akun?' }}</h2>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Apakah Anda yakin ingin mengubah status keaktifan akun ini menjadi <strong>{{ $targetStatusValue === 'active' ? 'Aktif' : 'Nonaktif' }}</strong>?
+                </p>
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button wire:click="$set('confirmingStatusChange', false)" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
+                    <button wire:click="statusChangeConfirmed" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#178a71] text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Konfirmasi</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Floating Toast Notification --}}
+    @if($flashMessage)
+    <div wire:key="toast-notification-{{ md5($flashMessage) }}"
+         x-data="{ show: true }"
+         x-show="show"
+         x-init="setTimeout(() => { show = false; $wire.call('dismissFlash'); }, 4000)"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="translate-y-2 opacity-0 scale-95"
+         x-transition:enter-end="translate-y-0 opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="translate-y-0 opacity-100 scale-100"
+         x-transition:leave-end="translate-y-2 opacity-0 scale-95"
+         class="fixed bottom-6 right-6 z-[300] flex items-center gap-3 rounded-2xl px-5 py-4 text-xs font-black shadow-[0_10px_35px_-5px_rgba(0,0,0,0.15)] border max-w-sm
+         {{ $flashType === 'success' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-rose-600 text-white border-rose-500' }}">
+         <span class="material-symbols-outlined text-[16px]">{{ $flashType === 'success' ? 'check_circle' : 'error' }}</span>
+         <span>{{ $flashMessage }}</span>
+    </div>
+    @endif
 </div>

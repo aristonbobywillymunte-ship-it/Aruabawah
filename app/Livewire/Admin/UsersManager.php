@@ -148,15 +148,35 @@ class UsersManager extends Component
         $this->notify('success', 'User berhasil dihapus.');
     }
 
+    public bool $confirmingStatusChange = false;
+    public ?int $targetStatusUserId = null;
+    public ?string $targetStatusValue = null;
+
     public function toggleStatus(int $id): void
     {
         $this->adminOnly();
 
         $user = User::findOrFail($id);
-        $user->status = $user->status === 'active' ? 'inactive' : 'active';
+        $this->targetStatusUserId = $user->id;
+        $this->targetStatusValue = $user->status === 'active' ? 'inactive' : 'active';
+        $this->confirmingStatusChange = true;
+    }
+
+    public function statusChangeConfirmed(): void
+    {
+        $this->adminOnly();
+
+        abort_unless($this->targetStatusUserId, 400);
+        $user = User::findOrFail($this->targetStatusUserId);
+        $user->status = $this->targetStatusValue;
         $user->save();
 
-        $this->notify('success', 'Status user berhasil diperbarui.');
+        $statusText = $user->status === 'active' ? 'diaktifkan' : 'dinonaktifkan';
+        $this->notify('success', "Akun pengguna {$user->name} berhasil {$statusText}.");
+
+        $this->confirmingStatusChange = false;
+        $this->targetStatusUserId = null;
+        $this->targetStatusValue = null;
     }
 
     public function resetPassword(int $id): void
@@ -192,6 +212,12 @@ class UsersManager extends Component
     {
         $this->showForm = false;
         $this->resetForm();
+    }
+
+    public function dismissFlash(): void
+    {
+        $this->flashMessage = null;
+        $this->flashType = null;
     }
 
     protected function resetForm(): void
