@@ -833,7 +833,7 @@
                                         $isSocial = $article->category === 'social' || $isFacebook || str_contains($srcLower, 'tiktok') || str_contains($srcLower, 'instagram') || str_contains($srcLower, 'twitter') || str_contains($srcLower, 'facebook') || str_contains($srcLower, 'fb') || str_contains($srcLower, 'ig');
                                         $likesCount = 0;
                                         $commentsCount = 0;
-                                        $showInstagramComments = false;
+                                        $instagramCommentsClickable = false;
                                         if ($isSocial) {
                                             $socialItem = $this->resolveSocialMediaItemForArticle($article);
                                             if ($socialItem) {
@@ -842,11 +842,11 @@
                                             }
                                             if ($this->isInstagramArticle($article)) {
                                                 $commentsCount = $this->getStoredCommentCountForArticle($article);
-                                                $showInstagramComments = $commentsCount > 0;
+                                                $instagramCommentsClickable = $commentsCount > 0;
                                             }
                                         }
                                         $iconColor = match(true) {
-                                            str_contains($srcLower, 'tiktok') => '#1fa387',
+                                            str_contains($srcLower, 'tiktok') => '#000000',
                                             str_contains($srcLower, 'instagram') || str_contains($srcLower, 'ig') => '#c13584',
                                             str_contains($srcLower, 'facebook') || str_contains($srcLower, 'fb') => '#1877f2',
                                             default => '#64748b',
@@ -857,7 +857,7 @@
                                         <div class="px-1.5 py-0.5">
                                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Jangkauan</span>
                                             <div class="flex items-start gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                                                <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px] mt-0.5">insights</span>
+                                                <span class="material-symbols-outlined text-[14px] md:text-[15px] mt-0.5" style="color:{{ $iconColor }}">insights</span>
                                                 <div class="flex flex-col leading-tight">
                                                     <span>
                                                         @if($projectReachDisplay['hasOfficialProjectReach'])
@@ -881,7 +881,7 @@
                                         <div class="px-1.5 py-0.5 border-l border-slate-200">
                                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Skor</span>
                                             <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                                                <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">analytics</span>
+                                                <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">analytics</span>
                                                 <span>
                                                     @if($projectReachDisplay['hasOfficialProjectReach'])
                                                         {{ $projectReachDisplay['scoreValue'] . '/10' }}
@@ -896,7 +896,7 @@
                                         <div class="px-1.5 py-0.5 border-t sm:border-t-0 sm:border-l border-slate-200/60 pt-2 sm:pt-0.5">
                                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Tanggal</span>
                                             <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                                                <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">calendar_month</span>
+                                                <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">calendar_month</span>
                                                 <span class="truncate animate-none" title="{{ $article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d M Y, H:i') : 'Baru saja' }}">
                                                     {{ $article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d/m/y') : 'Baru saja' }}
                                                 </span>
@@ -915,28 +915,41 @@
                                             @if($this->isTikTokArticle($article))
                                                 <button
                                                     type="button"
+                                                    @click="showTikTokCommentsModal = true"
                                                     wire:click.prevent="openTikTokCommentsModal({{ $article->id }})"
                                                     class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#17856e] transition-colors cursor-pointer"
                                                     title="Lihat komentar TikTok"
                                                 >
-                                                    <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">comment</span>
+                                                    <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">comment</span>
                                                     <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
                                                 </button>
                                             @elseif($this->isInstagramArticle($article))
-                                                @if($showInstagramComments)
+                                                @if($instagramCommentsClickable)
                                                     <button
                                                         type="button"
+                                                        @click="showInstagramCommentsModal = true"
                                                         wire:click.prevent="openInstagramCommentsModal({{ $article->id }})"
                                                         class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#e1306c] transition-colors cursor-pointer"
                                                         title="Lihat komentar Instagram"
                                                     >
-                                                        <span class="material-symbols-outlined text-[#c13584] text-[14px] md:text-[15px]">comment</span>
+                                                        <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">comment</span>
+                                                        <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
+                                                    </button>
+                                                @else
+                                                    <button
+                                                        type="button"
+                                                        disabled
+                                                        aria-disabled="true"
+                                                        class="flex items-center gap-1 text-slate-300 text-[11px] md:text-xs font-black cursor-not-allowed"
+                                                        title="Belum ada komentar Instagram yang tersimpan"
+                                                    >
+                                                        <span class="material-symbols-outlined text-[14px] md:text-[15px] text-slate-300">comment</span>
                                                         <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
                                                     </button>
                                                 @endif
                                             @else
                                                 <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                                                    <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor ?? '#64748b' }}">comment</span>
+                                                    <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">comment</span>
                                                     <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
                                                 </div>
                                             @endif
@@ -945,18 +958,32 @@
                                     </div>
 
                                     <!-- Content Body (Sleek teaser layout) -->
-                                    <div class="space-y-2 mb-4 text-left flex-grow">
-                                        <h3 class="text-xs sm:text-sm md:text-[17px] font-extrabold text-slate-900 leading-snug tracking-tight hover:text-[#1fa387] transition-colors duration-150">
-                                            {{ $this->displayArticleTitle($article) }}
-                                        </h3>
-                                        <p class="text-[11px] sm:text-sm text-slate-600 leading-relaxed line-clamp-3">
-                                            {{ $this->formatArticleExcerpt($article, 200) }}
-                                        </p>
-
+                                    <div class="space-y-1.5 mb-4 text-left flex-grow">
                                         @php
                                             $aiResult = $this->getValidAiResult($article);
                                             $aiSummary = $aiResult?->summary;
+                                            $socialHashtags = $this->getSocialHashtagsForArticle($article);
                                         @endphp
+
+                                        @if(!empty($socialHashtags))
+                                            <div class="flex flex-wrap gap-2 pb-1.5">
+                                                @foreach($socialHashtags as $hashtag)
+                                                    <span 
+                                                        class="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] sm:text-[11px] font-bold tracking-wide transition-colors"
+                                                        style="background-color: {{ $iconColor }}0b; border-color: {{ $iconColor }}25; color: {{ $iconColor }};"
+                                                    >
+                                                        {{ $hashtag }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+
+                                        <h3 class="text-xs sm:text-[13px] md:text-[15px] font-extrabold text-slate-900 leading-snug tracking-tight hover:text-[#1fa387] transition-colors duration-150">
+                                            {{ $this->displayArticleTitle($article) }}
+                                        </h3>
+                                        <p class="text-[10px] sm:text-xs text-slate-650 leading-relaxed line-clamp-3">
+                                            {{ $this->formatArticleExcerpt($article, 200) }}
+                                        </p>
 
                                         @if($aiSummary)
                                             <div x-data="{ isOpen: false }" class="mt-4 mb-2 text-left">
@@ -964,7 +991,8 @@
                                                 <button 
                                                     type="button"
                                                     @click="isOpen = !isOpen"
-                                                    class="w-8 h-8 rounded-xl bg-[#1fa387]/5 hover:bg-[#1fa387]/10 text-[#1fa387] border border-[#1fa387]/15 flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm"
+                                                    class="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm border"
+                                                    style="background-color: {{ $iconColor }}10; color: {{ $iconColor }}; border-color: {{ $iconColor }}25;"
                                                     title="Ringkasan AI"
                                                 >
                                                     <span class="material-symbols-outlined text-[15px] transition-transform duration-200" :class="isOpen ? 'rotate-45 scale-110' : ''">auto_awesome</span>
@@ -979,11 +1007,11 @@
                                                     x-transition:leave="transition ease-in duration-200"
                                                     x-transition:leave-start="opacity-100 transform translate-y-0 scale-100"
                                                     x-transition:leave-end="opacity-0 transform -translate-y-2 scale-95"
-                                                    class="mt-3 p-4 bg-gradient-to-r from-[#1fa387]/5 to-emerald-50/20 border border-[#1fa387]/10 rounded-2xl flex items-start gap-3.5 shadow-sm"
-                                                    style="display: none;"
+                                                    class="mt-3 p-4 border rounded-2xl flex items-start gap-3.5 shadow-sm"
+                                                    style="display: none; background-image: linear-gradient(to right, {{ $iconColor }}08, #f8fafc05); border-color: {{ $iconColor }}1b;"
                                                 >
-                                                    <div class="w-8 h-8 rounded-xl bg-white border border-[#1fa387]/15 flex items-center justify-center flex-shrink-0 shadow-sm">
-                                                        <span class="material-symbols-outlined text-[#1fa387] text-[16px] font-bold">auto_awesome</span>
+                                                    <div class="w-8 h-8 rounded-xl border flex items-center justify-center flex-shrink-0 shadow-sm bg-white" style="border-color: {{ $iconColor }}25;">
+                                                        <span class="material-symbols-outlined text-[16px] font-bold" style="color: {{ $iconColor }};">auto_awesome</span>
                                                     </div>
                                                     <div class="space-y-1 min-w-0 flex-grow">
                                                         <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Ringkasan AI</span>
@@ -1052,7 +1080,8 @@
                                                         {{ Js::from($projectReachDisplay['hasOfficialProjectReach'] ? $projectReachDisplay['scoreValue'] . '/10' : ($projectReachDisplay['hasReadableAiReach'] ? 'Belum tersedia' : 'Belum dinilai AI')) }},
                                                         {{ Js::from($article->published_at ? \Carbon\Carbon::parse($article->published_at)->format('d/m/y') : 'Baru saja') }},
                                                         {{ Js::from($likesCount) }},
-                                                        {{ Js::from($commentsCount) }}
+                                                        {{ Js::from($commentsCount) }},
+                                                        {{ Js::from($socialHashtags) }}
                                                     )" 
                                                     class="px-2.5 py-1.5 sm:px-4 sm:py-2 border border-slate-200/80 text-slate-700 hover:bg-slate-50 font-bold text-[10px] sm:text-xs rounded-xl transition flex items-center gap-1 bg-white cursor-pointer hover:border-slate-300"
                                                 >
@@ -1060,6 +1089,7 @@
                                                     <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
                                                 </button>
                                             @endif
+
                                         </div>
                                     </div>
                                 </article>
@@ -4769,8 +4799,9 @@
             <div class="border-b border-slate-100 pb-6 mb-2 flex-shrink-0" style="padding-right: 48px;">
                 <div class="flex items-center gap-4 mb-4">
                     <!-- Source Icon (Dynamic Favicon/Fallback in Modal) -->
+                    <!-- Source Icon (Dynamic Favicon/Fallback in Modal) -->
                     <div class="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm shrink-0">
-                        <div x-data="{ iconFailed: false }" class="w-full h-full">
+                        <div x-data="{ iconFailed: false }" class="w-full h-full flex items-center justify-center">
                             <img 
                                 :src="'https://www.google.com/s2/favicons?sz=64&domain=' + (
                                     detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'facebook.com' :
@@ -4782,7 +4813,7 @@
                                 )"
                                 x-on:error="iconFailed = true"
                                 x-show="!iconFailed"
-                                class="w-5 h-5 object-contain"
+                                class="w-full h-full object-cover"
                                 alt="Logo"
                             />
                             <div x-show="iconFailed" class="w-full h-full flex items-center justify-center" style="display: none;">
@@ -4808,6 +4839,19 @@
                                 x-text="detailSentiment === 'positive' ? 'Positif' : (detailSentiment === 'negative' ? 'Negatif' : 'Netral')"
                             ></span>
                             <span x-show="detailCategory" class="px-2.5 py-1 text-[9px] font-bold bg-slate-50 border border-slate-200/80 text-slate-500 rounded-xl max-w-[150px] truncate" title="Kategori" x-text="detailCategory"></span>
+                            
+                            <template x-for="tag in detailHashtags">
+                                <span 
+                                    class="px-2 py-0.5 text-[9px] font-bold rounded-lg border"
+                                    :style="
+                                        detailSource.toLowerCase().includes('tiktok') ? 'background-color: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.15); color: #000000;' :
+                                        (detailSource.toLowerCase().includes('instagram') || detailSource.toLowerCase() === 'ig' ? 'background-color: rgba(193,53,132,0.05); border-color: rgba(193,53,132,0.15); color: #c13584;' :
+                                        (detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'background-color: rgba(24,119,242,0.05); border-color: rgba(24,119,242,0.15); color: #1877f2;' :
+                                        'background-color: rgba(100,116,139,0.05); border-color: rgba(100,116,139,0.15); color: #64748b;'))
+                                    "
+                                    x-text="tag"
+                                ></span>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -4819,7 +4863,15 @@
                     <div class="px-1.5 py-0.5">
                         <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Jangkauan</span>
                         <div class="flex items-start gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                            <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px] mt-0.5">insights</span>
+                            <span 
+                                class="material-symbols-outlined text-[14px] md:text-[15px] mt-0.5"
+                                :style="
+                                    detailSource.toLowerCase().includes('tiktok') ? 'color: #000000;' :
+                                    (detailSource.toLowerCase().includes('instagram') || detailSource.toLowerCase() === 'ig' ? 'color: #c13584;' :
+                                    (detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'color: #1877f2;' :
+                                    'color: #64748b;'))
+                                "
+                            >insights</span>
                             <div class="flex flex-col leading-tight">
                                 <span x-text="detailReach"></span>
                                 <span class="text-[9px] font-semibold text-slate-400 mt-0.5" x-text="detailLevel"></span>
@@ -4829,14 +4881,30 @@
                     <div class="px-1.5 py-0.5 border-l border-slate-200">
                         <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Skor</span>
                         <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                            <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">analytics</span>
+                            <span 
+                                class="material-symbols-outlined text-[14px] md:text-[15px]"
+                                :style="
+                                    detailSource.toLowerCase().includes('tiktok') ? 'color: #000000;' :
+                                    (detailSource.toLowerCase().includes('instagram') || detailSource.toLowerCase() === 'ig' ? 'color: #c13584;' :
+                                    (detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'color: #1877f2;' :
+                                    'color: #64748b;'))
+                                "
+                            >analytics</span>
                             <span x-text="detailScore"></span>
                         </div>
                     </div>
                     <div class="px-1.5 py-0.5 border-l border-slate-200">
                         <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Tanggal</span>
                         <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                            <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">calendar_month</span>
+                            <span 
+                                class="material-symbols-outlined text-[14px] md:text-[15px]"
+                                :style="
+                                    detailSource.toLowerCase().includes('tiktok') ? 'color: #000000;' :
+                                    (detailSource.toLowerCase().includes('instagram') || detailSource.toLowerCase() === 'ig' ? 'color: #c13584;' :
+                                    (detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'color: #1877f2;' :
+                                    'color: #64748b;'))
+                                "
+                            >calendar_month</span>
                             <span x-text="detailFormattedDate"></span>
                         </div>
                     </div>
@@ -4844,7 +4912,16 @@
                         <div class="px-1.5 py-0.5 border-l border-slate-200">
                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1" x-text="detailSource.toLowerCase() === 'tiktok' ? 'Love' : 'Like'"></span>
                             <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                                <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]" x-text="detailSource.toLowerCase() === 'tiktok' ? 'favorite' : 'thumb_up'"></span>
+                                <span 
+                                    class="material-symbols-outlined text-[14px] md:text-[15px]"
+                                    :style="
+                                        detailSource.toLowerCase().includes('tiktok') ? 'color: #000000;' :
+                                        (detailSource.toLowerCase().includes('instagram') || detailSource.toLowerCase() === 'ig' ? 'color: #c13584;' :
+                                        (detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'color: #1877f2;' :
+                                        'color: #64748b;'))
+                                    "
+                                    x-text="detailSource.toLowerCase() === 'tiktok' ? 'favorite' : 'thumb_up'"
+                                ></span>
                                 <span x-text="detailLikes"></span>
                             </div>
                         </div>
@@ -4853,7 +4930,15 @@
                         <div class="px-1.5 py-0.5 border-l border-slate-200">
                             <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Komen</span>
                             <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
-                                <span class="material-symbols-outlined text-[#1fa387] text-[14px] md:text-[15px]">comment</span>
+                                <span 
+                                    class="material-symbols-outlined text-[14px] md:text-[15px]"
+                                    :style="
+                                        detailSource.toLowerCase().includes('tiktok') ? 'color: #000000;' :
+                                        (detailSource.toLowerCase().includes('instagram') || detailSource.toLowerCase() === 'ig' ? 'color: #c13584;' :
+                                        (detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'color: #1877f2;' :
+                                        'color: #64748b;'))
+                                    "
+                                >comment</span>
                                 <span x-text="detailComments"></span>
                             </div>
                         </div>
@@ -4861,7 +4946,17 @@
                 </div>
 
                 <div class="flex items-center gap-3 mt-1.5 flex-wrap">
-                    <a :href="detailUrl" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#1fa387] hover:text-[#17856e] transition-colors hover:underline bg-[#1fa387]/10 px-3 py-1.5 rounded-lg">
+                    <a 
+                        :href="detailUrl" 
+                        target="_blank" 
+                        class="inline-flex items-center gap-1.5 text-xs font-bold transition-colors hover:underline px-3 py-1.5 rounded-lg"
+                        :style="
+                            detailSource.toLowerCase().includes('tiktok') ? 'background-color: rgba(0,0,0,0.08); color: #000000;' :
+                            (detailSource.toLowerCase().includes('instagram') || detailSource.toLowerCase() === 'ig' ? 'background-color: rgba(193,53,132,0.08); color: #c13584;' :
+                            (detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'background-color: rgba(24,119,242,0.08); color: #1877f2;' :
+                            'background-color: rgba(31,163,135,0.08); color: #1fa387;'))
+                        "
+                    >
                         <span>Baca Artikel Asli</span>
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                     </a>
@@ -4869,7 +4964,13 @@
                     <button 
                         type="button"
                         @click="showAiSummaryModal = !showAiSummaryModal"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold bg-[#1fa387] hover:bg-[#1fa387]/90 text-white rounded-lg transition-all duration-200 cursor-pointer shadow-sm"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-white rounded-lg transition-all duration-200 cursor-pointer shadow-sm"
+                        :style="
+                            detailSource.toLowerCase().includes('tiktok') ? 'background-color: #000000;' :
+                            (detailSource.toLowerCase().includes('instagram') || detailSource.toLowerCase() === 'ig' ? 'background-color: #c13584;' :
+                            (detailSource.toLowerCase().includes('facebook') || detailSource.toLowerCase() === 'fb' ? 'background-color: #1877f2;' :
+                            'background-color: #1fa387;'))
+                        "
                     >
                         <span class="material-symbols-outlined text-[15px] transition-transform duration-200" :class="showAiSummaryModal ? 'rotate-45' : ''">auto_awesome</span>
                         <span>Ringkasan AI</span>
@@ -4918,16 +5019,18 @@
             </div>
     </div>
 
-    @if($showTikTokCommentsModal)
         @php
             $tikTokCommentsModalMeta = $tikTokCommentsModalMeta ?? [];
             $tikTokCommentsModalItems = $tikTokCommentsModalItems ?? [];
         @endphp
         <template x-teleport="body">
         <div
+            x-show="showTikTokCommentsModal"
+            x-cloak
+            x-transition
             class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-            @keydown.escape.window="$wire.closeTikTokCommentsModal()"
-            @click.self="$wire.closeTikTokCommentsModal()"
+            @keydown.escape.window="showTikTokCommentsModal = false; $wire.closeTikTokCommentsModal()"
+            @click.self="showTikTokCommentsModal = false; $wire.closeTikTokCommentsModal()"
         >
             <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
                 <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
@@ -4951,8 +5054,8 @@
                     </div>
                     <button
                         type="button"
-                        wire:click="closeTikTokCommentsModal"
-                        class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
+                        @click="showTikTokCommentsModal = false; $wire.closeTikTokCommentsModal()"
+                        class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
                         title="Tutup"
                     >
                         ✕
@@ -4976,7 +5079,28 @@
                 </div>
 
                 <div class="flex-1 overflow-y-auto px-6 py-5">
-                    @if(empty($tikTokCommentsModalItems))
+                    @if($loadingTikTokComments)
+                        <!-- Skeleton Loader matching Comment Card Structure -->
+                        <div class="space-y-3 animate-pulse">
+                            @for($i = 0; $i < 3; $i++)
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 shrink-0"></div>
+                                        <div class="flex-1 space-y-2 py-0.5">
+                                            <div class="flex items-center gap-2">
+                                                <div class="h-3.5 bg-slate-200 rounded-full w-28"></div>
+                                                <div class="h-3 bg-slate-150 rounded-full w-16"></div>
+                                            </div>
+                                            <div class="space-y-1.5 pt-1">
+                                                <div class="h-3 bg-slate-200 rounded-full w-full"></div>
+                                                <div class="h-3 bg-slate-150 rounded-full w-4/5"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endfor
+                        </div>
+                    @elseif(empty($tikTokCommentsModalItems))
                         <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
                             <span class="material-symbols-outlined text-[30px] text-slate-300">comment</span>
                             <p class="mt-3 text-sm font-bold text-slate-700">Belum ada daftar komentar yang terbaca.</p>
@@ -5019,8 +5143,8 @@
                 <div class="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
                     <button
                         type="button"
-                        wire:click="closeTikTokCommentsModal"
-                        class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition"
+                        @click="showTikTokCommentsModal = false; $wire.closeTikTokCommentsModal()"
+                        class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
                     >
                         Tutup
                     </button>
@@ -5028,19 +5152,20 @@
             </div>
         </div>
         </template>
-    @endif
 
 
-    @if($showInstagramCommentsModal)
         @php
             $instagramCommentsModalMeta = $instagramCommentsModalMeta ?? [];
             $instagramCommentsModalItems = $instagramCommentsModalItems ?? [];
         @endphp
         <template x-teleport="body">
         <div
+            x-show="showInstagramCommentsModal"
+            x-cloak
+            x-transition
             class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-            @keydown.escape.window="$wire.closeInstagramCommentsModal()"
-            @click.self="$wire.closeInstagramCommentsModal()"
+            @keydown.escape.window="showInstagramCommentsModal = false; $wire.closeInstagramCommentsModal()"
+            @click.self="showInstagramCommentsModal = false; $wire.closeInstagramCommentsModal()"
         >
             <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
                 <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
@@ -5064,8 +5189,8 @@
                     </div>
                     <button
                         type="button"
-                        wire:click="closeInstagramCommentsModal"
-                        class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
+                        @click="showInstagramCommentsModal = false; $wire.closeInstagramCommentsModal()"
+                        class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
                         title="Tutup"
                     >
                         ✕
@@ -5089,7 +5214,28 @@
                 </div>
 
                 <div class="flex-1 overflow-y-auto px-6 py-5">
-                    @if(empty($instagramCommentsModalItems))
+                    @if($loadingInstagramComments)
+                        <!-- Skeleton Loader matching Comment Card Structure -->
+                        <div class="space-y-3 animate-pulse">
+                            @for($i = 0; $i < 3; $i++)
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 shrink-0"></div>
+                                        <div class="flex-1 space-y-2 py-0.5">
+                                            <div class="flex items-center gap-2">
+                                                <div class="h-3.5 bg-slate-200 rounded-full w-28"></div>
+                                                <div class="h-3 bg-slate-150 rounded-full w-16"></div>
+                                            </div>
+                                            <div class="space-y-1.5 pt-1">
+                                                <div class="h-3 bg-slate-200 rounded-full w-full"></div>
+                                                <div class="h-3 bg-slate-150 rounded-full w-4/5"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endfor
+                        </div>
+                    @elseif(empty($instagramCommentsModalItems))
                         <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
                             <span class="material-symbols-outlined text-[30px] text-slate-300">comment</span>
                             <p class="mt-3 text-sm font-bold text-slate-700">Belum ada daftar komentar yang terbaca.</p>
@@ -5132,8 +5278,8 @@
                 <div class="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
                     <button
                         type="button"
-                        wire:click="closeInstagramCommentsModal"
-                        class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition"
+                        @click="showInstagramCommentsModal = false; $wire.closeInstagramCommentsModal()"
+                        class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
                     >
                         Tutup
                     </button>
@@ -5141,7 +5287,6 @@
             </div>
         </div>
         </template>
-    @endif
 
     <!-- Global AI PDF Report Generation Modal Overlay -->
     <div wire:loading.flex wire:target="preparePdfReport" class="fixed inset-0 z-[9999] items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">

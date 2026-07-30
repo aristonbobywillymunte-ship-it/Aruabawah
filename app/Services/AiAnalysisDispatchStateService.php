@@ -63,7 +63,7 @@ class AiAnalysisDispatchStateService
         return AiProvider::query()->where('is_active', true)->exists();
     }
 
-    public function reserveQueuedState(array $payload, ?int $promptTemplateId = null, ?string $providerContextHash = null): array
+    public function reserveQueuedState(array $payload, ?int $promptTemplateId = null, ?string $providerContextHash = null, bool $forceReset = false): array
     {
         try {
             $context = $this->normalizePayloadContext($payload, $promptTemplateId, $providerContextHash);
@@ -79,11 +79,26 @@ class AiAnalysisDispatchStateService
             ];
         }
 
-        return DB::transaction(function () use ($context) {
+        return DB::transaction(function () use ($context, $forceReset) {
             $state = AiAnalysisDispatchState::query()
                 ->where('dispatch_key', $context['dispatch_key'])
                 ->lockForUpdate()
                 ->first();
+
+            if ($state && $forceReset) {
+                // Reset state agar AI dapat dijalankan ulang (misal: setelah komentar tersedia)
+                $state->forceFill([
+                    'status'           => 'queued',
+                    'error_message'    => null,
+                    'failure_category' => null,
+                    'last_error_code'  => null,
+                    'next_retry_at'    => null,
+                    'completed_at'     => null,
+                    'meta_json'        => $context['meta_json'],
+                ])->save();
+
+                return $this->decision($state->refresh(), true, 'queued', 'force_reset');
+            }
 
             if ($state) {
                 return $this->decisionFromExistingState($state, $context);
@@ -118,9 +133,9 @@ class AiAnalysisDispatchStateService
         });
     }
 
-    public function reserveQueuedStateAndDispatch(array $payload, ?int $promptTemplateId = null, ?string $providerContextHash = null): array
+    public function reserveQueuedStateAndDispatch(array $payload, ?int $promptTemplateId = null, ?string $providerContextHash = null, bool $forceReset = false): array
     {
-        $decision = $this->reserveQueuedState($payload, $promptTemplateId, $providerContextHash);
+        $decision = $this->reserveQueuedState($payload, $promptTemplateId, $providerContextHash, $forceReset);
 
         if (! ($decision['should_dispatch'] ?? false)) {
             return $decision;

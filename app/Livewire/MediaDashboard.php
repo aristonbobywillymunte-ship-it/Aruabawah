@@ -234,10 +234,12 @@ class MediaDashboard extends Component
     public $showAddKeywordModal = false;
     public $socialMediaItemsCache = null;
     public bool $showTikTokCommentsModal = false;
+    public bool $loadingTikTokComments = false;
     public array $tikTokCommentsModalMeta = [];
     public array $tikTokCommentsModalItems = [];
 
     public bool $showInstagramCommentsModal = false;
+    public bool $loadingInstagramComments = false;
     public array $instagramCommentsModalMeta = [];
     public array $instagramCommentsModalItems = [];
 
@@ -305,8 +307,23 @@ class MediaDashboard extends Component
             ->with(['aiAnalysisResult'])
             ->whereHas('aiAnalysisResult', function ($ai) {
                 $ai->completeOfficialAiResult();
+            })
+            // Sembunyikan postingan IG/TikTok yang komentarnya belum selesai diperiksa.
+            // Artikel dihubungkan ke social_media_items lewat canonical_url/url.
+            // Kondisi: jika ada social_media_item dengan platform IG/TikTok yang url-nya cocok
+            // dan comments_checked = false → artikel ini dikecualikan dari tampilan.
+            ->whereNotExists(function ($sub) {
+                $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                    ->from('social_media_items')
+                    ->where(function ($q) {
+                        $q->whereColumn('social_media_items.post_url', 'articles.canonical_url')
+                          ->orWhereColumn('social_media_items.post_url', 'articles.url');
+                    })
+                    ->whereIn('social_media_items.platform', ['Instagram', 'TikTok'])
+                    ->where('social_media_items.comments_checked', false);
             });
     }
+
 
     public function mount($projectId = null)
     {
@@ -970,6 +987,14 @@ class MediaDashboard extends Component
         $sourceText = trim((string) $sourceText);
         $sourceText = $this->cleanNoiseText($sourceText);
 
+        // Jika teks rill kosong, gunakan Summary dari AI sebagai fallback untuk deskripsi utama
+        if ($sourceText === '') {
+            $aiSummary = $article->aiAnalysisResult?->summary ?? '';
+            if (trim($aiSummary) !== '') {
+                $sourceText = trim($aiSummary);
+            }
+        }
+
         if ($sourceText === '') {
             return 'Belum ada ringkasan.';
         }
@@ -986,16 +1011,45 @@ class MediaDashboard extends Component
         if ($this->isSocialArticle($article)) {
             $title = preg_replace('/^Post\s+dari\s+Facebook\s+oleh\s+/i', '', $title) ?? $title;
             $title = preg_replace('/^Post\s+dari\s+(Instagram|TikTok|Twitter|X)\s+oleh\s+/i', '', $title) ?? $title;
+            
+            // Jika judul mentah hanya berupa 'Post dari TikTok' atau 'Post dari Instagram' tanpa pengunggah spesifik
+            if (preg_match('/^Post\s+dari\s+(TikTok|Instagram|Facebook|Twitter|X)$/i', trim($title))) {
+                $title = trim($title);
+            }
         }
 
         return trim($title) !== '' ? trim($title) : 'Penyebutan sosial';
     }
 
+
     public function openTikTokCommentsModal(int $articleId): void
     {
-        $this->showTikTokCommentsModal = false;
-        $this->tikTokCommentsModalMeta = [];
+        // 1. Tampilkan modal seketika
+        $this->showTikTokCommentsModal = true;
+        $this->loadingTikTokComments = true;
+        $this->tikTokCommentsModalMeta = [
+            'article_id' => $articleId,
+            'title' => 'Memuat data...',
+            'source_name' => 'TikTok',
+            'post_url' => '',
+            'author_name' => '',
+            'published_at' => '',
+            'comment_count' => 0,
+            'like_count' => 0,
+        ];
         $this->tikTokCommentsModalItems = [];
+
+        // 2. Dispatch event asinkron agar browser memicu load data di background
+        $this->dispatch('load-tiktok-comments', articleId: $articleId);
+    }
+
+    // Listener Livewire untuk loading data asinkron
+    #[on('load-tiktok-comments')]
+    public function loadTikTokCommentsData(int $articleId): void
+    {
+        if (!$this->showTikTokCommentsModal || $this->tikTokCommentsModalMeta['article_id'] !== $articleId) {
+            return;
+        }
 
         $article = $this->projectArticlesQuery()
             ->whereKey($articleId)
@@ -1008,6 +1062,7 @@ class MediaDashboard extends Component
         }
 
         if (! $article || ! $this->isTikTokArticle($article)) {
+            $this->loadingTikTokComments = false;
             return;
         }
 
@@ -1025,12 +1080,13 @@ class MediaDashboard extends Component
             'like_count' => (int) ($socialItem?->like_count ?? 0),
         ];
         $this->tikTokCommentsModalItems = $comments;
-        $this->showTikTokCommentsModal = true;
+        $this->loadingTikTokComments = false;
     }
 
     public function closeTikTokCommentsModal(): void
     {
         $this->showTikTokCommentsModal = false;
+        $this->loadingTikTokComments = false;
         $this->tikTokCommentsModalMeta = [];
         $this->tikTokCommentsModalItems = [];
     }
@@ -1046,9 +1102,32 @@ class MediaDashboard extends Component
 
     public function openInstagramCommentsModal(int $articleId): void
     {
-        $this->showInstagramCommentsModal = false;
-        $this->instagramCommentsModalMeta = [];
+        // 1. Tampilkan modal seketika
+        $this->showInstagramCommentsModal = true;
+        $this->loadingInstagramComments = true;
+        $this->instagramCommentsModalMeta = [
+            'article_id' => $articleId,
+            'title' => 'Memuat data...',
+            'source_name' => 'Instagram',
+            'post_url' => '',
+            'author_name' => '',
+            'published_at' => '',
+            'comment_count' => 0,
+            'like_count' => 0,
+        ];
         $this->instagramCommentsModalItems = [];
+
+        // 2. Dispatch event asinkron agar browser memicu load data di background
+        $this->dispatch('load-instagram-comments', articleId: $articleId);
+    }
+
+    // Listener Livewire untuk loading data asinkron
+    #[on('load-instagram-comments')]
+    public function loadInstagramCommentsData(int $articleId): void
+    {
+        if (!$this->showInstagramCommentsModal || $this->instagramCommentsModalMeta['article_id'] !== $articleId) {
+            return;
+        }
 
         $article = $this->projectArticlesQuery()
             ->whereKey($articleId)
@@ -1061,11 +1140,13 @@ class MediaDashboard extends Component
         }
 
         if (! $article || ! $this->isInstagramArticle($article)) {
+            $this->loadingInstagramComments = false;
             return;
         }
 
         $socialItem = $this->resolveSocialMediaItemForArticle($article);
         $comments = $this->resolveCommentsForSocialItem($socialItem);
+        $storedCommentCount = count($comments);
 
         $this->instagramCommentsModalMeta = [
             'article_id' => $article->id,
@@ -1074,16 +1155,17 @@ class MediaDashboard extends Component
             'post_url' => (string) ($socialItem?->post_url ?: $article->canonical_url ?: $article->url ?: ''),
             'author_name' => (string) ($socialItem?->author_name ?? ''),
             'published_at' => $article->published_at ? \Carbon\Carbon::parse($article->published_at)->translatedFormat('d M Y, H:i') : 'Baru saja',
-            'comment_count' => (int) ($socialItem?->comment_count ?? 0),
+            'comment_count' => $storedCommentCount,
             'like_count' => (int) ($socialItem?->like_count ?? 0),
         ];
         $this->instagramCommentsModalItems = $comments;
-        $this->showInstagramCommentsModal = true;
+        $this->loadingInstagramComments = false;
     }
 
     public function closeInstagramCommentsModal(): void
     {
         $this->showInstagramCommentsModal = false;
+        $this->loadingInstagramComments = false;
         $this->instagramCommentsModalMeta = [];
         $this->instagramCommentsModalItems = [];
     }
@@ -1104,15 +1186,19 @@ class MediaDashboard extends Component
         }
 
         if ($this->socialMediaItemsCache === null) {
-            $urls = $this->projectArticlesQuery()->pluck('canonical_url')->merge(
-                $this->projectArticlesQuery()->pluck('url')
-            )->filter()->unique()->values()->all();
+            try {
+                $urls = $this->projectArticlesQuery()->pluck('canonical_url')->merge(
+                    $this->projectArticlesQuery()->pluck('url')
+                )->filter()->unique()->values()->all();
 
-            if (! empty($urls)) {
-                $this->socialMediaItemsCache = SocialMediaItem::whereIn('post_url', $urls)
-                    ->get()
-                    ->keyBy('post_url');
-            } else {
+                if (! empty($urls)) {
+                    $this->socialMediaItemsCache = SocialMediaItem::whereIn('post_url', $urls)
+                        ->get()
+                        ->keyBy('post_url');
+                } else {
+                    $this->socialMediaItemsCache = collect();
+                }
+            } catch (\Throwable $e) {
                 $this->socialMediaItemsCache = collect();
             }
         }
@@ -1226,6 +1312,78 @@ class MediaDashboard extends Component
         $decodedPayload = $this->decodeSocialPayload($socialItem->raw_json);
 
         return $this->extractTikTokComments($decodedPayload);
+    }
+
+    public function getSocialHashtagsForArticle($article): array
+    {
+        if (! $this->isSocialArticle($article)) {
+            return [];
+        }
+
+        $socialItem = $this->resolveSocialMediaItemForArticle($article);
+        $payload = $this->decodeSocialPayload($socialItem?->raw_json);
+
+        $candidates = [];
+
+        if ($payload) {
+            foreach ([
+                data_get($payload, 'hashtags'),
+                data_get($payload, 'hashTags'),
+                data_get($payload, 'tags'),
+                data_get($payload, 'topicTags'),
+                data_get($payload, 'displayHashtags'),
+            ] as $candidate) {
+                if (is_array($candidate)) {
+                    $candidates = array_merge($candidates, $candidate);
+                }
+            }
+        }
+
+        foreach ([
+            data_get($payload, 'text'),
+            data_get($payload, 'caption'),
+            data_get($payload, 'description'),
+            data_get($payload, 'desc'),
+            data_get($payload, 'content'),
+            $socialItem?->content,
+            $article->title,
+            $article->content,
+            $article->excerpt,
+        ] as $textSource) {
+            if (is_string($textSource) && trim($textSource) !== '') {
+                preg_match_all('/#([\p{L}\p{N}_\.]+)/u', $textSource, $matches);
+                foreach (($matches[1] ?? []) as $tag) {
+                    $candidates[] = $tag;
+                }
+            }
+        }
+
+        $hashtags = [];
+        foreach ($candidates as $candidate) {
+            if (is_array($candidate)) {
+                $candidate = data_get($candidate, 'name')
+                    ?: data_get($candidate, 'tag')
+                    ?: data_get($candidate, 'hashtag')
+                    ?: data_get($candidate, 'title')
+                    ?: null;
+            }
+
+            $tag = ltrim(trim((string) $candidate), '#');
+            $tag = preg_replace('/[^\p{L}\p{N}_\.]/u', '', $tag) ?? '';
+
+            if ($tag === '') {
+                continue;
+            }
+
+            $normalized = Str::lower($tag);
+            if (isset($hashtags[$normalized])) {
+                continue;
+            }
+
+            $hashtags[$normalized] = '#' . $tag;
+        }
+
+        return array_values($hashtags);
     }
 
     protected function extractTikTokComments(mixed $payload): array

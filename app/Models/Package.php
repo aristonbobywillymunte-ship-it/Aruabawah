@@ -11,11 +11,19 @@ class Package extends Model
     protected $fillable = [
         'name',
         'description',
+        'price',
+        'social_media_features',
+        'news_portal_features',
+        'advantages',
         'is_active',
         'use_portal',
     ];
 
     protected $casts = [
+        'price' => 'decimal:2',
+        'social_media_features' => 'array',
+        'news_portal_features' => 'array',
+        'advantages' => 'array',
         'is_active' => 'boolean',
         'use_portal' => 'boolean',
     ];

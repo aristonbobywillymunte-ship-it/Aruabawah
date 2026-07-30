@@ -22,15 +22,17 @@ class SocialMediaItem extends Model
         'view_count',
         'follower_count',
         'raw_json',
+        'comments_checked',
     ];
 
     protected $casts = [
-        'posted_at'      => 'datetime',
-        'like_count'     => 'integer',
-        'comment_count'  => 'integer',
-        'share_count'    => 'integer',
-        'view_count'     => 'integer',
-        'follower_count' => 'integer',
+        'posted_at'        => 'datetime',
+        'like_count'       => 'integer',
+        'comment_count'    => 'integer',
+        'share_count'      => 'integer',
+        'view_count'       => 'integer',
+        'follower_count'   => 'integer',
+        'comments_checked' => 'boolean',
     ];
 
     public function projects(): BelongsToMany

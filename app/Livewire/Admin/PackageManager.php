@@ -22,8 +22,25 @@ class PackageManager extends Component
     // ─── Form Fields ──────────────────────────────────────────────────────
     public string $name = '';
     public string $description = '';
+    public string $price = '0';
+    public string $newSocialFeature = '';
+    public array $social_media_features = [];
+    public string $newPortalFeature = '';
+    public array $news_portal_features = [];
+    public string $newAdvantage = '';
+    public array $advantages = [];
     public bool $is_active = true;
     public bool $use_portal = true;
+
+    // ─── CRUD-based Limits & Features (Advantages Wrapper) ───────────────
+    public string $limit_projects = 'unlimited';
+    public string $limit_keywords = 'unlimited';
+    public string $limit_mentions = '500000';
+    public string $limit_users = 'unlimited';
+    public bool $feat_ai = false;
+    public bool $feat_rss = false;
+    public bool $feat_api = false;
+    public bool $feat_whitelabel = false;
 
     // ─── Actor Configuration (per paket) ─────────────────────────────────
     /** @var array<int, array{is_enabled: bool, cost_per_run_usd: string}> keyed by apify_actor_id */
@@ -43,11 +60,117 @@ class PackageManager extends Component
     protected function rules(): array
     {
         return [
-            'name'        => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'is_active'   => 'boolean',
-            'use_portal'  => 'boolean',
+            'name'                  => 'required|string|max:255',
+            'description'           => 'nullable|string|max:1000',
+            'price'                 => 'required|numeric|min:0',
+            'social_media_features' => 'nullable|array',
+            'news_portal_features'  => 'nullable|array',
+            'advantages'            => 'nullable|array',
+            'is_active'             => 'boolean',
+            'use_portal'            => 'boolean',
         ];
+    }
+
+    // ─── Feature List Management Actions ──────────────────────────────────
+    public function addSocialFeature(): void
+    {
+        if (trim($this->newSocialFeature) !== '') {
+            $this->social_media_features[] = trim($this->newSocialFeature);
+            $this->newSocialFeature = '';
+        }
+    }
+
+    public function removeSocialFeature(int $index): void
+    {
+        if (isset($this->social_media_features[$index])) {
+            unset($this->social_media_features[$index]);
+            $this->social_media_features = array_values($this->social_media_features);
+        }
+    }
+
+    public function editSocialFeature(int $index): void
+    {
+        if (isset($this->social_media_features[$index])) {
+            $this->newSocialFeature = $this->social_media_features[$index];
+            $this->removeSocialFeature($index);
+        }
+    }
+
+    public function addPortalFeature(): void
+    {
+        if (trim($this->newPortalFeature) !== '') {
+            $this->news_portal_features[] = trim($this->newPortalFeature);
+            $this->newPortalFeature = '';
+        }
+    }
+
+    public function removePortalFeature(int $index): void
+    {
+        if (isset($this->news_portal_features[$index])) {
+            unset($this->news_portal_features[$index]);
+            $this->news_portal_features = array_values($this->news_portal_features);
+        }
+    }
+
+    public function editPortalFeature(int $index): void
+    {
+        if (isset($this->news_portal_features[$index])) {
+            $this->newPortalFeature = $this->news_portal_features[$index];
+            $this->removePortalFeature($index);
+        }
+    }
+
+    public function addAdvantage(): void
+    {
+        if (trim($this->newAdvantage) !== '') {
+            $this->advantages[] = trim($this->newAdvantage);
+            $this->newAdvantage = '';
+        }
+    }
+
+    public function removeAdvantage(int $index): void
+    {
+        if (isset($this->advantages[$index])) {
+            unset($this->advantages[$index]);
+            $this->advantages = array_values($this->advantages);
+        }
+    }
+
+    public function editAdvantage(int $index): void
+    {
+        if (isset($this->advantages[$index])) {
+            $this->newAdvantage = $this->advantages[$index];
+            $this->removeAdvantage($index);
+        }
+    }
+
+    public function loadDefaultTemplate(): void
+    {
+        $this->advantages = [
+            'Proyek Tak Terbatas',
+            'Kata Kunci Tak Terbatas',
+            '500.000 Penyebutan /bln',
+            'Pengguna Tak Terbatas',
+        ];
+        $this->social_media_features = [
+            'Facebook Scraper (Posts, Comments, Likes)',
+            'Instagram Scraper (Posts, Comments, Profiles)',
+            'TikTok Scraper (Videos, Hashtags, Search)'
+        ];
+        $this->news_portal_features = [
+            'RSS Feed & Portal Scraper',
+            'Custom Portal Scraping (Detik, Kompas, Tribun, dll.)'
+        ];
+        
+        $this->limit_projects = 'unlimited';
+        $this->limit_keywords = 'unlimited';
+        $this->limit_mentions = '500000';
+        $this->limit_users = 'unlimited';
+        
+        $this->feat_ai = true;
+        $this->feat_rss = true;
+        $this->feat_api = true;
+        $this->feat_whitelabel = true;
     }
 
     // ─── List View ────────────────────────────────────────────────────────
@@ -71,10 +194,48 @@ class PackageManager extends Component
     {
         $pkg = Package::findOrFail($id);
         $this->editingPackageId = $id;
-        $this->name        = $pkg->name;
-        $this->description = $pkg->description ?? '';
-        $this->is_active   = $pkg->is_active;
-        $this->use_portal  = (bool) ($pkg->use_portal ?? true);
+        $this->name                  = $pkg->name;
+        $this->description           = $pkg->description ?? '';
+        $this->price                 = (string) ($pkg->price ?? '0');
+        $this->social_media_features = $pkg->social_media_features ?? [];
+        $this->news_portal_features  = $pkg->news_portal_features ?? [];
+        $this->advantages            = $pkg->advantages ?? [];
+        $this->is_active             = $pkg->is_active;
+        $this->use_portal            = (bool) ($pkg->use_portal ?? true);
+        
+        // Parse advantages to find toggles and clean them up
+        $this->parseAdvantagesToProperties();
+
+        // Backward compatibility: If it is Enterprise and lists are empty/mixed, distribute them
+        if (str_contains(strtolower($this->name), 'enterprise')) {
+            // Move news portal features out of advantages if present
+            foreach ($this->advantages as $key => $adv) {
+                $advLower = strtolower($adv);
+                if (str_contains($advLower, 'rss feed') || str_contains($advLower, 'portal scraper')) {
+                    if (!in_array($adv, $this->news_portal_features)) {
+                        $this->news_portal_features[] = $adv;
+                    }
+                    unset($this->advantages[$key]);
+                }
+            }
+            $this->advantages = array_values($this->advantages);
+
+            // Populate default lists if empty
+            if (empty($this->social_media_features)) {
+                $this->social_media_features = [
+                    'Facebook Scraper (Posts, Comments, Likes)',
+                    'Instagram Scraper (Posts, Comments, Profiles)',
+                    'TikTok Scraper (Videos, Hashtags, Search)'
+                ];
+            }
+            if (empty($this->news_portal_features)) {
+                $this->news_portal_features = [
+                    'RSS Feed & Portal Scraper',
+                    'Custom Portal Scraping (Detik, Kompas, Tribun, dll.)'
+                ];
+            }
+        }
+        
         $this->loadActorConfig($id);
         $this->view = 'form';
     }
@@ -83,22 +244,31 @@ class PackageManager extends Component
     {
         $this->validate();
 
+        // Pastikan parameter limit system di set ke unlimited / 500k penyebutan jika user tidak mengetiknya secara manual
+        $this->limit_projects = 'unlimited';
+        $this->limit_keywords = 'unlimited';
+        $this->limit_mentions = '500000';
+        $this->limit_users = 'unlimited';
+
+        $this->compilePropertiesToAdvantages();
+
+        $data = [
+            'name'                  => trim($this->name),
+            'description'           => trim($this->description) ?: null,
+            'price'                 => (float) $this->price,
+            'social_media_features' => $this->social_media_features ?: null,
+            'news_portal_features'  => $this->news_portal_features ?: null,
+            'advantages'            => $this->advantages ?: null,
+            'is_active'             => $this->is_active,
+            'use_portal'            => $this->use_portal,
+        ];
+
         if ($this->editingPackageId) {
             $pkg = Package::findOrFail($this->editingPackageId);
-            $pkg->update([
-                'name'        => trim($this->name),
-                'description' => trim($this->description) ?: null,
-                'is_active'   => $this->is_active,
-                'use_portal'  => $this->use_portal,
-            ]);
+            $pkg->update($data);
             $this->setFlash('Paket berhasil diperbarui.', 'success');
         } else {
-            $pkg = Package::create([
-                'name'        => trim($this->name),
-                'description' => trim($this->description) ?: null,
-                'is_active'   => $this->is_active,
-                'use_portal'  => $this->use_portal,
-            ]);
+            $pkg = Package::create($data);
             $this->setFlash('Paket baru berhasil dibuat.', 'success');
         }
 
@@ -233,46 +403,189 @@ class PackageManager extends Component
         }
     }
 
-    // ─── Toggle Actor Confirmation ───────────────────────────────────────
+    // ─── Toggle Actor Directly ───────────────────────────────────────────
 
-    public function initiateActorToggle(int $actorId, string $actorName): void
+    public function toggleActor(int $actorId): void
     {
-        $this->confirmActorToggleId = $actorId;
-        $this->confirmActorToggleName = $actorName;
-        $this->confirmActorToggleTargetState = !($this->actorConfig[$actorId]['is_enabled'] ?? false);
-    }
-
-    public function cancelActorToggle(): void
-    {
-        $this->confirmActorToggleId = null;
-        $this->confirmActorToggleName = '';
-    }
-
-    public function confirmActorToggle(): void
-    {
-        if ($this->confirmActorToggleId) {
-            $actorId = $this->confirmActorToggleId;
-            $newState = $this->confirmActorToggleTargetState;
-            $this->actorConfig[$actorId]['is_enabled'] = $newState;
-            
-            $actionWord = $newState ? 'diaktifkan' : 'dinonaktifkan';
-            $this->setFlash("Actor '{$this->confirmActorToggleName}' berhasil {$actionWord} sementara di paket ini.", 'success');
-            
-            $this->confirmActorToggleId = null;
-            $this->confirmActorToggleName = '';
+        if (isset($this->actorConfig[$actorId])) {
+            $this->actorConfig[$actorId]['is_enabled'] = !($this->actorConfig[$actorId]['is_enabled'] ?? false);
         }
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────
 
+    protected function parseAdvantagesToProperties(): void
+    {
+        $this->limit_projects = 'unlimited';
+        $this->limit_keywords = 'unlimited';
+        $this->limit_mentions = '500000';
+        $this->limit_users = 'unlimited';
+        $this->feat_ai = false;
+        $this->feat_rss = false;
+        $this->feat_api = false;
+        $this->feat_whitelabel = false;
+
+        $cleanAdvantages = [];
+        foreach ($this->advantages as $adv) {
+            $advLower = strtolower($adv);
+            $isSystemOrToggle = false;
+            
+            if (str_contains($advLower, 'proyek')) {
+                $isSystemOrToggle = true;
+                if (str_contains($advLower, 'tak terbatas') || str_contains($advLower, 'unlimited')) {
+                    $this->limit_projects = 'unlimited';
+                } else {
+                    $num = (int) filter_var(str_replace(['.', ','], '', $adv), FILTER_SANITIZE_NUMBER_INT);
+                    $this->limit_projects = $num > 0 ? (string)$num : 'unlimited';
+                }
+            }
+            
+            if (str_contains($advLower, 'kata kunci')) {
+                $isSystemOrToggle = true;
+                if (str_contains($advLower, 'tak terbatas') || str_contains($advLower, 'unlimited')) {
+                    $this->limit_keywords = 'unlimited';
+                } else {
+                    $num = (int) filter_var(str_replace(['.', ','], '', $adv), FILTER_SANITIZE_NUMBER_INT);
+                    $this->limit_keywords = $num > 0 ? (string)$num : 'unlimited';
+                }
+            }
+            
+            if (str_contains($advLower, 'penyebutan')) {
+                $isSystemOrToggle = true;
+                if (str_contains($advLower, 'tak terbatas') || str_contains($advLower, 'unlimited')) {
+                    $this->limit_mentions = 'unlimited';
+                } else {
+                    $num = (int) filter_var(str_replace(['.', ','], '', $adv), FILTER_SANITIZE_NUMBER_INT);
+                    $this->limit_mentions = $num > 0 ? (string)$num : '500000';
+                }
+            }
+            
+            if (str_contains($advLower, 'pengguna') || str_contains($advLower, 'user')) {
+                $isSystemOrToggle = true;
+                if (str_contains($advLower, 'tak terbatas') || str_contains($advLower, 'unlimited')) {
+                    $this->limit_users = 'unlimited';
+                } else {
+                    $num = (int) filter_var(str_replace(['.', ','], '', $adv), FILTER_SANITIZE_NUMBER_INT);
+                    $this->limit_users = $num > 0 ? (string)$num : 'unlimited';
+                }
+            }
+            
+            if (str_contains($advLower, 'fitur ai') || str_contains($advLower, 'kecerdasan buatan')) {
+                $this->feat_ai = true;
+                $isSystemOrToggle = true;
+            }
+            if (str_contains($advLower, 'rss feed') || str_contains($advLower, 'portal scraper')) {
+                $this->feat_rss = true;
+                $isSystemOrToggle = true;
+            }
+            if (str_contains($advLower, 'telegram') || str_contains($advLower, 'integrasi api') || str_contains($advLower, 'akses api')) {
+                $this->feat_api = true;
+                $isSystemOrToggle = true;
+            }
+            if (str_contains($advLower, 'branding') || str_contains($advLower, 'whitelabel') || str_contains($advLower, 'dashboard custom')) {
+                $this->feat_whitelabel = true;
+                $isSystemOrToggle = true;
+            }
+
+            if (!$isSystemOrToggle) {
+                $cleanAdvantages = [];
+                // pastikan tidak masuk clean
+            }
+            
+            // Perbaikan logic looping filter
+            $cleanAdvantages = array_filter($this->advantages, function($item) {
+                $itemLower = strtolower($item);
+                return !(
+                    str_contains($itemLower, 'proyek') ||
+                    str_contains($itemLower, 'kata kunci') ||
+                    str_contains($itemLower, 'penyebutan') ||
+                    str_contains($itemLower, 'pengguna') ||
+                    str_contains($itemLower, 'user') ||
+                    str_contains($itemLower, 'fitur ai') ||
+                    str_contains($itemLower, 'kecerdasan buatan') ||
+                    str_contains($itemLower, 'rss feed') ||
+                    str_contains($itemLower, 'portal scraper') ||
+                    str_contains($itemLower, 'telegram') ||
+                    str_contains($itemLower, 'integrasi api') ||
+                    str_contains($itemLower, 'akses api') ||
+                    str_contains($itemLower, 'branding') ||
+                    str_contains($itemLower, 'whitelabel') ||
+                    str_contains($itemLower, 'dashboard custom')
+                );
+            });
+        }
+        $this->advantages = array_values($cleanAdvantages);
+    }
+
+    public function compilePropertiesToAdvantages(): void
+    {
+        $newAdvantages = [];
+        
+        // Pelihara keuntungan kustom murni yang tidak bertabrakan dengan string limit/toggles
+        foreach ($this->advantages as $adv) {
+            $advLower = strtolower($adv);
+            if (str_contains($advLower, 'proyek') ||
+                str_contains($advLower, 'kata kunci') ||
+                str_contains($advLower, 'penyebutan') ||
+                str_contains($advLower, 'pengguna') ||
+                str_contains($advLower, 'user') ||
+                str_contains($advLower, 'fitur ai') ||
+                str_contains($advLower, 'kecerdasan buatan') ||
+                str_contains($advLower, 'rss feed') ||
+                str_contains($advLower, 'portal scraper') ||
+                str_contains($advLower, 'telegram') ||
+                str_contains($advLower, 'integrasi api') ||
+                str_contains($advLower, 'akses api') ||
+                str_contains($advLower, 'branding') ||
+                str_contains($advLower, 'whitelabel') ||
+                str_contains($advLower, 'dashboard custom')) {
+                continue;
+            }
+            $newAdvantages[] = $adv;
+        }
+        
+        if ($this->feat_ai) {
+            $newAdvantages[] = 'Fitur AI Tingkat Lanjut';
+        }
+        if ($this->feat_rss) {
+            $newAdvantages[] = 'RSS Feed & Portal Scraper';
+        }
+        if ($this->feat_api) {
+            $newAdvantages[] = 'Integrasi Telegram';
+        }
+        if ($this->feat_whitelabel) {
+            $newAdvantages[] = 'Branding Aplikasi';
+        }
+        
+        $this->advantages = $newAdvantages;
+    }
+
     protected function resetForm(): void
     {
-        $this->name            = '';
-        $this->description     = '';
-        $this->is_active       = true;
-        $this->use_portal      = true;
-        $this->actorConfig     = [];
-        $this->editingPackageId = null;
+        $this->name                  = '';
+        $this->description           = '';
+        $this->price                 = '0';
+        $this->newSocialFeature      = '';
+        $this->social_media_features = [];
+        $this->newPortalFeature      = '';
+        $this->news_portal_features  = [];
+        $this->newAdvantage          = '';
+        $this->advantages            = [];
+        $this->is_active             = true;
+        $this->use_portal            = true;
+        
+        // Reset limit properties
+        $this->limit_projects        = 'unlimited';
+        $this->limit_keywords        = 'unlimited';
+        $this->limit_mentions        = '500000';
+        $this->limit_users           = 'unlimited';
+        $this->feat_ai               = false;
+        $this->feat_rss              = false;
+        $this->feat_api              = false;
+        $this->feat_whitelabel       = false;
+        
+        $this->actorConfig           = [];
+        $this->editingPackageId      = null;
         $this->resetValidation();
     }
 

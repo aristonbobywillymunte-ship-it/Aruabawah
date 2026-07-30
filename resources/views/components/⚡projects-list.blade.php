@@ -238,6 +238,12 @@ new class extends Component
         return DB::table('apify_dispatch_states')
             ->where('project_id', $projectId)
             ->whereIn(DB::raw('lower(platform)'), ['facebook', 'instagram', 'tiktok'])
+            // Abaikan aktivitas comment scraper — ini proses internal, bukan "data medsos baru"
+            ->whereNotIn('actor_id', function ($sub) {
+                $sub->select('id')
+                    ->from('apify_actors')
+                    ->whereRaw("lower(function_type) = 'comment scraper'");
+            })
             ->max(DB::raw('coalesce(completed_at, started_at, queued_at)'));
     }
 
@@ -247,6 +253,12 @@ new class extends Component
             ->where('project_id', $projectId)
             ->whereIn(DB::raw('lower(platform)'), ['facebook', 'instagram', 'tiktok'])
             ->where('status', 'success')
+            // Abaikan aktivitas comment scraper — ini proses internal, bukan "data medsos baru"
+            ->whereNotIn('actor_id', function ($sub) {
+                $sub->select('id')
+                    ->from('apify_actors')
+                    ->whereRaw("lower(function_type) = 'comment scraper'");
+            })
             ->max('completed_at');
     }
 
@@ -254,6 +266,9 @@ new class extends Component
     {
         return DB::table('social_media_items')
             ->where('project_id', $projectId)
+            // Hanya hitung postingan yang sudah selesai diproses (comments_checked = true)
+            // agar waktu tidak bergerak hanya karena ada post baru yang masih menunggu komentar
+            ->where('comments_checked', true)
             ->max('created_at');
     }
 
@@ -734,6 +749,7 @@ new class extends Component
         detailFormattedDate: '',
         detailLikes: 0,
         detailComments: 0,
+        detailHashtags: [],
         updateScrollLock() {
             const shouldLock = (this.showSuccess || this.showEdit || this.showTrashed || this.showConfirm || this.detailModalOpen || this.showViralModal || this.showAiSummaryModal);
             document.body.style.overflow = shouldLock ? 'hidden' : '';
@@ -751,7 +767,7 @@ new class extends Component
             @if(session()->has('message'))
                 this.showToast("{{ session('message') }}", 'success');
             @endif
-            window.openDashboardDetail = (title, source, date, url, content, summary, rec, sentiment, category, reach, level, score, formattedDate, likes = 0, comments = 0) => {
+            window.openDashboardDetail = (title, source, date, url, content, summary, rec, sentiment, category, reach, level, score, formattedDate, likes = 0, comments = 0, hashtags = []) => {
                 this.detailTitle = title;
                 this.detailSource = source;
                 this.detailDate = date;
@@ -767,6 +783,7 @@ new class extends Component
                 this.detailFormattedDate = formattedDate;
                 this.detailLikes = likes;
                 this.detailComments = comments;
+                this.detailHashtags = hashtags;
                 this.showAiSummaryModal = false;
                 this.detailModalOpen = true;
             };

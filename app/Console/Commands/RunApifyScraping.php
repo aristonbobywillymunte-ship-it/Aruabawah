@@ -174,13 +174,19 @@ class RunApifyScraping extends Command
                 continue;
             }
 
-            // Tentukan actors yang digunakan untuk project ini (jika punya paket, pakai actor paket. Jika tidak, pakai global)
-            $projectActors = $actors;
+            // Tentukan actors yang digunakan untuk project ini (jika punya paket, pakai actor paket. Jika tidak, lewati secara ketat)
             if ($project->package_id && $project->package) {
                 $projectActors = $project->package->enabledActors()
                     ->when($filterPlatform, fn($q) => $q->where('platform', $filterPlatform))
                     ->orderBy('priority')
                     ->get();
+            } else {
+                $this->warn("Project [{$project->name}] has no active package. Skipping scraping process.");
+                $socialLog->warning('[Social] Project skipped: no active package.', [
+                    'project_id' => $project->id,
+                    'project_name' => $project->name,
+                ]);
+                continue;
             }
 
             foreach ($projectActors as $actor) {

@@ -1004,21 +1004,29 @@ class ApifyScrapingJob implements ShouldQueue
                 continue;
             }
 
+            // --- Tentukan apakah ada comment scraper aktif untuk platform ini ---
+            // Jika ada: tunda dispatch ke AI, simpan dengan comments_checked = false
+            // Jika tidak ada: langsung dispatch ke AI dan set comments_checked = true
+            $platformNeedsCommentCheck = in_array($platform, ['Instagram', 'TikTok'], true)
+                && $this->hasActiveCommentScraperForPlatform($platform, $projectId);
+
             $record = SocialMediaItem::updateOrCreate(
                 ['post_url' => $postUrl ?? ('apify-' . md5($content . $platform))],
                 [
-                    'project_id'    => $projectId ?: null,
-                    'platform'       => $platform,
-                    'author_name'    => $author,
-                    'author_url'     => $authorUrl,
-                    'content'        => $content,
-                    'posted_at'      => $postedAtCarbon,
-                    'like_count'     => (int) $likes,
-                    'comment_count'  => (int) $comments,
-                    'share_count'    => (int) $shares,
-                    'view_count'     => (int) $views,
-                    'follower_count' => (int) $followers,
-                    'raw_json'       => json_encode($item),
+                    'project_id'       => $projectId ?: null,
+                    'platform'          => $platform,
+                    'author_name'       => $author,
+                    'author_url'        => $authorUrl,
+                    'content'           => $content,
+                    'posted_at'         => $postedAtCarbon,
+                    'like_count'        => (int) $likes,
+                    'comment_count'     => (int) $comments,
+                    'share_count'       => (int) $shares,
+                    'view_count'        => (int) $views,
+                    'follower_count'    => (int) $followers,
+                    'raw_json'          => json_encode($item),
+                    // Jika platform tidak butuh comment check → langsung tandai sudah dicek
+                    'comments_checked'  => ! $platformNeedsCommentCheck,
                 ]
             );
 
@@ -1063,6 +1071,16 @@ class ApifyScrapingJob implements ShouldQueue
             }
 
             $saved++;
+
+            // Jika platform IG/TikTok dengan comment scraper aktif: TUNDA AI dispatch.
+            // AI akan dipanggil nanti setelah comment scraper selesai (dengan komentar sebagai konteks).
+            if ($platformNeedsCommentCheck) {
+                Log::info('[Apify] AI dispatch ditunda: menunggu comment scraper untuk ' . $platform . '.', [
+                    'post_url'   => $postUrl,
+                    'article_id' => $article->id ?? null,
+                ]);
+                continue;
+            }
 
             if (empty($article->id) || empty($projectId)) {
                 Log::warning('[Apify] Skipped AI dispatch: missing article_id or project_id.', [
@@ -1132,6 +1150,7 @@ class ApifyScrapingJob implements ShouldQueue
 
         // Tandai link postingan yang sudah di-scrape komentarnya agar tidak di-scrape ulang.
         // Sekaligus hapus tanda "dalam proses" yang dipasang saat dispatch.
+        // Juga update DB comments_checked=true dan dispatch AI dengan komentar sebagai konteks.
         if (strtolower((string) $actor->function_type) === 'comment scraper') {
             foreach ($keywords as $url) {
                 if (filled($url)) {
@@ -1151,8 +1170,25 @@ class ApifyScrapingJob implements ShouldQueue
                     // Hanya tandai selesai (forever) jika berhasil menarik minimal 1 komentar
                     // ATAU jika postingan tersebut memang tercatat memiliki 0 komentar di metrik utamanya.
                     $targetCommentCount = $mainPost ? (int) $mainPost->comment_count : 0;
-                    if ($actualCommentsCount > 0 || $targetCommentCount === 0) {
+                    $shouldMarkDone = $actualCommentsCount > 0 || $targetCommentCount === 0;
+
+                    if ($shouldMarkDone) {
+                        // Tandai di cache (cepat, untuk filter loop berikutnya)
                         Cache::forever('comments_scraped_for_post:' . $urlHash, true);
+
+                        // Tandai di DB (persisten, sumber kebenaran untuk UI dan AI dispatch)
+                        if ($mainPost) {
+                            SocialMediaItem::where(function($q) use ($url) {
+                                $q->where('post_url', $url)
+                                  ->orWhere('post_url', rtrim($url, '/'))
+                                  ->orWhere('post_url', rtrim($url, '/') . '/');
+                            })->update(['comments_checked' => true]);
+
+                            // Dispatch AI untuk postingan ini sekarang (dengan komentar sebagai konteks)
+                            if ($projectId) {
+                                $this->dispatchAiForPostAfterCommentCheck($mainPost->fresh(), $projectId, $suppressTelegram);
+                            }
+                        }
                     }
                     Cache::forget('comments_scraping_in_progress:' . $urlHash);
                 }
@@ -1784,4 +1820,156 @@ class ApifyScrapingJob implements ShouldQueue
             'lihat selengkapnya',
         ];
     }
+
+    /**
+     * Cek apakah ada actor Comment Scraper yang aktif untuk platform tertentu.
+     *
+     * Jika proyek menggunakan paket: hanya cek actor yang termasuk dalam paket.
+     * Jika tidak menggunakan paket: cek semua actor aktif secara global.
+     *
+     * Jika tidak ada comment scraper aktif → postingan langsung dianggap sudah dicek
+     * (tidak perlu menunggu komentar sebelum tampil ke user dan dikirim ke AI).
+     */
+    protected function hasActiveCommentScraperForPlatform(string $platform, ?int $projectId): bool
+    {
+        static $cache = [];
+        $cacheKey = "{$platform}|{$projectId}";
+        if (array_key_exists($cacheKey, $cache)) {
+            return $cache[$cacheKey];
+        }
+
+        $query = ApifyActor::where('function_type', 'Comment Scraper')
+            ->where('platform', $platform)
+            ->where('status', 'active');
+
+        // Jika proyek pakai paket: cek apakah comment scraper ada di dalam paket
+        if ($projectId) {
+            $project = \App\Models\Project::find($projectId);
+            if ($project && $project->package_id && $project->package) {
+                $packageActorIds = $project->package->enabledActors()->pluck('id')->toArray();
+                if (! empty($packageActorIds)) {
+                    $query->whereIn('id', $packageActorIds);
+                } else {
+                    // Paket ada tapi tidak punya actor sama sekali → tidak ada comment scraper
+                    $cache[$cacheKey] = false;
+                    return false;
+                }
+            }
+        }
+
+        $result = $query->exists();
+        $cache[$cacheKey] = $result;
+        return $result;
+    }
+
+    /**
+     * Dispatch AI analysis untuk sebuah postingan setelah comment scraper selesai.
+     *
+     * Komentar dari tabel social_media_comments digabungkan ke konten postingan
+     * sebagai konteks tambahan agar AI mendapat gambaran lengkap tentang reaksi publik.
+     */
+    protected function dispatchAiForPostAfterCommentCheck(
+        SocialMediaItem $mainPost,
+        int $projectId,
+        bool $suppressTelegram = false
+    ): void {
+        // Cari artikel yang terhubung ke postingan ini
+        $postUrl = $mainPost->post_url;
+        if (! $postUrl) {
+            return;
+        }
+
+        $article = \App\Models\Article::where('canonical_url', $postUrl)
+            ->orWhere('url', $postUrl)
+            ->orWhere('canonical_url', rtrim($postUrl, '/'))
+            ->orWhere('url', rtrim($postUrl, '/'))
+            ->first();
+
+        if (! $article) {
+            Log::info('[Apify] dispatchAiForPostAfterCommentCheck: artikel tidak ditemukan untuk URL.', [
+                'post_url' => $postUrl,
+            ]);
+            return;
+        }
+
+        // Bangun konten gabungan: konten postingan + daftar komentar
+        $baseContent = (string) $mainPost->content;
+
+        // Ambil komentar dari DB (lebih akurat dan terstruktur dari raw_json)
+        $dbComments = SocialMediaComment::where('social_media_item_id', $mainPost->id)
+            ->orderByDesc('posted_at')
+            ->orderByDesc('id')
+            ->limit(50)
+            ->get();
+
+        $commentLines = [];
+        if ($dbComments->isNotEmpty()) {
+            $commentLines[] = "\n\n--- Komentar Publik ({$dbComments->count()} komentar) ---";
+            foreach ($dbComments as $idx => $c) {
+                $num = $idx + 1;
+                $commentAuthor = $c->author_name ?: 'Pengguna';
+                $commentText   = trim((string) $c->content) ?: '[tanpa teks]';
+                $commentLines[] = "{$num}. {$commentAuthor}: {$commentText}";
+            }
+        } else {
+            // Fallback: coba dari raw_json jika belum ada di tabel
+            $rawJsonDecoded = json_decode((string) $mainPost->raw_json, true) ?: [];
+            $rawComments = $rawJsonDecoded['comments'] ?? [];
+            if (! empty($rawComments)) {
+                $commentLines[] = "\n\n--- Komentar Publik (" . count($rawComments) . " komentar) ---";
+                foreach (array_slice($rawComments, 0, 50) as $idx => $c) {
+                    $num = $idx + 1;
+                    $commentAuthor = $c['ownerUsername'] ?? $c['authorName'] ?? $c['userName'] ?? 'Pengguna';
+                    $commentText   = trim((string) ($c['text'] ?? $c['content'] ?? '')) ?: '[tanpa teks]';
+                    $commentLines[] = "{$num}. {$commentAuthor}: {$commentText}";
+                }
+            }
+        }
+
+        $enrichedContent = $baseContent . implode("\n", $commentLines);
+
+        // Dispatch ke AI — menggunakan reserveQueuedStateAndDispatch dengan force reset
+        // agar analisis sebelumnya (jika ada) digantikan dengan yang baru + komentar
+        try {
+            $dispatchStateService = app(AiAnalysisDispatchStateService::class);
+            $promptTemplateId     = $dispatchStateService->resolvePromptTemplateId('social');
+            $providerContextHash  = $dispatchStateService->resolveProviderContextHash();
+
+            $platform   = $mainPost->platform;
+            $authorName = $mainPost->author_name ?? $platform;
+
+            $decision = $dispatchStateService->reserveQueuedStateAndDispatch([
+                'type'          => 'social',
+                'id'            => $article->id,
+                'item_id'       => $mainPost->id,
+                'project_id'    => $projectId,
+                'title'         => "Post dari {$platform} oleh {$authorName}",
+                'content'       => $enrichedContent,
+                'url'           => $postUrl,
+                'source_name'   => $platform,
+                'author_name'   => $authorName,
+                'author_url'    => $mainPost->author_url,
+                'like_count'    => (int) $mainPost->like_count,
+                'comment_count' => (int) $mainPost->comment_count,
+                'share_count'   => (int) $mainPost->share_count,
+                'view_count'    => (int) $mainPost->view_count,
+                'follower_count'=> (int) $mainPost->follower_count,
+                'published_at'  => $mainPost->posted_at?->toIso8601String(),
+                'no_telegram'   => $suppressTelegram,
+            ], $promptTemplateId, $providerContextHash, forceReset: true);
+
+            Log::info('[Apify] AI dispatch setelah comment check.', [
+                'post_url'        => $postUrl,
+                'article_id'      => $article->id,
+                'comment_count'   => $dbComments->count(),
+                'should_dispatch' => $decision['should_dispatch'] ?? false,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('[Apify] Gagal dispatch AI setelah comment check.', [
+                'post_url' => $postUrl,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+    }
 }
+
