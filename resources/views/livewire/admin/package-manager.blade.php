@@ -658,39 +658,39 @@
                                         </div>
 
                                         {{-- Panel Konfigurasi Aktor Per Paket (Cost, Limit, RAM) --}}
-                                        <div class="flex flex-wrap items-center gap-3.5 bg-slate-50 border border-slate-100 rounded-2xl p-2.5 shrink-0 self-end lg:self-auto min-w-[500px] justify-between">
+                                        <div class="flex flex-wrap items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-3 shrink-0 w-full lg:w-auto justify-between lg:justify-end">
                                             {{-- Global Cost Display --}}
                                             <div class="text-left px-2">
                                                 <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Biaya Global</div>
-                                                <div class="text-xs font-black text-slate-600 mt-0.5">
+                                                <div class="text-xs font-black text-slate-650 mt-0.5">
                                                     {{ $actor->maximum_cost_per_run_usd ? '$' . number_format($actor->maximum_cost_per_run_usd, 2) : '—' }}
                                                 </div>
                                             </div>
 
                                             {{-- Divider --}}
-                                            <div class="h-6 w-px bg-slate-200/80"></div>
+                                            <div class="hidden sm:block h-6 w-px bg-slate-200/80"></div>
 
                                             {{-- Cost Override Field --}}
                                             <div class="text-left px-2">
                                                 <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-1">Override Biaya ($)</div>
-                                                <div class="flex items-center gap-1.5">
+                                                <div class="flex items-center">
                                                     <div class="relative flex items-center">
-                                                        <span class="absolute left-2 text-slate-400 text-[10px] font-bold">$</span>
+                                                        <span class="absolute left-2.5 text-slate-400 text-[10px] font-bold">$</span>
                                                         <input
                                                             type="number"
                                                             min="0"
                                                             step="0.01"
                                                             placeholder="{{ $actor->maximum_cost_per_run_usd ? number_format($actor->maximum_cost_per_run_usd, 2) : 'Global' }}"
                                                             wire:model.lazy="actorConfig.{{ $actor->id }}.cost_per_run_usd"
-                                                            style="padding-left: 1.25rem;"
-                                                            class="pr-1 py-1 w-16 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
+                                                            style="padding-left: 1.5rem;"
+                                                            class="pr-1.5 py-1 w-24 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
                                                             {{ $config['is_enabled'] ? 'border-slate-200 bg-white text-slate-800' : 'border-slate-150 bg-slate-100 text-slate-400' }}" />
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {{-- Divider --}}
-                                            <div class="h-6 w-px bg-slate-200/80"></div>
+                                            <div class="hidden sm:block h-6 w-px bg-slate-200/80"></div>
 
                                             {{-- Default Limit Field --}}
                                             <div class="text-left px-2">
@@ -700,20 +700,20 @@
                                                     min="1"
                                                     placeholder="{{ $actor->default_limit }}"
                                                     wire:model.lazy="actorConfig.{{ $actor->id }}.default_limit"
-                                                    class="px-1 py-1 w-16 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
+                                                    class="px-2 py-1 w-20 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
                                                     {{ $config['is_enabled'] ? 'border-slate-200 bg-white text-slate-800' : 'border-slate-150 bg-slate-100 text-slate-400' }}"
                                                     {{ !$config['is_enabled'] ? 'disabled' : '' }} />
                                             </div>
 
                                             {{-- Divider --}}
-                                            <div class="h-6 w-px bg-slate-200/80"></div>
+                                            <div class="hidden sm:block h-6 w-px bg-slate-200/80"></div>
 
                                             {{-- Memory Limit Select --}}
                                             <div class="text-left px-2">
                                                 <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-1">Alokasi RAM</div>
                                                 <select
                                                     wire:model="actorConfig.{{ $actor->id }}.memory_limit"
-                                                    class="px-1 py-1 w-20 text-center rounded-lg border text-[11px] font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387] bg-white
+                                                    class="px-2 py-1 w-24 text-center rounded-lg border text-[11px] font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387] bg-white
                                                     {{ $config['is_enabled'] ? 'border-slate-200 text-slate-800' : 'border-slate-150 bg-slate-100 text-slate-400' }}"
                                                     {{ !$config['is_enabled'] ? 'disabled' : '' }}>
                                                     <option value="128">128 MB</option>
@@ -856,39 +856,39 @@
                 </div>
 
                 {{-- Right Area: Unified Pricing, Limit & Memory Config Panel (Micro Card) --}}
-                <div class="flex flex-wrap items-center gap-3.5 bg-slate-50 border border-slate-100 rounded-2xl p-2.5 shrink-0 self-end md:self-auto min-w-[500px] justify-between">
+                <div class="flex flex-wrap items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-3 shrink-0 w-full lg:w-auto justify-between lg:justify-end">
                     {{-- Global Cost Display --}}
                     <div class="text-left px-2">
                         <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Biaya Global</div>
-                        <div class="text-xs font-black text-slate-600 mt-0.5">
+                        <div class="text-xs font-black text-slate-650 mt-0.5">
                             {{ $actor->maximum_cost_per_run_usd ? '$' . number_format($actor->maximum_cost_per_run_usd, 2) : '—' }}
                         </div>
                     </div>
 
                     {{-- Divider --}}
-                    <div class="h-6 w-px bg-slate-200/80"></div>
+                    <div class="hidden sm:block h-6 w-px bg-slate-200/80"></div>
 
                     {{-- Cost Override Field --}}
                     <div class="text-left px-2">
                         <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-1">Override Biaya ($)</div>
-                        <div class="flex items-center gap-1.5">
+                        <div class="flex items-center">
                             <div class="relative flex items-center">
-                                <span class="absolute left-2 text-slate-400 text-[10px] font-bold">$</span>
+                                <span class="absolute left-2.5 text-slate-400 text-[10px] font-bold">$</span>
                                 <input
                                     type="number"
                                     min="0"
                                     step="0.01"
                                     placeholder="{{ $actor->maximum_cost_per_run_usd ? number_format($actor->maximum_cost_per_run_usd, 2) : 'Global' }}"
                                     wire:model.lazy="actorConfig.{{ $actor->id }}.cost_per_run_usd"
-                                    style="padding-left: 1.25rem;"
-                                    class="pr-1 py-1 w-16 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
+                                    style="padding-left: 1.5rem;"
+                                    class="pr-1.5 py-1 w-24 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
                                     {{ $config['is_enabled'] ? 'border-slate-200 bg-white text-slate-800' : 'border-slate-150 bg-slate-100 text-slate-400' }}" />
                             </div>
                         </div>
                     </div>
 
                     {{-- Divider --}}
-                    <div class="h-6 w-px bg-slate-200/80"></div>
+                    <div class="hidden sm:block h-6 w-px bg-slate-200/80"></div>
 
                     {{-- Default Limit Field --}}
                     <div class="text-left px-2">
@@ -898,20 +898,20 @@
                             min="1"
                             placeholder="{{ $actor->default_limit }}"
                             wire:model.lazy="actorConfig.{{ $actor->id }}.default_limit"
-                            class="px-1 py-1 w-16 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
+                            class="px-2 py-1 w-20 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
                             {{ $config['is_enabled'] ? 'border-slate-200 bg-white text-slate-800' : 'border-slate-150 bg-slate-100 text-slate-400' }}"
                             {{ !$config['is_enabled'] ? 'disabled' : '' }} />
                     </div>
 
                     {{-- Divider --}}
-                    <div class="h-6 w-px bg-slate-200/80"></div>
+                    <div class="hidden sm:block h-6 w-px bg-slate-200/80"></div>
 
                     {{-- Memory Limit Select --}}
                     <div class="text-left px-2">
                         <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-1">Alokasi RAM</div>
                         <select
                             wire:model="actorConfig.{{ $actor->id }}.memory_limit"
-                            class="px-1 py-1 w-20 text-center rounded-lg border text-[11px] font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387] bg-white
+                            class="px-2 py-1 w-24 text-center rounded-lg border text-[11px] font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387] bg-white
                             {{ $config['is_enabled'] ? 'border-slate-200 text-slate-800' : 'border-slate-150 bg-slate-100 text-slate-400' }}"
                             {{ !$config['is_enabled'] ? 'disabled' : '' }}>
                             <option value="128">128 MB</option>
