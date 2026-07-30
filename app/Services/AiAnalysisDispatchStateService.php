@@ -7,6 +7,7 @@ use App\Jobs\AiAnalysisJob;
 use App\Models\AiPromptTemplate;
 use App\Models\AiProvider;
 use App\Models\Project;
+use App\Models\ScrapingSetting;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,7 @@ class AiAnalysisDispatchStateService
 {
     public const MAX_AUTO_ATTEMPTS = 3;
     public const DEFAULT_RETRY_MINUTES = 5;
+    private ?ScrapingSetting $cachedScrapingSetting = null;
 
     public function buildDispatchKey(string $analyzableType, int $analyzableId, ?int $projectId, ?int $promptTemplateId, string $providerContextHash): string
     {
@@ -290,7 +292,12 @@ class AiAnalysisDispatchStateService
             return null;
         }
         $classification = app(AiFailureClassifier::class)->classify($errorCode, $errorMessage, $exception);
-        $nextRetryAt = now()->addMinutes($this->backoffMinutes((int) ($context['attempts_hint'] ?? 1)));
+
+        if ($this->retryLimit() <= 0) {
+            return $this->persistFailureState($context, 'failed', $classification, null);
+        }
+
+        $nextRetryAt = now()->addMinutes($this->retryDelayMinutes());
 
         return $this->persistFailureState($context, 'retry_wait', $classification, $nextRetryAt);
     }
@@ -307,8 +314,12 @@ class AiAnalysisDispatchStateService
         }
         $classification = app(AiFailureClassifier::class)->classify($errorCode, $errorMessage, $exception);
 
+        if ($this->retryLimit() <= 0) {
+            return $this->persistFailureState($context, 'failed', $classification, null);
+        }
+
         if ((bool) ($classification['retryable'] ?? false)) {
-            $nextRetryAt = now()->addMinutes($this->backoffMinutes((int) ($context['attempts_hint'] ?? 1)));
+            $nextRetryAt = now()->addMinutes($this->retryDelayMinutes());
 
             return $this->persistFailureState($context, 'retry_wait', $classification, $nextRetryAt);
         }
@@ -343,7 +354,7 @@ class AiAnalysisDispatchStateService
                     'error_message' => $errorMessage,
                     'last_attempt_at' => $now,
                     'last_failed_at' => $now,
-                    'next_retry_at' => $status === 'retry_wait' ? ($nextRetryAt ?? now()->addMinutes($this->backoffMinutes($attempts))) : null,
+                    'next_retry_at' => $status === 'retry_wait' ? ($nextRetryAt ?? now()->addMinutes($this->retryDelayMinutes())) : null,
                     'completed_at' => $status === 'failed' ? $now : null,
                     'meta_json' => $context['meta_json'],
                 ]));
@@ -359,7 +370,7 @@ class AiAnalysisDispatchStateService
                 'last_attempt_at' => $now,
                 'last_failed_at' => $now,
                 'attempts' => $attempts,
-                'next_retry_at' => $status === 'retry_wait' ? ($nextRetryAt ?? now()->addMinutes($this->backoffMinutes($attempts))) : null,
+                'next_retry_at' => $status === 'retry_wait' ? ($nextRetryAt ?? now()->addMinutes($this->retryDelayMinutes())) : null,
                 'completed_at' => $status === 'failed' ? $now : null,
                 'meta_json' => $context['meta_json'],
             ])->save();
@@ -383,7 +394,7 @@ class AiAnalysisDispatchStateService
                 return $this->decision($state, false, 'retry_wait', 'retry_not_due');
             }
 
-            if ((int) $state->attempts >= self::MAX_AUTO_ATTEMPTS) {
+            if ((int) $state->attempts >= $this->retryLimit()) {
                 $state->forceFill([
                     'status' => 'failed',
                     'last_error_code' => $state->last_error_code ?: 'max_attempts_reached',
@@ -428,6 +439,25 @@ class AiAnalysisDispatchStateService
         }
 
         return $this->decision($state, false, $state->status, 'duplicate_locked');
+    }
+
+    private function currentScrapingSetting(): ?ScrapingSetting
+    {
+        if ($this->cachedScrapingSetting !== null) {
+            return $this->cachedScrapingSetting;
+        }
+
+        return $this->cachedScrapingSetting = ScrapingSetting::query()->first();
+    }
+
+    private function retryLimit(): int
+    {
+        return max(0, (int) ($this->currentScrapingSetting()?->retry_limit ?? self::MAX_AUTO_ATTEMPTS));
+    }
+
+    private function retryDelayMinutes(): int
+    {
+        return max(1, (int) ($this->currentScrapingSetting()?->retry_delay_minutes ?? self::DEFAULT_RETRY_MINUTES));
     }
 
     private function normalizePayloadContext(array $payload, ?int $promptTemplateId, ?string $providerContextHash): array
@@ -509,9 +539,6 @@ class AiAnalysisDispatchStateService
 
     private function backoffMinutes(int $attempts): int
     {
-        $attempts = max(1, $attempts);
-        $minutes = self::DEFAULT_RETRY_MINUTES * (2 ** min($attempts - 1, 4));
-
-        return min(720, $minutes);
+        return $this->retryDelayMinutes();
     }
 }

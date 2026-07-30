@@ -452,9 +452,15 @@ class ApifyScrapingJob implements ShouldQueue
         $projectName = $project ? $project->name : 'N/A';
         $contextStr = "platform={$platform} actor={$actor->actor_slug} project_name={$projectName} (ID: {$projectId}) keyword=" . implode(',', $keywords ?: [$keyword]);
 
+        // Resolving effective default limit per actor from package pivot override
+        $resolvedDefaultLimit = (int) ($actor->default_limit ?? 50);
+        if ($project && $project->package) {
+            $resolvedDefaultLimit = $project->package->getEffectiveLimitForActor($actor);
+        }
+
         $jobLimit = isset($this->params['limit']) ? (int) $this->params['limit'] : null;
         $configuredLimit = (int) (\App\Models\ScrapingSetting::first()?->limit_per_run ?? 3);
-        $limit = $jobLimit ?: $configuredLimit ?: (int) ($actor->default_limit ?? 50);
+        $limit = $jobLimit ?: $configuredLimit ?: $resolvedDefaultLimit;
         $limit = max(1, $limit);
         $input = $actor->buildInputPayload($keyword, $limit, null, null, $keywords);
 
@@ -473,11 +479,17 @@ class ApifyScrapingJob implements ShouldQueue
         // Apify API requires actor slug with ~ instead of / in the URL
         $slugForUrl = str_replace('/', '~', $actor->actor_slug);
 
+        // Resolving effective memory limit from package pivot override
+        $resolvedMemoryLimit = (int) ($actor->memory_limit ?? 1024);
+        if ($project && $project->package) {
+            $resolvedMemoryLimit = $project->package->getEffectiveMemoryLimitForActor($actor);
+        }
+
         // Run the actor — send input directly in the POST body (Apify v2 API format)
         $runUrl = "https://api.apify.com/v2/acts/{$slugForUrl}/runs";
         $apifyTimeout = max(1, (int) ($actor->timeout_seconds ?: (300 + ($limit * 6))));
         $runQuery = [
-            'memory' => max(128, (int) ($actor->memory_limit ?? 1024)),
+            'memory' => max(128, $resolvedMemoryLimit),
             'build' => $actor->build ?: 'latest',
             'timeout' => $apifyTimeout,
         ];
@@ -1394,6 +1406,12 @@ class ApifyScrapingJob implements ShouldQueue
     ): array {
         [$payloadLimitField, $payloadLimitValue] = $this->resolvePayloadLimitInfo($platform, $input);
 
+        $project = $projectId ? \App\Models\Project::find($projectId) : null;
+        $effectiveMemory = (int) ($actor->memory_limit ?? 0);
+        if ($project && $project->package) {
+            $effectiveMemory = $project->package->getEffectiveMemoryLimitForActor($actor);
+        }
+
         return [
             'platform' => $platform,
             'project_id' => $projectId ? (int) $projectId : null,
@@ -1408,7 +1426,7 @@ class ApifyScrapingJob implements ShouldQueue
             'payload_limit_field' => $payloadLimitField,
             'payload_limit_value' => $payloadLimitValue,
             'interval_minutes' => (int) ($actor->interval_minutes ?? 0),
-            'memory_limit_mb' => (int) ($actor->memory_limit ?? 0),
+            'memory_limit_mb' => $effectiveMemory,
             'maximum_cost_per_run_usd' => (float) ($actor->maximum_cost_per_run_usd ?? 0),
             'range_mode' => $actor->range_mode,
             'priority' => (int) ($actor->priority ?? 0),

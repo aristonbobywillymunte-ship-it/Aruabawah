@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Article;
 use App\Models\ScrapingItem;
+use App\Models\ScrapingSetting;
 use App\Models\Project;
 use App\Models\NewsSource;
 use App\Models\ReachAssessment;
@@ -27,6 +28,7 @@ class RunNewsPortalScraping extends Command
     private array $runStats = [];
     private array $runCandidateLogs = [];
     private array $seenCanonicalUrls = [];
+    private ?ScrapingSetting $cachedScrapingSetting = null;
 
     protected $signature = 'scraping:run-news
                             {--project-id= : Specific project ID}
@@ -121,6 +123,7 @@ class RunNewsPortalScraping extends Command
             'rejected_keyword' => 0,
             'rejected_short_content' => 0,
             'rejected_invalid_url' => 0,
+            'rejected_date_range' => 0,
             'partial_count' => 0,
             'error_count' => 0,
             'scraped_count' => 0,
@@ -544,6 +547,27 @@ class RunNewsPortalScraping extends Command
                     $publishedAt = \Carbon\Carbon::parse($pubDate);
                 } catch (\Exception $e) {}
 
+                if (! $this->isPublishedWithinConfiguredDateRange($publishedAt)) {
+                    $this->runStats['skipped_count']++;
+                    $this->runStats['rejected_count']++;
+                    $this->runStats['rejected_date_range']++;
+                    $rejected++;
+                    $this->runCandidateLogs[] = [
+                        'index' => $index,
+                        'original_url' => $discoveryUrl ?? '-',
+                        'resolved_url' => $articleUrl,
+                        'candidate_link_id' => null,
+                        'scraping_item_id' => null,
+                        'article_id' => null,
+                        'final_status' => 'skipped',
+                        'reason' => 'Published date outside configured date_range filter',
+                        'title_final' => $title,
+                        'published_at' => optional($publishedAt)?->toIso8601String(),
+                        'date_range' => $this->currentDateRangeSetting(),
+                    ];
+                    continue;
+                }
+
             $outcome = $this->processPortalCandidate(
                 project: $project,
                 candidateUrl: $articleUrl,
@@ -646,6 +670,41 @@ class RunNewsPortalScraping extends Command
                 'newly_inserted' => 0,
                 'reused_existing' => 0,
                 'rejected' => 0,
+                'partial' => 0,
+                'error' => 0,
+            ];
+        }
+
+        if (! $this->isPublishedWithinConfiguredDateRange($finalPublishedAt)) {
+            $this->runStats['skipped_count']++;
+            $this->runStats['rejected_count']++;
+            $this->runStats['rejected_date_range']++;
+            $candidateLinkId = DB::table('candidate_links')->where('canonical_url', $canonicalUrl ?: $candidateUrl)->value('id');
+            $scrapingItemId = $candidateLinkId ? ScrapingItem::where('candidate_link_id', $candidateLinkId)->value('id') : null;
+            $this->runCandidateLogs[] = [
+                'index' => $candidateIndex,
+                'original_url' => $discoveryUrl ?? $candidateUrl,
+                'resolved_url' => $canonicalUrl,
+                'candidate_link_id' => $candidateLinkId,
+                'scraping_item_id' => $scrapingItemId,
+                'article_id' => null,
+                'final_status' => 'skipped',
+                'reason' => 'Published date outside configured date_range filter',
+                'title_final' => $finalTitle,
+                'canonical_url_final' => $canonicalUrl,
+                'source_name_final' => $finalSourceName,
+                'published_at' => optional($finalPublishedAt)?->toIso8601String(),
+                'date_range' => $this->currentDateRangeSetting(),
+                'content_length' => $contentLength,
+                'resolution_trace' => $resolutionTrace,
+            ];
+
+            unset($fetchResult, $finalContent);
+            return [
+                'status' => 'rejected',
+                'newly_inserted' => 0,
+                'reused_existing' => 0,
+                'rejected' => 1,
                 'partial' => 0,
                 'error' => 0,
             ];
@@ -927,6 +986,25 @@ class RunNewsPortalScraping extends Command
             $title = trim((string) ($fetchResult['title'] ?? ''));
             $sourceName = trim((string) ($fetchResult['source_name'] ?? ''));
             $publishedAt = $fetchResult['published_at'] ?? null;
+
+            if (! $this->isPublishedWithinConfiguredDateRange($publishedAt)) {
+                $this->line(json_encode([
+                    'status' => 'rejected',
+                    'reason' => 'Published date outside configured date_range filter',
+                    'original_url' => $url,
+                    'resolved_url' => $canonicalUrl,
+                    'published_at' => optional($publishedAt)?->toIso8601String(),
+                    'date_range' => $this->currentDateRangeSetting(),
+                ], JSON_UNESCAPED_UNICODE));
+                return [
+                    'status' => 'rejected',
+                    'newly_inserted' => 0,
+                    'reused_existing' => 0,
+                    'rejected' => 1,
+                    'partial' => 0,
+                    'error' => 0,
+                ];
+            }
 
             if (! $this->isFinalPortalArticleUrl($canonicalUrl)) {
                 $this->line(json_encode([
@@ -1422,6 +1500,42 @@ class RunNewsPortalScraping extends Command
     private function shouldTrustDiscoveryKeyword(string $sourceType): bool
     {
         return in_array($sourceType, ['manual_portal', 'google_news'], true);
+    }
+
+    private function currentScrapingSetting(): ?ScrapingSetting
+    {
+        if ($this->cachedScrapingSetting !== null) {
+            return $this->cachedScrapingSetting;
+        }
+
+        return $this->cachedScrapingSetting = ScrapingSetting::query()->first();
+    }
+
+    private function currentDateRangeSetting(): string
+    {
+        return (string) ($this->currentScrapingSetting()?->date_range ?? '7d');
+    }
+
+    private function configuredNewsDateCutoff(): ?Carbon
+    {
+        return match (strtolower(trim($this->currentDateRangeSetting()))) {
+            '24h' => now()->subDay(),
+            '7d' => now()->subDays(7),
+            '30d' => now()->subDays(30),
+            '90d' => now()->subDays(90),
+            default => null,
+        };
+    }
+
+    private function isPublishedWithinConfiguredDateRange(?Carbon $publishedAt): bool
+    {
+        $cutoff = $this->configuredNewsDateCutoff();
+
+        if ($cutoff === null || $publishedAt === null) {
+            return true;
+        }
+
+        return $publishedAt->greaterThanOrEqualTo($cutoff);
     }
 
     private function fetchFullContent(string $url, ?Project $project = null, ?string $keyword = null): array

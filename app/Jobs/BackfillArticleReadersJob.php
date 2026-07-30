@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\AiAnalysisResult;
+use App\Models\ScrapingSetting;
 use App\Models\Project;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -21,13 +22,25 @@ class BackfillArticleReadersJob implements ShouldQueue
 
     public array $payload;
 
-    public $tries = 5;
-
     public function __construct(array $payload)
     {
         $this->payload = $payload;
         $this->onConnection('redis-ai');
         $this->onQueue('ai-backfill');
+    }
+
+    public function tries(): int
+    {
+        $retryLimit = (int) (ScrapingSetting::query()->value('retry_limit') ?? 3);
+
+        return max(1, $retryLimit);
+    }
+
+    public function backoff(): int
+    {
+        $delayMinutes = (int) (ScrapingSetting::query()->value('retry_delay_minutes') ?? 10);
+
+        return max(1, $delayMinutes) * 60;
     }
 
     public function handle(): void
@@ -145,19 +158,14 @@ Berikan output berupa JSON murni dengan tepat SATU field:
             Log::info("[Backfill] Berhasil update Article {$articleId} dengan reach {$readers}.");
 
         } catch (RateLimitRetryException $e) {
-            if ($this->attempts() >= $this->tries) {
-                Log::warning("[Backfill] HTTP 429 dari provider untuk Article {$articleId}. Batas tries habis ({$this->tries}). Menghentikan job secara aman (deferred) untuk dijadwalkan ulang.");
+            if ($this->attempts() >= $this->tries()) {
+                Log::warning("[Backfill] HTTP 429 dari provider untuk Article {$articleId}. Batas retry habis ({$this->tries()}). Menghentikan job secara aman (deferred) untuk dijadwalkan ulang.");
                 return;
             }
 
-            // Local rate limit or transient rate limit
-            $delay = $e->delaySeconds;
-            // Jika delay fix 60 dari classifier (tanpa header Retry-After), terapkan backoff
-            if ($delay === 60) {
-                $attempts = $this->attempts();
-                $delays = [60, 120, 300, 600];
-                $baseDelay = $delays[min($attempts - 1, count($delays) - 1)];
-                $delay = $baseDelay + rand(1, 15); // Jitter
+            $delay = max(1, $this->backoff());
+            if (is_int($e->delaySeconds) && $e->delaySeconds > 0) {
+                $delay = max($delay, $e->delaySeconds);
             }
 
             Log::info("[Backfill] Transient rate limit hit. Releasing job for {$delay}s.");

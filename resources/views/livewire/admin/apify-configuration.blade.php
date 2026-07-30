@@ -315,28 +315,13 @@
                                         @error('priority') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
-                                @if($platform !== 'Facebook')
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Batas Hasil (Jumlah Item)</label>
-                                        <input wire:model.defer="defaultLimit" type="number" min="1" inputmode="numeric" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
-                                        <p class="mt-1 text-[10px] font-semibold text-slate-400">
-                                            Jumlah maksimum item yang diambil per run aktor.
-                                        </p>
-                                        @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                                    </div>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-
                         <div>
                             <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                                 <span class="w-5 h-5 rounded bg-slate-900 flex items-center justify-center text-white"><span class="material-symbols-outlined text-[13px]">play_circle</span></span>
                                 Run Options
                             </h3>
                             <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-5">
-                                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                <div class="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Build</label>
                                         <select wire:model="build" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition">
@@ -348,17 +333,6 @@
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Timeout</label>
                                         <input wire:model="timeout_seconds" type="number" step="1" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition">
-                                    </div>
-                                    <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Memory</label>
-                                        <select wire:model="memory_limit" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white">
-                                            <option value="128">128 MB</option>
-                                            <option value="256">256 MB</option>
-                                            <option value="512">512 MB</option>
-                                            <option value="1024">1 GB</option>
-                                            <option value="2048">2 GB</option>
-                                            <option value="4096">4 GB</option>
-                                        </select>
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">

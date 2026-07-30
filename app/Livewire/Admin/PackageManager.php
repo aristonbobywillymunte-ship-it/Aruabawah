@@ -48,9 +48,6 @@ class PackageManager extends Component
 
     // ─── Confirmation ─────────────────────────────────────────────────────
     public ?int $confirmDeleteId = null;
-    public ?int $confirmActorToggleId = null;
-    public string $confirmActorToggleName = '';
-    public bool $confirmActorToggleTargetState = false;
     public string $flash = '';
     public string $flashType = 'success'; // success | error
 
@@ -142,35 +139,6 @@ class PackageManager extends Component
             $this->newAdvantage = $this->advantages[$index];
             $this->removeAdvantage($index);
         }
-    }
-
-    public function loadDefaultTemplate(): void
-    {
-        $this->advantages = [
-            'Proyek Tak Terbatas',
-            'Kata Kunci Tak Terbatas',
-            '500.000 Penyebutan /bln',
-            'Pengguna Tak Terbatas',
-        ];
-        $this->social_media_features = [
-            'Facebook Scraper (Posts, Comments, Likes)',
-            'Instagram Scraper (Posts, Comments, Profiles)',
-            'TikTok Scraper (Videos, Hashtags, Search)'
-        ];
-        $this->news_portal_features = [
-            'RSS Feed & Portal Scraper',
-            'Custom Portal Scraping (Detik, Kompas, Tribun, dll.)'
-        ];
-        
-        $this->limit_projects = 'unlimited';
-        $this->limit_keywords = 'unlimited';
-        $this->limit_mentions = '500000';
-        $this->limit_users = 'unlimited';
-        
-        $this->feat_ai = true;
-        $this->feat_rss = true;
-        $this->feat_api = true;
-        $this->feat_whitelabel = true;
     }
 
     // ─── List View ────────────────────────────────────────────────────────
@@ -337,6 +305,8 @@ class PackageManager extends Component
             $this->actorConfig[$actor->id] = [
                 'is_enabled'       => $pivot ? (bool) $pivot->is_enabled : false,
                 'cost_per_run_usd' => $pivot?->cost_per_run_usd !== null ? (string) $pivot->cost_per_run_usd : '',
+                'default_limit'    => $pivot?->default_limit !== null ? (string) $pivot->default_limit : (string) $actor->default_limit,
+                'memory_limit'     => $pivot?->memory_limit !== null ? (string) $pivot->memory_limit : (string) ($actor->memory_limit ?? '1024'),
             ];
         }
     }
@@ -349,6 +319,8 @@ class PackageManager extends Component
             $this->actorConfig[$actor->id] = [
                 'is_enabled' => false,
                 'cost_per_run_usd' => '',
+                'default_limit' => (string) $actor->default_limit,
+                'memory_limit' => (string) ($actor->memory_limit ?? '1024'),
             ];
         }
     }
@@ -362,9 +334,19 @@ class PackageManager extends Component
                 ? (float) $config['cost_per_run_usd']
                 : null;
 
+            $limit = $config['default_limit'] !== '' && $config['default_limit'] !== null
+                ? (int) $config['default_limit']
+                : null;
+
+            $memory = $config['memory_limit'] !== '' && $config['memory_limit'] !== null
+                ? (int) $config['memory_limit']
+                : null;
+
             $syncData[(int) $actorId] = [
                 'is_enabled'       => (bool) ($config['is_enabled'] ?? false),
                 'cost_per_run_usd' => $cost,
+                'default_limit'    => $limit,
+                'memory_limit'     => $memory,
             ];
         }
 

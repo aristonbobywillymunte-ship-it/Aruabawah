@@ -28,13 +28,10 @@ class Package extends Model
         'use_portal' => 'boolean',
     ];
 
-    /**
-     * Actor Apify yang terdaftar di paket ini.
-     */
     public function actors(): BelongsToMany
     {
         return $this->belongsToMany(ApifyActor::class, 'package_actors')
-            ->withPivot(['is_enabled', 'cost_per_run_usd'])
+            ->withPivot(['is_enabled', 'cost_per_run_usd', 'default_limit', 'memory_limit'])
             ->withTimestamps();
     }
 
@@ -44,7 +41,7 @@ class Package extends Model
     public function enabledActors(): BelongsToMany
     {
         return $this->belongsToMany(ApifyActor::class, 'package_actors')
-            ->withPivot(['is_enabled', 'cost_per_run_usd'])
+            ->withPivot(['is_enabled', 'cost_per_run_usd', 'default_limit', 'memory_limit'])
             ->withTimestamps()
             ->wherePivot('is_enabled', true);
     }
@@ -78,5 +75,35 @@ class Package extends Model
         }
 
         return $actor->maximum_cost_per_run_usd !== null ? (float) $actor->maximum_cost_per_run_usd : null;
+    }
+
+    /**
+     * Mendapatkan limit memory efektif actor dalam konteks paket ini.
+     * Jika ada override di pivot, gunakan itu. Jika tidak, pakai global actor.
+     */
+    public function getEffectiveMemoryLimitForActor(ApifyActor $actor): int
+    {
+        $pivot = $this->actors()->where('apify_actors.id', $actor->id)->first()?->pivot;
+
+        if ($pivot && $pivot->memory_limit !== null) {
+            return (int) $pivot->memory_limit;
+        }
+
+        return (int) ($actor->memory_limit ?? 1024);
+    }
+
+    /**
+     * Mendapatkan limit default hasil efektif actor dalam konteks paket ini.
+     * Jika ada override di pivot, gunakan itu. Jika tidak, pakai global actor.
+     */
+    public function getEffectiveLimitForActor(ApifyActor $actor): int
+    {
+        $pivot = $this->actors()->where('apify_actors.id', $actor->id)->first()?->pivot;
+
+        if ($pivot && $pivot->default_limit !== null) {
+            return (int) $pivot->default_limit;
+        }
+
+        return (int) ($actor->default_limit ?? 20);
     }
 }
