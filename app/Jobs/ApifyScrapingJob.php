@@ -1440,7 +1440,9 @@ class ApifyScrapingJob implements ShouldQueue
     protected function resolvePayloadLimitInfo(string $platform, array $input): array
     {
         return match ($platform) {
-            'Facebook' => ['maxPosts', isset($input['maxPosts']) ? (int) $input['maxPosts'] : null],
+            'Facebook' => isset($input['maxCommentsPerPost'])
+                ? ['maxCommentsPerPost', (int) $input['maxCommentsPerPost']]
+                : ['maxPosts', isset($input['maxPosts']) ? (int) $input['maxPosts'] : null],
             'Instagram' => ['resultsLimit', isset($input['resultsLimit']) ? (int) $input['resultsLimit'] : null],
             'TikTok' => isset($input['commentsPerPost'])
                 ? ['commentsPerPost', (int) $input['commentsPerPost']]

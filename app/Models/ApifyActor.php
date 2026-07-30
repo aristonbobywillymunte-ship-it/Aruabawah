@@ -143,6 +143,10 @@ class ApifyActor extends Model
         }
 
         if ($this->platform === 'Facebook') {
+            if ($this->isFacebookCommentsActor()) {
+                return $this->buildFacebookCommentsInputPayload($keyword, $keywords, $resolvedLimit, $dateFrom, $dateTo);
+            }
+
             return $this->buildFacebookInputPayload($keyword, $keywords, $resolvedLimit, $dateFrom, $dateTo);
         }
 
@@ -343,6 +347,58 @@ class ApifyActor extends Model
         ];
     }
 
+    protected function buildFacebookCommentsInputPayload(?string $keyword, ?array $keywords, int $limit, ?string $dateFrom = null, ?string $dateTo = null): array
+    {
+        $postUrls = array_values(array_filter(array_map(
+            fn ($value) => $this->normalizeFacebookCommentUrl((string) $value),
+            $keywords ?? [$keyword]
+        )));
+
+        if ($postUrls === []) {
+            $postUrls = array_values(array_filter([
+                $this->normalizeFacebookCommentUrl((string) ($keyword ?: $this->default_keyword)),
+            ]));
+        }
+
+        $startUrls = array_map(fn($url) => ['url' => $url], $postUrls);
+
+        $configuredComments = (int) ($this->default_limit ?? $limit);
+        if ($configuredComments < 1) {
+            $configuredComments = max(1, $limit);
+        }
+
+        return [
+            'startUrls' => $startUrls,
+            'maxCommentsPerPost' => $configuredComments,
+            'includeReplies' => true,
+            'sortOrder' => 'ALL_COMMENTS',
+            'proxyConfiguration' => [
+                'useApifyProxy' => true,
+            ],
+        ];
+    }
+
+    protected function normalizeFacebookCommentUrl(string $value): string
+    {
+        $value = trim($value);
+        $value = trim($value, " \t\n\r\0\x0B\"'`");
+
+        if ($value === '' || !preg_match('~^https?://~i', $value)) {
+            return '';
+        }
+
+        $host = parse_url($value, PHP_URL_HOST);
+        if (! is_string($host) || $host === '') {
+            return '';
+        }
+
+        if (! str_contains(Str::lower($host), 'facebook.com')) {
+            return '';
+        }
+
+        return $value;
+    }
+
     protected function perKeywordLimit(int $totalLimit, array $keywords): int
     {
         $keywordCount = max(1, count(array_values(array_filter($keywords))));
@@ -411,6 +467,15 @@ class ApifyActor extends Model
         return $this->platform === 'Instagram'
             && (
                 Str::contains(Str::lower((string) $this->actor_slug), 'instagram-comment-scraper')
+                || Str::lower((string) $this->function_type) === 'comment scraper'
+            );
+    }
+
+    protected function isFacebookCommentsActor(): bool
+    {
+        return $this->platform === 'Facebook'
+            && (
+                Str::contains(Str::lower((string) $this->actor_slug), 'facebook-comments-scraper')
                 || Str::lower((string) $this->function_type) === 'comment scraper'
             );
     }
