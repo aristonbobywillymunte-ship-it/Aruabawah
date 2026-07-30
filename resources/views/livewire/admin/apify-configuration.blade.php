@@ -9,7 +9,7 @@
         <div class="flex items-center gap-3">
             <button 
                 type="button"
-                wire:click="testConnection" 
+                onclick="Livewire.dispatch('testConnection')" 
                 class="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-4 text-xs font-bold transition shadow-sm cursor-pointer"
             >
                 <span class="material-symbols-outlined text-[18px]">network_check</span>
@@ -21,7 +21,7 @@
 
 <div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
     {{-- Global Loading State for UI Responsiveness --}}
-    <div wire:loading.flex wire:target="testConnection, saveToken, syncManagedActors, saveActor" class="fixed inset-0 z-[9999] items-center justify-center bg-slate-950/20 backdrop-blur-[2px]">
+    <div wire:loading.flex class="fixed inset-0 z-[9999] items-center justify-center bg-slate-950/20 backdrop-blur-[2px]">
         <div class="bg-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100 animate-fade-in">
             <svg class="animate-spin h-5 w-5 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
