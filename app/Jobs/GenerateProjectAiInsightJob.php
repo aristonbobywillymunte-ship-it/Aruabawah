@@ -36,8 +36,7 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             return;
         }
 
-        $template = AiPromptTemplate::resolveActiveDefaultForSourceType('Laporan AI Media Intelligence', 'report')
-            ?? AiPromptTemplate::resolvePreferredActiveForSourceType('report');
+        $template = AiPromptTemplate::resolveActiveDefaultForSourceType('Laporan AI Media Intelligence', 'report');
 
         if (! $template) {
             Log::error("Report AI prompt template not found for project insight {$this->projectId}.");
@@ -131,15 +130,6 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             'viral_basis' => $viralMeta['viral_basis'],
         ]);
 
-        $renderedPrompt .= "\n\nDATA KONDISI VIRAL TAMBAHAN:\n"
-            . "- Status Viral: {$viralMeta['viral_status']}\n"
-            . "- Penjelasan Viral: {$viralMeta['viral_desc']}\n"
-            . "- Penyebutan 7 Hari Terakhir: {$viralMeta['recent_7d']}\n"
-            . "- Dasar Penilaian Viral: {$viralMeta['viral_basis']}\n"
-            . "\nATURAN TAMBAHAN:\n"
-            . "7. Sertakan penilaian khusus tentang kondisi viral ke dalam key viral_condition.\n"
-            . "8. Penilaian viral harus menyebut status, alasan, dan implikasi reputasinya secara singkat tapi jelas.";
-
         try {
             $router = app(AiProviderRouter::class);
             $result = $router->execute(
@@ -153,7 +143,7 @@ class GenerateProjectAiInsightJob implements ShouldQueue
             $decoded = $this->decodeAiJson($rawText);
 
             if (! $decoded) {
-                $retryPrompt = $this->buildValidationRetryPrompt(trim((string) $template->system_prompt), $rawText, trim($renderedPrompt));
+                $retryPrompt = $this->buildValidationRetryPrompt($template, $rawText, trim($renderedPrompt));
                 $retryResult = $router->execute(
                     trim((string) $template->system_prompt),
                     $retryPrompt,
@@ -265,17 +255,15 @@ class GenerateProjectAiInsightJob implements ShouldQueue
         ];
     }
 
-    protected function buildValidationRetryPrompt(string $systemPrompt, string $rawText, string $originalPrompt): string
+    protected function buildValidationRetryPrompt(AiPromptTemplate $template, string $rawText, string $originalPrompt): string
     {
-        return "Output sebelumnya belum valid untuk disimpan. Ubah hasil berikut menjadi JSON murni yang hanya berisi tiga key: summary, recommendations, dan viral_condition.\n\n"
-            . "Aturan:\n"
-            . "- summary harus berupa narasi isu berita yang spesifik, fokus ke pemberitaan, framing media, dan dampak reputasi.\n"
-            . "- recommendations harus berupa array berisi minimal 3 butir tindakan respons isu yang spesifik.\n"
-            . "- viral_condition harus berupa satu paragraf khusus yang menilai kondisi viral secara eksplisit.\n"
-            . "- Jangan tambahkan markdown, penjelasan, atau teks di luar JSON.\n\n"
-            . "System prompt:\n{$systemPrompt}\n\n"
+        $schema = trim((string) ($template->output_schema ?? ''));
+
+        return "Output sebelumnya belum valid untuk disimpan. Ubah hasil berikut menjadi JSON murni yang sesuai dengan prompt laporan dan schema template.\n\n"
+            . ($schema !== '' ? "Schema:\n{$schema}\n\n" : '')
             . "Prompt asli:\n{$originalPrompt}\n\n"
-            . "Output sebelumnya:\n{$rawText}";
+            . "Output sebelumnya:\n{$rawText}\n\n"
+            . "Jangan tambahkan markdown, penjelasan, atau teks di luar JSON.";
     }
 
     protected function buildViralContext($articles): array

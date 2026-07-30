@@ -439,33 +439,7 @@ class AiAnalysisJob implements ShouldQueue
         ];
 
         $schema = $this->effectiveOutputSchema($template);
-        $instruction = $template->system_prompt . "\n\n";
-        $instruction .= strtr($template->user_prompt_template, $replacements) . "\n\n";
-        $instruction .= "AI wajib menghasilkan estimasi pembaca dengan field berikut: project_estimated_readers, potential_estimated_readers, potential_reach_score, potential_reach_level, potential_reach_band, local_relevance_score, confidence_score, confidence_level, signals_used, reasoning_summary, limitations, is_exact_reach (false), reach_method (ai_reader_estimate_v1).\n";
-        if (($template->source_type ?? 'article') === 'social') {
-            $instruction .= "Untuk sosial media, prioritaskan penilaian berdasarkan link konten, jenis media, caption, konteks visual, dan engagement bila tersedia. Jika link atau thumbnail mengarah ke video/foto/carousel, gunakan itu sebagai sinyal utama untuk menentukan apakah kontennya video, gambar, carousel, atau teks.\n";
-            $instruction .= "Jangan menebak isi visual secara berlebihan; jika media tidak bisa diakses, sebutkan keterbatasan secara eksplisit di limitations.\n";
-        }
-        $instruction .= "Estimasi pembaca harus berupa integer natural yang spesifik dan tidak boleh dipaksa ke angka bulat generik seperti 100, 500, atau 1000 tanpa alasan kuat. Gunakan angka yang terasa realistis dari sinyal konten, misalnya 187, 326, 847, atau 1.173 bila konteksnya mendukung.\n";
-        $instruction .= "project_estimated_readers adalah estimasi jumlah pembaca artikel secara umum. Jangan gunakan angka random atau string rentang (misal '10-20'). Nilai ini harus dihitung berdasarkan kekuatan dan skala media, posisi artikel, karakter isu, dan distribusi.\n";
-        $instruction .= "Jangan mengurangi atau mengubah nilai project_estimated_readers berdasarkan relevansi artikel terhadap project. Nilai nol tidak diperbolehkan.\n";
-        $instruction .= "potential_estimated_readers: Estimasi potensi pembaca artikel SECARA UMUM. Artikel di portal besar bisa memiliki potential_estimated_readers besar. (Catatan: Nilai ini biasanya hampir sama dengan project_estimated_readers karena keduanya kini menghitung konteks artikel umum).\n";
-        $instruction .= "Jangkauan umum (potential) adalah estimasi seluruh pembaca artikel.\n";
-        $instruction .= "Score dan level WAJIB mengikuti tabel berikut berdasarkan estimasi pembaca (potential_estimated_readers):\n";
-        $instruction .= "1-20 pembaca -> Skor 1 (Sangat rendah)\n";
-        $instruction .= "21-40 pembaca -> Skor 2 (Sangat rendah)\n";
-        $instruction .= "41-70 pembaca -> Skor 3 (Rendah)\n";
-        $instruction .= "71-100 pembaca -> Skor 4 (Rendah)\n";
-        $instruction .= "101-150 pembaca -> Skor 5 (Sedang)\n";
-        $instruction .= "151-200 pembaca -> Skor 6 (Sedang)\n";
-        $instruction .= "201-350 pembaca -> Skor 7 (Cukup tinggi)\n";
-        $instruction .= "351-600 pembaca -> Skor 8 (Tinggi)\n";
-        $instruction .= "601-999 pembaca -> Skor 9 (Sangat tinggi)\n";
-        $instruction .= ">=1000 pembaca -> Skor 10 (Luar biasa/nasional)\n";
-        $instruction .= "Band (string) harus mendeskripsikan rentang tersebut (contoh: '1-20 pembaca', '71-100 pembaca', '>=1.000 pembaca').\n";
-        $instruction .= "Jika analytics nyata tidak ada, estimasi harus konservatif (confidence maksimal 69 dan level Medium).\n";
-        $instruction .= "Balas hanya dengan JSON valid tanpa markdown atau teks tambahan.\n";
-
+        $instruction = strtr($template->user_prompt_template, $replacements) . "\n\n";
         if ($schema !== '') {
             $instruction .= "Gunakan schema berikut sebagai format output:\n" . $schema;
         }
@@ -475,112 +449,7 @@ class AiAnalysisJob implements ShouldQueue
 
     protected function effectiveOutputSchema(AiPromptTemplate $template): string
     {
-        if ($template->source_type !== 'article') {
-            $schema = trim((string) ($template->output_schema ?? ''));
-            if ($schema === '' && $template->source_type === 'social') {
-                return json_encode([
-                    'type' => 'object',
-                    'properties' => [
-                        'summary' => ['type' => 'string'],
-                        'sentiment' => ['type' => 'string'],
-                        'sentiment_score' => ['type' => 'number'],
-                        'main_issue' => ['type' => 'string'],
-                        'entities' => ['type' => 'array'],
-                        'risk_level' => ['type' => 'string'],
-                        'risk_reason' => ['type' => 'string'],
-                        'reach_estimate' => ['type' => 'integer'],
-                        'reach_score_10' => ['type' => 'integer'],
-                        'reach_level' => ['type' => 'string'],
-                        'reach_trend' => ['type' => 'string'],
-                        'reach_source' => ['type' => 'string'],
-                        'reach_confidence' => ['type' => 'string'],
-                        'reach_reason' => ['type' => 'string'],
-                        'content_type' => ['type' => 'string'],
-                        'media_type' => ['type' => 'string'],
-                        'media_link_used' => ['type' => 'string'],
-                        'media_signal' => ['type' => 'string'],
-                        'local_relevance_score' => ['type' => 'integer'],
-                        'confidence_score' => ['type' => 'integer'],
-                        'confidence_level' => ['type' => 'string'],
-                        'signals_used' => ['type' => 'array'],
-                        'reasoning_summary' => ['type' => 'string'],
-                        'limitations' => ['type' => 'string'],
-                        'recommendation' => ['type' => 'string'],
-                    ],
-                    'required' => [
-                        'summary',
-                        'sentiment',
-                        'sentiment_score',
-                        'main_issue',
-                        'entities',
-                        'risk_level',
-                        'risk_reason',
-                        'reach_estimate',
-                        'reach_score_10',
-                        'reach_level',
-                        'reach_trend',
-                        'reach_source',
-                        'reach_confidence',
-                        'reach_reason',
-                        'content_type',
-                        'media_type',
-                        'media_link_used',
-                        'media_signal',
-                        'local_relevance_score',
-                        'confidence_score',
-                        'confidence_level',
-                        'signals_used',
-                        'reasoning_summary',
-                        'limitations',
-                        'recommendation',
-                    ],
-                ], JSON_UNESCAPED_UNICODE);
-            }
-
-            return $schema;
-        }
-
-        return json_encode([
-            'type' => 'object',
-            'properties' => [
-                'summary' => ['type' => 'string'],
-                'sentiment' => ['type' => 'string'],
-                'sentiment_score' => ['type' => 'number'],
-                'main_issue' => ['type' => 'string'],
-                'entities' => ['type' => 'array'],
-                'risk_level' => ['type' => 'string'],
-                'risk_reason' => ['type' => 'string'],
-                'potential_estimated_readers' => ['type' => 'integer', 'minimum' => 1],
-                'project_estimated_readers' => ['type' => 'integer', 'minimum' => 1],
-                'potential_reach_score' => ['type' => 'integer'],
-                'potential_reach_level' => ['type' => 'string'],
-                'potential_reach_band' => ['type' => 'string'],
-                'local_relevance_score' => ['type' => 'integer'],
-                'confidence_score' => ['type' => 'integer'],
-                'confidence_level' => ['type' => 'string'],
-                'signals_used' => ['type' => 'array'],
-                'reasoning_summary' => ['type' => 'string'],
-                'limitations' => ['type' => 'string'],
-                'is_exact_reach' => ['type' => 'boolean'],
-                'reach_method' => ['type' => 'string'],
-                'recommendation' => ['type' => 'string'],
-            ],
-            'required' => [
-                'potential_estimated_readers',
-                'project_estimated_readers',
-                'potential_reach_score',
-                'potential_reach_level',
-                'potential_reach_band',
-                'local_relevance_score',
-                'confidence_score',
-                'confidence_level',
-                'signals_used',
-                'reasoning_summary',
-                'limitations',
-                'is_exact_reach',
-                'reach_method'
-            ]
-        ], JSON_UNESCAPED_UNICODE);
+        return trim((string) ($template->output_schema ?? ''));
     }
 
 
@@ -857,7 +726,12 @@ class AiAnalysisJob implements ShouldQueue
         }
 
         $base = $this->buildPrompt($template, $payload);
-        return $base . "\n\nPerbaiki konsistensi output JSON berdasarkan validation_errors berikut: " . implode('; ', $errors) . ". Pastikan score serta level sesuai dengan tabel mapping pembaca, dan estimasi pembaca tetap natural tanpa pembulatan generik yang tidak didukung sinyal. Kembalikan JSON valid saja tanpa tambahan markdown.\n";
+        $schema = trim((string) ($template->output_schema ?? ''));
+
+        return $base
+            . "\n\nPerbaiki output agar valid dan konsisten dengan validation_errors berikut: " . implode('; ', $errors) . "."
+            . ($schema !== '' ? "\nGunakan schema berikut sebagai acuan:\n{$schema}" : '')
+            . "\nKembalikan JSON valid saja tanpa tambahan markdown.";
     }
 
     protected function hasConsumptionSignals(array $result): bool

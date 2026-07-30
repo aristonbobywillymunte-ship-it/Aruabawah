@@ -180,4 +180,98 @@ PROMPT;
     {
         return '{"type":"object","properties":{"summary":{"type":"string"},"recommendations":{"type":"array","items":{"type":"string"}},"viral_condition":{"type":"string"}},"required":["summary","recommendations","viral_condition"]}';
     }
+
+    public static function aiReaderEstimateInstructionBlock(): string
+    {
+        return <<<'PROMPT'
+ATURAN ESTIMASI PEMBACA:
+1. Wajib menghasilkan estimasi pembaca dengan field berikut: project_estimated_readers, potential_estimated_readers, potential_reach_score, potential_reach_level, potential_reach_band, local_relevance_score, confidence_score, confidence_level, signals_used, reasoning_summary, limitations, is_exact_reach, reach_method.
+2. project_estimated_readers adalah estimasi jumlah pembaca artikel secara umum. Jangan gunakan angka random atau string rentang (misal "10-20"). Nilai ini harus dihitung berdasarkan kekuatan dan skala media, posisi artikel, karakter isu, dan distribusi.
+3. potential_estimated_readers adalah estimasi potensi pembaca artikel secara umum. Artikel di portal besar bisa memiliki potential_estimated_readers besar. Nilai ini biasanya hampir sama dengan project_estimated_readers.
+4. Jangan mengubah nilai estimasi pembaca menjadi nol.
+5. Jika analytics nyata tidak ada, estimasi harus konservatif dan confidence maksimal 69 dengan confidence_level "Medium".
+6. Score dan level WAJIB mengikuti tabel berikut berdasarkan potential_estimated_readers:
+   - 1-20 pembaca -> Skor 1 (Sangat rendah)
+   - 21-40 pembaca -> Skor 2 (Sangat rendah)
+   - 41-70 pembaca -> Skor 3 (Rendah)
+   - 71-100 pembaca -> Skor 4 (Rendah)
+   - 101-150 pembaca -> Skor 5 (Sedang)
+   - 151-200 pembaca -> Skor 6 (Sedang)
+   - 201-350 pembaca -> Skor 7 (Cukup tinggi)
+   - 351-600 pembaca -> Skor 8 (Tinggi)
+   - 601-999 pembaca -> Skor 9 (Sangat tinggi)
+   - >=1000 pembaca -> Skor 10 (Luar biasa/nasional)
+7. potential_reach_band wajib menjelaskan rentang estimasi tersebut.
+8. Balas hanya JSON valid tanpa markdown, penjelasan, atau teks tambahan.
+PROMPT;
+    }
+
+    public static function articleAiSystemPrompt(): string
+    {
+        return 'Anda adalah AI analis berita senior untuk analisis artikel media. Baca judul, konten, konteks project, sumber, media, dan engagement lalu keluarkan JSON valid. Fokus pada ringkasan, sentimen, isu utama, entitas, risiko, rekomendasi, dan estimasi jangkauan pembaca yang natural, spesifik, dan realistis. Estimasi pembaca harus berupa integer natural, tidak boleh angka generik atau string rentang. Gunakan sinyal kekuatan media, karakter isu, distribusi, dan konteks artikel. ' . static::aiReaderEstimateInstructionBlock();
+    }
+
+    public static function articleAiUserPromptTemplate(): string
+    {
+        return <<<'PROMPT'
+ANALISIS BERITA:
+- Judul: {title}
+- Konten: {content}
+- Sumber: {source_name}
+- URL: {url}
+- Platform: {platform}
+- Jenis Media: {media_type}
+- Media URL: {media_url}
+- Thumbnail URL: {thumbnail_url}
+- Penulis: {author_name}
+- Tanggal Publikasi: {published_at}
+- Engagement: {engagement_context}
+- Media Context: {media_context}
+- Project Context: {project_context}
+- Reach Context: {reach_context}
+
+ATURAN WAJIB:
+1. Fokus pada isu berita yang nyata, framing media, sentimen, risiko reputasi, dan relevansi terhadap project.
+2. Gunakan konteks project hanya untuk relevansi dan risiko, bukan untuk menurunkan atau menaikkan estimasi pembaca secara artifisial.
+3. Balas hanya JSON valid sesuai schema yang diberikan.
+PROMPT;
+    }
+
+    public static function articleAiOutputSchema(): string
+    {
+        return '{"type":"object","properties":{"summary":{"type":"string"},"sentiment":{"type":"string"},"sentiment_score":{"type":"number"},"main_issue":{"type":"string"},"entities":{"type":"array"},"risk_level":{"type":"string"},"risk_reason":{"type":"string"},"potential_estimated_readers":{"type":"integer","minimum":1},"project_estimated_readers":{"type":"integer","minimum":1},"potential_reach_score":{"type":"integer","minimum":1,"maximum":10},"potential_reach_level":{"type":"string"},"potential_reach_band":{"type":"string"},"local_relevance_score":{"type":"integer","minimum":0,"maximum":100},"confidence_score":{"type":"integer","minimum":0,"maximum":100},"confidence_level":{"type":"string"},"signals_used":{"type":"array"},"reasoning_summary":{"type":"string"},"limitations":{"type":"string"},"is_exact_reach":{"type":"boolean"},"reach_method":{"type":"string"},"recommendation":{"type":"string"}},"required":["summary","sentiment","sentiment_score","main_issue","entities","risk_level","risk_reason","potential_estimated_readers","project_estimated_readers","potential_reach_score","potential_reach_level","potential_reach_band","local_relevance_score","confidence_score","confidence_level","signals_used","reasoning_summary","limitations","is_exact_reach","reach_method","recommendation"]}';
+    }
+
+    public static function socialAiSystemPrompt(): string
+    {
+        return 'Anda adalah AI analis media sosial. Analisis postingan medsos yang diberikan dan berikan respon dalam format JSON yang valid. Prioritaskan link konten, jenis media, caption, konteks visual, dan engagement untuk menentukan nilai konten. Jangan menebak isi visual secara berlebihan; jika media tidak bisa diakses, sebutkan keterbatasan secara eksplisit di limitations. ' . static::aiReaderEstimateInstructionBlock();
+    }
+
+    public static function socialAiUserPromptTemplate(): string
+    {
+        return <<<'PROMPT'
+ANALISIS POSTINGAN MEDIA SOSIAL:
+- Platform: {platform}
+- URL: {url}
+- Media Type: {media_type}
+- Media URL: {media_url}
+- Thumbnail URL: {thumbnail_url}
+- Author: {author_name}
+- Konten: {content}
+- Engagement: {engagement_context}
+- Media Context: {media_context}
+- Konteks Project: {project_context}
+
+ATURAN WAJIB:
+1. Untuk sosial media, prioritaskan link konten, jenis media, caption, konteks visual, dan engagement bila tersedia.
+2. Jika link atau thumbnail mengarah ke video/foto/carousel, gunakan itu sebagai sinyal utama untuk menentukan kontennya.
+3. Jangan menebak isi visual secara berlebihan; jika media tidak bisa diakses, tulis keterbatasan secara eksplisit.
+4. Balas hanya JSON valid sesuai schema yang diberikan.
+PROMPT;
+    }
+
+    public static function socialAiOutputSchema(): string
+    {
+        return '{"type":"object","properties":{"summary":{"type":"string"},"sentiment":{"type":"string"},"sentiment_score":{"type":"number"},"main_issue":{"type":"string"},"entities":{"type":"array"},"risk_level":{"type":"string"},"risk_reason":{"type":"string"},"potential_estimated_readers":{"type":"integer","minimum":1},"project_estimated_readers":{"type":"integer","minimum":1},"potential_reach_score":{"type":"integer","minimum":1,"maximum":10},"potential_reach_level":{"type":"string"},"potential_reach_band":{"type":"string"},"local_relevance_score":{"type":"integer","minimum":0,"maximum":100},"confidence_score":{"type":"integer","minimum":0,"maximum":100},"confidence_level":{"type":"string"},"signals_used":{"type":"array"},"reasoning_summary":{"type":"string"},"limitations":{"type":"string"},"is_exact_reach":{"type":"boolean"},"reach_method":{"type":"string"},"recommendation":{"type":"string"},"content_type":{"type":"string"},"media_type":{"type":"string"},"media_link_used":{"type":"string"},"media_signal":{"type":"string"}},"required":["summary","sentiment","sentiment_score","main_issue","entities","risk_level","risk_reason","potential_estimated_readers","project_estimated_readers","potential_reach_score","potential_reach_level","potential_reach_band","local_relevance_score","confidence_score","confidence_level","signals_used","reasoning_summary","limitations","is_exact_reach","reach_method","recommendation"]}';
+    }
 }
