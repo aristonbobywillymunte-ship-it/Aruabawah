@@ -575,6 +575,12 @@ class PackageManager extends Component
     {
         $this->flash     = $message;
         $this->flashType = $type;
+
+        $this->dispatch('admin-toast', payload: [
+            'type'    => $type,
+            'title'   => $message,
+            'message' => '',
+        ]);
     }
 
     public function dismissFlash(): void

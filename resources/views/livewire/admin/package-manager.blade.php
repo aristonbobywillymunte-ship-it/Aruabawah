@@ -1,6 +1,6 @@
 <div>
     {{-- Global Loading State for UI Responsiveness --}}
-    <div wire:loading.flex wire:target="createPackage, editPackage, manageActors" class="fixed inset-0 z-[9999] items-center justify-center bg-slate-950/20 backdrop-blur-[2px]">
+    <div wire:loading.flex class="fixed inset-0 z-[9999] items-center justify-center bg-slate-950/20 backdrop-blur-[2px]">
         <div class="bg-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100 animate-fade-in">
             <svg class="animate-spin h-5 w-5 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
