@@ -53,6 +53,7 @@ class ApifyScrapingJob implements ShouldQueue
     {
         $authorName = trim((string) (
             data_get($item, 'author.name')
+            ?: data_get($item, 'profileName')
             ?: data_get($item, 'user.nickname')
             ?: data_get($item, 'user.uniqueId')
             ?: data_get($item, 'user.name')
