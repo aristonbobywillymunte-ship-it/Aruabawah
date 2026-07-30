@@ -106,8 +106,8 @@ class ApifyConfiguration extends Component
                         ->orWhere('function_type', 'like', "%{$search}%");
                 });
             })
+            ->orderBy('platform', 'asc')
             ->orderBy('priority', 'asc')
-            ->orderBy('platform')
             ->orderBy('actor_name');
     }
 
