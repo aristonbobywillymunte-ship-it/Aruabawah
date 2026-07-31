@@ -805,7 +805,7 @@ class ApifyScrapingJob implements ShouldQueue
             // Normalise fields across platforms
             $rawPostUrl = $item['videoWebUrl'] ?? $item['submittedVideoUrl'] ?? $item['webVideoUrl'] ?? $item['url'] ?? $item['facebookUrl'] ?? $item['topLevelUrl'] ?? $item['post_url'] ?? $item['postUrl'] ?? $item['link'] ?? null;
             $postUrl    = $this->normalizeSocialPostUrl($rawPostUrl);
-            $content    = $item['message'] ?? $item['text'] ?? $item['caption'] ?? $item['description'] ?? $item['title'] ?? '';
+            $content    = $item['postTitle'] ?? $item['message'] ?? $item['text'] ?? $item['caption'] ?? $item['description'] ?? $item['title'] ?? '';
             $authorFallback = $platform === 'TikTok' ? 'TikTok' : 'Unknown Author';
             $author     = $item['author']['name']
                 ?? $item['authorMeta']['nickName']
@@ -1237,10 +1237,9 @@ class ApifyScrapingJob implements ShouldQueue
                         $actualCommentsCount = count($savedComments);
                     }
 
-                    // Hanya tandai selesai (forever) jika berhasil menarik minimal 1 komentar
-                    // ATAU jika postingan tersebut memang tercatat memiliki 0 komentar di metrik utamanya.
-                    $targetCommentCount = $mainPost ? (int) $mainPost->comment_count : 0;
-                    $shouldMarkDone = $actualCommentsCount > 0 || $targetCommentCount === 0;
+                    // Selalu tandai selesai agar tidak terjadi pengulangan scraping komentar tanpa henti
+                    // pada URL post yang sama jika hasil scraping berikutnya tetap 0.
+                    $shouldMarkDone = true;
 
                     if ($shouldMarkDone) {
                         // Tandai di cache (cepat, untuk filter loop berikutnya)
@@ -1346,14 +1345,12 @@ class ApifyScrapingJob implements ShouldQueue
 
             if ($hasMoreQueue) {
                 // PROTEKSI: Cek apakah sudah ada job comment scraper aktif pada platform yang sama
-                // agar Facebook, Instagram, dan TikTok tidak saling memblokir antrean komentar.
                 $activeCommentScrapersCount = \App\Models\ApifyDispatchState::whereIn('status', ['queued', 'processing'])
                     ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')
                         ->where('platform', $platform)
                         ->pluck('id'))
                     ->where(function ($query) {
                         $staleThreshold = now()->subMinutes(self::COMMENT_SCRAPER_STALE_MINUTES);
-
                         $query->where(function ($queued) use ($staleThreshold) {
                             $queued->where('status', 'queued')
                                 ->where('queued_at', '>=', $staleThreshold);
@@ -1368,18 +1365,117 @@ class ApifyScrapingJob implements ShouldQueue
                     ->count();
 
                 if ($activeCommentScrapersCount > 0) {
-                    Log::info("[Apify] Pemicuan antrean instan dilewati karena masih ada job comment scraper aktif pada platform yang sama.");
+                    Log::info("[Apify] Self-chain dilewati: masih ada comment scraper aktif.");
                 } else {
-                    Log::info("[Apify] Antrean komentar masih ada untuk project={$projectId}. Memicu siklus scraping berikutnya secara instan.");
-                    \Illuminate\Support\Facades\Artisan::queue('scraping:run-apify', [
-                        '--platform' => $platform,
-                        '--project-id' => $projectId,
-                        '--force-dispatch' => true,
-                        '--no-telegram' => $suppressTelegram,
-                    ]);
+                    // Dispatch langsung ApifyScrapingJob ke Comment Scraper saja
+                    // (TIDAK memanggil scraping:run-apify agar Posts Search tidak ikut terpicu).
+                    $commentScraperActor = \App\Models\ApifyActor::where('function_type', 'Comment Scraper')
+                        ->where('platform', $platform)
+                        ->where('status', 'active')
+                        ->first();
+
+                    if ($commentScraperActor && $projectId) {
+                        $nextUrls = $this->resolveNextCommentUrls($projectId, $platform);
+
+                        if (!empty($nextUrls)) {
+                            Log::info("[Apify] Self-chain: dispatch Comment Scraper langsung untuk " . count($nextUrls) . " URL.", [
+                                'project_id'       => $projectId,
+                                'platform'         => $platform,
+                                'comment_actor_id' => $commentScraperActor->id,
+                                'urls'             => $nextUrls,
+                            ]);
+
+                            // Tandai URL sebagai in-progress agar tidak didispatch ganda
+                            foreach ($nextUrls as $urlToMark) {
+                                Cache::put(
+                                    'comments_scraping_in_progress:' . md5((string) $urlToMark),
+                                    true,
+                                    now()->addMinutes(30)
+                                );
+                            }
+
+                            self::dispatchSafely([
+                                'platform'       => $platform,
+                                'keyword'        => $nextUrls[0],
+                                'keywords'       => $nextUrls,
+                                'project_id'     => $projectId,
+                                'actor_id'       => $commentScraperActor->id,
+                                'force_dispatch' => true,
+                                'no_telegram'    => $suppressTelegram,
+                            ]);
+                        } else {
+                            Log::info("[Apify] Self-chain selesai: tidak ada URL komentar tersisa.", [
+                                'project_id' => $projectId,
+                                'platform'   => $platform,
+                            ]);
+                        }
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Resolve next batch of unprocessed post URLs for comment scraping.
+     * Returns up to 3 URLs that haven't been scraped or marked in-progress.
+     */
+    protected function resolveNextCommentUrls(int $projectId, string $platform): array
+    {
+        $platformLower = strtolower($platform);
+
+        $articleUrlsQuery = \App\Models\Article::query()
+            ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
+            ->where('project_articles.project_id', $projectId);
+
+        if ($platformLower === 'tiktok') {
+            $articleUrlsQuery->where(function ($q) {
+                $q->where('articles.source_name', 'like', '%tiktok%')
+                  ->orWhere('articles.url', 'like', '%tiktok.com%');
+            });
+        } elseif ($platformLower === 'instagram') {
+            $articleUrlsQuery->where(function ($q) {
+                $q->where('articles.source_name', 'like', '%instagram%')
+                  ->orWhere('articles.url', 'like', '%instagram.com%');
+            });
+        }
+
+        $articleUrls = $articleUrlsQuery
+            ->get(['articles.url', 'articles.canonical_url'])
+            ->flatMap(fn($a) => [$a->url, $a->canonical_url])
+            ->filter()
+            ->unique()
+            ->flatMap(fn($url) => [$url, rtrim($url, '/'), rtrim($url, '/') . '/'])
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $projectId)
+            ->where('platform', $platform)
+            ->whereNotNull('post_url')
+            ->whereIn('post_url', $articleUrls)
+            ->orderBy('posted_at', 'desc')
+            ->orderBy('id', 'desc');
+
+        if ($platformLower === 'tiktok') {
+            $candidateQuery->where('post_url', 'like', '%tiktok.com/@%')
+                ->where('post_url', 'like', '%/video/%');
+        } elseif ($platformLower === 'instagram') {
+            $candidateQuery->where('post_url', 'like', '%instagram.com/%');
+        }
+
+        $results = [];
+        foreach ($candidateQuery->get(['post_url']) as $item) {
+            $urlHash = md5((string) $item->post_url);
+            if (!Cache::has('comments_scraped_for_post:' . $urlHash)
+                && !Cache::has('comments_scraping_in_progress:' . $urlHash)) {
+                $results[] = $item->post_url;
+                if (count($results) >= 3) {
+                    break;
+                }
+            }
+        }
+
+        return $results;
     }
 
     protected function detectSocialMediaType(array $item, string $platform): string

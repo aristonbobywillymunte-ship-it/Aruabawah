@@ -29,6 +29,7 @@ class RunApifyScraping extends Command
     protected $signature = 'scraping:run-apify
                             {--platform= : Platform to scrape (Facebook, Instagram, TikTok)}
                             {--project-id= : Specific project ID to scrape for}
+                            {--actor-id= : Specific actor ID to run (skip all other actors)}
                             {--limit= : Maximum items per actor run}
                             {--keyword= : Specific keyword override for QA purposes}
                             {--force-dispatch : Force dispatch even if duplicate/stale-safe guard matches}
@@ -74,6 +75,7 @@ class RunApifyScraping extends Command
 
         $filterPlatform  = $this->option('platform');
         $filterProjectId = $this->option('project-id');
+        $filterActorId   = $this->option('actor-id') ? (int) $this->option('actor-id') : null;
         $overrideKeyword = trim((string) $this->option('keyword'));
         $forceDispatch = (bool) $this->option('force-dispatch');
         $suppressTelegram = (bool) $this->option('no-telegram');
@@ -82,6 +84,9 @@ class RunApifyScraping extends Command
         $actorQuery = ApifyActor::where('status', 'active')->orderBy('priority');
         if ($filterPlatform) {
             $actorQuery->where('platform', $filterPlatform);
+        }
+        if ($filterActorId) {
+            $actorQuery->where('id', $filterActorId);
         }
         $actors = $actorQuery->get();
 
@@ -204,17 +209,6 @@ class RunApifyScraping extends Command
                 $platformKey = strtolower((string) $actor->platform);
                 $hasQueue = false;
                 if ($isCommentScraper) {
-                    if (! ($mainScraperDispatchedByPlatform[$platformKey] ?? false)) {
-                        $this->line("Skipping Comment Scraper: [{$actor->platform}] project={$project->name} — actor scraping utama platform ini belum dijalankan di siklus ini.");
-                        $socialLog->info('[Social] Comment Scraper skipped: main scraper has not been dispatched in the current cycle.', [
-                            'project_id' => $project->id,
-                            'project_name' => $project->name,
-                            'platform' => $actor->platform,
-                            'actor_id' => $actor->id,
-                        ]);
-                        continue;
-                    }
-
                     $platformLower = $platformKey;
                     $preCheckQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
                         ->where('platform', $actor->platform)
