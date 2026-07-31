@@ -11,7 +11,6 @@ class ScrapingSettings extends Component
     public int $google_news_interval = 5;
     public int $portal_crawling_interval = 720;
     public int $limit_per_run = 50;
-    public string $date_range = '7d';
     public int $timeout_seconds = 30;
     public int $retry_limit = 3;
     public int $retry_delay_minutes = 10;
@@ -39,7 +38,6 @@ class ScrapingSettings extends Component
             'google_news_interval' => ['required', 'integer', 'min:5', 'max:1440'],
             'portal_crawling_interval' => ['required', 'integer', 'min:5', 'max:1440'],
             'limit_per_run' => ['required', 'integer', 'min:1', 'max:1000'],
-            'date_range' => ['required', 'string', 'in:24h,7d,30d,90d'],
             'timeout_seconds' => ['required', 'integer', 'min:5', 'max:300'],
             'retry_limit' => ['required', 'integer', 'min:0', 'max:10'],
             'retry_delay_minutes' => ['required', 'integer', 'min:1', 'max:180'],
@@ -68,7 +66,6 @@ class ScrapingSettings extends Component
         $this->google_news_interval = (int) ($setting->google_news_interval ?? 5);
         $this->portal_crawling_interval = (int) ($setting->portal_crawling_interval ?? 720);
         $this->limit_per_run = (int) ($setting->limit_per_run ?? 50);
-        $this->date_range = (string) ($setting->date_range ?? '7d');
         $this->timeout_seconds = (int) ($setting->timeout_seconds ?? 30);
         $this->retry_limit = (int) ($setting->retry_limit ?? 3);
         $this->retry_delay_minutes = (int) ($setting->retry_delay_minutes ?? 10);
@@ -93,7 +90,6 @@ class ScrapingSettings extends Component
             'google_news_interval' => $this->google_news_interval,
             'portal_crawling_interval' => $this->portal_crawling_interval,
             'limit_per_run' => $this->limit_per_run,
-            'date_range' => $this->date_range,
             'timeout_seconds' => $this->timeout_seconds,
             'retry_limit' => $this->retry_limit,
             'retry_delay_minutes' => $this->retry_delay_minutes,

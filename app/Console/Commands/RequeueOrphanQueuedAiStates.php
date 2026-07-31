@@ -284,6 +284,10 @@ class RequeueOrphanQueuedAiStates extends Command
             return [false, 'not_queued', [], []];
         }
 
+        if (! DB::table('projects')->where('id', $state->project_id)->exists()) {
+            return [false, 'missing_project', [], []];
+        }
+
         $article = Article::query()->find($state->analyzable_id);
         if (! $article) {
             return [false, 'missing_analyzable', [], []];
@@ -387,7 +391,7 @@ class RequeueOrphanQueuedAiStates extends Command
             return true;
         }
 
-        if (in_array($reason, ['missing_analyzable', 'missing_social_item', 'empty_content'], true)) {
+        if (in_array($reason, ['missing_project', 'missing_analyzable', 'missing_social_item', 'empty_content'], true)) {
             $state->forceFill([
                 'status' => 'failed',
                 'failure_category' => $this->failureCategoryForReason($reason),
@@ -408,7 +412,7 @@ class RequeueOrphanQueuedAiStates extends Command
     {
         return match ($reason) {
             'empty_content' => 'invalid_content',
-            'missing_analyzable', 'missing_social_item' => 'missing_dependency',
+            'missing_project', 'missing_analyzable', 'missing_social_item' => 'missing_dependency',
             default => 'unknown_error',
         };
     }
@@ -416,6 +420,7 @@ class RequeueOrphanQueuedAiStates extends Command
     private function failureMessageForReason(string $reason, array $details): string
     {
         return match ($reason) {
+            'missing_project' => 'Project sumber untuk state AI orphan sudah tidak ada.',
             'empty_content' => 'Konten sumber kosong sehingga tidak layak dikirim ulang ke AI.',
             'missing_analyzable' => 'Artikel sumber untuk state AI orphan tidak ditemukan.',
             'missing_social_item' => 'Item sosial sumber untuk state AI orphan tidak ditemukan.',

@@ -6,7 +6,6 @@ use App\Models\Article;
 use App\Models\Project;
 use App\Models\SocialMediaItem;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ContentMatchingService
@@ -24,19 +23,10 @@ class ContentMatchingService
             return ['articles' => 0, 'social' => 0];
         }
 
-        $cacheKey = 'content_match_counts:' . $project->id . ':' . md5(json_encode([
-            'updated_at' => optional($project->updated_at)->timestamp,
-            'topics' => $project->topics ?? [],
-            'context' => $project->context_keywords ?? [],
-            'exclude' => $project->exclude_keywords ?? [],
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-
-        return Cache::remember($cacheKey, 300, function () use ($project) {
-            return [
-                'articles' => (int) $project->articles()->count(),
-                'social' => (int) $project->socialMediaItems()->count(),
-            ];
-        });
+        return [
+            'articles' => (int) $project->articles()->count(),
+            'social' => (int) $project->socialMediaItems()->count(),
+        ];
     }
 
     /**
@@ -46,9 +36,27 @@ class ContentMatchingService
      */
     public function resyncProjectContent(Project $project): array
     {
+        $matchResult = $this->matchExistingContentForProject($project);
+        $portalArticleIds = $matchResult['matched_ids'] ?? [];
+
+        $socialResult = $this->syncProjectSocialContent($project);
+        $socialArticleIds = $socialResult['mirrored_article_ids'] ?? [];
+
+        $combinedArticleIds = array_values(array_unique(array_merge($portalArticleIds, $socialArticleIds)));
+        $project->articles()->sync($combinedArticleIds);
+
+        Log::info('[Project Resync] Combined portal and social mirrored articles synced to project_articles.', [
+            'project_id' => $project->id,
+            'project_name' => $project->name,
+            'total_articles' => count($combinedArticleIds),
+            'portal_articles' => count($portalArticleIds),
+            'social_articles' => count($socialArticleIds),
+        ]);
+
         return [
-            'match' => $this->matchExistingContentForProject($project),
-            'social_sync' => $this->syncProjectSocialContent($project),
+            'match' => $matchResult,
+            'social_sync' => $socialResult,
+            'total_synced' => count($combinedArticleIds),
         ];
     }
 
@@ -72,8 +80,10 @@ class ContentMatchingService
             $contentToMatch = ($item->title ?? '') . "\n" . ($item->content ?? '');
         } else {
             $contentToMatch = $this->buildSocialMatchText(
+                $item->author_name ?? null,
                 $item->content ?? null,
                 $item->raw_json ?? null,
+                $item->post_url ?? null,
             );
         }
         
@@ -108,11 +118,19 @@ class ContentMatchingService
             $matchedProjectIds[] = $projectId;
         }
 
-        if ($discoveryProjectId && $isArticle && ! in_array($discoveryProjectId, $matchedProjectIds, true)) {
-            $matchedProjectIds[] = $discoveryProjectId;
-        }
+        // Do not force-attach the discovery project ID. 
+        // Even the project that initiated the scrape must strictly match the keywords.
         
         $uniqueMatchedIds = array_unique($matchedProjectIds);
+
+        if ($isArticle && $uniqueMatchedIds !== []) {
+            foreach ($uniqueMatchedIds as $projectId) {
+                $project = Project::find($projectId);
+                if ($project) {
+                    $project->articles()->syncWithoutDetaching([$item->id]);
+                }
+            }
+        }
         
         if (count($uniqueMatchedIds) > 1) {
             Log::info("[Cross-Project Matching] Item {$item->id} matched multiple projects", [
@@ -137,6 +155,7 @@ class ContentMatchingService
         if (! $project || ! $project->is_active || $project->trashed()) {
             return [
                 'articles_linked' => 0,
+                'matched_ids' => [],
                 'skipped' => true,
                 'reason' => 'project_inactive_or_deleted',
             ];
@@ -147,9 +166,9 @@ class ContentMatchingService
         $excludeKeywords = $project->scrapeExcludeKeywords();
 
         if ($primaryKeywords === []) {
-            $project->articles()->sync([]);
             return [
                 'articles_linked' => 0,
+                'matched_ids' => [],
                 'skipped' => true,
                 'reason' => 'no_keywords',
             ];
@@ -157,9 +176,13 @@ class ContentMatchingService
 
         $matchedIds = [];
         Article::query()
-            ->select(['id', 'title', 'content'])
+            ->select(['id', 'title', 'content', 'source_name', 'category'])
             ->chunkById(250, function ($articles) use ($project, $primaryKeywords, $contextKeywords, $excludeKeywords, &$matchedIds) {
                 foreach ($articles as $article) {
+                    if ($this->isSocialMirroredArticle($article)) {
+                        continue;
+                    }
+
                     $content = ($article->title ?? '') . "\n" . ($article->content ?? '');
                     if ($this->shouldSkipGovernorArticleMatch($project, $content)) {
                         continue;
@@ -184,9 +207,8 @@ class ContentMatchingService
             });
 
         $matchedIds = array_values(array_unique($matchedIds));
-        $project->articles()->sync($matchedIds);
 
-        Log::info('[Project Matching] Existing portal articles matched and synced to pivot table.', [
+        Log::info('[Project Matching] Existing portal articles matched for project.', [
             'project_id' => $project->id,
             'project_name' => $project->name,
             'articles_linked' => count($matchedIds),
@@ -194,9 +216,62 @@ class ContentMatchingService
 
         return [
             'articles_linked' => count($matchedIds),
+            'matched_ids' => $matchedIds,
             'skipped' => false,
             'reason' => null,
         ];
+    }
+
+    /**
+     * Keep approved portal discoveries attached to the project even when the
+     * strict keyword matcher would otherwise prune them during a resync.
+     *
+     * @return array<int>
+     */
+    protected function approvedCandidateArticleIds(Project $project): array
+    {
+        $candidateRows = \Illuminate\Support\Facades\DB::table('candidate_links')
+            ->where('project_id', $project->id)
+            ->where('status', 'approved')
+            ->where(function ($query) {
+                $query->whereNotNull('canonical_url')
+                    ->orWhereNotNull('url');
+            })
+            ->get(['url', 'canonical_url']);
+
+        if ($candidateRows->isEmpty()) {
+            return [];
+        }
+
+        $urls = $candidateRows
+            ->flatMap(function ($row) {
+                return array_filter([
+                    $row->canonical_url ?? null,
+                    $row->url ?? null,
+                ]);
+            })
+            ->map(fn ($url) => trim((string) $url))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($urls === []) {
+            return [];
+        }
+
+        return Article::query()
+            ->where(function ($query) use ($urls) {
+                $query->whereIn('canonical_url', $urls)
+                    ->orWhereIn('url', $urls);
+            })
+            ->get(['id', 'source_name', 'category'])
+            ->reject(fn (Article $article) => $this->isSocialMirroredArticle($article))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**
@@ -213,6 +288,8 @@ class ContentMatchingService
                 'attached' => 0,
                 'skipped' => true,
                 'reason' => 'project_inactive_or_deleted',
+                'matched_social_ids' => [],
+                'mirrored_article_ids' => [],
             ];
         }
 
@@ -227,17 +304,21 @@ class ContentMatchingService
                 'attached' => 0,
                 'skipped' => false,
                 'reason' => 'no_keywords',
+                'matched_social_ids' => [],
+                'mirrored_article_ids' => [],
             ];
         }
 
         $matchedIds = [];
         SocialMediaItem::query()
-            ->select(['id', 'author_name', 'content', 'raw_json'])
+            ->select(['id', 'author_name', 'content', 'raw_json', 'post_url'])
             ->chunkById(250, function ($items) use ($primaryKeywords, $contextKeywords, $excludeKeywords, &$matchedIds) {
                 foreach ($items as $item) {
                     $content = $this->buildSocialMatchText(
+                        $item->author_name ?? null,
                         $item->content ?? null,
                         $item->raw_json ?? null,
+                        $item->post_url ?? null,
                     );
 
                     if ($this->matchesExcludeKeywords($excludeKeywords, $content)) {
@@ -261,10 +342,21 @@ class ContentMatchingService
         $matchedIds = array_values(array_unique($matchedIds));
         $project->socialMediaItems()->sync($matchedIds);
 
+        // Fetch mirrored article IDs for project_articles syncing
+        $postUrls = SocialMediaItem::whereIn('id', $matchedIds)->pluck('post_url')->filter()->toArray();
+        $mirroredArticleIds = [];
+        if (!empty($postUrls)) {
+            $mirroredArticleIds = Article::whereIn('url', $postUrls)
+                ->orWhereIn('canonical_url', $postUrls)
+                ->pluck('id')
+                ->toArray();
+        }
+
         Log::info('[Project Matching] Existing social media items matched and synced to pivot table.', [
             'project_id' => $project->id,
             'project_name' => $project->name,
             'social_linked' => count($matchedIds),
+            'mirrored_articles_linked' => count($mirroredArticleIds),
         ]);
 
         return [
@@ -272,6 +364,8 @@ class ContentMatchingService
             'attached' => count($matchedIds),
             'skipped' => false,
             'reason' => null,
+            'matched_social_ids' => $matchedIds,
+            'mirrored_article_ids' => $mirroredArticleIds,
         ];
     }
     
@@ -311,7 +405,20 @@ class ContentMatchingService
         // across non-ascii boundaries).
         $pattern = '/(?<![\p{L}\p{N}])' . $escapedKeyword . '(?![\p{L}\p{N}])/iu';
 
-        return preg_match($pattern, $text) === 1;
+        if (preg_match($pattern, $text) === 1) {
+            return true;
+        }
+
+        // Allow compound-word variants such as "walikota" <-> "wali kota"
+        // without loosening the matcher for unrelated short fragments.
+        $keywordCompact = preg_replace('/\s+/u', '', Str::lower($keyword));
+        $textCompact = preg_replace('/\s+/u', '', Str::lower($text));
+
+        if ($keywordCompact === '' || $textCompact === '') {
+            return false;
+        }
+
+        return str_contains($textCompact, $keywordCompact);
     }
 
     /**
@@ -321,9 +428,16 @@ class ContentMatchingService
      * same rule as the dashboard: social sources match from caption/post text,
      * while hashtags remain a supporting signal.
      */
-    protected function buildSocialMatchText(?string $content, mixed $rawJson): string
+    protected function buildSocialMatchText(?string $authorName, ?string $content, mixed $rawJson, ?string $postUrl = null): string
     {
         $parts = [];
+
+        if (is_string($authorName)) {
+            $author = trim($authorName);
+            if ($author !== '') {
+                $parts[] = $author;
+            }
+        }
 
         if (is_string($content)) {
             $caption = trim($content);
@@ -371,7 +485,23 @@ class ContentMatchingService
             }
         }
 
+        if (is_string($postUrl)) {
+            $trimmedUrl = trim($postUrl);
+            if ($trimmedUrl !== '') {
+                $parts[] = $trimmedUrl;
+            }
+        }
+
         return implode("\n", array_values(array_unique($parts)));
+    }
+
+    protected function isSocialMirroredArticle(Article $article): bool
+    {
+        $source = strtolower(trim((string) ($article->source_name ?? '')));
+        $category = strtolower(trim((string) ($article->category ?? '')));
+
+        return in_array($source, ['facebook', 'instagram', 'tiktok'], true)
+            || $category === 'social';
     }
 
     protected function matchesAllKeywords(array $keywords, string $text): bool

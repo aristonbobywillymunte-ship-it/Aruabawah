@@ -32,8 +32,7 @@
          }
      }"
      x-effect="
-         const shouldLock = !isMobile
-             || (typeof detailModalOpen !== 'undefined' && detailModalOpen)
+         const shouldLock = (typeof detailModalOpen !== 'undefined' && detailModalOpen)
              || (typeof showViralModal !== 'undefined' && showViralModal)
              || (typeof showTikTokCommentsModal !== 'undefined' && showTikTokCommentsModal)
              || (typeof showInstagramCommentsModal !== 'undefined' && showInstagramCommentsModal)
@@ -922,8 +921,8 @@
                                             @if($this->isTikTokArticle($article))
                                                 <button
                                                     type="button"
-                                                    @click="showTikTokCommentsModal = true"
-                                                    wire:click.prevent="openTikTokCommentsModal({{ $article->id }})"
+                                                    @click.stop="showTikTokCommentsModal = true"
+                                                    wire:click.stop.prevent="openTikTokCommentsModal({{ $article->id }})"
                                                     class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#17856e] transition-colors cursor-pointer"
                                                     title="Lihat komentar TikTok"
                                                 >
@@ -934,8 +933,8 @@
                                                 @if($instagramCommentsClickable)
                                                     <button
                                                         type="button"
-                                                        @click="showInstagramCommentsModal = true"
-                                                        wire:click.prevent="openInstagramCommentsModal({{ $article->id }})"
+                                                        @click.stop="showInstagramCommentsModal = true"
+                                                        wire:click.stop.prevent="openInstagramCommentsModal({{ $article->id }})"
                                                         class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#e1306c] transition-colors cursor-pointer"
                                                         title="Lihat komentar Instagram"
                                                     >
@@ -958,8 +957,8 @@
                                                 @if($facebookCommentsClickable)
                                                     <button
                                                         type="button"
-                                                        @click="showFacebookCommentsModal = true"
-                                                        wire:click.prevent="openFacebookCommentsModal({{ $article->id }})"
+                                                        @click.stop="showFacebookCommentsModal = true"
+                                                        wire:click.stop.prevent="openFacebookCommentsModal({{ $article->id }})"
                                                         class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#1877f2] transition-colors cursor-pointer"
                                                         title="Lihat komentar Facebook"
                                                     >
@@ -5048,20 +5047,14 @@
                     <div class="text-sm md:text-base text-slate-800 leading-relaxed space-y-5 whitespace-pre-line overflow-y-auto flex-grow pr-3 pb-8 font-sans" x-text="detailContent"></div>
                 </div>
             </div>
+        </div>
     </div>
 
-        @php
-            $tikTokCommentsModalMeta = $tikTokCommentsModalMeta ?? [];
-            $tikTokCommentsModalItems = $tikTokCommentsModalItems ?? [];
-        @endphp
-        <template x-teleport="body">
+        @if($showTikTokCommentsModal)
         <div
-            x-show="showTikTokCommentsModal"
-            x-cloak
-            x-transition
             class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-            @keydown.escape.window="showTikTokCommentsModal = false; $wire.closeTikTokCommentsModal()"
-            @click.self="showTikTokCommentsModal = false; $wire.closeTikTokCommentsModal()"
+            @keydown.escape.window="$wire.closeTikTokCommentsModal()"
+            @click.self="$wire.closeTikTokCommentsModal()"
         >
             <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
                 <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
@@ -5182,21 +5175,14 @@
                 </div>
             </div>
         </div>
-        </template>
+        @endif
 
 
-        @php
-            $instagramCommentsModalMeta = $instagramCommentsModalMeta ?? [];
-            $instagramCommentsModalItems = $instagramCommentsModalItems ?? [];
-        @endphp
-        <template x-teleport="body">
+        @if($showInstagramCommentsModal)
         <div
-            x-show="showInstagramCommentsModal"
-            x-cloak
-            x-transition
             class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-            @keydown.escape.window="showInstagramCommentsModal = false; $wire.closeInstagramCommentsModal()"
-            @click.self="showInstagramCommentsModal = false; $wire.closeInstagramCommentsModal()"
+            @keydown.escape.window="$wire.closeInstagramCommentsModal()"
+            @click.self="$wire.closeInstagramCommentsModal()"
         >
             <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
                 <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
@@ -5317,21 +5303,18 @@
                 </div>
             </div>
         </div>
-        </template>
+        @endif
 
         @php
             $facebookCommentsModalMeta = $facebookCommentsModalMeta ?? [];
             $facebookCommentsModalItems = $facebookCommentsModalItems ?? [];
         @endphp
-        <template x-teleport="body">
-        <div
-            x-show="showFacebookCommentsModal"
-            x-cloak
-            x-transition
-            class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-            @keydown.escape.window="showFacebookCommentsModal = false; $wire.closeFacebookCommentsModal()"
-            @click.self="showFacebookCommentsModal = false; $wire.closeFacebookCommentsModal()"
-        >
+        @if($showFacebookCommentsModal)
+         <div
+             class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+             @keydown.escape.window="$wire.closeFacebookCommentsModal()"
+             @click.self="$wire.closeFacebookCommentsModal()"
+         >
             <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
                 <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
                     <div class="min-w-0">
@@ -5450,7 +5433,7 @@
                 </div>
             </div>
         </div>
-        </template>
+        @endif
 
     <!-- Global AI PDF Report Generation Modal Overlay -->
     <div wire:loading.flex wire:target="preparePdfReport" class="fixed inset-0 z-[9999] items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">

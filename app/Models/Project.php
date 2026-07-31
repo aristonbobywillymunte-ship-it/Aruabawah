@@ -142,11 +142,13 @@ class Project extends Model
         $variants = [];
 
         foreach ($this->scrapeKeywords() as $keyword) {
-            $variants[] = $keyword;
+            foreach ($this->expandKeywordAliases($keyword) as $variant) {
+                $variants[] = $variant;
 
-            $hashtag = $this->toHashtagVariant($keyword);
-            if ($hashtag !== '') {
-                $variants[] = $hashtag;
+                $hashtag = $this->toHashtagVariant($variant);
+                if ($hashtag !== '') {
+                    $variants[] = $hashtag;
+                }
             }
         }
 
@@ -177,11 +179,13 @@ class Project extends Model
         $variants = [];
 
         foreach ($this->scrapeContextKeywords() as $keyword) {
-            $variants[] = $keyword;
+            foreach ($this->expandKeywordAliases($keyword) as $variant) {
+                $variants[] = $variant;
 
-            $hashtag = $this->toHashtagVariant($keyword);
-            if ($hashtag !== '') {
-                $variants[] = $hashtag;
+                $hashtag = $this->toHashtagVariant($variant);
+                if ($hashtag !== '') {
+                    $variants[] = $hashtag;
+                }
             }
         }
 
@@ -220,6 +224,43 @@ class Project extends Model
         $keyword = preg_replace('/\s+/u', '', $keyword) ?? $keyword;
 
         return $keyword === '' ? '' : '#' . $keyword;
+    }
+
+    protected function expandKeywordAliases(string $keyword): array
+    {
+        $keyword = trim($keyword);
+        if ($keyword === '') {
+            return [];
+        }
+
+        $variants = [$keyword];
+        $normalized = preg_replace('/\s+/u', ' ', $keyword) ?? $keyword;
+
+        if (preg_match('/^bpd\s+(.+)$/iu', $normalized, $matches) === 1) {
+            $region = trim((string) ($matches[1] ?? ''));
+            if ($region !== '') {
+                $variants[] = 'Bank ' . $region;
+                $variants[] = 'Bank Pembangunan Daerah ' . $region;
+            }
+        }
+
+        if (preg_match('/^bank\s+(.+)$/iu', $normalized, $matches) === 1) {
+            $region = trim((string) ($matches[1] ?? ''));
+            if ($region !== '') {
+                $variants[] = 'BPD ' . $region;
+                $variants[] = 'Bank Pembangunan Daerah ' . $region;
+            }
+        }
+
+        if (preg_match('/^bank pembangunan daerah\s+(.+)$/iu', $normalized, $matches) === 1) {
+            $region = trim((string) ($matches[1] ?? ''));
+            if ($region !== '') {
+                $variants[] = 'BPD ' . $region;
+                $variants[] = 'Bank ' . $region;
+            }
+        }
+
+        return array_values(array_unique(array_filter(array_map('trim', $variants))));
     }
 
     public function hasScrapeKeywords(): bool

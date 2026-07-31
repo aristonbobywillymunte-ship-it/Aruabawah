@@ -120,7 +120,19 @@ class ScrapingJob implements ShouldQueue
             $xpath = new \DOMXPath($dom);
             $canonicalNodes = $xpath->query('//link[@rel="canonical"]');
             if ($canonicalNodes && $canonicalNodes->length > 0) {
-                $canonicalUrl = trim($canonicalNodes->item(0)->getAttribute('href'));
+                $canonicalUrl = '';
+                foreach ($canonicalNodes as $node) {
+                    $canonicalHref = trim($node->getAttribute('href'));
+                    if (!empty($canonicalHref)) {
+                        $canonicalPath = trim(parse_url($canonicalHref, PHP_URL_PATH) ?? '', '/');
+                        $originalPath = trim(parse_url($url, PHP_URL_PATH) ?? '', '/');
+                        if (empty($canonicalPath) && !empty($originalPath)) {
+                            continue;
+                        }
+                        $canonicalUrl = $canonicalHref;
+                        break;
+                    }
+                }
                 if ($canonicalUrl !== '' && $canonicalUrl !== $url) {
                     $canonicalHtml = $this->fetchRenderedHtml($canonicalUrl);
                     if ($canonicalHtml === '') {

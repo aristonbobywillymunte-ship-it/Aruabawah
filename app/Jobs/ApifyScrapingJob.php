@@ -493,6 +493,14 @@ class ApifyScrapingJob implements ShouldQueue
         }
 
         $limit = max(1, (int) $limit);
+        $isMainSocialActor = in_array($platform, ['TikTok', 'Facebook', 'Instagram'], true)
+            && strtolower((string) ($actor->function_type ?? '')) !== 'comment scraper';
+
+        if ($isMainSocialActor) {
+            // Batas hasil langsung mengikuti nilai dari konfigurasi paket
+            $limit = $limit;
+        }
+
         $input = $actor->buildInputPayload($keyword, $limit, null, null, $keywords);
 
         Log::info("[Apify] Calling actor. {$contextStr} | input: " . json_encode($input));
@@ -896,15 +904,7 @@ class ApifyScrapingJob implements ShouldQueue
                     && $actorFunctionType === 'search post'
                     && (($input['resultsType'] ?? 'posts') === 'posts');
 
-                if (
-                    !$isInstagramPostSearch
-                    && !$isCommentScraper
-                    && $postedAtCarbon
-                    && $postedAtCarbon->lessThan(now()->subDays(7)->startOfDay())
-                ) {
-                    Log::info("[Apify] Skipped IG item: older than 7 days ({$postedAtCarbon->toIso8601String()})");
-                    continue;
-                }
+                // Filter batas waktu 7 hari dihapus sesuai instruksi user agar semua postingan ditarik.
 
                 $item['_metadata'] = [
                     'source_mode' => $isInstagramPostSearch ? 'instagram_post_search' : 'posts',
@@ -1036,6 +1036,7 @@ class ApifyScrapingJob implements ShouldQueue
                     $mainPost = SocialMediaItem::create([
                         'project_id'    => $projectId ?: null,
                         'platform'       => $platform,
+                        'post_url'       => $postUrl,
                         'author_name'    => $author,
                         'author_url'     => $authorUrl,
                         'content'        => '[Menunggu postingan utama] ' . $content,
@@ -1076,8 +1077,12 @@ class ApifyScrapingJob implements ShouldQueue
             $platformNeedsCommentCheck = in_array($platform, ['Instagram', 'TikTok', 'Facebook'], true)
                 && $this->hasActiveCommentScraperForPlatform($platform, $projectId);
 
+            $targetPostUrl = $postUrl ?? ('apify-' . md5($content . $platform));
+            $existingRecord = SocialMediaItem::where('post_url', $targetPostUrl)->first();
+            $commentsCheckedValue = $existingRecord ? ($existingRecord->comments_checked || ! $platformNeedsCommentCheck) : (! $platformNeedsCommentCheck);
+
             $record = SocialMediaItem::updateOrCreate(
-                ['post_url' => $postUrl ?? ('apify-' . md5($content . $platform))],
+                ['post_url' => $targetPostUrl],
                 [
                     'project_id'       => $projectId ?: null,
                     'platform'          => $platform,
@@ -1091,8 +1096,7 @@ class ApifyScrapingJob implements ShouldQueue
                     'view_count'        => (int) $views,
                     'follower_count'    => (int) $followers,
                     'raw_json'          => json_encode($item),
-                    // Jika platform tidak butuh comment check → langsung tandai sudah dicek
-                    'comments_checked'  => ! $platformNeedsCommentCheck,
+                    'comments_checked'  => $commentsCheckedValue,
                 ]
             );
 

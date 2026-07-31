@@ -316,14 +316,21 @@ new class extends Component
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()->map(function($project) {
-            $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
+            $matchedCounts = [
+                'articles' => (int) $project->articles()->count(),
+                'social' => (int) $project->socialMediaItems()->count(),
+            ];
+
             $analyzedArticlesQuery = Article::query()
+                ->select('articles.*')
+                ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
+                ->where('project_articles.project_id', $project->id)
                 ->whereHas('aiAnalysisResult', function($q) {
-                $q->completeOfficialAiResult()
-                  ->whereNotNull('summary')
-                  ->whereNotNull('sentiment')
-                  ->whereNotNull('risk_level');
-            });
+                    $q->completeOfficialAiResult()
+                      ->whereNotNull('summary')
+                      ->whereNotNull('sentiment')
+                      ->whereNotNull('risk_level');
+                });
             $totalAiValid = (clone $analyzedArticlesQuery)->count();
             $rescrapeCount = 0;
             $totalAiFailed = 0;
@@ -358,7 +365,9 @@ new class extends Component
             $hasOfficialReach = (clone $reachQuery)->exists();
             $reach = $hasOfficialReach ? number_format($officialReach, 0, ',', '.') : 'Belum tersedia';
 
-            $lastMedsosTime = $this->latestSocialUpdateForProject($project->id);
+            $lastMedsosTime = $this->latestSocialUpdateForProject($project->id)
+                ?? $project->socialMediaItems()->max('posted_at')
+                ?? $project->socialMediaItems()->max('created_at');
 
             $lastPortalScanTime = $this->latestPortalScanForProject($project->id);
             $lastPortalUpdate = $lastPortalScanTime
@@ -585,6 +594,30 @@ new class extends Component
         $this->showConfirmModal = true;
     }
 
+    public function confirmRunScraping($id)
+    {
+        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
+
+        $this->confirmAction = 'run_scraping';
+        $this->confirmProjectId = $project->id;
+        $this->confirmProjectName = $project->name;
+        $this->confirmTitle = 'Jalankan Scraping Sekarang?';
+        $this->confirmMessage = "Apakah Anda yakin ingin menjalankan scraping langsung untuk proyek '{$project->name}'? Tindakan ini akan langsung mencari portal berita dan media sosial, serta mengonsumsi kuota API/Apify Anda.";
+        $this->showConfirmModal = true;
+    }
+
+    public function confirmSyncProject($id)
+    {
+        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
+
+        $this->confirmAction = 'sync_project';
+        $this->confirmProjectId = $project->id;
+        $this->confirmProjectName = $project->name;
+        $this->confirmTitle = 'Sinkronisasi Ulang Konten?';
+        $this->confirmMessage = "Apakah Anda yakin ingin mensinkronisasi ulang seluruh konten artikel dan media sosial untuk proyek '{$project->name}' berdasarkan kata kunci terbaru?";
+        $this->showConfirmModal = true;
+    }
+
     public function runConfirmedProjectAction()
     {
         if ($this->confirmAction === 'delete' && $this->confirmProjectId) {
@@ -599,6 +632,16 @@ new class extends Component
 
         if ($this->confirmAction === 'force_delete' && $this->confirmProjectId) {
             $this->forceDeleteProject($this->confirmProjectId);
+            return;
+        }
+
+        if ($this->confirmAction === 'run_scraping' && $this->confirmProjectId) {
+            $this->runScraping($this->confirmProjectId);
+            return;
+        }
+
+        if ($this->confirmAction === 'sync_project' && $this->confirmProjectId) {
+            $this->syncProject($this->confirmProjectId);
             return;
         }
 
@@ -764,9 +807,6 @@ new class extends Component
             this.toastTimer = setTimeout(() => this.toastVisible = false, 3000);
         },
         init() {
-            @if(session()->has('message'))
-                this.showToast("{{ session('message') }}", 'success');
-            @endif
             window.openDashboardDetail = (title, source, date, url, content, summary, rec, sentiment, category, reach, level, score, formattedDate, likes = 0, comments = 0, hashtags = []) => {
                 this.detailTitle = title;
                 this.detailSource = source;
@@ -917,22 +957,7 @@ new class extends Component
 
                             <!-- Scrollable Modal Content (Scroll internal dengan flex-grow) -->
                             <div class="p-8 space-y-6 text-left" style="flex: 1 1 auto; overflow-y: auto;">
-                                <form id="createProjectForm" wire:submit.prevent="createProject" class="space-y-6">
-                                    <!-- Project Name Field -->
-                                    <div class="space-y-2">
-                                        <div class="flex items-center justify-between">
-                                            <label class="text-sm font-bold text-slate-800 block">Nama Proyek</label>
-                                            <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
-                                        </div>
-                                        <input 
-                                            wire:model="name" 
-                                            type="text" 
-                                            placeholder="Contoh: Arsip Sejarah Tokoh Bangsa"
-                                            class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
-                                        >
-                                        @error('name') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
-                                    </div>
-
+                                @if($createStep === 1)
                                     <!-- Pilih Paket - Desain Card Selection Grid Premium -->
                                     @php
                                         $activePackages = \App\Models\Package::where('is_active', true)
@@ -975,126 +1000,164 @@ new class extends Component
                                         @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                     </div>
                                     @endif
-
-                                    <!-- Telegram Chat ID -->
-                                    <div class="space-y-2">
-                                        <div class="flex items-center justify-between">
-                                            <label class="text-sm font-bold text-slate-800 block">Telegram Chat ID</label>
-                                            <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
-                                        </div>
-                                        <p class="text-xs text-slate-400 leading-tight">Masukkan ID chat/group Telegram tanpa menggunakan tanda minus di depan (contoh: 10022334455).</p>
-                                        <input 
-                                            wire:model="telegramChatId" 
-                                            type="text" 
-                                            placeholder="Contoh: 10022334455"
-                                            class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
-                                        >
-                                        @error('telegramChatId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
-                                    </div>
-
-                                    <!-- Filter Keyword (Kata Kunci Penyaring) -->
-                                    <div class="space-y-2">
-                                        <div class="flex items-center justify-between">
-                                            <label class="text-sm font-bold text-slate-800 block">Kata Kunci Penyaring (Wajib)</label>
-                                            <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
-                                        </div>
-                                        <p class="text-xs text-slate-400">
-                                            Kata kunci tambahan yang wajib ada di dalam judul atau isi portal. Data berita dan sosial media hanya akan ditampilkan jika mengandung kata kunci pencarian (scraping) DAN minimal salah satu dari kata kunci penyaring (wajib) yang Anda masukkan di sini.
-                                        </p>
-                                        <input 
-                                            wire:model="keywordsString" 
-                                            type="text" 
-                                            placeholder="Contoh: Soekarno, Hatta, Sudirman"
-                                            class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
-                                        >
-                                        @error('keywordsString') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
-                                        <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
-                                    </div>
-
-                                    <!-- Main Keywords Field (Kata Kunci Pencarian (Scraping)) -->
-                                    <div class="space-y-2">
-                                        <div class="flex items-center justify-between">
-                                            <label class="text-sm font-bold text-slate-800 block">Kata Kunci Pencarian (Scraping)</label>
-                                            <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
-                                        </div>
-                                        <p class="text-xs text-slate-400">
-                                            Kata kunci pencarian atau frasa utama untuk proyek Anda. Kata kunci ini digunakan sebagai acuan untuk melakukan scraping data berita dan sosial media.
-                                        </p>
-                                        <input 
-                                            wire:model="topicsString" 
-                                            type="text" 
-                                            placeholder="Contoh: Pahlawan Nasional, Proklamator, Tokoh Sejarah"
-                                            class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
-                                        >
-                                        @error('topicsString') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
-                                        <p class="text-[10px] text-slate-400 mt-1">Tidak peka huruf besar/kecil. Pisahkan dengan Koma atau tekan Enter untuk banyak kata kunci.</p>
-                                        
-                                        <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4" x-data="{
-                                            topics() {
-                                                return $wire.topicsString ? $wire.topicsString.split(',').map(t => t.trim()).filter(Boolean) : [];
-                                            },
-                                            toHashtag(topic) {
-                                                const clean = topic
-                                                    .replace(/^#+/, '')
-                                                    .replace(/['’‘`]/g, '')
-                                                    .replace(/\s+/g, '');
-                                                return clean ? `#${clean}` : '';
-                                            }
-                                        }">
-                                            <div class="flex items-center justify-between gap-3 mb-3">
-                                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Preview Hashtag</span>
-                                                <span class="text-[10px] font-semibold text-slate-500">Hasil akhir saat disimpan</span>
+                                @else
+                                    <form id="createProjectForm" wire:submit.prevent="createProject" class="space-y-6">
+                                        <!-- Project Name Field -->
+                                        <div class="space-y-2">
+                                            <div class="flex items-center justify-between">
+                                                <label class="text-sm font-bold text-slate-800 block">Nama Proyek</label>
+                                                <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
                                             </div>
-                                            <div class="flex flex-wrap gap-2 text-xs">
-                                                <template x-for="topic in topics()" :key="topic">
-                                                    <span
-                                                        class="px-3 py-1.5 rounded-full border border-[#1fa387]/20 bg-[#1fa387]/5 text-[#1fa387] font-bold"
-                                                        x-text="toHashtag(topic)"
-                                                    ></span>
-                                                </template>
-                                                <span x-show="!$wire.topicsString" class="text-xs text-slate-400 italic">Belum ada keyword.</span>
+                                            <input 
+                                                wire:model="name" 
+                                                type="text" 
+                                                placeholder="Contoh: Arsip Sejarah Tokoh Bangsa"
+                                                class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
+                                            >
+                                            @error('name') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                        </div>
+
+                                        <!-- Telegram Chat ID -->
+                                        <div class="space-y-2">
+                                            <div class="flex items-center justify-between">
+                                                <label class="text-sm font-bold text-slate-800 block">Telegram Chat ID</label>
+                                                <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
+                                            </div>
+                                            <p class="text-xs text-slate-400 leading-tight">Masukkan ID chat/group Telegram tanpa menggunakan tanda minus di depan (contoh: 10022334455).</p>
+                                            <input 
+                                                wire:model="telegramChatId" 
+                                                type="text" 
+                                                placeholder="Contoh: 10022334455"
+                                                class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
+                                            >
+                                            @error('telegramChatId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                        </div>
+
+                                        <!-- Filter Keyword (Kata Kunci Penyaring) -->
+                                        <div class="space-y-2">
+                                            <div class="flex items-center justify-between">
+                                                <label class="text-sm font-bold text-slate-800 block">Kata Kunci Penyaring (Wajib)</label>
+                                                <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
+                                            </div>
+                                            <p class="text-xs text-slate-400">
+                                                Kata kunci tambahan yang wajib ada di dalam judul atau isi portal. Data berita dan sosial media hanya akan ditampilkan jika mengandung kata kunci pencarian (scraping) DAN minimal salah satu dari kata kunci penyaring (wajib) yang Anda masukkan di sini.
+                                            </p>
+                                            <input 
+                                                wire:model="contextKeywords" 
+                                                type="text" 
+                                                placeholder="Contoh: Soekarno, Hatta, Sudirman"
+                                                class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
+                                            >
+                                            @error('contextKeywords') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                            <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
+                                        </div>
+
+                                        <!-- Main Keywords Field (Kata Kunci Pencarian (Scraping)) -->
+                                        <div class="space-y-2">
+                                            <div class="flex items-center justify-between">
+                                                <label class="text-sm font-bold text-slate-800 block">Kata Kunci Pencarian (Scraping)</label>
+                                                <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
+                                            </div>
+                                            <p class="text-xs text-slate-400">
+                                                Kata kunci pencarian atau frasa utama untuk proyek Anda. Kata kunci ini digunakan sebagai acuan untuk melakukan scraping data berita dan sosial media.
+                                            </p>
+                                            <input 
+                                                wire:model="topicsString" 
+                                                type="text" 
+                                                placeholder="Contoh: Pahlawan Nasional, Proklamator, Tokoh Sejarah"
+                                                class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
+                                            >
+                                            @error('topicsString') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                            <p class="text-[10px] text-slate-400 mt-1">Tidak peka huruf besar/kecil. Pisahkan dengan Koma atau tekan Enter untuk banyak kata kunci.</p>
+                                            
+                                            <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4" x-data="{
+                                                topics() {
+                                                    return $wire.topicsString ? $wire.topicsString.split(',').map(t => t.trim()).filter(Boolean) : [];
+                                                },
+                                                toHashtag(topic) {
+                                                    const clean = topic
+                                                        .replace(/^#+/, '')
+                                                        .replace(/['’‘`]/g, '')
+                                                        .replace(/\s+/g, '');
+                                                    return clean ? `#${clean}` : '';
+                                                }
+                                            }">
+                                                <div class="flex items-center justify-between gap-3 mb-3">
+                                                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Preview Hashtag</span>
+                                                    <span class="text-[10px] font-semibold text-slate-500">Hasil akhir saat disimpan</span>
+                                                </div>
+                                                <div class="flex flex-wrap gap-2 text-xs">
+                                                    <template x-for="topic in topics()" :key="topic">
+                                                        <span
+                                                            class="px-3 py-1.5 rounded-full border border-[#1fa387]/20 bg-[#1fa387]/5 text-[#1fa387] font-bold"
+                                                            x-text="toHashtag(topic)"
+                                                        ></span>
+                                                    </template>
+                                                    <span x-show="!$wire.topicsString" class="text-xs text-slate-400 italic">Belum ada keyword.</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <!-- Dikecualikan Column (Kata Kunci Pengecualian) di bawah Kata Kunci Utama -->
-                                    <div class="space-y-2">
-                                        <div class="flex items-center gap-1.5">
-                                            <label class="text-sm font-bold text-slate-800">Kata Kunci Pengecualian (Dikecualikan)</label>
-                                            <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
+                                        <!-- Dikecualikan Column (Kata Kunci Pengecualian) di bawah Kata Kunci Utama -->
+                                        <div class="space-y-2">
+                                            <div class="flex items-center gap-1.5">
+                                                <label class="text-sm font-bold text-slate-800">Kata Kunci Pengecualian (Dikecualikan)</label>
+                                                <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-full uppercase">Opsional</span>
+                                            </div>
+                                            <p class="text-xs text-slate-400">
+                                                Artikel berita yang mengandung kata kunci ini tidak akan dimasukkan ke database sistem monitoring proyek Anda.
+                                            </p>
+                                            <input 
+                                                wire:model="excludeKeywords" 
+                                                type="text" 
+                                                placeholder="Contoh: promosi, jual, beli, diskon"
+                                                class="w-full bg-[#F8F9FA] border border-slate-355 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
+                                            >
+                                            @error('excludeKeywords') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                            <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
                                         </div>
-                                        <p class="text-xs text-slate-400">
-                                            Artikel berita yang mengandung kata kunci ini tidak akan dimasukkan ke database sistem monitoring proyek Anda.
-                                        </p>
-                                        <input 
-                                            wire:model="excludedKeywordsString" 
-                                            type="text" 
-                                            placeholder="Contoh: promosi, jual, beli, diskon"
-                                            class="w-full bg-[#F8F9FA] border border-slate-355 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-850 placeholder-[#727785] transition"
-                                        >
-                                        @error('excludedKeywordsString') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
-                                        <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
-                                    </div>
-
-                                </form>
+                                    </form>
+                                @endif
                             </div>
 
                             <!-- Fixed Modal Footer -->
                             <div class="px-8 py-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 shrink-0" style="flex-shrink: 0;">
-                                <button 
-                                    type="button" 
-                                    wire:click="$set('isCreatingProject', false)"
-                                    class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer active:scale-95"
-                                >
-                                    Batal
-                                </button>
-                                <button 
-                                    type="submit" 
-                                    form="createProjectForm"
-                                    class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#178a71] text-white font-black rounded-xl text-xs transition shadow-lg shadow-[#1fa387]/20 cursor-pointer active:scale-95"
-                                >
-                                    Buat Proyek
-                                </button>
+                                @if($createStep === 1)
+                                    <button 
+                                        type="button" 
+                                        wire:click="$set('isCreatingProject', false)"
+                                        class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer active:scale-95"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        wire:click="$set('createStep', 2)"
+                                        @if(!$packageId) 
+                                            disabled 
+                                            class="px-6 py-2.5 bg-slate-200 text-slate-400 font-black rounded-xl text-xs cursor-not-allowed" 
+                                        @else 
+                                            class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#178a71] text-white font-black rounded-xl text-xs transition shadow-lg shadow-[#1fa387]/20 cursor-pointer active:scale-95" 
+                                        @endif
+                                    >
+                                        Lanjut
+                                    </button>
+                                @else
+                                    <button 
+                                        type="button" 
+                                        wire:click="$set('createStep', 1)"
+                                        class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer active:scale-95"
+                                    >
+                                        Kembali
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        form="createProjectForm"
+                                        class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#178a71] text-white font-black rounded-xl text-xs transition shadow-lg shadow-[#1fa387]/20 cursor-pointer active:scale-95"
+                                    >
+                                        Buat Proyek
+                                    </button>
+                                @endif
                             </div>
 
                         </div>
@@ -1130,7 +1193,7 @@ new class extends Component
                                 <!-- Create Project Card -->
                                 @if(auth()->check())
                                     <div 
-                                        wire:click="$set('isCreatingProject', true)"
+                                        wire:click="$set('isCreatingProject', true); $set('createStep', 1)"
                                         class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/50 transition-all duration-300 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
                                         style="min-height: 620px; height: 100%;"
                                     >
@@ -1183,6 +1246,42 @@ new class extends Component
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
+                                        <!-- Play/Scraping Button -->
+                                        <button 
+                                            wire:click="confirmRunScraping({{ $project['id'] }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="confirmRunScraping({{ $project['id'] }})"
+                                            title="Jalankan Scraping Sekarang (Portal & Medsos)"
+                                            class="text-slate-300 hover:text-emerald-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <!-- Normal Icon (Play SVG) -->
+                                            <svg wire:loading.remove wire:target="confirmRunScraping({{ $project['id'] }})" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z"></path>
+                                            </svg>
+                                            <!-- Loading Spinner -->
+                                            <svg wire:loading wire:target="confirmRunScraping({{ $project['id'] }})" class="animate-spin w-4 h-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </button>
+                                        <!-- Resync Button -->
+                                        <button 
+                                            wire:click="confirmSyncProject({{ $project['id'] }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="confirmSyncProject({{ $project['id'] }})"
+                                            title="Sinkronisasi Kata Kunci Ulang"
+                                            class="text-slate-300 hover:text-emerald-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <!-- Normal Icon -->
+                                            <svg wire:loading.remove wire:target="confirmSyncProject({{ $project['id'] }})" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                                            </svg>
+                                            <!-- Loading Spinner -->
+                                            <svg wire:loading wire:target="confirmSyncProject({{ $project['id'] }})" class="animate-spin w-4 h-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </button>
                                         <!-- Edit Button -->
                                         <button 
                                             wire:click="editProject({{ $project['id'] }})"
@@ -1787,7 +1886,16 @@ new class extends Component
                                 class="flex-1 py-2.5 {{ in_array($confirmAction, ['delete', 'force_delete'], true) ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-100' : 'bg-[#1fa387] hover:bg-[#1a8b73] shadow-emerald-100' }} text-white font-bold rounded-xl text-xs transition duration-150 active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                             >
                                 <svg wire:loading wire:target="runConfirmedProjectAction" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                <span>{{ $confirmAction === 'delete' ? 'Nonaktifkan' : ($confirmAction === 'force_delete' ? 'Hapus Permanen' : 'Aktifkan') }}</span>
+                                <span>
+                                    {{ match($confirmAction) {
+                                        'delete' => 'Nonaktifkan',
+                                        'force_delete' => 'Hapus Permanen',
+                                        'restore' => 'Aktifkan',
+                                        'run_scraping' => 'Jalankan Scraping',
+                                        'sync_project' => 'Sinkronkan',
+                                        default => 'Konfirmasi'
+                                    } }}
+                                </span>
                             </button>
                         </div>
                     </div>

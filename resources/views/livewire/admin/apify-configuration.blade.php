@@ -5,6 +5,9 @@
             <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
             <h1 class="text-2xl font-black text-slate-900 mt-1">Konfigurasi Scraper Apify</h1>
             <p class="text-xs text-slate-500 mt-1">Kelola API Token, konfigurasi Actor medsos, alokasi RAM, limit, dan prioritas fallback.</p>
+            <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[11px] font-medium leading-relaxed text-amber-900">
+                Konfigurasi actor di halaman ini hanya template sistem. Runtime proyek membaca <span class="font-bold">limit</span>, <span class="font-bold">RAM</span>, dan <span class="font-bold">cost per run</span> dari <span class="font-bold">paket proyek</span>.
+            </div>
         </div>
         <div class="flex items-center gap-3">
             <button 

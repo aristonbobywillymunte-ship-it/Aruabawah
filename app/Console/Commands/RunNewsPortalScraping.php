@@ -23,8 +23,10 @@ use Carbon\Carbon;
 
 class RunNewsPortalScraping extends Command
 {
-    private const MIN_FULL_CONTENT_LENGTH = 500;
+    private const MIN_FULL_CONTENT_LENGTH_PORTAL = 500;
+    private const MIN_FULL_CONTENT_LENGTH_GOOGLE_NEWS = 200;
     private const AI_ANALYSIS_CACHE_LOCK_MINUTES = 15;
+    private const RECENT_CANDIDATE_RETRY_MINUTES = 720;
     private array $runStats = [];
     private array $runCandidateLogs = [];
     private array $seenCanonicalUrls = [];
@@ -34,12 +36,13 @@ class RunNewsPortalScraping extends Command
                             {--project-id= : Specific project ID}
                             {--source-id= : Restrict manual portal discovery to one news source}
                             {--keyword= : Override keyword}
-                            {--discovery-mode=auto : auto|manual|google_news}
+                            {--discovery-mode=auto : auto|manual_only|google_news_only}
                             {--url= : Direct portal article URL for smoke test}
                             {--limit=3 : Max RSS items to stage}
                             {--no-telegram : Suppress Telegram notification dispatch}
                             {--no-ai : Do not dispatch AI analysis jobs}
-                            {--no-reach : Do not calculate or store reach assessments}';
+                            {--no-reach : Do not calculate or store reach assessments}
+                            {--ignore-date-limit : Legacy option, no longer used}';
 
     protected $description = 'Scrape news articles from Google News RSS for all active project keywords';
 
@@ -61,14 +64,14 @@ class RunNewsPortalScraping extends Command
         $filterProjectId = $this->option('project-id');
         $filterSourceId  = $this->option('source-id');
         $forceKeyword    = $this->option('keyword');
-        $discoveryMode   = strtolower(trim((string) $this->option('discovery-mode'))) ?: 'auto';
+        $discoveryMode   = $this->normalizeDiscoveryMode((string) $this->option('discovery-mode'));
         $directUrl       = trim((string) $this->option('url'));
         $limit           = max(1, (int) $this->option('limit'));
         $suppressTelegram = (bool) $this->option('no-telegram');
         $suppressAi = (bool) $this->option('no-ai');
         $suppressReach = (bool) $this->option('no-reach');
 
-        $runLock = Cache::lock('news:run-active', 3600);
+        $runLock = Cache::lock('news:run-active', 600);
         if (! $runLock->get()) {
             $busyReason = $this->schedulerQueueGuard->newsBusyReason() ?? 'Scan portal sebelumnya masih berjalan.';
             $this->warn("News scraping skipped: {$busyReason}");
@@ -123,7 +126,6 @@ class RunNewsPortalScraping extends Command
             'rejected_keyword' => 0,
             'rejected_short_content' => 0,
             'rejected_invalid_url' => 0,
-            'rejected_date_range' => 0,
             'partial_count' => 0,
             'error_count' => 0,
             'scraped_count' => 0,
@@ -143,12 +145,21 @@ class RunNewsPortalScraping extends Command
         $this->seenCanonicalUrls = [];
 
         foreach ($projects as $project) {
-            if ($project->package && ! ($project->package->use_portal ?? true)) {
-                $this->line("Skipping project [{$project->name}] — Portal News dimatikan dari paket.");
-                $portalLog->info('[Portal] Project skipped: package disables portal.', [
+            if ($project->package_id && $project->package) {
+                if (! ($project->package->use_portal ?? true)) {
+                    $this->line("Skipping project [{$project->name}] — Portal News dimatikan dari paket.");
+                    $portalLog->info('[Portal] Project skipped: package disables portal.', [
+                        'project_id' => $project->id,
+                        'project_name' => $project->name,
+                        'package_id' => $project->package_id,
+                    ]);
+                    continue;
+                }
+            } else {
+                $this->line("Skipping project [{$project->name}] — Tidak memiliki paket aktif.");
+                $portalLog->warning('[Portal] Project skipped: no active package.', [
                     'project_id' => $project->id,
                     'project_name' => $project->name,
-                    'package_id' => $project->package_id,
                 ]);
                 continue;
             }
@@ -206,6 +217,13 @@ class RunNewsPortalScraping extends Command
                     $totalInserted += (int) ($outcome['newly_inserted'] ?? 0);
                     $totalReused += (int) ($outcome['reused_existing'] ?? 0);
                 }
+            } catch (\Throwable $e) {
+                $this->error("Error scraping project [{$project->name}]: " . $e->getMessage());
+                $portalLog->error("Error scraping project [{$project->name}]", [
+                    'project_id' => $project->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
             } finally {
                 $projectLock->release();
             }
@@ -250,8 +268,8 @@ class RunNewsPortalScraping extends Command
         $manualRejected = 0;
         $manualPartial = 0;
         $manualError = 0;
-        $manualRequested = in_array($discoveryMode, ['auto', 'manual'], true);
-        $fallbackRequested = in_array($discoveryMode, ['auto', 'google_news'], true);
+        $manualRequested = in_array($discoveryMode, ['auto', 'manual_only'], true);
+        $fallbackRequested = in_array($discoveryMode, ['auto', 'google_news_only'], true);
 
         if ($manualRequested) {
             foreach ($this->getManualPortalSources($sourceId) as $source) {
@@ -299,6 +317,28 @@ class RunNewsPortalScraping extends Command
                     foreach ($candidateUrls as $index => $candidateUrl) {
                         if ($manualSaved >= $limit) {
                             break 2;
+                        }
+
+                        if ($this->shouldSkipRecentlyProcessedPortalCandidate($candidateUrl, $project->id)) {
+                            $this->runStats['skipped_count']++;
+                            $this->runStats['duplicate_candidate_count']++;
+                            $this->runCandidateLogs[] = [
+                                'index' => $index,
+                                'original_url' => $discoveryUrl,
+                                'resolved_url' => $candidateUrl,
+                                'candidate_link_id' => DB::table('candidate_links')->where('canonical_url', $candidateUrl)->value('id'),
+                                'scraping_item_id' => DB::table('candidate_links')->where('canonical_url', $candidateUrl)->value('id')
+                                    ? ScrapingItem::where('candidate_link_id', DB::table('candidate_links')->where('canonical_url', $candidateUrl)->value('id'))->value('id')
+                                    : null,
+                                'article_id' => Article::where('canonical_url', $candidateUrl)->value('id'),
+                                'final_status' => 'skipped_recent',
+                                'reason' => 'Candidate already processed recently for this project',
+                                'title_final' => '',
+                                'canonical_url_final' => $candidateUrl,
+                                'source_name_final' => $source->name,
+                                'content_length' => null,
+                            ];
+                            continue;
                         }
 
                         $this->runCandidateLogs[] = [
@@ -361,7 +401,7 @@ class RunNewsPortalScraping extends Command
             $googleOutcome = $this->scrapeGoogleNews($keyword, $project, $limit, $suppressTelegram, $suppressAi, $suppressReach);
             $googleSaved = (int) (($googleOutcome['newly_inserted'] ?? 0) + ($googleOutcome['reused_existing'] ?? 0));
             if ($googleSaved > 0) {
-                $this->runStats['discovery_source'] = $manualRequested ? 'manual_portal+google_news' : 'google_news_fallback';
+                $this->runStats['discovery_source'] = $manualRequested ? 'auto_with_google_news_fallback' : 'google_news_only';
             }
             Log::channel('google_news')->info('[GoogleNews] Fallback stage finished.', [
                 'project_id' => $project->id,
@@ -542,31 +582,17 @@ class RunNewsPortalScraping extends Command
                     ];
                     continue;
                 }
+
+                if ($this->shouldSkipRecentlyProcessedPortalCandidate($articleUrl, $project->id)) {
+                    $this->runStats['skipped_count']++;
+                    $this->runStats['duplicate_candidate_count']++;
+                    continue;
+                }
+
                 $publishedAt = null;
                 try {
                     $publishedAt = \Carbon\Carbon::parse($pubDate);
                 } catch (\Exception $e) {}
-
-                if (! $this->isPublishedWithinConfiguredDateRange($publishedAt)) {
-                    $this->runStats['skipped_count']++;
-                    $this->runStats['rejected_count']++;
-                    $this->runStats['rejected_date_range']++;
-                    $rejected++;
-                    $this->runCandidateLogs[] = [
-                        'index' => $index,
-                        'original_url' => $discoveryUrl ?? '-',
-                        'resolved_url' => $articleUrl,
-                        'candidate_link_id' => null,
-                        'scraping_item_id' => null,
-                        'article_id' => null,
-                        'final_status' => 'skipped',
-                        'reason' => 'Published date outside configured date_range filter',
-                        'title_final' => $title,
-                        'published_at' => optional($publishedAt)?->toIso8601String(),
-                        'date_range' => $this->currentDateRangeSetting(),
-                    ];
-                    continue;
-                }
 
             $outcome = $this->processPortalCandidate(
                 project: $project,
@@ -670,41 +696,6 @@ class RunNewsPortalScraping extends Command
                 'newly_inserted' => 0,
                 'reused_existing' => 0,
                 'rejected' => 0,
-                'partial' => 0,
-                'error' => 0,
-            ];
-        }
-
-        if (! $this->isPublishedWithinConfiguredDateRange($finalPublishedAt)) {
-            $this->runStats['skipped_count']++;
-            $this->runStats['rejected_count']++;
-            $this->runStats['rejected_date_range']++;
-            $candidateLinkId = DB::table('candidate_links')->where('canonical_url', $canonicalUrl ?: $candidateUrl)->value('id');
-            $scrapingItemId = $candidateLinkId ? ScrapingItem::where('candidate_link_id', $candidateLinkId)->value('id') : null;
-            $this->runCandidateLogs[] = [
-                'index' => $candidateIndex,
-                'original_url' => $discoveryUrl ?? $candidateUrl,
-                'resolved_url' => $canonicalUrl,
-                'candidate_link_id' => $candidateLinkId,
-                'scraping_item_id' => $scrapingItemId,
-                'article_id' => null,
-                'final_status' => 'skipped',
-                'reason' => 'Published date outside configured date_range filter',
-                'title_final' => $finalTitle,
-                'canonical_url_final' => $canonicalUrl,
-                'source_name_final' => $finalSourceName,
-                'published_at' => optional($finalPublishedAt)?->toIso8601String(),
-                'date_range' => $this->currentDateRangeSetting(),
-                'content_length' => $contentLength,
-                'resolution_trace' => $resolutionTrace,
-            ];
-
-            unset($fetchResult, $finalContent);
-            return [
-                'status' => 'rejected',
-                'newly_inserted' => 0,
-                'reused_existing' => 0,
-                'rejected' => 1,
                 'partial' => 0,
                 'error' => 0,
             ];
@@ -824,7 +815,11 @@ class RunNewsPortalScraping extends Command
             ];
         }
 
-        if ($contentLength < self::MIN_FULL_CONTENT_LENGTH) {
+        $minimumContentLength = $sourceType === 'google_news'
+            ? $this->minimumGoogleNewsContentLength($canonicalUrl)
+            : self::MIN_FULL_CONTENT_LENGTH_PORTAL;
+
+        if ($contentLength < $minimumContentLength) {
             $this->markShortContentAsPartial(
                 url: $discoveryUrl ?? $candidateUrl,
                 canonicalUrl: $canonicalUrl,
@@ -987,28 +982,9 @@ class RunNewsPortalScraping extends Command
             $sourceName = trim((string) ($fetchResult['source_name'] ?? ''));
             $publishedAt = $fetchResult['published_at'] ?? null;
 
-            if (! $this->isPublishedWithinConfiguredDateRange($publishedAt)) {
-                $this->line(json_encode([
-                    'status' => 'rejected',
-                    'reason' => 'Published date outside configured date_range filter',
-                    'original_url' => $url,
-                    'resolved_url' => $canonicalUrl,
-                    'published_at' => optional($publishedAt)?->toIso8601String(),
-                    'date_range' => $this->currentDateRangeSetting(),
-                ], JSON_UNESCAPED_UNICODE));
-                return [
-                    'status' => 'rejected',
-                    'newly_inserted' => 0,
-                    'reused_existing' => 0,
-                    'rejected' => 1,
-                    'partial' => 0,
-                    'error' => 0,
-                ];
-            }
-
-            if (! $this->isFinalPortalArticleUrl($canonicalUrl)) {
-                $this->line(json_encode([
-                    'status' => 'rejected',
+        if (! $this->isFinalPortalArticleUrl($canonicalUrl)) {
+            $this->line(json_encode([
+                'status' => 'rejected',
                     'reason' => 'Direct URL did not resolve to a valid portal article',
                     'original_url' => $url,
                     'resolved_url' => $canonicalUrl,
@@ -1023,7 +999,7 @@ class RunNewsPortalScraping extends Command
                 ];
             }
 
-            if (mb_strlen($content) < self::MIN_FULL_CONTENT_LENGTH) {
+            if (mb_strlen($content) < self::MIN_FULL_CONTENT_LENGTH_PORTAL) {
                 $this->line(json_encode([
                     'status' => 'partial',
                     'reason' => 'Content too short for final article',
@@ -1262,7 +1238,8 @@ class RunNewsPortalScraping extends Command
 
         // Cross-link to ALL active projects that match the keywords (Bank Berita Concept)
         $matchingService = app(\App\Services\ContentMatchingService::class);
-        $matchingService->crossLinkToActiveProjects($article, $project->id);
+        $matchedProjectIds = $matchingService->crossLinkToActiveProjects($article, $project->id);
+        $article->projects()->syncWithoutDetaching($matchedProjectIds);
 
         return [
             'article_id' => $article->id,
@@ -1432,6 +1409,64 @@ class RunNewsPortalScraping extends Command
         }
     }
 
+    private function minimumGoogleNewsContentLength(string $canonicalUrl): int
+    {
+        $host = strtolower((string) parse_url($canonicalUrl, PHP_URL_HOST));
+
+        if ($host === 'bekesah.co' || str_ends_with($host, '.bekesah.co')) {
+            return 150;
+        }
+
+        return self::MIN_FULL_CONTENT_LENGTH_GOOGLE_NEWS;
+    }
+
+    private function normalizeDiscoveryMode(string $mode): string
+    {
+        $mode = strtolower(trim($mode));
+
+        return match ($mode) {
+            'manual' => 'manual_only',
+            'google_news' => 'google_news_only',
+            'manual_only', 'google_news_only', 'auto' => $mode,
+            default => 'auto',
+        };
+    }
+
+    private function shouldSkipRecentlyProcessedPortalCandidate(string $candidateUrl, int $projectId): bool
+    {
+        $candidateUrl = trim($candidateUrl);
+        if ($candidateUrl === '') {
+            return false;
+        }
+
+        $candidate = DB::table('candidate_links')
+            ->where('project_id', $projectId)
+            ->where(function ($query) use ($candidateUrl) {
+                $query->where('canonical_url', $candidateUrl)
+                    ->orWhere('url', $candidateUrl);
+            })
+            ->first();
+
+        if (! $candidate) {
+            return false;
+        }
+
+        $scrapingItem = ScrapingItem::query()
+            ->where('candidate_link_id', $candidate->id)
+            ->first();
+
+        if (! $scrapingItem || ! $scrapingItem->last_attempt_at) {
+            return false;
+        }
+
+        if ($scrapingItem->last_attempt_at->lte(now()->subMinutes(self::RECENT_CANDIDATE_RETRY_MINUTES))) {
+            return false;
+        }
+
+        return in_array((string) $scrapingItem->status, ['scraped', 'partial', 'rejected'], true)
+            || in_array((string) $candidate->status, ['approved', 'partial', 'rejected'], true);
+    }
+
     private function getManualPortalSources(?int $sourceId = null)
     {
         $query = NewsSource::query()
@@ -1511,33 +1546,6 @@ class RunNewsPortalScraping extends Command
         return $this->cachedScrapingSetting = ScrapingSetting::query()->first();
     }
 
-    private function currentDateRangeSetting(): string
-    {
-        return (string) ($this->currentScrapingSetting()?->date_range ?? '7d');
-    }
-
-    private function configuredNewsDateCutoff(): ?Carbon
-    {
-        return match (strtolower(trim($this->currentDateRangeSetting()))) {
-            '24h' => now()->subDay(),
-            '7d' => now()->subDays(7),
-            '30d' => now()->subDays(30),
-            '90d' => now()->subDays(90),
-            default => null,
-        };
-    }
-
-    private function isPublishedWithinConfiguredDateRange(?Carbon $publishedAt): bool
-    {
-        $cutoff = $this->configuredNewsDateCutoff();
-
-        if ($cutoff === null || $publishedAt === null) {
-            return true;
-        }
-
-        return $publishedAt->greaterThanOrEqualTo($cutoff);
-    }
-
     private function fetchFullContent(string $url, ?Project $project = null, ?string $keyword = null): array
     {
         $resolutionTrace = [];
@@ -1613,9 +1621,17 @@ class RunNewsPortalScraping extends Command
             $xpath = new \DOMXPath($dom);
             $canonicalNodes = $xpath->query('//link[@rel="canonical"]');
             if ($canonicalNodes && $canonicalNodes->length > 0) {
-                $canonicalHref = trim($canonicalNodes->item(0)->getAttribute('href'));
-                if (!empty($canonicalHref)) {
-                    $canonicalUrl = $canonicalHref;
+                foreach ($canonicalNodes as $node) {
+                    $canonicalHref = trim($node->getAttribute('href'));
+                    if (!empty($canonicalHref)) {
+                        $canonicalPath = trim(parse_url($canonicalHref, PHP_URL_PATH) ?? '', '/');
+                        $originalPath = trim(parse_url($url, PHP_URL_PATH) ?? '', '/');
+                        if (empty($canonicalPath) && !empty($originalPath)) {
+                            continue;
+                        }
+                        $canonicalUrl = $canonicalHref;
+                        break;
+                    }
                 }
             }
 
@@ -1854,15 +1870,33 @@ class RunNewsPortalScraping extends Command
 
     private function buildDiscoveryUrl(NewsSource $source, string $keyword): ?string
     {
-        if ($source->is_search_enabled && filled($source->search_url)) {
-            return strtr($source->search_url, [
-                '{keyword}' => rawurlencode($keyword),
-                '{query}' => rawurlencode($keyword),
-                '{search}' => rawurlencode($keyword),
-            ]);
+        $domainKey = strtolower((string) $source->domain);
+        $domainPresets = [
+            'prokal.co' => 'https://www.prokal.co/search?q={query}',
+            'editorialkaltim.com' => 'https://editorialkaltim.com/search?q={query}',
+            'kaltimkece.id' => 'https://kaltimkece.id/search?terms={query}',
+            'kaltimtoday.co' => 'https://kaltimtoday.co/search?q={query}',
+            'korankaltim.com' => 'https://korankaltim.com/search?q={query}',
+            'mediakaltim.com' => 'https://mediakaltim.com/search?q={query}',
+            'niaga.asia' => 'https://niaga.asia/search?q={query}',
+            'nomorsatukaltim.disway.id' => 'https://nomorsatukaltim.disway.id/search?q={query}',
+            'sapos.co.id' => 'https://www.sapos.co.id/search?key={query}',
+        ];
+
+        $template = $domainPresets[$domainKey] ?? null;
+        if ($template === null && $source->is_search_enabled && filled($source->search_url)) {
+            $template = $source->search_url;
         }
 
-        return null;
+        if (! $template) {
+            return null;
+        }
+
+        return strtr($template, [
+            '{keyword}' => rawurlencode($keyword),
+            '{query}' => rawurlencode($keyword),
+            '{search}' => rawurlencode($keyword),
+        ]);
     }
 
     private function extractArticleUrlsFromDiscovery(NewsSource $source, string $body, int $limit = 3): array
@@ -1897,12 +1931,28 @@ class RunNewsPortalScraping extends Command
             $nodes = $xpath->query($xpathQuery);
             if ($nodes && $nodes->length > 0) {
                 foreach ($nodes as $node) {
-                    $href = trim((string) $node->getAttribute('href'));
-                    $resolved = $this->normalizeUrl($href, $baseUrl);
-                    if ($resolved && $this->isLikelyArticleUrl($resolved, $source) && $this->isSameNewsDomain($resolved, $source->domain)) {
-                        $results[] = $resolved;
-                        if (count($results) >= $limit) {
-                            return array_values(array_unique($results));
+                    $candidateHrefs = [];
+
+                    if ($node->hasAttributes() && $node->attributes->getNamedItem('href')) {
+                        $candidateHrefs[] = trim((string) $node->getAttribute('href'));
+                    }
+
+                    if ($candidateHrefs === []) {
+                        $descendantLinks = $xpath->query('.//a[@href]', $node);
+                        if ($descendantLinks && $descendantLinks->length > 0) {
+                            foreach ($descendantLinks as $linkNode) {
+                                $candidateHrefs[] = trim((string) $linkNode->getAttribute('href'));
+                            }
+                        }
+                    }
+
+                    foreach ($candidateHrefs as $href) {
+                        $resolved = $this->normalizeUrl($href, $baseUrl);
+                        if ($resolved && $this->isLikelyArticleUrl($resolved, $source) && $this->isSameNewsDomain($resolved, $source->domain)) {
+                            $results[] = $resolved;
+                            if (count($results) >= $limit) {
+                                return array_values(array_unique($results));
+                            }
                         }
                     }
                 }

@@ -231,7 +231,7 @@ class ApifyActorRegistry
             'actor_name' => $actor['actor_name'],
             'function_type' => $actor['function_type'],
             'default_keyword' => $actor['default_keyword'],
-            'default_limit' => min(50, (int) $actor['default_limit']),
+            'default_limit' => (int) $actor['default_limit'],
             'status' => $active ? 'active' : 'inactive',
             'keyword_field_mapping' => $actor['keyword_field_mapping'],
             'output_mapping' => $actor['output_mapping'],

@@ -10,7 +10,6 @@ class ScrapingSetting extends Model
         'google_news_interval',
         'portal_crawling_interval',
         'limit_per_run',
-        'date_range',
         'timeout_seconds',
         'retry_limit',
         'retry_delay_minutes',

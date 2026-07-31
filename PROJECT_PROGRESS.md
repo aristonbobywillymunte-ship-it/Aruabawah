@@ -1,5 +1,83 @@
 # Project Progress Log
 
+## Log Aktivitas Terbaru (31 Juli 2026 - Lanjutan)
+
+### 1. Pemisahan Mode Discovery Portal dan Fallback Google News
+* Command `scraping:run-news` sekarang menormalkan mode discovery menjadi `auto`, `manual_only`, dan `google_news_only`.
+* Alias lama `manual` dan `google_news` tetap diterima, tetapi langsung dipetakan ke mode baru agar alur audit lebih jelas.
+* Label statistik `discovery_source` untuk fallback juga diperjelas menjadi `auto_with_google_news_fallback` atau `google_news_only`, sehingga log tidak lagi mencampur sumber portal manual dan Google News secara ambigu.
+
+### 2. Cooldown Kandidat Portal yang Baru Diproses
+* Audit portal menemukan URL kandidat lama bisa dibuka lagi terlalu cepat walau status sebelumnya sudah `approved`, `partial`, atau `rejected`.
+* `RunNewsPortalScraping` sekarang menahan kandidat yang sudah diproses untuk project yang sama dalam jendela `720` menit berdasarkan `scraping_items.last_attempt_at`.
+* Guard ini diterapkan pada jalur portal manual dan Google News supaya scheduler tidak menghabiskan siklus hanya untuk membaca URL lama berulang.
+
+### 3. Recovery Orphan AI untuk Project Hilang
+* Audit warning AI menemukan state orphan queued masih bisa mencoba enqueue ulang walau `project_id` sudah tidak ada di database.
+* `RequeueOrphanQueuedAiStates` sekarang memotong kasus ini lebih awal dan menutup state sebagai `failed` dengan kode `missing_project`.
+* Service `AiAnalysisDispatchStateService` juga diselaraskan untuk validasi project memakai model `Project` yang sama dengan jalur runtime utama.
+
+### 4. Clamp Limit Command-Level Apify Dihapus
+* Audit jalur Apify menemukan command `scraping:run-apify` masih punya clamp internal `min(MAX_SOCIAL_ITEMS_PER_RUN, ...)` meski aturan resmi menyatakan limit wajib datang dari paket/override eksplisit.
+* Clamp command-level tersebut sudah dihapus; override `--limit` sekarang hanya divalidasi minimum `1`, lalu sisanya dibiarkan mengikuti aturan paket dan runtime actor.
+
+## Log Aktivitas Terbaru (31 Juli 2026)
+
+### 1. Audit End-to-End Proyek Baru `walikota bontang`
+* Proyek baru `walikota bontang` dibuat langsung di runtime lokal dengan `project_id=59`, relasi user aktif, lalu bootstrap scraping portal dan Apify dipicu otomatis.
+* Audit portal membuktikan jalur discovery berjalan nyata: log `Project keyword processed` mencatat `inserted: 1` pada `2026-07-31 17:06:09` untuk keyword `walikota bontang`.
+* Kandidat portal awal masuk sebagai `candidate_link` nyata dengan canonical URL `https://bekesah.co/puncak-han-2026-wali-kota-bontang-ingatkan-pelajar-tak-pacaran-dan-merokok`, tetapi tertahan di status `partial` karena isi hasil ekstraksi hanya `51 chars`, di bawah ambang `MIN_FULL_CONTENT_LENGTH = 500`.
+* Setelah alur sosial dan matcher proyek diperbaiki lalu dilakukan resync manual, proyek `59` berhasil tertaut ke `4` artikel dan `118` item sosial (`28 Facebook`, `30 Instagram`, `60 TikTok`) serta `9` komentar yang tersimpan ke item proyek.
+* Bukti comment scraper otomatis untuk proyek baru juga tervalidasi: pada `2026-07-31 17:12:33`, tiga URL Instagram proyek `59` berhasil menerima komentar dan langsung memicu `AI dispatch setelah comment check`.
+
+### 2. Perbaikan Runtime Queue untuk Memakai Kode Terbaru
+* Audit menemukan perubahan limit Apify di file lokal belum langsung terlihat di log job karena worker queue Laravel masih hidup dengan runtime kode lama.
+* Worker queue direstart melalui `php artisan queue:restart`, lalu rerun actor proyek `59` membuktikan runtime baru sudah aktif.
+* Bukti sinkronisasi runtime terlihat pada log `2026-07-31 17:11:40`, saat actor Instagram proyek `walikota bontang` sudah memakai `limit_total_requested: 50` dan `resultsLimit: 50`, bukan lagi `100`.
+
+### 3. Pembatasan Limit Actor Utama Sosial ke Maksimal 50 per Run
+* Audit proyek baru menemukan actor utama Facebook, Instagram, dan TikTok masih bisa berjalan dengan payload `100`, padahal aturan proyek mensyaratkan batas total `50` item per run utama sosial.
+* `ApifyScrapingJob` sekarang memotong limit actor utama sosial ke `ApifyActor::MAX_SOCIAL_ITEMS_PER_RUN = 50` sebelum payload dibentuk.
+* Builder payload `ApifyActor` untuk Facebook, Instagram, dan TikTok juga sekarang memakai pembagian limit terdistribusi berbasis jumlah keyword, sehingga nilai field seperti `maxPosts`, `resultsLimit`, dan `maxItems` tidak bisa lagi lewat dari batas total yang diizinkan.
+* Setelah queue direstart, rerun Instagram proyek `59` terbukti memakai limit baru dan tetap memicu comment scraper otomatis sesudah scraper utama selesai.
+* Builder payload actor sekarang juga menolak dipanggil tanpa `limit` valid, sehingga jalur runtime tidak bisa lagi diam-diam jatuh ke angka default internal; `limit` wajib datang dari paket atau override eksplisit job.
+* Layer admin/config juga dibersihkan dari fallback tersembunyi: preview payload actor sekarang menampilkan error jelas bila limit belum valid, form actor tidak lagi menyuntik angka `1/20/1024` secara diam-diam, dan registry tidak lagi meng-clamp nilai actor saat sinkronisasi katalog.
+
+### 4. Normalisasi Matcher `walikota` vs `wali kota`
+* Audit lanjut pada proyek `walikota bontang` menunjukkan item sosial nyata sempat banyak tersimpan global tetapi tidak tertaut ke proyek karena matcher proyek aktif memakai regex ketat dan menganggap `walikota bontang` berbeda dari `wali kota bontang`.
+* `ContentMatchingService::isStrictMatch()` sekarang menambahkan fallback compact match berbasis penghapusan spasi, khusus untuk menyamakan variasi frasa gabungan seperti `walikota` dan `wali kota` tanpa membuka pencocokan ke fragmen kata acak.
+* Setelah resync manual proyek `59`, jumlah tautan proyek berubah nyata dari `0` menjadi `118` item sosial dan `4` artikel, sehingga hasil proyek baru akhirnya muncul ke jalur user sesuai keyword yang diminta.
+
+### 1. Perbaikan Matching Otomatis Project Alias BPD / Bank
+* Audit proyek `BPD KALTENG` menemukan portal dan Apify sebenarnya berjalan normal, tetapi banyak hasil berhenti di tabel global dan gagal tertaut ke proyek karena matcher pivot terlalu ketat dibanding matcher saat ingest.
+* Variasi keyword proyek sekarang otomatis diperluas untuk alias umum lembaga perbankan daerah: contoh `BPD Kalteng` ikut menghasilkan varian `Bank Kalteng` dan `Bank Pembangunan Daerah Kalteng`, lengkap dengan varian hashtag.
+* Matcher sosial di `ContentMatchingService` juga sekarang ikut membaca `author_name` dan `post_url`, bukan hanya caption/hashtag, supaya hasil seperti akun resmi `Bank Kalteng` tidak hilang saat resync pivot proyek.
+* Cache hitungan proyek yang sebelumnya bisa menahan kartu proyek tetap kosong walau pivot sudah terisi dihapus dari daftar proyek dan service count, sehingga hasil scraping otomatis lebih cepat tampil apa adanya di UI.
+* Setelah resync manual proyek `BPD KALTENG`, pivot runtime lokal terisi kembali dengan `46` artikel dan `46` item sosial untuk `project_id=58`.
+
+### 2. Perbaikan Kontaminasi Artikel Portal oleh Mirror Sosial
+* Audit lanjutan pada `BPD KALTENG` menunjukkan `project_articles` sempat terisi penuh oleh artikel mirror sosial (`Facebook`, `Instagram`, `TikTok`) karena proses resync artikel tidak membedakan artikel portal dan artikel legacy hasil mirror Apify.
+* `ContentMatchingService::matchExistingContentForProject()` sekarang mengecualikan artikel mirror sosial dari sinkronisasi `project_articles`, sehingga kartu `ARTIKEL SIAP DITAMPILKAN` kembali hanya menghitung artikel portal/news yang memang layak dibaca AI artikel.
+* Artikel portal yang berasal dari `candidate_links` berstatus `approved` kini dipertahankan saat resync proyek, sehingga hasil discovery proyek baru tidak hilang hanya karena matcher lintas proyek lebih ketat.
+* Setelah resync ulang proyek `BPD KALTENG`, `project_articles` bersih menjadi `1` artikel portal valid dengan hasil AI lengkap, sedangkan `project_social_media_items` tetap menyimpan `46` item sosial pada jalur medsos terpisah.
+
+### 3. Pembersihan Placeholder Sosial / Data Dummy di Dashboard
+* Audit tampilan `Penyebutan` menemukan placeholder sosial mentah seperti artikel dengan judul generik `Post dari TikTok` dan URL internal `apify-*` berisiko tampil ke user walau belum mewakili post nyata.
+* `MediaDashboard::projectArticlesQuery()` sekarang memblokir artikel sosial placeholder seperti itu dari query utama dashboard, sambil tetap membiarkan post sosial valid dengan URL nyata dan AI resmi tampil normal.
+* Record placeholder runtime lokal yang memakai URL `apify-*` dan artikel sosial generik terkait juga dibersihkan dari database container lokal agar tidak tersisa sebagai data dummy lama.
+
+### 1. Perbaikan Macet Comment Scraper Facebook
+* Audit pipeline sosial menemukan comment scraper Facebook sebenarnya berhasil menyelesaikan run Apify, tetapi job lokal jatuh setelah penyimpanan komentar karena `raw_json.comments` pada sebagian item bisa berbentuk integer, bukan array.
+* `ApifyScrapingJob` sekarang menormalkan payload `comments` sebelum dihitung, sehingga blok finalisasi comment scraper tidak lagi gagal pada `count(): Argument #1 must be Countable|array`.
+* Guard antrean comment scraper di scheduler dan self-chaining juga diperketat agar hanya menganggap state `queued/processing` yang masih segar. State comment scraper stale tidak lagi memblokir Facebook, Instagram, atau TikTok tanpa batas.
+* State Facebook yang sempat macet dilepas manual di environment lokal, lalu dispatch Facebook berhasil dibuka kembali tanpa memunculkan TypeError yang sama.
+
+### 1. Perbaikan UI Tombol Komentar di Tab Penyebutan
+* Audit UI pada tab `Penyebutan` menemukan tombol komentar Instagram, Facebook, dan TikTok berisiko tidak merespons karena dua masalah di layer view aktif.
+* Tombol komentar sekarang memakai `@click.stop` dan `wire:click.stop.prevent` agar klik tidak tertelan propagasi event lain di dalam kartu mention.
+* Struktur markup modal komentar Instagram diperbaiki dengan menambahkan penutup `div` yang sebelumnya kurang, sehingga blok modal komentar sosial kembali valid dan binding Alpine/Livewire lebih stabil.
+* Validasi syntax PHP/Blade untuk `MediaDashboard` lulus tanpa error.
+
 ## Status Proyek Saat Ini:
 * **Seluruh Portal Utama:** 13 portal berita aktif di Kalimantan Timur telah dibersihkan dari duplikasi data, server mati (`samarindatv.com` dihapus), dan statusnya berhasil diverifikasi (**`verified`** / Lolos Uji).
 

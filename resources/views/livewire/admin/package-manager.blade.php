@@ -643,7 +643,21 @@
 
                             <div class="divide-y divide-[#1fa387]/8">
                                 @foreach($actors as $actor)
-                                    @php $config = $actorConfig[$actor->id] ?? ['is_enabled' => false, 'cost_per_run_usd' => '']; @endphp
+                                    @php
+                                        $config = $actorConfig[$actor->id] ?? ['is_enabled' => false, 'cost_per_run_usd' => ''];
+                                        $isConfigIncomplete = ($config['is_enabled'] ?? false)
+                                            && (
+                                                ($config['cost_per_run_usd'] ?? '') === ''
+                                                || !is_numeric($config['cost_per_run_usd'] ?? null)
+                                                || (float) ($config['cost_per_run_usd'] ?? 0) < 0
+                                                || ($config['default_limit'] ?? '') === ''
+                                                || !is_numeric($config['default_limit'] ?? null)
+                                                || (int) ($config['default_limit'] ?? 0) < 1
+                                                || ($config['memory_limit'] ?? '') === ''
+                                                || !is_numeric($config['memory_limit'] ?? null)
+                                                || (int) ($config['memory_limit'] ?? 0) < 128
+                                            );
+                                    @endphp
                                     <div wire:key="package-form-actor-{{ $actor->id }}" class="px-5 py-4 hover:bg-slate-50/50 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b last:border-0 border-slate-100">
                                         <div class="flex items-start gap-3 flex-1 min-w-0">
                                             <button
@@ -661,17 +675,20 @@
                                                     @if($config['is_enabled'] ?? false)
                                                         <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600 border border-emerald-100 uppercase tracking-wide">Aktif</span>
                                                     @endif
+                                                    @if($isConfigIncomplete)
+                                                        <span class="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-600 border border-rose-100 uppercase tracking-wide">Belum Lengkap</span>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
 
                                         {{-- Panel Konfigurasi Aktor Per Paket (Cost, Limit, RAM) --}}
                                         <div class="flex flex-wrap items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-3 shrink-0 w-full lg:w-auto justify-between lg:justify-end">
-                                            {{-- Global Cost Display --}}
-                                            <div class="text-left px-2">
-                                                <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Biaya Global</div>
-                                                <div class="text-xs font-black text-slate-650 mt-0.5">
-                                                    {{ $actor->maximum_cost_per_run_usd ? '$' . number_format($actor->maximum_cost_per_run_usd, 2) : '—' }}
+                                            {{-- Package-only notice --}}
+                                            <div class="text-left px-2 min-w-[120px]">
+                                                <div class="text-[8px] text-[#1fa387] font-bold uppercase tracking-wider">Runtime Paket</div>
+                                                <div class="text-[10px] font-semibold text-slate-500 mt-0.5 leading-tight">
+                                                    Limit, biaya, dan RAM wajib diisi dari paket ini.
                                                 </div>
                                             </div>
 
@@ -680,7 +697,7 @@
 
                                             {{-- Cost Override Field --}}
                                             <div class="text-left px-2">
-                                                <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-1">Override Biaya ($)</div>
+                                                <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-1">Biaya Paket ($)</div>
                                                 <div class="flex items-center">
                                                     <div class="relative flex items-center">
                                                         <span class="absolute left-2.5 text-slate-400 text-[10px] font-bold">$</span>
@@ -688,7 +705,7 @@
                                                             type="number"
                                                             min="0"
                                                             step="0.01"
-                                                            placeholder="{{ $actor->maximum_cost_per_run_usd ? number_format($actor->maximum_cost_per_run_usd, 2) : 'Global' }}"
+                                                            placeholder="Wajib"
                                                             wire:model.lazy="actorConfig.{{ $actor->id }}.cost_per_run_usd"
                                                             style="padding-left: 1.5rem;"
                                                             class="pr-1.5 py-1 w-24 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
@@ -706,7 +723,7 @@
                                                 <input
                                                     type="number"
                                                     min="1"
-                                                    placeholder="{{ $actor->default_limit }}"
+                                                    placeholder="Wajib"
                                                     wire:model.lazy="actorConfig.{{ $actor->id }}.default_limit"
                                                     class="px-2 py-1 w-20 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
                                                     {{ $config['is_enabled'] ? 'border-slate-200 bg-white text-slate-800' : 'border-slate-150 bg-slate-100 text-slate-400' }}"
@@ -724,6 +741,7 @@
                                                     class="px-2 py-1 w-24 text-center rounded-lg border text-[11px] font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387] bg-white
                                                     {{ $config['is_enabled'] ? 'border-slate-200 text-slate-800' : 'border-slate-150 bg-slate-100 text-slate-400' }}"
                                                     {{ !$config['is_enabled'] ? 'disabled' : '' }}>
+                                                    <option value="">Pilih</option>
                                                     <option value="128">128 MB</option>
                                                     <option value="256">256 MB</option>
                                                     <option value="512">512 MB</option>
@@ -849,7 +867,21 @@
             </div>
 
             @foreach($actors as $actor)
-            @php $config = $actorConfig[$actor->id] ?? ['is_enabled' => false, 'cost_per_run_usd' => '']; @endphp
+            @php
+                $config = $actorConfig[$actor->id] ?? ['is_enabled' => false, 'cost_per_run_usd' => ''];
+                $isConfigIncomplete = ($config['is_enabled'] ?? false)
+                    && (
+                        ($config['cost_per_run_usd'] ?? '') === ''
+                        || !is_numeric($config['cost_per_run_usd'] ?? null)
+                        || (float) ($config['cost_per_run_usd'] ?? 0) < 0
+                        || ($config['default_limit'] ?? '') === ''
+                        || !is_numeric($config['default_limit'] ?? null)
+                        || (int) ($config['default_limit'] ?? 0) < 1
+                        || ($config['memory_limit'] ?? '') === ''
+                        || !is_numeric($config['memory_limit'] ?? null)
+                        || (int) ($config['memory_limit'] ?? 0) < 128
+                    );
+            @endphp
             <div wire:key="package-actors-actor-{{ $actor->id }}" 
                  class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 py-4.5 border-b border-slate-100 hover:bg-slate-50/30 transition-all duration-150 last:border-b-0 group
                  {{ ($config['is_enabled'] ?? false) ? 'border-l-4 border-l-[#1fa387]' : 'border-l-4 border-l-transparent' }}">
@@ -871,6 +903,11 @@
                             <span class="inline-flex shrink-0 items-center px-2 py-0.5 rounded-full text-[8.5px] font-black bg-blue-50 text-blue-650 border border-blue-100/50 uppercase tracking-wider">
                                 {{ $actor->function_type ?? 'scraper' }}
                             </span>
+                            @if($isConfigIncomplete)
+                                <span class="inline-flex shrink-0 items-center px-2 py-0.5 rounded-full text-[8.5px] font-black bg-rose-50 text-rose-650 border border-rose-100 uppercase tracking-wider">
+                                    Belum Lengkap
+                                </span>
+                            @endif
                         </div>
                         <div class="text-[9.5px] text-slate-400 font-mono mt-1 select-all truncate max-w-xs md:max-w-md">{{ $actor->actor_slug }}</div>
                     </div>
@@ -878,11 +915,11 @@
 
                 {{-- Right Area: Unified Pricing, Limit & Memory Config Panel (Micro Card) --}}
                 <div class="flex flex-wrap items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-3 shrink-0 w-full lg:w-auto justify-between lg:justify-end">
-                    {{-- Global Cost Display --}}
-                    <div class="text-left px-2">
-                        <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Biaya Global</div>
-                        <div class="text-xs font-black text-slate-650 mt-0.5">
-                            {{ $actor->maximum_cost_per_run_usd ? '$' . number_format($actor->maximum_cost_per_run_usd, 2) : '—' }}
+                    {{-- Package-only notice --}}
+                    <div class="text-left px-2 min-w-[120px]">
+                        <div class="text-[8px] text-[#1fa387] font-bold uppercase tracking-wider">Runtime Paket</div>
+                        <div class="text-[10px] font-semibold text-slate-500 mt-0.5 leading-tight">
+                            Runtime proyek membaca nilai dari paket ini, bukan actor global.
                         </div>
                     </div>
 
@@ -891,7 +928,7 @@
 
                     {{-- Cost Override Field --}}
                     <div class="text-left px-2">
-                        <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-1">Override Biaya ($)</div>
+                        <div class="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-1">Biaya Paket ($)</div>
                         <div class="flex items-center">
                             <div class="relative flex items-center">
                                 <span class="absolute left-2.5 text-slate-400 text-[10px] font-bold">$</span>
@@ -899,7 +936,7 @@
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    placeholder="{{ $actor->maximum_cost_per_run_usd ? number_format($actor->maximum_cost_per_run_usd, 2) : 'Global' }}"
+                                    placeholder="Wajib"
                                     wire:model.lazy="actorConfig.{{ $actor->id }}.cost_per_run_usd"
                                     style="padding-left: 1.5rem;"
                                     class="pr-1.5 py-1 w-24 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
@@ -917,7 +954,7 @@
                         <input
                             type="number"
                             min="1"
-                            placeholder="{{ $actor->default_limit }}"
+                            placeholder="Wajib"
                             wire:model.lazy="actorConfig.{{ $actor->id }}.default_limit"
                             class="px-2 py-1 w-20 text-center font-mono rounded-lg border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387]
                             {{ $config['is_enabled'] ? 'border-slate-200 bg-white text-slate-800' : 'border-slate-150 bg-slate-100 text-slate-400' }}"
@@ -935,6 +972,7 @@
                             class="px-2 py-1 w-24 text-center rounded-lg border text-[11px] font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387] bg-white
                             {{ $config['is_enabled'] ? 'border-slate-200 text-slate-800' : 'border-slate-150 bg-slate-100 text-slate-400' }}"
                             {{ !$config['is_enabled'] ? 'disabled' : '' }}>
+                            <option value="">Pilih</option>
                             <option value="128">128 MB</option>
                             <option value="256">256 MB</option>
                             <option value="512">512 MB</option>

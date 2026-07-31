@@ -15,8 +15,6 @@ use Livewire\Attributes\Url;
 
 class ProjectsList extends Component
 {
-    private const PROJECTS_CACHE_TTL_SECONDS = 300;
-
     #[Url(as: 'project')]
     public $projectId;
 
@@ -39,6 +37,7 @@ class ProjectsList extends Component
     public $excludeKeywords = '';
     public $telegramChatId = '';
     public $isCreatingProject = false;
+    public $createStep = 1; // Langkah pembuatan proyek baru (1: pilih paket, 2: isi data)
     public $showSuccessModal = false;
     public $lastCreatedProjectName = '';
     public $packageId = null; // Tambahkan properti paket (package_id)
@@ -319,31 +318,27 @@ class ProjectsList extends Component
 
     public function getProjects()
     {
-        return \Illuminate\Support\Facades\Cache::remember(
-            $this->projectsCacheKey(),
-            self::PROJECTS_CACHE_TTL_SECONDS,
-            function () {
-                return Project::accessibleBy(auth()->user())
-                    ->where('is_active', true)
-                    ->orderBy('created_at')
-                    ->orderBy('id')
-                    ->get()
-                    ->map(function ($project) {
-                        $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
-                        $primaryKeywords = $project->scrapeKeywordVariants();
-                        $contextKeywords = $project->scrapeContextKeywordVariants();
-                        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
+        return Project::accessibleBy(auth()->user())
+            ->where('is_active', true)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get()
+            ->map(function ($project) {
+                $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
+                $primaryKeywords = $project->scrapeKeywordVariants();
+                $contextKeywords = $project->scrapeContextKeywordVariants();
+                $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
 
-                        $articleQuery = Article::query()
-                            ->select('articles.*')
-                            ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
-                            ->where('project_articles.project_id', $project->id)
-                            ->withCompleteOfficialAiResult();
+                $articleQuery = Article::query()
+                    ->select('articles.*')
+                    ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
+                    ->where('project_articles.project_id', $project->id)
+                    ->withCompleteOfficialAiResult();
 
-                        $pendingAi = DB::table('ai_analysis_dispatch_states')
-                            ->where('project_id', $project->id)
-                            ->whereIn('status', ['queued', 'processing', 'retry_wait'])
-                            ->count();
+                $pendingAi = DB::table('ai_analysis_dispatch_states')
+                    ->where('project_id', $project->id)
+                    ->whereIn('status', ['queued', 'processing', 'retry_wait'])
+                    ->count();
 
                         // Single aggregation query: count total, sentiment breakdown, risk, and reach sum.
                         // Replaces 4 separate COUNT queries → saves ~900ms per project.
@@ -401,32 +396,30 @@ class ProjectsList extends Component
                             ? \Carbon\Carbon::parse($lastMedsosRunAt)->locale('id')->diffForHumans()
                             : 'Belum ada data';
 
-                        return [
-                            'id' => $project->id,
-                            'name' => $project->name,
-                            'mentions' => number_format($mentions, 0, ',', '.'),
-                            'reach' => $reach,
-                            'positive' => $posPercent . '%',
-                            'negative' => $negPercent . '%',
-                            'topics' => $project->topics ?? [],
-                            'ai_valid' => $totalAiValid,
-                            'ai_failed' => $totalAiFailed,
-                            'ai_pending' => $pendingAi,
-                            'ai_rescrape' => $rescrapeCount,
-                            'high_risk' => $highCriticalRisk,
-                            'created_at' => $project->created_at ? $project->created_at->format('d M Y H:i') : '—',
-                            'last_portal_update' => $lastPortalUpdate,
-                            'portal_is_running' => $this->isPortalScanRunningForProject($project->id),
-                            'last_medsos_update' => $lastMedsosUpdate,
-                            'medsos_is_running' => $this->isSocialScanRunningForProject($project->id),
-                            'medsos_running_label' => $this->socialRunningLabelForProject($project->id),
-                            'articles_count' => $matchedCounts['articles'] ?? 0,
-                            'social_count' => $matchedCounts['social'] ?? 0,
-                        ];
-                    })
-                    ->toArray();
-            }
-        );
+                return [
+                    'id' => $project->id,
+                    'name' => $project->name,
+                    'mentions' => number_format($mentions, 0, ',', '.'),
+                    'reach' => $reach,
+                    'positive' => $posPercent . '%',
+                    'negative' => $negPercent . '%',
+                    'topics' => $project->topics ?? [],
+                    'ai_valid' => $totalAiValid,
+                    'ai_failed' => $totalAiFailed,
+                    'ai_pending' => $pendingAi,
+                    'ai_rescrape' => $rescrapeCount,
+                    'high_risk' => $highCriticalRisk,
+                    'created_at' => $project->created_at ? $project->created_at->format('d M Y H:i') : '—',
+                    'last_portal_update' => $lastPortalUpdate,
+                    'portal_is_running' => $this->isPortalScanRunningForProject($project->id),
+                    'last_medsos_update' => $lastMedsosUpdate,
+                    'medsos_is_running' => $this->isSocialScanRunningForProject($project->id),
+                    'medsos_running_label' => $this->socialRunningLabelForProject($project->id),
+                    'articles_count' => $matchedCounts['articles'] ?? 0,
+                    'social_count' => $matchedCounts['social'] ?? 0,
+                ];
+            })
+            ->toArray();
     }
 
     public function loadProjects(): void
@@ -438,11 +431,6 @@ class ProjectsList extends Component
     public function mount()
     {
         $this->projectId = $this->resolveProjectOrDefault($this->getDecodedProjectId());
-
-        if (Cache::has($this->projectsCacheKey())) {
-            $this->projectsLoaded = true;
-            $this->projects = $this->getProjects();
-        }
     }
 
     public function updatedProjectId($value): void
@@ -535,11 +523,10 @@ class ProjectsList extends Component
         BootstrapNewProjectScrapingJob::dispatch($project->id)->onQueue('news');
         $this->forgetProjectsCache();
 
-        $this->lastCreatedProjectName = $this->name;
-        $this->showSuccessModal = true;
         session()->flash('message', 'Proyek berhasil dibuat.');
+        $this->notifyProjectAction('Proyek berhasil dibuat.');
         
-        $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords', 'telegramChatId', 'packageId']);
+        $this->redirect(request()->header('Referer') ?: '/');
     }
 
     public function editProject($id)
@@ -699,6 +686,30 @@ class ProjectsList extends Component
         $this->showConfirmModal = true;
     }
 
+    public function confirmRunScraping($id)
+    {
+        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
+
+        $this->confirmAction = 'run_scraping';
+        $this->confirmProjectId = $project->id;
+        $this->confirmProjectName = $project->name;
+        $this->confirmTitle = 'Jalankan Scraping Sekarang?';
+        $this->confirmMessage = "Apakah Anda yakin ingin menjalankan scraping langsung untuk proyek '{$project->name}'? Tindakan ini akan langsung mencari portal berita dan media sosial, serta mengonsumsi kuota API/Apify Anda.";
+        $this->showConfirmModal = true;
+    }
+
+    public function confirmSyncProject($id)
+    {
+        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
+
+        $this->confirmAction = 'sync_project';
+        $this->confirmProjectId = $project->id;
+        $this->confirmProjectName = $project->name;
+        $this->confirmTitle = 'Sinkronisasi Ulang Konten?';
+        $this->confirmMessage = "Apakah Anda yakin ingin mensinkronisasi ulang seluruh konten artikel dan media sosial untuk proyek '{$project->name}' berdasarkan kata kunci terbaru?";
+        $this->showConfirmModal = true;
+    }
+
     public function runConfirmedProjectAction()
     {
         if ($this->confirmAction === 'delete' && $this->confirmProjectId) {
@@ -713,6 +724,16 @@ class ProjectsList extends Component
 
         if ($this->confirmAction === 'force_delete' && $this->confirmProjectId) {
             $this->forceDeleteProject($this->confirmProjectId);
+            return;
+        }
+
+        if ($this->confirmAction === 'run_scraping' && $this->confirmProjectId) {
+            $this->runScraping($this->confirmProjectId);
+            return;
+        }
+
+        if ($this->confirmAction === 'sync_project' && $this->confirmProjectId) {
+            $this->syncProject($this->confirmProjectId);
             return;
         }
 
@@ -740,6 +761,32 @@ class ProjectsList extends Component
         $this->notifyProjectAction('Proyek dinonaktifkan. Data sumber tetap aman.');
 
         // Refresh halaman agar list proyek aktif langsung ter-update
+        $this->redirect(request()->header('Referer') ?: '/');
+    }
+
+    public function syncProject($id)
+    {
+        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
+        $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
+        
+        $totalSynced = $resyncResult['total_synced'] ?? 0;
+        session()->flash('message', "Proyek '{$project->name}' berhasil disinkronisasi ulang. Total {$totalSynced} konten terhubung.");
+        $this->notifyProjectAction("Sinkronisasi '{$project->name}' berhasil. {$totalSynced} konten terhubung.");
+        
+        $this->forgetProjectsCache();
+        $this->redirect(request()->header('Referer') ?: '/');
+    }
+
+    public function runScraping($id)
+    {
+        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
+        
+        \App\Jobs\BootstrapNewProjectScrapingJob::dispatch($project->id);
+        
+        session()->flash('message', "Proyek '{$project->name}' telah didaftarkan ke antrean scraping langsung!");
+        $this->notifyProjectAction("Antrean Scraping", "Proyek '{$project->name}' sedang berjalan di background.");
+        
+        $this->forgetProjectsCache();
         $this->redirect(request()->header('Referer') ?: '/');
     }
 

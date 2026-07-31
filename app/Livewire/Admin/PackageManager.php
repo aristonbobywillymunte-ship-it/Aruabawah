@@ -55,6 +55,43 @@ class PackageManager extends Component
     // ─── Search ───────────────────────────────────────────────────────────
     public string $search = '';
 
+    protected function isActorPackageConfigComplete(array $config): bool
+    {
+        if (! (bool) ($config['is_enabled'] ?? false)) {
+            return true;
+        }
+
+        $cost = $config['cost_per_run_usd'] ?? null;
+        $limit = $config['default_limit'] ?? null;
+        $memory = $config['memory_limit'] ?? null;
+
+        return $cost !== '' && $cost !== null
+            && is_numeric($cost) && (float) $cost >= 0
+            && $limit !== '' && $limit !== null
+            && is_numeric($limit) && (int) $limit > 0
+            && $memory !== '' && $memory !== null
+            && is_numeric($memory) && (int) $memory >= 128;
+    }
+
+    protected function validateActorPackageConfig(): void
+    {
+        foreach ($this->actorConfig as $actorId => $config) {
+            if (! (bool) ($config['is_enabled'] ?? false)) {
+                continue;
+            }
+
+            if (! $this->isActorPackageConfigComplete($config)) {
+                $actor = ApifyActor::find($actorId);
+                $actorName = $actor?->actor_name ?? "Actor #{$actorId}";
+
+                $this->setFlash("Konfigurasi paket untuk {$actorName} belum lengkap. Isi biaya, limit, dan RAM sebelum menyimpan.", 'error');
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "actorConfig.{$actorId}" => "Konfigurasi paket {$actorName} belum lengkap.",
+                ]);
+            }
+        }
+    }
+
     protected function rules(): array
     {
         return [
@@ -226,6 +263,7 @@ class PackageManager extends Component
     public function savePackage(): void
     {
         $this->validate();
+        $this->validateActorPackageConfig();
 
         // Pastikan parameter limit system di set ke unlimited / 500k penyebutan jika user tidak mengetiknya secara manual
         $this->limit_projects = 'unlimited';
@@ -321,8 +359,8 @@ class PackageManager extends Component
             $this->actorConfig[$actor->id] = [
                 'is_enabled'       => $pivot ? (bool) $pivot->is_enabled : false,
                 'cost_per_run_usd' => $pivot?->cost_per_run_usd !== null ? (string) $pivot->cost_per_run_usd : '',
-                'default_limit'    => $pivot?->default_limit !== null ? (string) $pivot->default_limit : (string) $actor->default_limit,
-                'memory_limit'     => $pivot?->memory_limit !== null ? (string) $pivot->memory_limit : (string) ($actor->memory_limit ?? '1024'),
+                'default_limit'    => $pivot?->default_limit !== null ? (string) $pivot->default_limit : '',
+                'memory_limit'     => $pivot?->memory_limit !== null ? (string) $pivot->memory_limit : '',
             ];
         }
     }
@@ -335,8 +373,8 @@ class PackageManager extends Component
             $this->actorConfig[$actor->id] = [
                 'is_enabled' => false,
                 'cost_per_run_usd' => '',
-                'default_limit' => (string) $actor->default_limit,
-                'memory_limit' => (string) ($actor->memory_limit ?? '1024'),
+                'default_limit' => '',
+                'memory_limit' => '',
             ];
         }
     }
@@ -372,6 +410,7 @@ class PackageManager extends Component
     public function saveActors(): void
     {
         $pkg = Package::findOrFail($this->managingActorsPackageId);
+        $this->validateActorPackageConfig();
         $this->syncActorConfig($pkg);
         $this->setFlash('Konfigurasi actor berhasil disimpan.', 'success');
         $this->view = 'list';

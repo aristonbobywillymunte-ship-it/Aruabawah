@@ -191,10 +191,17 @@ class NewsSources extends Component
         $suggestionSourceIds = $this->getSuggestionSourceIds();
         $suggestionDomains = $this->getSuggestionDomains();
 
+        $articleCounts = \App\Models\Article::query()
+            ->selectRaw('lower(source_name) as source_name, count(*) as count')
+            ->groupByRaw('lower(source_name)')
+            ->pluck('count', 'source_name')
+            ->toArray();
+
         return view('livewire.admin.news-sources', [
             'sources' => $sources,
             'suggestionSourceIds' => $suggestionSourceIds,
             'suggestionDomains' => $suggestionDomains,
+            'articleCounts' => $articleCounts,
             'trashSources' => NewsSource::onlyTrashed()->orderByDesc('deleted_at')->paginate(5, pageName: 'trashPage'),
         ]);
     }

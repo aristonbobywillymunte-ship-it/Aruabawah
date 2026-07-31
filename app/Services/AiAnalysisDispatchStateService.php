@@ -474,7 +474,7 @@ class AiAnalysisDispatchStateService
         if ($projectId === null || $projectId <= 0) {
             throw new \InvalidArgumentException("project_id must be greater than 0.");
         }
-        if (! \App\Models\Project::query()->where('id', $projectId)->exists()) {
+        if (! Project::query()->where('id', $projectId)->exists()) {
             throw new \InvalidArgumentException("Project ID {$projectId} does not exist.");
         }
         if ($analyzableType === 'social') {

@@ -51,16 +51,30 @@ class NewsSourceSuggestionTester
             try {
                 $statusTemp = 200;
                 $tempHtml = self::fetchHtml($candidate['url'], $statusTemp);
-                if (filled($tempHtml)) {
-                    $html = $tempHtml;
-                    $discoveryUrl = $candidate['url'];
-                    $discoverySource = $candidate['source'];
-                    $discoveryHttpStatus = $statusTemp;
-                    $usedSearchUrl = ($candidate['source'] === 'search_url');
-                    break;
-                } else {
+                if (! filled($tempHtml)) {
                     $reasons[] = "Discovery via {$candidate['source']} gagal (HTTP {$statusTemp})";
+                    continue;
                 }
+
+                $tempSearchCandidateResult = self::extractSearchPageCandidateLinks(
+                    $tempHtml,
+                    $suggestion->base_url ?: ('https://' . $suggestion->domain),
+                    $suggestion->search_result_selector
+                );
+                $tempSearchCandidateLinks = $tempSearchCandidateResult['links'] ?? [];
+                $tempDiscoveredUrls = self::discoverLinks($tempHtml, $suggestion, $candidate['url']);
+
+                if (empty($tempSearchCandidateLinks) && empty($tempDiscoveredUrls)) {
+                    $reasons[] = "Discovery via {$candidate['source']} tidak menghasilkan link artikel, mencoba kandidat lain.";
+                    continue;
+                }
+
+                $html = $tempHtml;
+                $discoveryUrl = $candidate['url'];
+                $discoverySource = $candidate['source'];
+                $discoveryHttpStatus = $statusTemp;
+                $usedSearchUrl = ($candidate['source'] === 'search_url');
+                break;
             } catch (\Throwable $e) {
                 $reasons[] = "Discovery via {$candidate['source']} error: " . $e->getMessage();
             }
@@ -751,12 +765,26 @@ class NewsSourceSuggestionTester
                     if (! $node instanceof \DOMElement) {
                         continue;
                     }
+                    $candidateHrefs = [];
                     $href = trim((string) $node->getAttribute('href'));
-                    $resolved = self::normalizeUrl($href, $baseUrl);
-                    if ($resolved
-                        && self::isLikelySearchCandidateLink($resolved, $node)
-                        && ! self::checkUrlRejection($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) {
-                        $links[] = $resolved;
+                    if ($href !== '') {
+                        $candidateHrefs[] = $href;
+                    } else {
+                        $descendantLinks = $xpath->query('.//a[@href]', $node);
+                        if ($descendantLinks && $descendantLinks->length > 0) {
+                            foreach ($descendantLinks as $linkNode) {
+                                $candidateHrefs[] = trim((string) $linkNode->getAttribute('href'));
+                            }
+                        }
+                    }
+
+                    foreach ($candidateHrefs as $candidateHref) {
+                        $resolved = self::normalizeUrl($candidateHref, $baseUrl);
+                        if ($resolved
+                            && self::isLikelySearchCandidateLink($resolved, $node)
+                            && ! self::checkUrlRejection($resolved, parse_url($baseUrl, PHP_URL_HOST) ?: '')) {
+                            $links[] = $resolved;
+                        }
                     }
                 }
             }
@@ -1201,9 +1229,16 @@ class NewsSourceSuggestionTester
         $xpath = new \DOMXPath($dom);
         $canonicalNodes = $xpath->query('//link[@rel="canonical"]');
         if ($canonicalNodes && $canonicalNodes->length > 0) {
-            $canonicalHref = trim($canonicalNodes->item(0)->getAttribute('href'));
-            if (!empty($canonicalHref)) {
-                return $canonicalHref;
+            foreach ($canonicalNodes as $node) {
+                $canonicalHref = trim($node->getAttribute('href'));
+                if (!empty($canonicalHref)) {
+                    $canonicalPath = trim(parse_url($canonicalHref, PHP_URL_PATH) ?? '', '/');
+                    $originalPath = trim(parse_url($fallbackUrl, PHP_URL_PATH) ?? '', '/');
+                    if (empty($canonicalPath) && !empty($originalPath)) {
+                        continue;
+                    }
+                    return $canonicalHref;
+                }
             }
         }
         return $fallbackUrl;

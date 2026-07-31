@@ -98,6 +98,7 @@ class MediaDashboard extends Component
 
     public function setTab($name)
     {
+        $this->resetCommentModals();
         $this->activeTab = base64_encode($name);
         if ($name === 'analisis') {
             $this->analysisLoaded = true;
@@ -313,6 +314,21 @@ class MediaDashboard extends Component
             ->whereHas('aiAnalysisResult', function ($ai) {
                 $ai->completeOfficialAiResult();
             })
+            ->where(function ($query) {
+                $query->where(function ($nonSocial) {
+                    $nonSocial->whereRaw("lower(coalesce(articles.category, '')) <> 'social'")
+                        ->whereRaw("lower(coalesce(articles.source_name, '')) not in ('facebook', 'instagram', 'tiktok')");
+                })->orWhere(function ($social) {
+                    $social
+                        ->where(function ($socialSource) {
+                            $socialSource->whereRaw("lower(coalesce(articles.category, '')) = 'social'")
+                                ->orWhereRaw("lower(coalesce(articles.source_name, '')) in ('facebook', 'instagram', 'tiktok')");
+                        })
+                        ->whereRaw("coalesce(articles.url, '') not like 'apify-%'")
+                        ->whereRaw("coalesce(articles.canonical_url, '') not like 'apify-%'")
+                        ->whereRaw("coalesce(articles.title, '') not in ('Post dari TikTok', 'Post dari Instagram', 'Post dari Facebook')");
+                });
+            })
             // Sembunyikan postingan IG/TikTok/Facebook yang komentarnya belum selesai diperiksa.
             // Artikel dihubungkan ke social_media_items lewat canonical_url/url.
             // Kondisi: jika ada social_media_item dengan platform sosial yang url-nya cocok
@@ -324,7 +340,7 @@ class MediaDashboard extends Component
                         $q->whereColumn('social_media_items.post_url', 'articles.canonical_url')
                           ->orWhereColumn('social_media_items.post_url', 'articles.url');
                     })
-                    ->whereIn('social_media_items.platform', ['Instagram', 'TikTok', 'Facebook'])
+                    ->whereIn('social_media_items.platform', ['Instagram', 'Facebook'])
                     ->where('social_media_items.comments_checked', false);
             });
     }
@@ -332,6 +348,7 @@ class MediaDashboard extends Component
 
     public function mount($projectId = null)
     {
+        $this->resetCommentModals();
         $project = $this->resolveProjectOrFail($projectId);
         $this->projectId = base64_encode($project->id);
         $this->projectName = $project->name;
@@ -381,6 +398,24 @@ class MediaDashboard extends Component
         // bahkan jika dashboardLoaded sudah true dari cache.
         $this->rebuildKeywordsTable();
 
+    }
+
+    protected function resetCommentModals(): void
+    {
+        $this->showTikTokCommentsModal = false;
+        $this->loadingTikTokComments = false;
+        $this->tikTokCommentsModalMeta = [];
+        $this->tikTokCommentsModalItems = [];
+
+        $this->showInstagramCommentsModal = false;
+        $this->loadingInstagramComments = false;
+        $this->instagramCommentsModalMeta = [];
+        $this->instagramCommentsModalItems = [];
+
+        $this->showFacebookCommentsModal = false;
+        $this->loadingFacebookComments = false;
+        $this->facebookCommentsModalMeta = [];
+        $this->facebookCommentsModalItems = [];
     }
 
     public function loadDashboard(): void
@@ -1186,6 +1221,29 @@ class MediaDashboard extends Component
 
     public function openFacebookCommentsModal(int $articleId): void
     {
+        $article = $this->projectArticlesQuery()
+            ->whereKey($articleId)
+            ->first();
+
+        if (! $article) {
+            $article = Article::query()
+                ->with(['aiAnalysisResult'])
+                ->find($articleId);
+        }
+
+        if (! $article || ! $this->isFacebookArticle($article)) {
+            $this->dispatch('project-action-toast', type: 'error', message: 'Komentar Facebook untuk konten ini tidak tersedia.');
+            return;
+        }
+
+        $socialItem = $this->resolveSocialMediaItemForArticle($article);
+        $storedComments = $this->resolveCommentsForSocialItem($socialItem);
+
+        if ($storedComments === []) {
+            $this->dispatch('project-action-toast', type: 'error', message: 'Komentar Facebook belum berhasil diambil dari sumber data.');
+            return;
+        }
+
         $this->showFacebookCommentsModal = true;
         $this->loadingFacebookComments = true;
         $this->facebookCommentsModalMeta = [
@@ -1396,7 +1454,47 @@ class MediaDashboard extends Component
 
     protected function extractSocialComments(mixed $payload, string $platform = 'TikTok'): array
     {
-        return $this->extractTikTokComments($payload, $platform);
+        $normalizedPlatform = Str::lower(trim($platform));
+
+        return match ($normalizedPlatform) {
+            'facebook' => $this->extractFacebookComments($payload),
+            'instagram' => $this->extractInstagramComments($payload),
+            default => $this->extractTikTokComments($payload, $platform),
+        };
+    }
+
+    protected function extractFacebookComments(mixed $payload): array
+    {
+        return $this->extractGenericSocialComments($payload, 'Facebook');
+    }
+
+    protected function extractInstagramComments(mixed $payload): array
+    {
+        return $this->extractGenericSocialComments($payload, 'Instagram');
+    }
+
+    protected function extractGenericSocialComments(mixed $payload, string $platform): array
+    {
+        if (! is_array($payload) || $payload === []) {
+            return [];
+        }
+
+        $comments = [];
+
+        if (array_is_list($payload)) {
+            foreach ($payload as $item) {
+                $normalized = $this->normalizeTikTokCommentItem($item, $platform);
+                if ($normalized !== null) {
+                    $comments[] = $normalized;
+                }
+            }
+
+            return $this->deduplicateCommentItems($comments);
+        }
+
+        $this->walkTikTokCommentPayload($payload, $comments, 0, $platform);
+
+        return $this->deduplicateCommentItems($comments);
     }
 
     public function getSocialHashtagsForArticle($article): array
@@ -1734,6 +1832,11 @@ class MediaDashboard extends Component
             'sentiment_score' => $score,
             'published_at'    => now(),
         ]);
+
+        $project = Project::find($this->projectId);
+        if ($project) {
+            $article->projects()->syncWithoutDetaching([$project->id]);
+        }
 
         $this->reset(['title', 'content', 'url', 'source_name', 'category', 'showAddModal']);
         session()->flash('message', 'Mention analyzed and added successfully.');
@@ -2373,7 +2476,10 @@ class MediaDashboard extends Component
 
         return $this->projectSourcesMemo[$cacheKey] = collect(array_values($aggregated))
             ->sortByDesc('total')
-            ->values();
+            ->values()
+            ->map(static function (array $row): object {
+                return (object) $row;
+            });
     }
 
     public function getWawasan()

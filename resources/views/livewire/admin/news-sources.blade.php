@@ -1,70 +1,74 @@
 @section('page-header')
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div class="text-left">
-            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
-            <h1 class="text-2xl font-black text-slate-900 mt-1">Manajemen Sumber Berita</h1>
-        </div>
-
-        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-            <div class="relative w-full sm:w-64">
-                <input 
-                    wire:model.live.debounce.300ms="search" 
-                    type="text" 
-                    placeholder="Cari portal..." 
-                    class="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20"
-                />
-            </div>
-            <button 
-                wire:click="openTrashModal" 
-                class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
-            >
-                <span class="material-symbols-outlined text-[18px]">delete</span>
-                <span>Data Dihapus</span>
-            </button>
-            <a 
-                href="{{ route('admin.logs', ['file' => 'portal-manual.log', 'source' => 'portal_manual']) }}" 
-                class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
-            >
-                <span class="material-symbols-outlined text-[18px]">terminal</span>
-                <span>Log Scraping</span>
-            </a>
-            <button 
-                wire:click="create" 
-                class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
-            >
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                <span>Tambah Portal</span>
-            </button>
-        </div>
-    </div>
-
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-4 mt-4">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Alur Portal Manual</p>
-        <div class="mt-3 grid gap-3 md:grid-cols-2">
-            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 border border-slate-100">
-                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1fa387]/10 text-[#1fa387]">
-                    <span class="material-symbols-outlined text-[18px]">language</span>
-                </span>
-                <div>
-                    <p class="text-xs font-bold text-slate-800">1. Isi data inti</p>
-                    <p class="text-[11px] text-slate-500 leading-relaxed">Masukkan nama portal, domain, base URL, dan search URL.</p>
-                </div>
-            </div>
-            <div class="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 border border-slate-100">
-                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1fa387]/10 text-[#1fa387]">
-                    <span class="material-symbols-outlined text-[18px]">psychology</span>
-                </span>
-                <div>
-                    <p class="text-xs font-bold text-slate-800">2. AI cek struktur</p>
-                    <p class="text-[11px] text-slate-500 leading-relaxed">AI cari <span class="font-semibold">Search URL Template</span> dulu, lalu selector artikel.</p>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="page-header-teleport-target"></div>
 @endsection
 
 <div class="mx-auto w-full max-w-7xl flex flex-col flex-1 min-h-0 space-y-6 font-sans pb-4 h-full">
+
+    @teleport('#page-header-teleport-target')
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="text-left">
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
+                <h1 class="text-2xl font-black text-slate-900 mt-1">Manajemen Sumber Berita</h1>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                <div class="relative w-full sm:w-64">
+                    <input 
+                        wire:model.live.debounce.300ms="search" 
+                        type="text" 
+                        placeholder="Cari portal..." 
+                        class="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20"
+                    />
+                </div>
+                <button 
+                    wire:click="openTrashModal" 
+                    class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
+                >
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                    <span>Data Dihapus</span>
+                </button>
+                <a 
+                    href="{{ route('admin.logs', ['file' => 'portal-manual.log', 'source' => 'portal_manual']) }}" 
+                    class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
+                >
+                    <span class="material-symbols-outlined text-[18px]">terminal</span>
+                    <span>Log Scraping</span>
+                </a>
+                <button 
+                    wire:click="create" 
+                    class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
+                >
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                    <span>Tambah Portal</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm px-5 py-4 mt-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Alur Portal Manual</p>
+            <div class="mt-3 grid gap-3 md:grid-cols-2">
+                <div class="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 border border-slate-100">
+                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1fa387]/10 text-[#1fa387]">
+                        <span class="material-symbols-outlined text-[18px]">language</span>
+                    </span>
+                    <div>
+                        <p class="text-xs font-bold text-slate-800">1. Isi data inti</p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">Masukkan nama portal, domain, base URL, dan search URL.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 border border-slate-100">
+                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1fa387]/10 text-[#1fa387]">
+                        <span class="material-symbols-outlined text-[18px]">psychology</span>
+                    </span>
+                    <div>
+                        <p class="text-xs font-bold text-slate-800">2. AI cek struktur</p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">AI cari <span class="font-semibold">Search URL Template</span> dulu, lalu selector artikel.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endteleport
 
     <!-- News Sources Table Card -->
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left relative flex flex-col flex-1 min-h-0">
@@ -99,6 +103,7 @@
                         <th class="px-4 py-3.5 text-left font-bold">Domain / Base URL</th>
                         <th class="px-4 py-3.5 text-left font-bold">Verified</th>
                         <th class="px-4 py-3.5 text-left font-bold">Selector</th>
+                        <th class="px-4 py-3.5 text-left font-bold">Artikel</th>
                         <th class="px-4 py-3.5 text-left font-bold">Timeout</th>
                         <th class="px-4 py-3.5 text-left font-bold">Status</th>
                         <th class="px-4 py-3.5 text-right font-bold w-36">Aksi</th>
@@ -143,6 +148,14 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 font-mono text-[10px] text-slate-500">{{ $source->selector ?: '-' }}</td>
+                            <td class="px-4 py-3">
+                                @php
+                                    $nameKey = strtolower(trim($source->name ?? ''));
+                                    $domainKey = strtolower(trim($source->domain ?? ''));
+                                    $count = ($articleCounts[$nameKey] ?? 0) ?: ($articleCounts[$domainKey] ?? 0);
+                                @endphp
+                                <span class="font-bold text-slate-700">{{ number_format($count) }}</span>
+                            </td>
                             <td class="px-4 py-3 font-semibold text-slate-700">{{ $source->timeout_seconds ? $source->timeout_seconds . 's' : 'Default' }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center gap-1.5 font-bold {{ $source->is_active ? 'text-emerald-600' : 'text-slate-400' }}">

@@ -70,7 +70,7 @@ class RunApifyScraping extends Command
 
         $scrapingSetting = ScrapingSetting::first();
         $requestedLimit = $this->option('limit') ? (int) $this->option('limit') : null;
-        $limitPerRun = $requestedLimit ? min(ApifyActorModel::MAX_SOCIAL_ITEMS_PER_RUN, max(1, $requestedLimit)) : null;
+        $limitPerRun = $requestedLimit ? max(1, $requestedLimit) : null;
 
         $filterPlatform  = $this->option('platform');
         $filterProjectId = $this->option('project-id');
@@ -145,13 +145,14 @@ class RunApifyScraping extends Command
             'duplicate_or_stale' => 0,
         ];
         foreach ($projects as $project) {
-            $projectKeywords = array_values(array_unique($project->scrapeKeywords()));
-            if ($overrideKeyword !== '') {
-                array_unshift($projectKeywords, $overrideKeyword);
-            }
-            $projectKeywords = array_values(array_unique(array_filter(array_map('trim', $projectKeywords))));
+            try {
+                $projectKeywords = array_values(array_unique($project->scrapeKeywords()));
+                if ($overrideKeyword !== '') {
+                    array_unshift($projectKeywords, $overrideKeyword);
+                }
+                $projectKeywords = array_values(array_unique(array_filter(array_map('trim', $projectKeywords))));
 
-            $socialLog->info('[Social] Project scan started.', [
+                $socialLog->info('[Social] Project scan started.', [
                 'project_id' => $project->id,
                 'project_name' => $project->name,
                 'keywords' => $projectKeywords,
@@ -187,13 +188,34 @@ class RunApifyScraping extends Command
                 continue;
             }
 
-            foreach ($projectActors as $actor) {
+            $mainActors = $projectActors
+                ->filter(fn ($actor) => strtolower((string) $actor->function_type) !== 'comment scraper')
+                ->values();
+            $commentActors = $projectActors
+                ->filter(fn ($actor) => strtolower((string) $actor->function_type) === 'comment scraper')
+                ->values();
+            $orderedActors = $mainActors->concat($commentActors);
+            $mainScraperDispatchedByPlatform = [];
+
+            foreach ($orderedActors as $actor) {
                 $lastProjectActorRunAt = $this->latestProjectActorRunAt($project->id, $actor->platform);
 
                 $isCommentScraper = (strtolower((string) $actor->function_type) === 'comment scraper');
+                $platformKey = strtolower((string) $actor->platform);
                 $hasQueue = false;
                 if ($isCommentScraper) {
-                    $platformLower = strtolower((string) $actor->platform);
+                    if (! ($mainScraperDispatchedByPlatform[$platformKey] ?? false)) {
+                        $this->line("Skipping Comment Scraper: [{$actor->platform}] project={$project->name} — actor scraping utama platform ini belum dijalankan di siklus ini.");
+                        $socialLog->info('[Social] Comment Scraper skipped: main scraper has not been dispatched in the current cycle.', [
+                            'project_id' => $project->id,
+                            'project_name' => $project->name,
+                            'platform' => $actor->platform,
+                            'actor_id' => $actor->id,
+                        ]);
+                        continue;
+                    }
+
+                    $platformLower = $platformKey;
                     $preCheckQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
                         ->where('platform', $actor->platform)
                         ->whereNotNull('post_url');
@@ -219,7 +241,7 @@ class RunApifyScraping extends Command
 
                 // Comment scraper must keep checking the queue every scheduler tick.
                 // Do not block it behind the long actor interval when the queue is empty.
-                if (! $isCommentScraper && $lastProjectActorRunAt && $actor->interval_minutes && !$hasQueue) {
+                if (! $isCommentScraper && $lastProjectActorRunAt && $actor->interval_minutes && !$hasQueue && !$forceDispatch) {
                     $nextRunAt = $lastProjectActorRunAt->copy()->addMinutes($actor->interval_minutes);
                     if (now()->lessThan($nextRunAt) && !$filterPlatform) {
                         $this->line("Skipping {$actor->platform} — next run at {$nextRunAt->format('H:i')}");
@@ -309,6 +331,7 @@ class RunApifyScraping extends Command
                         // di tabel Article dengan URL yang identik.
                         $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
                             ->where('platform', $actor->platform)
+                            ->where('comments_checked', false)
                             ->whereNotNull('post_url');
 
                         if ($platformLower === 'tiktok') {
@@ -422,6 +445,10 @@ class RunApifyScraping extends Command
                     ]);
 
                     if ($wasDispatched) {
+                        if (! $isCommentScraper) {
+                            $mainScraperDispatchedByPlatform[$platformKey] = true;
+                        }
+
                         $this->info("✓ Dispatched: [{$actor->platform}] keywords=" . implode(', ', $dispatchKeywords) . " project={$project->name}");
                         Log::info("[Scheduler] Dispatched social ApifyScrapingJob", [
                             'platform'   => $actor->platform,
@@ -504,6 +531,14 @@ class RunApifyScraping extends Command
                 'project_name' => $project->name,
                 'keywords' => $projectKeywords,
             ]);
+            } catch (\Throwable $e) {
+                $this->error("Error scraping project [{$project->name}]: " . $e->getMessage());
+                $socialLog->error("Error scraping project [{$project->name}]", [
+                    'project_id' => $project->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
         }
 
         $this->info("Total {$dispatched} scraping job(s) dispatched.");

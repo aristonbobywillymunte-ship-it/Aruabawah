@@ -66,46 +66,46 @@ class Package extends Model
 
     /**
      * Mendapatkan cost efektif actor dalam konteks paket ini.
-     * Jika ada override di pivot, gunakan itu. Jika tidak, pakai global actor.
+     * Cost hanya boleh dibaca dari pivot paket aktif.
      */
     public function getEffectiveCostForActor(ApifyActor $actor): ?float
     {
         $pivot = $this->actors()->where('apify_actors.id', $actor->id)->first()?->pivot;
 
-        if ($pivot && $pivot->cost_per_run_usd !== null) {
-            return (float) $pivot->cost_per_run_usd;
+        if (! $pivot || $pivot->cost_per_run_usd === null) {
+            return null;
         }
 
-        return $actor->maximum_cost_per_run_usd !== null ? (float) $actor->maximum_cost_per_run_usd : null;
+        return (float) $pivot->cost_per_run_usd;
     }
 
     /**
      * Mendapatkan limit memory efektif actor dalam konteks paket ini.
-     * Jika ada override di pivot, gunakan itu. Jika tidak, pakai global actor.
+     * Nilai wajib berasal dari pivot paket aktif.
      */
-    public function getEffectiveMemoryLimitForActor(ApifyActor $actor): int
+    public function getEffectiveMemoryLimitForActor(ApifyActor $actor): ?int
     {
         $pivot = $this->actors()->where('apify_actors.id', $actor->id)->first()?->pivot;
 
-        if ($pivot && $pivot->memory_limit !== null) {
-            return (int) $pivot->memory_limit;
+        if (! $pivot || $pivot->memory_limit === null) {
+            return null;
         }
 
-        return (int) ($actor->memory_limit ?? 1024);
+        return (int) $pivot->memory_limit;
     }
 
     /**
-     * Mendapatkan limit default hasil efektif actor dalam konteks paket ini.
-     * Jika ada override di pivot, gunakan itu. Jika tidak, pakai global actor.
+     * Mendapatkan limit hasil efektif actor dalam konteks paket ini.
+     * Nilai wajib berasal dari pivot paket aktif.
      */
-    public function getEffectiveLimitForActor(ApifyActor $actor): int
+    public function getEffectiveLimitForActor(ApifyActor $actor): ?int
     {
         $pivot = $this->actors()->where('apify_actors.id', $actor->id)->first()?->pivot;
 
-        if ($pivot && $pivot->default_limit !== null) {
-            return (int) $pivot->default_limit;
+        if (! $pivot || $pivot->default_limit === null) {
+            return null;
         }
 
-        return (int) ($actor->default_limit ?? 20);
+        return (int) $pivot->default_limit;
     }
 }

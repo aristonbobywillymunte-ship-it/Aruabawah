@@ -3,6 +3,10 @@
         overflow-x: hidden;
     }
 
+    [x-cloak] {
+        display: none !important;
+    }
+
     @media (min-width: 900px) {
         .desktop-filter-scroll {
             height: calc(100vh - 420px) !important;

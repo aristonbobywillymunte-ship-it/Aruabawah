@@ -90,10 +90,6 @@
                         <span class="text-xs font-semibold text-slate-500">Limit per Run</span>
                         <span class="text-xs font-bold text-slate-800">{{ $setting->limit_per_run }} artikel</span>
                     </div>
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                        <span class="text-xs font-semibold text-slate-500">Rentang Waktu</span>
-                        <span class="text-xs font-bold text-slate-800 uppercase">{{ $setting->date_range }}</span>
-                    </div>
                     <div class="flex justify-between items-center">
                         <span class="text-xs font-semibold text-slate-500">HTTP Timeout</span>
                         <span class="text-xs font-bold text-slate-800">{{ $setting->timeout_seconds }} detik</span>
@@ -144,21 +140,11 @@
                         </div>
                     </div>
 
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid gap-4 sm:grid-cols-1">
                         <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Limit Artikel per Run</label>
                             <input wire:model="limit_per_run" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
                             @error('limit_per_run') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Ambil Rentang Berita</label>
-                            <select wire:model="date_range" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
-                                <option value="24h">24 Jam Terakhir (24h)</option>
-                                <option value="7d">7 Hari Terakhir (7d)</option>
-                                <option value="30d">30 Hari Terakhir (30d)</option>
-                                <option value="90d">90 Hari Terakhir (90d)</option>
-                            </select>
-                            @error('date_range') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
 

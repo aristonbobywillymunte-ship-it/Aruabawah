@@ -49,7 +49,7 @@ class ApifyConfiguration extends Component
     public int $timeout_seconds = 10000;
     public bool $no_timeout = false;
     public int $interval_minutes = 240;
-    public int $memory_limit = 1024;
+    public int $memory_limit = 0;
     public string $range_mode = '7d';
     public int $priority = 1;
 
@@ -472,9 +472,6 @@ class ApifyConfiguration extends Component
             $definition = $this->resolveTikTokActorDefinition($data['actorSlug']);
             if ($definition) {
                 $data['keyword_field_mapping'] = $definition['keyword_field_mapping'];
-                if ((int) $data['defaultLimit'] < 1) {
-                    $data['defaultLimit'] = (int) ($definition['default_limit'] ?? 1);
-                }
             }
 
             $resolvedOutputMapping = $this->buildTikTokOutputMapping($data, $definition);
@@ -740,7 +737,7 @@ class ApifyConfiguration extends Component
         $this->timeout_seconds = 10000;
         $this->no_timeout = false;
         $this->interval_minutes = 240;
-        $this->memory_limit = 1024;
+        $this->memory_limit = 0;
         $this->range_mode = '7d';
         $this->facebook_post_time_range = '24h';
         $this->facebook_use_apify_proxy = true;
@@ -759,9 +756,8 @@ class ApifyConfiguration extends Component
         $maxPosts = $template['maxPosts'] ?? null;
         if (is_numeric($maxPosts)) {
             $this->facebook_max_posts = (int) $maxPosts;
-        } elseif (!$this->editingActor) {
-            $actorDefaultLimit = $this->registry()->primaryActors()['facebook']['default_limit'] ?? $this->defaultLimit;
-            $this->facebook_max_posts = (int) $actorDefaultLimit;
+        } elseif (!$this->editingActor && is_numeric($this->defaultLimit)) {
+            $this->facebook_max_posts = (int) $this->defaultLimit;
         }
 
         $resolvedPostTimeRange = (string) ($template['postTimeRange'] ?? '');
@@ -792,7 +788,9 @@ class ApifyConfiguration extends Component
 
         if ($this->isInstagramCommentsActor()) {
             $this->instagram_results_type = 'posts';
-            $this->instagram_results_limit = (int) ($template['resultsLimit'] ?? ($definition['default_limit'] ?? 20));
+            $this->instagram_results_limit = is_numeric($template['resultsLimit'] ?? null)
+                ? (int) $template['resultsLimit']
+                : (is_numeric($this->defaultLimit) ? (int) $this->defaultLimit : null);
             $this->instagram_include_nested_comments = (bool) ($template['includeNestedComments'] ?? false);
             $this->keyword_field_mapping = 'directUrls';
             return;
@@ -800,7 +798,9 @@ class ApifyConfiguration extends Component
 
         $resultsType = (string) ($template['resultsType'] ?? 'posts');
         $this->instagram_results_type = in_array($resultsType, ['posts', 'reels'], true) ? $resultsType : 'posts';
-        $this->instagram_results_limit = (int) ($template['resultsLimit'] ?? ($definition['default_limit'] ?? 20));
+        $this->instagram_results_limit = is_numeric($template['resultsLimit'] ?? null)
+            ? (int) $template['resultsLimit']
+            : (is_numeric($this->defaultLimit) ? (int) $this->defaultLimit : null);
         $this->instagram_include_nested_comments = false;
         $this->keyword_field_mapping = 'hashtags';
     }
@@ -831,7 +831,7 @@ class ApifyConfiguration extends Component
         if ($this->isInstagramCommentsActor()) {
             $payload = [
                 'directUrls' => ['{keyword}'],
-                'resultsLimit' => max(1, (int) ($this->instagram_results_limit ?? $this->defaultLimit ?? 1)),
+                'resultsLimit' => (int) ($this->instagram_results_limit ?? $this->defaultLimit ?? 0),
                 'includeNestedComments' => (bool) $this->instagram_include_nested_comments,
             ];
 
@@ -841,7 +841,7 @@ class ApifyConfiguration extends Component
         $payload = [
             'hashtags' => ['{keyword}'],
             'resultsType' => in_array($this->instagram_results_type, ['posts', 'reels'], true) ? $this->instagram_results_type : 'posts',
-            'resultsLimit' => max(1, (int) ($this->instagram_results_limit ?? $this->defaultLimit ?? 1)),
+            'resultsLimit' => (int) ($this->instagram_results_limit ?? $this->defaultLimit ?? 0),
         ];
 
         return json_encode($payload, JSON_UNESCAPED_SLASHES);
@@ -917,14 +917,14 @@ class ApifyConfiguration extends Component
         $this->actorSlug = (string) ($definition['actor_slug'] ?? $this->actorSlug);
         $this->functionType = (string) ($definition['function_type'] ?? $this->functionType);
         $this->actorStatus = (string) ($definition['status'] ?? $this->actorStatus);
-        $this->defaultLimit = (string) (int) ($definition['default_limit'] ?? $this->defaultLimit ?: 1);
+        $this->defaultLimit = (string) (int) ($definition['default_limit'] ?? $this->defaultLimit ?: 0);
         $this->keyword_field_mapping = (string) ($definition['keyword_field_mapping'] ?? $this->keyword_field_mapping ?: 'hashtags');
         $this->output_mapping = (string) ($definition['output_mapping'] ?? $this->output_mapping ?: '');
         $this->build = (string) ($definition['build'] ?? $this->build ?: 'latest');
         $this->timeout_seconds = (int) ($definition['timeout_seconds'] ?? $this->timeout_seconds ?: 10000);
         $this->no_timeout = (bool) ($definition['no_timeout'] ?? $this->no_timeout ?: false);
         $this->interval_minutes = (int) ($definition['interval_minutes'] ?? $this->interval_minutes ?: 240);
-        $this->memory_limit = (int) ($definition['memory_limit'] ?? $this->memory_limit ?: 1024);
+        $this->memory_limit = (int) ($definition['memory_limit'] ?? $this->memory_limit ?: 0);
         $this->range_mode = (string) ($definition['range_mode'] ?? $this->range_mode ?: '7d');
         $this->priority = (int) ($definition['priority'] ?? $this->priority ?: 1);
     }
@@ -944,7 +944,7 @@ class ApifyConfiguration extends Component
         if ($keywordField === 'postURLs') {
             $payload = [
                 'postURLs' => ['{keyword}'],
-                'commentsPerPost' => max(1, (int) ($data['defaultLimit'] ?? $this->defaultLimit ?? 20)),
+                'commentsPerPost' => (int) ($data['defaultLimit'] ?? $this->defaultLimit ?? 0),
                 'proxyConfiguration' => [
                     'useApifyProxy' => true,
                 ],
@@ -957,7 +957,7 @@ class ApifyConfiguration extends Component
             'customMapFunction' => '(object) => { return {...object} }',
             'endPage' => 1,
             'extendOutputFunction' => '($) => { return {} }',
-            'maxItems' => max(1, (int) ($data['defaultLimit'] ?? $this->defaultLimit ?? 1)),
+            'maxItems' => (int) ($data['defaultLimit'] ?? $this->defaultLimit ?? 0),
             'hashtags' => ['{keyword}'],
         ];
 
@@ -966,22 +966,29 @@ class ApifyConfiguration extends Component
 
     public function previewActorPayloadJson(): string
     {
+        $resolvedPreviewLimit = (int) ($this->defaultLimit ?: 0);
+        if ($resolvedPreviewLimit < 1) {
+            return json_encode([
+                'error' => 'Limit actor belum valid. Isi limit actor atau atur limit di paket sebelum preview payload.',
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}';
+        }
+
         $definition = null;
         $outputMapping = null;
 
         if ($this->platform === 'Facebook') {
             $outputMapping = $this->buildFacebookOutputMapping([
-                'defaultLimit' => (int) $this->defaultLimit,
+                'defaultLimit' => $resolvedPreviewLimit,
             ]);
         } elseif ($this->platform === 'Instagram') {
             $outputMapping = $this->buildInstagramOutputMapping([
-                'defaultLimit' => (int) $this->defaultLimit,
+                'defaultLimit' => $resolvedPreviewLimit,
             ]);
         } elseif ($this->platform === 'TikTok') {
             $definition = $this->resolveTikTokActorDefinition($this->actorSlug);
             $outputMapping = $this->buildTikTokOutputMapping([
                 'actorSlug' => $this->actorSlug,
-                'defaultLimit' => (int) $this->defaultLimit,
+                'defaultLimit' => $resolvedPreviewLimit,
             ], $definition);
         }
 
@@ -1007,7 +1014,7 @@ class ApifyConfiguration extends Component
 
         $payload = $actor->buildInputPayload(
             $previewKeyword,
-            max(1, (int) ($this->defaultLimit ?: 1)),
+            $resolvedPreviewLimit,
             $this->dateFrom,
             $this->dateTo
         );

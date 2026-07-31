@@ -210,6 +210,11 @@ Repository ini menggunakan `docker-compose.yml` untuk menjalankan aplikasi, Redi
 - Script Artisan generik di `composer.json` tetap ada untuk environment yang sudah berada di dalam container; jangan anggap itu perintah host lokal langsung.
 - Kalau kamu melihat `composer setup` atau `composer dev`, jalankan itu hanya di environment yang memang sudah punya akses ke Docker DB, bukan dari shell host yang masih memakai hostname `postgres`.
 
+## Dokumentasi Teknis Tambahan
+
+- Alur filter proyek: [docs/project-filter-flow.md](/Users/unity/Documents/proyek%20baru/docs/project-filter-flow.md)
+- Alur actor komentar sosial: [docs/comment-scraper-flow.md](/Users/unity/Documents/proyek%20baru/docs/comment-scraper-flow.md)
+
 ## Lisensi
 
 Proyek ini digunakan untuk kebutuhan internal ARUSBAWAH Media Intelligence.

@@ -129,9 +129,9 @@ class ApifyActor extends Model
 
     public function buildInputPayload(?string $keyword = null, ?int $limit = null, ?string $dateFrom = null, ?string $dateTo = null, ?array $keywords = null): array
     {
-        $resolvedLimit = $limit;
-        if (is_null($resolvedLimit)) {
-            $resolvedLimit = (int) ($this->default_limit ?? 50);
+        $resolvedLimit = (int) ($limit ?? 0);
+        if ($resolvedLimit < 1) {
+            throw new \InvalidArgumentException('Actor limit must come from package configuration or explicit job override.');
         }
 
         if ($this->platform === 'TikTok') {
@@ -201,11 +201,7 @@ class ApifyActor extends Model
             $postTimeRange = $this->resolveTimeFilter();
         }
         $useApifyProxy = (bool) data_get($config, 'proxyConfiguration.useApifyProxy', true);
-        $configuredMaxPosts = data_get($config, 'maxPosts', null);
-        $resolvedMaxPosts = (int) $configuredMaxPosts;
-        if ($resolvedMaxPosts < 1 || str_contains((string) $configuredMaxPosts, '{limit}')) {
-            $resolvedMaxPosts = $limit;
-        }
+        $resolvedMaxPosts = $this->distributedSocialLimit($limit, $keywords);
         return [
             'maxPosts' => $resolvedMaxPosts,
             'postTimeRange' => $postTimeRange ?: $this->resolveTimeFilter(),
@@ -245,11 +241,7 @@ class ApifyActor extends Model
             $resultsType = 'posts';
         }
 
-        $configuredResultsLimit = data_get($config, 'resultsLimit', null);
-        $configuredTotalLimit = (int) $configuredResultsLimit;
-        if ($configuredTotalLimit < 1 || str_contains((string) $configuredResultsLimit, '{limit}')) {
-            $configuredTotalLimit = (int) ($this->default_limit ?? $limit);
-        }
+        $configuredTotalLimit = $this->distributedSocialLimit($limit, $keywords);
 
         return [
             'hashtags' => $hashtags,
@@ -279,11 +271,7 @@ class ApifyActor extends Model
             }
         }
 
-        $configuredResultsLimit = data_get($config, 'resultsLimit', null);
-        $resolvedResultsLimit = (int) $configuredResultsLimit;
-        if ($resolvedResultsLimit < 1 || str_contains((string) $configuredResultsLimit, '{limit}')) {
-            $resolvedResultsLimit = (int) ($this->default_limit ?? $limit);
-        }
+        $resolvedResultsLimit = max(1, (int) $limit);
 
         return [
             'directUrls' => $directUrls,
@@ -303,10 +291,7 @@ class ApifyActor extends Model
             $keywords = [$this->normalizeTikTokHashtag((string) ($keyword ?: $this->default_keyword))];
         }
 
-        $configuredTotalLimit = (int) ($this->default_limit ?? $limit);
-        if ($configuredTotalLimit < 1) {
-            $configuredTotalLimit = max(1, $limit);
-        }
+        $configuredTotalLimit = $this->distributedSocialLimit($limit, $keywords);
 
         return [
             'customMapFunction' => '(object) => { return {...object} }',
@@ -333,10 +318,7 @@ class ApifyActor extends Model
             ]));
         }
 
-        $configuredCommentsPerPost = (int) ($this->default_limit ?? $limit);
-        if ($configuredCommentsPerPost < 1) {
-            $configuredCommentsPerPost = max(1, $limit);
-        }
+        $configuredCommentsPerPost = max(1, (int) $limit);
 
         return [
             'postURLs' => $postUrls,
@@ -362,10 +344,7 @@ class ApifyActor extends Model
 
         $startUrls = array_map(fn($url) => ['url' => $url], $postUrls);
 
-        $configuredComments = (int) ($this->default_limit ?? $limit);
-        if ($configuredComments < 1) {
-            $configuredComments = max(1, $limit);
-        }
+        $configuredComments = max(1, (int) $limit);
 
         return [
             'startUrls' => $startUrls,
@@ -376,6 +355,11 @@ class ApifyActor extends Model
                 'useApifyProxy' => true,
             ],
         ];
+    }
+
+    protected function distributedSocialLimit(int $totalLimit, array $keywords): int
+    {
+        return max(1, (int) $totalLimit);
     }
 
     protected function normalizeFacebookCommentUrl(string $value): string
@@ -581,9 +565,9 @@ class ApifyActor extends Model
             return [];
         }
 
-        $resolvedLimit = $limit;
-        if (is_null($resolvedLimit)) {
-            $resolvedLimit = (int) ($this->default_limit ?? 50);
+        $resolvedLimit = (int) ($limit ?? 0);
+        if ($resolvedLimit < 1) {
+            throw new \InvalidArgumentException('Template actor limit must come from package configuration or explicit job override.');
         }
 
         $context = [
