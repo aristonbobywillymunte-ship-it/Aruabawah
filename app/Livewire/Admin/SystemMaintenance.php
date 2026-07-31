@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Artisan;
 
 class SystemMaintenance extends Component
 {
+    public bool $showConfirmModal = false;
     public ?array $maintenanceSummary = null;
     public ?string $flashMessage = null;
     public string $flashType = 'success';
@@ -23,25 +24,45 @@ class SystemMaintenance extends Component
         $this->adminOnly();
     }
 
-    public function clearApifyQueue(): void
+    public function confirmClearRedisQueue(): void
     {
         $this->adminOnly();
+        $this->showConfirmModal = true;
+    }
 
-        $deleted = DB::table('jobs')
-            ->where('payload', 'like', '%"displayName":"App\\\\Jobs\\\\ApifyScrapingJob"%')
-            ->delete();
+    public function cancelClearRedisQueue(): void
+    {
+        $this->showConfirmModal = false;
+    }
 
-        Log::info('[Apify Maintenance] Cleared Apify queue', [
-            'deleted_jobs' => $deleted,
+    public function clearRedisQueue(): void
+    {
+        $this->adminOnly();
+        $this->showConfirmModal = false;
+
+        $redis = \Illuminate\Support\Facades\Redis::connection();
+        $queues = ['queues:default', 'queues:apify', 'queues:ai-analysis', 'queues:notification'];
+        
+        $totalDeleted = 0;
+        foreach ($queues as $queueKey) {
+            $count = (int) $redis->llen($queueKey);
+            if ($count > 0) {
+                $redis->del($queueKey);
+                $totalDeleted += $count;
+            }
+        }
+
+        Log::info('[System Maintenance] Cleared Redis queue', [
+            'deleted_jobs' => $totalDeleted,
             'triggered_by' => auth()->user()?->email,
         ]);
 
         $this->maintenanceSummary = [
-            'title' => 'Apify Queue Dibersihkan',
-            'detail' => "{$deleted} job Apify dihapus dari antrean.",
+            'title' => 'Redis Queue Dibersihkan',
+            'detail' => "{$totalDeleted} job berhasil dihapus dari antrean Redis.",
         ];
 
-        $this->notify('success', 'Antrean Apify berhasil dibersihkan.');
+        $this->notify('success', 'Antrean Redis berhasil dibersihkan.');
     }
 
     public function restartWorkers(): void
