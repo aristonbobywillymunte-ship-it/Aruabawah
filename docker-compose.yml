@@ -58,7 +58,7 @@ services:
   media-intelligent-worker:
     image: media_intelligent_app:latest
     container_name: media_intelligent_worker_container
-    command: ["php", "artisan", "queue:work", "redis", "--queue=news", "--sleep=3", "--tries=3", "--timeout=300"]
+    command: ["php", "artisan", "queue:work", "redis", "--queue=default,news", "--sleep=3", "--tries=3", "--timeout=300"]
     dns:
       - 1.1.1.1
       - 8.8.8.8
