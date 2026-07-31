@@ -17,6 +17,7 @@ class Package extends Model
         'advantages',
         'is_active',
         'use_portal',
+        'is_popular',
     ];
 
     protected $casts = [
@@ -26,6 +27,7 @@ class Package extends Model
         'advantages' => 'array',
         'is_active' => 'boolean',
         'use_portal' => 'boolean',
+        'is_popular' => 'boolean',
     ];
 
     public function actors(): BelongsToMany

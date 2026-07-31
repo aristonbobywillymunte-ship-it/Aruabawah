@@ -364,14 +364,18 @@ class RunApifyScraping extends Command
                             ->orderBy('id', 'desc')
                             ->get(['id', 'post_url']);
 
-                        // PROTEKSI: Jangan kirim ke Apify jika masih ada job comment scraper lain yang sedang aktif
+                        // PROTEKSI: Jangan kirim ke Apify jika masih ada job comment scraper aktif
+                        // pada platform yang sama. Facebook, Instagram, dan TikTok diperlakukan
+                        // dengan aturan antrean yang sama agar tidak saling memblokir.
                         $activeCommentScrapersCount = \App\Models\ApifyDispatchState::whereIn('status', ['queued', 'processing'])
-                            ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')->pluck('id'))
+                            ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')
+                                ->where('platform', $actor->platform)
+                                ->pluck('id'))
                             ->count();
 
                         if ($activeCommentScrapersCount > 0) {
-                            $this->line("Skipping Comment Scraper: [{$actor->platform}] project={$project->name} — masih ada job comment scraper aktif di worker.");
-                            $socialLog->info('[Social] Comment Scraper skipped: another comment scraper job is active.', [
+                            $this->line("Skipping Comment Scraper: [{$actor->platform}] project={$project->name} — masih ada job comment scraper aktif pada platform yang sama.");
+                            $socialLog->info('[Social] Comment Scraper skipped: another comment scraper job is active on the same platform.', [
                                 'project_id'   => $project->id,
                                 'project_name' => $project->name,
                                 'platform'     => $actor->platform,

@@ -31,6 +31,7 @@ class PackageManager extends Component
     public array $advantages = [];
     public bool $is_active = true;
     public bool $use_portal = true;
+    public bool $is_popular = false;
 
     // ─── CRUD-based Limits & Features (Advantages Wrapper) ───────────────
     public string $limit_projects = 'unlimited';
@@ -65,6 +66,19 @@ class PackageManager extends Component
             'advantages'            => 'nullable|array',
             'is_active'             => 'boolean',
             'use_portal'            => 'boolean',
+            'is_popular'            => 'boolean',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'name.required'   => 'Hei, nama paket tidak boleh kosong ya! Kasih nama yang gampang diingat.',
+            'name.max'        => 'Wah, nama paketnya kepanjangan. Maksimal 255 karakter saja.',
+            'price.required'  => 'Harga paket belum diisi nih. Boleh isi 0 kalau memang gratis.',
+            'price.numeric'   => 'Format harganya kurang tepat. Masukkan angka saja, tanpa huruf.',
+            'price.min'       => 'Harga tidak bisa negatif. Minimal 0 ya.',
+            'description.max' => 'Deskripsinya terlalu panjang. Maksimal 1.000 karakter saja.',
         ];
     }
 
@@ -170,6 +184,7 @@ class PackageManager extends Component
         $this->advantages            = $pkg->advantages ?? [];
         $this->is_active             = $pkg->is_active;
         $this->use_portal            = (bool) ($pkg->use_portal ?? true);
+        $this->is_popular            = (bool) ($pkg->is_popular ?? false);
         
         // Parse advantages to find toggles and clean them up
         $this->parseAdvantagesToProperties();
@@ -229,6 +244,7 @@ class PackageManager extends Component
             'advantages'            => $this->advantages ?: null,
             'is_active'             => $this->is_active,
             'use_portal'            => $this->use_portal,
+            'is_popular'            => $this->is_popular,
         ];
 
         if ($this->editingPackageId) {
@@ -555,6 +571,7 @@ class PackageManager extends Component
         $this->advantages            = [];
         $this->is_active             = true;
         $this->use_portal            = true;
+        $this->is_popular            = false;
         
         // Reset limit properties
         $this->limit_projects        = 'unlimited';

@@ -1,12 +1,12 @@
 <div>
     {{-- Global Loading State for UI Responsiveness --}}
-    <div wire:loading.flex class="fixed inset-0 z-[9999] items-center justify-center bg-slate-950/20 backdrop-blur-[2px]">
+    <div wire:loading.flex wire:target="createPackage, editPackage, manageActors, savePackage, saveActors" class="fixed inset-0 z-[9999] items-center justify-center bg-slate-950/20 backdrop-blur-[2px]">
         <div class="bg-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100 animate-fade-in">
             <svg class="animate-spin h-5 w-5 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span class="text-xs font-bold text-slate-700">Memuat parameter...</span>
+            <span class="text-xs font-bold text-slate-700">Memproses perubahan...</span>
         </div>
     </div>
 
@@ -89,10 +89,12 @@
                     {{-- Top Row: Badges + Actions --}}
                     <div class="flex justify-between items-start mb-5">
                         <div class="flex flex-wrap items-center gap-1.5">
-                            {{-- Terpopuler badge --}}
-                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-[#1fa387] text-white shadow-sm">
+                            {{-- Terpopuler badge (hanya jika is_popular = true) --}}
+                            @if($pkg->is_popular)
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-400 text-white shadow-sm">
                                 ⭐ Terpopuler
                             </span>
+                            @endif
                             {{-- Status badge --}}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
                                 {{ $pkg->is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400 border border-slate-200' }}">
@@ -208,13 +210,21 @@
                 <div class="h-1 w-full bg-gradient-to-r from-[#1fa387]/0 via-[#1fa387]/50 to-[#1fa387]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-400"></div>
 
                 <div class="p-6 md:p-7 flex flex-col flex-1">
-                    {{-- Top Row: Status + Actions --}}
-                    <div class="flex justify-between items-center mb-5">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
-                            {{ $pkg->is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400 border border-slate-200' }}">
-                            <span class="w-1.5 h-1.5 rounded-full {{ $pkg->is_active ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400' }}"></span>
-                            {{ $pkg->is_active ? 'Aktif' : 'Nonaktif' }}
-                        </span>
+                    {{-- Top Row: Status + Badges + Actions --}}
+                    <div class="flex justify-between items-start mb-5">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            {{-- Terpopuler badge (hanya jika is_popular = true) --}}
+                            @if($pkg->is_popular)
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-400 text-white shadow-sm">
+                                ⭐ Terpopuler
+                            </span>
+                            @endif
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
+                                {{ $pkg->is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-400 border border-slate-200' }}">
+                                <span class="w-1.5 h-1.5 rounded-full {{ $pkg->is_active ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400' }}"></span>
+                                {{ $pkg->is_active ? 'Aktif' : 'Nonaktif' }}
+                            </span>
+                        </div>
                         <div class="flex items-center gap-1.5">
                             <button wire:click="editPackage({{ $pkg->id }})" title="Edit Paket"
                                 class="p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/8 hover:border-[#1fa387]/30 transition-all duration-200 cursor-pointer">
@@ -429,14 +439,17 @@
 
                         <!-- Deskripsi Singkat (Melapisi 2 kolom) -->
                         <div class="md:col-span-2">
-                            <label class="block text-[11px] font-bold text-slate-700 tracking-wide mb-2">Deskripsi Singkat</label>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-[11px] font-bold text-slate-700 tracking-wide">Deskripsi Singkat</label>
+                                <span class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Opsional</span>
+                            </div>
                             <textarea wire:model="description" rows="3" placeholder="Rincian mengenai fungsionalitas paket ini..."
                                 class="w-full px-4 py-3 rounded-xl border border-[#1fa387]/20 text-sm resize-none focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white h-24"></textarea>
                             @error('description') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
                         </div>
                         
-                        <!-- Switches (Berdampingan di baris baru) -->
-                        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Switches (3 kolom) -->
+                        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
                             {{-- Status Switch --}}
                             <div class="flex flex-col p-3.5 bg-slate-50 rounded-xl border border-slate-100">
                                 <div class="flex items-center justify-between mb-1.5">
@@ -459,6 +472,21 @@
                                     </button>
                                 </div>
                                 <div class="text-[9px] text-slate-500 leading-tight">Akses fitur scraping & manajemen berita.</div>
+                            </div>
+
+                            {{-- Terpopuler Switch --}}
+                            <div class="flex flex-col p-3.5 rounded-xl border transition-all duration-150 {{ $is_popular ? 'bg-amber-50/60 border-amber-200' : 'bg-slate-50 border-slate-100' }}">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-[11px] font-bold {{ $is_popular ? 'text-amber-700' : 'text-slate-750' }}">⭐ Terpopuler</span>
+                                        <span class="text-[8px] font-bold text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md leading-none">Opsional</span>
+                                    </div>
+                                    <button type="button" wire:click="$toggle('is_popular')"
+                                        class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $is_popular ? 'bg-amber-400' : 'bg-slate-300' }}">
+                                        <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out {{ $is_popular ? 'translate-x-4' : 'translate-x-0' }}"></span>
+                                    </button>
+                                </div>
+                                <div class="text-[9px] leading-tight {{ $is_popular ? 'text-amber-600' : 'text-slate-500' }}">Tampilkan badge "Terpopuler" di kartu paket.</div>
                             </div>
                         </div>
                     </div>
@@ -721,9 +749,22 @@
                     class="px-5 py-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer active:scale-95">
                     Batal
                 </button>
-                <button wire:click="savePackage" class="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black text-white bg-[#1fa387] hover:bg-[#178a71] shadow-lg shadow-[#1fa387]/20 transition-all duration-200 active:scale-95 cursor-pointer">
-                    <span class="material-symbols-outlined text-[18px]">save</span>
-                    <span>{{ $editingPackageId ? 'Simpan Perubahan' : 'Buat Paket' }}</span>
+                <button
+                    type="button"
+                    wire:click="savePackage"
+                    wire:loading.attr="disabled"
+                    wire:target="savePackage"
+                    class="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black text-white bg-[#1fa387] hover:bg-[#178a71] shadow-lg shadow-[#1fa387]/20 transition-all duration-200 active:scale-95 cursor-pointer disabled:opacity-70 disabled:cursor-wait">
+                    <svg wire:loading.remove wire:target="savePackage" class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24">
+                        <path d="M5 4a1 1 0 0 1 1-1h10.586a1 1 0 0 1 .707.293l1.414 1.414A1 1 0 0 1 19 5.414V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M8 3v5h6V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <svg wire:loading wire:target="savePackage" class="w-[18px] h-[18px] animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span wire:loading.remove wire:target="savePackage">{{ $editingPackageId ? 'Simpan Perubahan' : 'Buat Paket' }}</span>
+                    <span wire:loading wire:target="savePackage">Menyimpan...</span>
                 </button>
             </div>
         </div>
@@ -920,10 +961,20 @@
                 class="px-5 py-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer active:scale-95">
                 Batal
             </button>
-            <button type="button" wire:click="saveActors" 
-                class="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black text-white bg-[#1fa387] hover:bg-[#178a71] shadow-lg shadow-[#1fa387]/15 transition cursor-pointer active:scale-95">
-                <span class="material-symbols-outlined text-[18px]">save</span>
-                <span>Simpan Konfigurasi</span>
+            <button type="button" wire:click="saveActors"
+                wire:loading.attr="disabled"
+                wire:target="saveActors"
+                class="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black text-white bg-[#1fa387] hover:bg-[#178a71] shadow-lg shadow-[#1fa387]/15 transition cursor-pointer active:scale-95 disabled:opacity-70 disabled:cursor-wait">
+                <svg wire:loading.remove wire:target="saveActors" class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24">
+                    <path d="M5 4a1 1 0 0 1 1-1h10.586a1 1 0 0 1 .707.293l1.414 1.414A1 1 0 0 1 19 5.414V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M8 3v5h6V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg wire:loading wire:target="saveActors" class="w-[18px] h-[18px] animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span wire:loading.remove wire:target="saveActors">Simpan Konfigurasi</span>
+                <span wire:loading wire:target="saveActors">Menyimpan...</span>
             </button>
         </div>
     </div>
