@@ -6,7 +6,10 @@ use App\Models\Article;
 use App\Models\AiAnalysisResult;
 use App\Models\ApifyActor;
 use App\Jobs\ApifyScrapingJob;
+use App\Jobs\BootstrapNewProjectScrapingJob;
 use App\Services\ContentMatchingService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Url;
 
 new class extends Component
@@ -31,10 +34,17 @@ new class extends Component
     public $topicsString = ''; // Reset default to empty string
     public $contextKeywords = '';
     public $excludeKeywords = '';
+    public $telegramChatId = '';
     public $selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
     public $isCreatingProject = false;
+    public $createStep = 1;
     public $showSuccessModal = false;
     public $lastCreatedProjectName = '';
+    public $packageId = null;
+
+    // Projects lazy-load state
+    public bool $projectsLoaded = false;
+    public array $projects = [];
 
     // Edit project state
     public $showEditModal = false;
@@ -49,9 +59,98 @@ new class extends Component
     public $confirmMessage = '';
     public $toastType = null;
     public $toastMessage = '';
+    public $showTrashedModal = false;
     protected ?array $portalScanTimes = null;
     protected ?array $portalRunningProjectIds = null;
     protected ?array $socialActiveProjects = null;
+
+    protected function projectsCacheKey(): string
+    {
+        $userId = (int) (auth()->id() ?? 0);
+        return 'projects_list:' . $userId . ':' . md5(json_encode([
+            'project' => $this->getDecodedProjectId(),
+            'user'    => $userId,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    protected function forgetProjectsCache(): void
+    {
+        Cache::forget($this->projectsCacheKey());
+    }
+
+    protected function parseMultiChatIds(string $value): array
+    {
+        $normalized = str_replace([';', ' '], ',', $value);
+        $items = array_map('trim', explode(',', $normalized));
+        $items = array_map(fn($item) => ltrim($item, '-'), $items);
+        $items = array_filter($items);
+        return array_values(array_unique($items));
+    }
+
+    public function mount(): void
+    {
+        $this->projectId = $this->resolveProjectOrDefault($this->getDecodedProjectId());
+    }
+
+    public function updatedProjectId($value): void
+    {
+        $this->projectId = $this->resolveProjectOrDefault($this->getDecodedProjectId());
+    }
+
+    protected function resolveProjectOrDefault($projectId = null): ?int
+    {
+        if ($projectId !== null && !is_numeric($projectId)) {
+            $decoded = base64_decode($projectId, true);
+            if ($decoded !== false && is_numeric($decoded)) {
+                $projectId = (int) $decoded;
+            }
+        }
+        $projectId = $projectId ? (int) $projectId : null;
+        if ($projectId) {
+            $exists = Project::accessibleBy(auth()->user())
+                ->where('is_active', true)
+                ->where('id', $projectId)
+                ->exists();
+            if (!$exists) {
+                return null;
+            }
+        }
+        return $projectId;
+    }
+
+    public function loadProjects(): void
+    {
+        $this->projectsLoaded = true;
+        $this->projects = $this->getProjects();
+    }
+
+    public function runScraping($id): void
+    {
+        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
+        BootstrapNewProjectScrapingJob::dispatch($project->id);
+        $this->showConfirmModal = false;
+        $this->resetConfirmState();
+        $this->notifyProjectAction("Scraping '{$project->name}' telah didaftarkan ke antrean background!");
+        $this->forgetProjectsCache();
+    }
+
+    public function syncProject($id): void
+    {
+        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
+        $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
+        $totalSynced = $resyncResult['total_synced'] ?? 0;
+        $this->showConfirmModal = false;
+        $this->resetConfirmState();
+        $this->notifyProjectAction("Sinkronisasi '{$project->name}' berhasil. {$totalSynced} konten terhubung.");
+        $this->forgetProjectsCache();
+        $this->projects = $this->getProjects();
+    }
+
+    public function closeConfirmModal(): void
+    {
+        $this->showConfirmModal = false;
+        $this->resetConfirmState();
+    }
 
     protected function parseOptionalKeywordString(string $value): array
     {
@@ -526,7 +625,6 @@ new class extends Component
     }
 
     // Trashed projects modal state
-    public $showTrashedModal = false;
 
     public function closeModals()
     {
