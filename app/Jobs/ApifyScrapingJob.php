@@ -26,6 +26,7 @@ class ApifyScrapingJob implements ShouldQueue
 
     public int $tries = 3;
     public int $timeout = 1000;
+    private const COMMENT_SCRAPER_STALE_MINUTES = 45;
 
     public array $params;
 
@@ -47,6 +48,15 @@ class ApifyScrapingJob implements ShouldQueue
             rtrim($trimmed, '/'),
             rtrim($trimmed, '/') . '/',
         ]));
+    }
+
+    protected function normalizeSavedCommentsPayload(mixed $comments): array
+    {
+        if (is_array($comments)) {
+            return $comments;
+        }
+
+        return [];
     }
 
     protected function normalizeSocialCommentItem(array $item, string $platform): array
@@ -169,9 +179,7 @@ class ApifyScrapingJob implements ShouldQueue
             $isCommentScraper = $actor && (strtolower((string) $actor->function_type) === 'comment scraper');
             if ($isCommentScraper) {
                 $platformLower = strtolower($platform);
-                $preCheckQuery = \App\Models\SocialMediaItem::where(function($q) use ($projectId) {
-                        $q->where('project_id', $projectId)->orWhereNull('project_id');
-                    })
+                $preCheckQuery = \App\Models\SocialMediaItem::where('project_id', $projectId)
                     ->where('platform', $platform)
                     ->whereNotNull('post_url');
 
@@ -453,16 +461,38 @@ class ApifyScrapingJob implements ShouldQueue
         $projectName = $project ? $project->name : 'N/A';
         $contextStr = "platform={$platform} actor={$actor->actor_slug} project_name={$projectName} (ID: {$projectId}) keyword=" . implode(',', $keywords ?: [$keyword]);
 
-        // Resolving effective default limit per actor from package pivot override
-        $resolvedDefaultLimit = (int) ($actor->default_limit ?? 50);
+        $packageLimit = null;
         if ($project && $project->package) {
-            $resolvedDefaultLimit = $project->package->getEffectiveLimitForActor($actor);
+            $packageLimit = $project->package->getEffectiveLimitForActor($actor);
         }
 
         $jobLimit = isset($this->params['limit']) ? (int) $this->params['limit'] : null;
-        $configuredLimit = (int) (\App\Models\ScrapingSetting::first()?->limit_per_run ?? 3);
-        $limit = $jobLimit ?: $configuredLimit ?: $resolvedDefaultLimit;
-        $limit = max(1, $limit);
+        $limit = $jobLimit ?: $packageLimit;
+        if ($limit === null || $limit < 1) {
+            $message = 'Actor skipped: package limit is missing or invalid.';
+            Log::warning("[Apify] {$message}", [
+                'project_id' => $projectId,
+                'project_name' => $projectName,
+                'actor_id' => $actor->id,
+                'actor_name' => $actor->actor_name,
+                'platform' => $platform,
+                'package_id' => $project?->package_id,
+                'job_limit' => $jobLimit,
+                'package_limit' => $packageLimit,
+            ]);
+
+            if ($state) {
+                $state->update([
+                    'status' => 'failed',
+                    'completed_at' => now(),
+                    'last_error_message' => 'Package limit is missing or invalid for this actor.',
+                ]);
+            }
+
+            return;
+        }
+
+        $limit = max(1, (int) $limit);
         $input = $actor->buildInputPayload($keyword, $limit, null, null, $keywords);
 
         Log::info("[Apify] Calling actor. {$contextStr} | input: " . json_encode($input));
@@ -481,9 +511,32 @@ class ApifyScrapingJob implements ShouldQueue
         $slugForUrl = str_replace('/', '~', $actor->actor_slug);
 
         // Resolving effective memory limit from package pivot override
-        $resolvedMemoryLimit = (int) ($actor->memory_limit ?? 1024);
+        $resolvedMemoryLimit = null;
         if ($project && $project->package) {
             $resolvedMemoryLimit = $project->package->getEffectiveMemoryLimitForActor($actor);
+        }
+
+        if ($resolvedMemoryLimit === null || $resolvedMemoryLimit < 128) {
+            $message = 'Actor skipped: package memory limit is missing or invalid.';
+            Log::warning("[Apify] {$message}", [
+                'project_id' => $projectId,
+                'project_name' => $projectName,
+                'actor_id' => $actor->id,
+                'actor_name' => $actor->actor_name,
+                'platform' => $platform,
+                'package_id' => $project?->package_id,
+                'package_memory_limit' => $resolvedMemoryLimit,
+            ]);
+
+            if ($state) {
+                $state->update([
+                    'status' => 'failed',
+                    'completed_at' => now(),
+                    'last_error_message' => 'Package memory limit is missing or invalid for this actor.',
+                ]);
+            }
+
+            return;
         }
 
         // Run the actor — send input directly in the POST body (Apify v2 API format)
@@ -499,7 +552,7 @@ class ApifyScrapingJob implements ShouldQueue
             unset($runQuery['timeout']);
         }
 
-        $maximumCostPerRun = (float) ($actor->maximum_cost_per_run_usd ?? 0);
+        $maximumCostPerRun = 0.0;
         if ($project && $project->package) {
             $effectiveCost = $project->package->getEffectiveCostForActor($actor);
             if ($effectiveCost !== null) {
@@ -638,9 +691,9 @@ class ApifyScrapingJob implements ShouldQueue
             ]);
         }
 
-        if ($this->isCostLimitAbort($status, $statusMessage, $actor, $runData) && $this->datasetItemCountAtLeast($token, $datasetId, 1)) {
+        if ($this->isCostLimitAbort($status, $statusMessage, $maximumCostPerRun, $runData) && $this->datasetItemCountAtLeast($token, $datasetId, 1)) {
             $costLimitReached = true;
-            $costLimitNote = $this->costLimitNote($statusMessage, $actor);
+            $costLimitNote = $this->costLimitNote($statusMessage, $maximumCostPerRun);
             Log::warning("[Apify] Cost limit reached; continuing with partial dataset. | {$contextStr}", [
                 'run_id' => $runId,
                 'dataset_id' => $datasetId,
@@ -1176,7 +1229,7 @@ class ApifyScrapingJob implements ShouldQueue
                     $actualCommentsCount = 0;
                     if ($mainPost) {
                         $rawJsonDecoded = json_decode($mainPost->raw_json, true) ?: [];
-                        $savedComments = $rawJsonDecoded['comments'] ?? [];
+                        $savedComments = $this->normalizeSavedCommentsPayload($rawJsonDecoded['comments'] ?? []);
                         $actualCommentsCount = count($savedComments);
                     }
 
@@ -1256,9 +1309,7 @@ class ApifyScrapingJob implements ShouldQueue
                     ->values()
                     ->toArray();
 
-                $candidateQuery = \App\Models\SocialMediaItem::where(function($q) use ($projectId) {
-                        $q->where('project_id', $projectId)->orWhereNull('project_id');
-                    })
+                $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $projectId)
                     ->where('platform', $platform)
                     ->whereNotNull('post_url');
 
@@ -1296,6 +1347,20 @@ class ApifyScrapingJob implements ShouldQueue
                     ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')
                         ->where('platform', $platform)
                         ->pluck('id'))
+                    ->where(function ($query) {
+                        $staleThreshold = now()->subMinutes(self::COMMENT_SCRAPER_STALE_MINUTES);
+
+                        $query->where(function ($queued) use ($staleThreshold) {
+                            $queued->where('status', 'queued')
+                                ->where('queued_at', '>=', $staleThreshold);
+                        })->orWhere(function ($processing) use ($staleThreshold) {
+                            $processing->where('status', 'processing')
+                                ->where(function ($active) use ($staleThreshold) {
+                                    $active->where('started_at', '>=', $staleThreshold)
+                                        ->orWhere('updated_at', '>=', $staleThreshold);
+                                });
+                        });
+                    })
                     ->count();
 
                 if ($activeCommentScrapersCount > 0) {
@@ -1411,9 +1476,14 @@ class ApifyScrapingJob implements ShouldQueue
         [$payloadLimitField, $payloadLimitValue] = $this->resolvePayloadLimitInfo($platform, $input);
 
         $project = $projectId ? \App\Models\Project::find($projectId) : null;
-        $effectiveMemory = (int) ($actor->memory_limit ?? 0);
+        $effectiveMemory = 0;
         if ($project && $project->package) {
-            $effectiveMemory = $project->package->getEffectiveMemoryLimitForActor($actor);
+            $effectiveMemory = (int) ($project->package->getEffectiveMemoryLimitForActor($actor) ?? 0);
+        }
+
+        $effectiveCost = 0.0;
+        if ($project && $project->package) {
+            $effectiveCost = (float) ($project->package->getEffectiveCostForActor($actor) ?? 0);
         }
 
         return [
@@ -1431,7 +1501,7 @@ class ApifyScrapingJob implements ShouldQueue
             'payload_limit_value' => $payloadLimitValue,
             'interval_minutes' => (int) ($actor->interval_minutes ?? 0),
             'memory_limit_mb' => $effectiveMemory,
-            'maximum_cost_per_run_usd' => (float) ($actor->maximum_cost_per_run_usd ?? 0),
+            'maximum_cost_per_run_usd' => $effectiveCost,
             'range_mode' => $actor->range_mode,
             'priority' => (int) ($actor->priority ?? 0),
             'last_run_at' => $actor->last_run_at instanceof CarbonInterface
@@ -1505,7 +1575,7 @@ class ApifyScrapingJob implements ShouldQueue
         }
     }
 
-    protected function isCostLimitAbort(?string $status, ?string $statusMessage, ?ApifyActor $actor = null, array $runData = []): bool
+    protected function isCostLimitAbort(?string $status, ?string $statusMessage, float $maximumCost = 0, array $runData = []): bool
     {
         if (! in_array($status, ['ABORTED', 'ABORTING'], true)) {
             return false;
@@ -1519,7 +1589,6 @@ class ApifyScrapingJob implements ShouldQueue
             return true;
         }
 
-        $maximumCost = (float) ($actor?->maximum_cost_per_run_usd ?? 0);
         $usageTotal = (float) data_get($runData, 'usageTotalUsd', 0);
 
         return $maximumCost > 0
@@ -1527,14 +1596,14 @@ class ApifyScrapingJob implements ShouldQueue
             && $usageTotal >= ($maximumCost * 0.95);
     }
 
-    protected function costLimitNote(?string $statusMessage, ?ApifyActor $actor = null): string
+    protected function costLimitNote(?string $statusMessage, float $maximumCost = 0): string
     {
         $message = (string) $statusMessage;
         $amount = null;
         if (preg_match('/\\$\\s*([0-9]+(?:\\.[0-9]+)?)/', $message, $matches)) {
             $amount = '$' . $matches[1];
-        } elseif ($actor && (float) ($actor->maximum_cost_per_run_usd ?? 0) > 0) {
-            $amount = '$' . rtrim(rtrim(number_format((float) $actor->maximum_cost_per_run_usd, 4, '.', ''), '0'), '.');
+        } elseif ($maximumCost > 0) {
+            $amount = '$' . rtrim(rtrim(number_format($maximumCost, 4, '.', ''), '0'), '.');
         }
 
         $amountText = $amount ? " {$amount}" : '';
@@ -1870,7 +1939,7 @@ class ApifyScrapingJob implements ShouldQueue
         if ($projectId) {
             $project = \App\Models\Project::find($projectId);
             if ($project && $project->package_id && $project->package) {
-                $packageActorIds = $project->package->enabledActors()->pluck('id')->toArray();
+                $packageActorIds = $project->package->enabledActors()->pluck('apify_actors.id')->toArray();
                 if (! empty($packageActorIds)) {
                     $query->whereIn('id', $packageActorIds);
                 } else {
@@ -1927,6 +1996,7 @@ class ApifyScrapingJob implements ShouldQueue
             ->get();
 
         $commentLines = [];
+        $commentPayload = [];
         if ($dbComments->isNotEmpty()) {
             $commentLines[] = "\n\n--- Komentar Publik ({$dbComments->count()} komentar) ---";
             foreach ($dbComments as $idx => $c) {
@@ -1934,6 +2004,11 @@ class ApifyScrapingJob implements ShouldQueue
                 $commentAuthor = $c->author_name ?: 'Pengguna';
                 $commentText   = trim((string) $c->content) ?: '[tanpa teks]';
                 $commentLines[] = "{$num}. {$commentAuthor}: {$commentText}";
+                $commentPayload[] = [
+                    'author_name' => $commentAuthor,
+                    'content' => $commentText,
+                    'posted_at' => $c->posted_at?->toIso8601String(),
+                ];
             }
         } else {
             // Fallback: coba dari raw_json jika belum ada di tabel
@@ -1946,6 +2021,11 @@ class ApifyScrapingJob implements ShouldQueue
                     $commentAuthor = $c['ownerUsername'] ?? $c['authorName'] ?? $c['userName'] ?? 'Pengguna';
                     $commentText   = trim((string) ($c['text'] ?? $c['content'] ?? '')) ?: '[tanpa teks]';
                     $commentLines[] = "{$num}. {$commentAuthor}: {$commentText}";
+                    $commentPayload[] = [
+                        'author_name' => $commentAuthor,
+                        'content' => $commentText,
+                        'posted_at' => null,
+                    ];
                 }
             }
         }
@@ -1979,6 +2059,7 @@ class ApifyScrapingJob implements ShouldQueue
                 'view_count'    => (int) $mainPost->view_count,
                 'follower_count'=> (int) $mainPost->follower_count,
                 'published_at'  => $mainPost->posted_at?->toIso8601String(),
+                'comments'      => $commentPayload,
                 'no_telegram'   => $suppressTelegram,
             ], $promptTemplateId, $providerContextHash, forceReset: true);
 

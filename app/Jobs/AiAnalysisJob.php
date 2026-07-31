@@ -434,12 +434,19 @@ class AiAnalysisJob implements ShouldQueue
             '{published_at}' => (string) ($payload['published_at'] ?? ''),
             '{engagement_context}' => $this->buildEngagementContext($payload),
             '{media_context}' => $this->buildMediaContext($payload),
+            '{comments_context}' => $this->buildCommentsContext($payload),
             '{project_context}' => $this->buildProjectContext($payload),
             '{reach_context}' => $this->buildReachContext($payload),
         ];
 
         $schema = $this->effectiveOutputSchema($template);
         $instruction = strtr($template->user_prompt_template, $replacements) . "\n\n";
+
+        $commentsContext = $this->buildCommentsContext($payload);
+        if (($payload['type'] ?? null) === 'social' && $commentsContext !== 'Tidak ada komentar publik tambahan.') {
+            $instruction .= $commentsContext . "\n\n";
+        }
+
         if ($schema !== '') {
             $instruction .= "Gunakan schema berikut sebagai format output:\n" . $schema;
         }
@@ -1210,6 +1217,37 @@ class AiAnalysisJob implements ShouldQueue
         }
 
         return $metrics ? 'Engagement tersedia: ' . implode(', ', $metrics) . '.' : 'Engagement tidak tersedia.';
+    }
+
+    protected function buildCommentsContext(array $payload): string
+    {
+        if (($payload['type'] ?? null) !== 'social') {
+            return 'Tidak ada komentar publik tambahan.';
+        }
+
+        $comments = $payload['comments'] ?? null;
+        if (! is_array($comments) || $comments === []) {
+            return 'Tidak ada komentar publik tambahan.';
+        }
+
+        $lines = ['Komentar publik yang terkait dengan postingan ini:'];
+        foreach (array_slice($comments, 0, 50) as $index => $comment) {
+            if (! is_array($comment)) {
+                continue;
+            }
+
+            $author = trim((string) ($comment['author_name'] ?? $comment['author'] ?? 'Pengguna'));
+            $content = trim((string) ($comment['content'] ?? $comment['text'] ?? ''));
+            if ($content === '') {
+                $content = '[tanpa teks]';
+            }
+
+            $lines[] = ($index + 1) . ". {$author}: {$content}";
+        }
+
+        return count($lines) > 1
+            ? implode("\n", $lines)
+            : 'Tidak ada komentar publik tambahan.';
     }
 
     protected function buildReachContext(array $payload): string

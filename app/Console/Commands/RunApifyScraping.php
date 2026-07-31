@@ -20,6 +20,7 @@ use Carbon\Carbon;
 class RunApifyScraping extends Command
 {
     private const ACTOR_RECOVERY_CACHE_PREFIX = 'apify_actor_retry_at:';
+    private const COMMENT_SCRAPER_STALE_MINUTES = 45;
 
     /**
      * The name and signature of the console command.
@@ -68,11 +69,8 @@ class RunApifyScraping extends Command
         app(ApifyActorRegistry::class)->syncManagedActors();
 
         $scrapingSetting = ScrapingSetting::first();
-        $configuredLimit = (int) ($scrapingSetting?->limit_per_run ?? 3);
-        $configuredLimit = max(1, $configuredLimit);
         $requestedLimit = $this->option('limit') ? (int) $this->option('limit') : null;
-        $limitPerRun = $requestedLimit ? max(1, $requestedLimit) : $configuredLimit;
-        $limitPerRun = min(ApifyActorModel::MAX_SOCIAL_ITEMS_PER_RUN, $limitPerRun);
+        $limitPerRun = $requestedLimit ? min(ApifyActorModel::MAX_SOCIAL_ITEMS_PER_RUN, max(1, $requestedLimit)) : null;
 
         $filterPlatform  = $this->option('platform');
         $filterProjectId = $this->option('project-id');
@@ -196,9 +194,7 @@ class RunApifyScraping extends Command
                 $hasQueue = false;
                 if ($isCommentScraper) {
                     $platformLower = strtolower((string) $actor->platform);
-                    $preCheckQuery = \App\Models\SocialMediaItem::where(function($q) use ($project) {
-                            $q->where('project_id', $project->id)->orWhereNull('project_id');
-                        })
+                    $preCheckQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
                         ->where('platform', $actor->platform)
                         ->whereNotNull('post_url');
 
@@ -306,46 +302,12 @@ class RunApifyScraping extends Command
                     if (strtolower((string) $actor->function_type) === 'comment scraper') {
                         $platformLower = strtolower((string) $actor->platform);
 
-                        // Ambil URL artikel dari "Penyebutan" sesuai platform
-                        $articleUrlsQuery = \App\Models\Article::query()
-                            ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
-                            ->where('project_articles.project_id', $project->id);
-
-                        if ($platformLower === 'tiktok') {
-                            $articleUrlsQuery->where(function ($q) {
-                                $q->where('articles.source_name', 'like', '%tiktok%')
-                                  ->orWhere('articles.url', 'like', '%tiktok.com%');
-                            });
-                        } elseif ($platformLower === 'instagram') {
-                            $articleUrlsQuery->where(function ($q) {
-                                $q->where('articles.source_name', 'like', '%instagram%')
-                                  ->orWhere('articles.url', 'like', '%instagram.com%');
-                            });
-                        }
-
-                        $articleUrls = $articleUrlsQuery
-                            ->get(['articles.url', 'articles.canonical_url'])
-                            ->flatMap(function($article) {
-                                return [$article->url, $article->canonical_url];
-                            })
-                            ->filter()
-                            ->unique()
-                            ->flatMap(function($url) {
-                                return [
-                                    $url,
-                                    rtrim($url, '/'),
-                                    rtrim($url, '/') . '/'
-                                ];
-                            })
-                            ->unique()
-                            ->values()
-                            ->toArray();
-
-                        // Ambil semua postingan dari proyek aktif ini,
-                        // hanya yang URL-nya valid dan tampil di Penyebutan
-                        $candidateQuery = \App\Models\SocialMediaItem::where(function($q) use ($project) {
-                                $q->where('project_id', $project->id)->orWhereNull('project_id');
-                            })
+                        // Ambil semua postingan dari proyek aktif ini yang masih perlu
+                        // diperiksa komentarnya. SocialMediaItem adalah sumber kebenaran
+                        // untuk comment scraper, jadi jangan batasi lagi ke URL artikel
+                        // dashboard karena beberapa postingan valid belum tentu tercermin
+                        // di tabel Article dengan URL yang identik.
+                        $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
                             ->where('platform', $actor->platform)
                             ->whereNotNull('post_url');
 
@@ -359,10 +321,9 @@ class RunApifyScraping extends Command
                         }
 
                         $candidateItems = $candidateQuery
-                            ->whereIn('post_url', $articleUrls)
                             ->orderBy('posted_at', 'desc')
                             ->orderBy('id', 'desc')
-                            ->get(['id', 'post_url']);
+                            ->get(['id', 'post_url', 'comments_checked']);
 
                         // PROTEKSI: Jangan kirim ke Apify jika masih ada job comment scraper aktif
                         // pada platform yang sama. Facebook, Instagram, dan TikTok diperlakukan
@@ -371,6 +332,20 @@ class RunApifyScraping extends Command
                             ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')
                                 ->where('platform', $actor->platform)
                                 ->pluck('id'))
+                            ->where(function ($query) {
+                                $staleThreshold = now()->subMinutes(self::COMMENT_SCRAPER_STALE_MINUTES);
+
+                                $query->where(function ($queued) use ($staleThreshold) {
+                                    $queued->where('status', 'queued')
+                                        ->where('queued_at', '>=', $staleThreshold);
+                                })->orWhere(function ($processing) use ($staleThreshold) {
+                                    $processing->where('status', 'processing')
+                                        ->where(function ($active) use ($staleThreshold) {
+                                            $active->where('started_at', '>=', $staleThreshold)
+                                                ->orWhere('updated_at', '>=', $staleThreshold);
+                                        });
+                                });
+                            })
                             ->count();
 
                         if ($activeCommentScrapersCount > 0) {
