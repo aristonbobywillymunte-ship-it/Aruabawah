@@ -179,6 +179,11 @@ class ApifyActor extends Model
 
     protected function buildFacebookInputPayload(?string $keyword, ?array $keywords, int $limit, ?string $dateFrom = null, ?string $dateTo = null): array
     {
+        $payload = $this->resolveTemplatePayload($keyword, $limit, $dateFrom, $dateTo);
+        if (!empty($payload)) {
+            return $payload;
+        }
+
         $keywords = array_values(array_filter(array_map(
             fn ($value) => $this->sanitizeSocialKeyword((string) $value),
             $keywords ?? [$keyword]
