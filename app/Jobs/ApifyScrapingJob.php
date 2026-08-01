@@ -597,12 +597,50 @@ class ApifyScrapingJob implements ShouldQueue
         if (!$runResponse->successful()) {
             $msg = "Apify run failed: HTTP {$runResponse->status()}: {$runResponse->body()}";
             Log::error("[Apify] {$msg} | {$contextStr}");
-            $actor->update(['last_run_at' => now(), 'last_run_status' => 'failed', 'last_run_message' => substr($msg, 0, 500)]);
-            $cooldownMinutes = $this->apifyCooldownMinutes($msg, (int) ($actor->interval_minutes ?? 20));
-            $retryAt = now()->addMinutes($cooldownMinutes);
-            Cache::put("apify_actor_retry_at:{$actor->id}", $retryAt->toDateTimeString(), $retryAt);
-            if ($state) {
-                $state->update(['status' => 'failed', 'last_error_message' => substr($msg, 0, 500)]);
+
+            $msgLower = strtolower($msg);
+            $isCredentialOrLimitError = str_contains($msgLower, 'monthly usage hard limit exceeded')
+                || str_contains($msgLower, 'platform-feature-disabled')
+                || str_contains($msgLower, 'user-or-token-not-found')
+                || str_contains($msgLower, 'insufficient-permissions')
+                || str_contains($msgLower, 'invalid');
+
+            if ($isCredentialOrLimitError) {
+                // Set status retry_wait cepat (5 menit) agar bisa langsung diulang saat token diperbarui
+                $cooldownMinutes = 5;
+                $retryAt = now()->addMinutes($cooldownMinutes);
+                
+                $actor->update([
+                    'last_run_at' => now(), 
+                    'last_run_status' => 'retry_wait', 
+                    'last_run_message' => substr("Limit/Token error: " . $msg, 0, 500)
+                ]);
+                
+                Cache::put("apify_actor_retry_at:{$actor->id}", $retryAt->toDateTimeString(), $retryAt);
+                if ($state) {
+                    $state->update([
+                        'status' => 'retry_wait', 
+                        'next_retry_at' => $retryAt,
+                        'last_error_message' => substr($msg, 0, 500)
+                    ]);
+                }
+            } else {
+                $cooldownMinutes = $this->apifyCooldownMinutes($msg, (int) ($actor->interval_minutes ?? 20));
+                $retryAt = now()->addMinutes($cooldownMinutes);
+                
+                $actor->update([
+                    'last_run_at' => now(), 
+                    'last_run_status' => 'failed', 
+                    'last_run_message' => substr($msg, 0, 500)
+                ]);
+                
+                Cache::put("apify_actor_retry_at:{$actor->id}", $retryAt->toDateTimeString(), $retryAt);
+                if ($state) {
+                    $state->update([
+                        'status' => 'failed', 
+                        'last_error_message' => substr($msg, 0, 500)
+                    ]);
+                }
             }
             return;
         }
