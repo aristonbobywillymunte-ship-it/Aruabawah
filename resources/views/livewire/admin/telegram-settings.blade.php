@@ -267,11 +267,12 @@
                 <form wire:submit.prevent="runTestSend" class="p-6 space-y-4">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold text-slate-700">Chat ID Tujuan Uji</label>
-                        <input wire:model="test_chat_id" placeholder="Contoh: 100123456789" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="numeric" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition font-mono">
-                        <p class="mt-1.5 text-[10px] text-slate-400 leading-relaxed">
-                            Hanya angka, tanpa tanda <span class="font-mono font-semibold text-slate-600">-</span>.
-                            Chat ID grup/channel biasanya dimulai dengan <span class="font-mono font-semibold text-slate-600">100...</span>
-                        </p>
+                        <input wire:model="test_chat_id" placeholder="Contoh: 840203231 atau -10012345678" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition font-mono">
+                        <div class="mt-1.5 p-2.5 rounded-lg bg-emerald-50/50 border border-emerald-100 text-[10px] text-slate-600 space-y-1">
+                            <p class="font-bold text-[#1fa387]">💡 Panduan Format Chat ID:</p>
+                            <p>• <strong>Chat Pribadi (User ID)</strong>: Masukkan angka positif langsung tanpa tanda minus (Contoh: <span class="font-mono bg-white px-1 py-0.5 rounded border">840203231</span>).</p>
+                            <p>• <strong>Grup / Channel</strong>: Wajib diawali tanda minus <span class="font-mono bg-white px-1 py-0.5 rounded border">-</span> (Contoh: <span class="font-mono bg-white px-1 py-0.5 rounded border">-1002241512</span>).</p>
+                        </div>
                         @error('test_chat_id') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
@@ -299,7 +300,16 @@
 
                     <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                         <button type="button" wire:click="$set('showTestModal', false)" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
-                        <button type="submit" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer">Jalankan Uji</button>
+                        <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center justify-center h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer min-w-[120px]">
+                            <span wire:loading.remove>Jalankan Uji</span>
+                            <span wire:loading class="flex items-center gap-1.5">
+                                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Sedang Mengirim...</span>
+                            </span>
+                        </button>
                     </div>
                 </form>
             </div>
