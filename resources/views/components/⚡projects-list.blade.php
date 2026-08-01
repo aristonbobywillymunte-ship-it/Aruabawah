@@ -1034,10 +1034,8 @@ new class extends Component
                 @if($isCreatingProject)
                     <!-- Modal Overlay (Fixed, centered, backdrop blur) -->
                     <div class="fixed inset-0 w-screen h-screen z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
-                        
-                        <!-- Modal Container (Menggunakan inline style murni untuk menjamin fungsionalitas) -->
-                        <div class="bg-white border border-slate-100 rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden animate-fade-in" style="height: 80vh; max-height: 650px; display: flex; flex-direction: column;">
-                            
+                        <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-100">
+
                             <!-- Fixed Modal Header -->
                             <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0" style="flex-shrink: 0;">
                                 <div>
@@ -1093,7 +1091,8 @@ new class extends Component
                                                             <span class="material-symbols-outlined text-[15px] font-bold block">check</span>
                                                         @endif
                                                     </div>
-                                                                                              <div class="space-y-4">
+                                                </div>
+                                                <div class="space-y-4">
                                                     {{-- Header Card --}}
                                                     <div class="pr-8">
                                                         <div class="flex items-center gap-2 mb-1.5 flex-wrap">
