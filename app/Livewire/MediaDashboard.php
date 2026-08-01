@@ -610,6 +610,31 @@ class MediaDashboard extends Component
         $this->resetPage();
     }
 
+    public function setPresetPeriod(string $mode): void
+    {
+        $today = now()->startOfDay();
+        $start = clone $today;
+        $end = now()->endOfDay();
+
+        if ($mode === 'harian') {
+            $start = clone $today;
+            $end = clone $today;
+        } elseif ($mode === 'mingguan') {
+            $start = now()->subDays(6)->startOfDay();
+        } elseif ($mode === 'bulanan') {
+            $start = now()->subDays(29)->startOfDay();
+        } elseif ($mode === 'tahunan') {
+            $start = now()->subYear()->startOfDay();
+        }
+
+        $this->startDate = $start->format('Y-m-d');
+        $this->endDate = $end->format('Y-m-d');
+
+        $this->limit = 5;
+        $this->resetPage();
+        $this->rebuildKeywordsTable();
+    }
+
     public function updatedStartDay()
     {
         $this->limit = 5;

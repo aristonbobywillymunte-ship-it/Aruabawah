@@ -27,10 +27,10 @@
             Pilih harian, mingguan, bulanan, atau tahunan lewat datepicker.
         </p>
         <div class="flex flex-wrap gap-2 pt-1">
-            <button type="button" wire:click="$set('showDatePicker', true)" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:border-[#1fa387] hover:text-[#1fa387] transition">Harian</button>
-            <button type="button" wire:click="$set('showDatePicker', true)" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:border-[#1fa387] hover:text-[#1fa387] transition">Mingguan</button>
-            <button type="button" wire:click="$set('showDatePicker', true)" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:border-[#1fa387] hover:text-[#1fa387] transition">Bulanan</button>
-            <button type="button" wire:click="$set('showDatePicker', true)" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-600 hover:border-[#1fa387] hover:text-[#1fa387] transition">Tahunan</button>
+            <button type="button" wire:click="setPresetPeriod('harian')" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-650 hover:border-[#1fa387] hover:text-[#1fa387] transition cursor-pointer">Harian</button>
+            <button type="button" wire:click="setPresetPeriod('mingguan')" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-650 hover:border-[#1fa387] hover:text-[#1fa387] transition cursor-pointer">Mingguan</button>
+            <button type="button" wire:click="setPresetPeriod('bulanan')" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-650 hover:border-[#1fa387] hover:text-[#1fa387] transition cursor-pointer">Bulanan</button>
+            <button type="button" wire:click="setPresetPeriod('tahunan')" class="px-2.5 py-1 rounded-full border border-slate-200 bg-white text-[10px] font-bold text-slate-650 hover:border-[#1fa387] hover:text-[#1fa387] transition cursor-pointer">Tahunan</button>
         </div>
     </div>
 @else
