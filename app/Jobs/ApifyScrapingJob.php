@@ -404,6 +404,25 @@ class ApifyScrapingJob implements ShouldQueue
             }
         }
 
+        // Validasi keaktifan proyek — lewati jika proyek nonaktif atau tidak ditemukan
+        if ($projectId) {
+            $project = Project::find($projectId);
+            if (!$project) {
+                Log::warning("[Apify] Scraping dibatalkan: Proyek ID {$projectId} tidak ditemukan.");
+                if ($state) {
+                    $state->update(['status' => 'failed', 'last_error_message' => "Project ID {$projectId} not found."]);
+                }
+                return;
+            }
+            if (!$project->is_active) {
+                Log::warning("[Apify] Scraping dibatalkan: Proyek ID {$projectId} ({$project->name}) berstatus NONAKTIF.");
+                if ($state) {
+                    $state->update(['status' => 'failed', 'last_error_message' => "Project ID {$projectId} is inactive."]);
+                }
+                return;
+            }
+        }
+
         Log::info("[Apify] Starting scrape for platform={$platform} keyword={$keyword} project={$projectId}", [
             'keywords' => $keywords,
         ]);
