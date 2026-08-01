@@ -50,9 +50,14 @@ class SystemHealth extends Component
         // 1. AI Provider Status
         $defaultAi = AiProvider::where('is_default', true)->where('is_active', true)->first();
         $fallbackCount = AiProvider::where('is_default', false)->where('is_active', true)->count();
+        $queueCount = DB::table('ai_analysis_dispatch_states')
+            ->whereIn('status', ['queued', 'processing', 'retry_wait'])
+            ->count();
+
         $this->aiStatus = [
             'default' => $defaultAi ? $defaultAi->name . ' (' . $defaultAi->model_name . ')' : 'Tidak Ada',
             'fallback' => $fallbackCount > 0 ? 'Tersedia (' . $fallbackCount . ')' : 'Tidak Tersedia',
+            'queue_count' => $queueCount,
             'status' => $defaultAi ? 'OK' : 'Warning',
             'color' => $defaultAi ? 'green' : 'yellow',
         ];

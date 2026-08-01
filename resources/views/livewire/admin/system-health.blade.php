@@ -27,6 +27,12 @@
                         <span>Fallback:</span>
                         <strong class="text-slate-800">{{ $aiStatus['fallback'] }}</strong>
                     </div>
+                    <div class="flex justify-between text-slate-500 pt-0.5">
+                        <span>Antrean Berjalan:</span>
+                        <strong class="text-slate-800 {{ $aiStatus['queue_count'] > 0 ? 'text-amber-600 animate-pulse font-bold' : '' }}">
+                            {{ $aiStatus['queue_count'] }} antrean
+                        </strong>
+                    </div>
                 </div>
             </div>
             <div class="mt-4 flex items-center gap-1.5 text-[10px] font-bold text-[#1fa387] pt-2 border-t border-slate-100">
