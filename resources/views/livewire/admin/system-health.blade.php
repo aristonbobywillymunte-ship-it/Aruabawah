@@ -1,27 +1,28 @@
 <div class="space-y-6 text-left" wire:poll.5s>
     <!-- Error logs display if available -->
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
+    <div class="rounded-2xl border {{ count($latestErrors) > 0 ? 'border-rose-100 bg-rose-50/40' : 'border-slate-200 bg-white' }} px-4 py-2.5 shadow-sm">
+        <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[18px] text-rose-500">error</span>
-                <span>Log Error / Kegagalan Terkini</span>
+                <span class="material-symbols-outlined text-[15px] {{ count($latestErrors) > 0 ? 'text-rose-500' : 'text-slate-400' }}">error</span>
+                <span class="text-[11px] font-bold {{ count($latestErrors) > 0 ? 'text-rose-700' : 'text-slate-500' }}">Log Error / Kegagalan Terkini</span>
+                @if(count($latestErrors) > 0)
+                    <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-bold ml-1">{{ count($latestErrors) }}</span>
+                @endif
             </div>
             @if(count($latestErrors) > 0)
-                <button wire:click="clearErrors" class="text-[10px] font-bold text-slate-400 hover:text-rose-600 px-2.5 py-1 border border-slate-200 hover:border-rose-100 hover:bg-rose-50/50 rounded-lg transition cursor-pointer">
-                    Bersihkan Log
+                <button wire:click="clearErrors" class="text-[10px] font-bold text-rose-400 hover:text-rose-600 px-2 py-0.5 border border-rose-200 hover:bg-rose-50 rounded-lg transition cursor-pointer">
+                    Bersihkan
                 </button>
             @endif
-        </h3>
+        </div>
         @if(count($latestErrors) > 0)
-            <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
+            <div class="mt-2 space-y-1 max-h-24 overflow-y-auto">
                 @foreach($latestErrors as $err)
-                    <div class="text-[11px] font-mono p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 leading-relaxed">
+                    <div class="text-[10px] font-mono px-2.5 py-1.5 bg-white border border-rose-100 rounded-lg text-rose-600 leading-relaxed">
                         {{ $err }}
                     </div>
                 @endforeach
             </div>
-        @else
-            <p class="text-xs text-slate-400 italic">Tidak ada log error terkini. Seluruh sistem berjalan normal.</p>
         @endif
     </div>
 
