@@ -383,8 +383,8 @@ class SystemHealth extends Component
                     }
                 }
 
-                // Cari project_id dari payload string serialized
-                if (preg_match('/"project_id";[is]:\d+:"?([^";]+)"?/', $payloadRaw, $mProj)) {
+                // Cari project_id dari payload string serialized (mendukung integer dan string)
+                if (preg_match('/"project_id";i:(\d+)/', $payloadRaw, $mProj) || preg_match('/"project_id";s:\d+:"([^"]+)"/', $payloadRaw, $mProj)) {
                     $projId = (int) $mProj[1];
                     $project = DB::table('projects')->where('id', $projId)->first();
                     if ($project) {
