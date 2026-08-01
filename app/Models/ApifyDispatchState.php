@@ -24,6 +24,9 @@ class ApifyDispatchState extends Model
         'next_retry_at',
         'last_error_code',
         'last_error_message',
+        'actual_cost_usd',
+        'items_collected',
+        'run_duration_secs',
     ];
 
     protected $casts = [
