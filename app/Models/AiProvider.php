@@ -29,7 +29,6 @@ class AiProvider extends Model
     ];
 
     protected $casts = [
-        'api_key' => 'encrypted',
         'temperature' => 'float',
         'max_tokens' => 'integer',
         'requests_per_minute' => 'integer',
@@ -40,6 +39,25 @@ class AiProvider extends Model
         'priority' => 'integer',
         'capabilities' => 'array',
     ];
+
+    public function getApiKeyAttribute($value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+        try {
+            return decrypt($value);
+        } catch (\Throwable $e) {
+            // Jika gagal didekripsi karena teks biasa (plain-text), kembalikan teks aslinya
+            return $value;
+        }
+    }
+
+    public function setApiKeyAttribute($value): void
+    {
+        // Enkripsi secara manual saat penyimpanan
+        $this->attributes['api_key'] = filled($value) ? encrypt($value) : null;
+    }
 
     public function isEligibleForUse(): bool
     {
