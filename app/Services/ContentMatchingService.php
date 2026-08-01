@@ -130,6 +130,13 @@ class ContentMatchingService
                     $project->articles()->syncWithoutDetaching([$item->id]);
                 }
             }
+        } elseif (!$isArticle && $uniqueMatchedIds !== []) {
+            foreach ($uniqueMatchedIds as $projectId) {
+                $project = Project::find($projectId);
+                if ($project) {
+                    $project->socialMediaItems()->syncWithoutDetaching([$item->id]);
+                }
+            }
         }
         
         if (count($uniqueMatchedIds) > 1) {
