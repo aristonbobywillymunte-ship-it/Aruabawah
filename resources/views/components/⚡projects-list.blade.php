@@ -1081,13 +1081,13 @@ new class extends Component
                                                 wire:click="$set('packageId', {{ $p->id }})"
                                                 class="group relative cursor-pointer rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 bg-white border-2
                                                 {{ $isSelected 
-                                                    ? 'border-[#1fa387] shadow-xl shadow-slate-100/60 scale-[1.01]' 
+                                                    ? 'border-[#c0392b] shadow-xl shadow-slate-100/60 scale-[1.01]' 
                                                     : 'border-slate-100 hover:border-slate-200 hover:shadow-lg' }}"
                                             >
                                                 {{-- Popular / Terpopuler Floating Label --}}
                                                 @if($p->is_popular)
                                                 <div class="absolute -top-3 right-6">
-                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-wider bg-[#1fa387] text-white shadow-sm border-2 border-white">
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-wider bg-[#c0392b] text-white shadow-sm border-2 border-white">
                                                         POPULAR
                                                     </span>
                                                 </div>
@@ -1097,7 +1097,7 @@ new class extends Component
                                                     {{-- Header Card --}}
                                                     <div class="flex items-center justify-between">
                                                         <div class="flex flex-col gap-1">
-                                                            <div class="w-8 h-8 rounded-full bg-[#1fa387]/10 flex items-center justify-center text-[#1fa387]">
+                                                            <div class="w-8 h-8 rounded-full bg-[#c0392b]/10 flex items-center justify-center text-[#c0392b]">
                                                                 @if($p->name == 'Enterprise')
                                                                     <span class="material-symbols-outlined text-[18px]">rocket_launch</span>
                                                                 @else
@@ -1117,7 +1117,7 @@ new class extends Component
                                                             </span>
                                                             <span class="text-slate-400 text-[10.5px] font-bold mt-1">/bulan</span>
                                                         @else
-                                                            <span class="text-lg font-black text-[#1fa387] leading-none uppercase tracking-wide">HUBUNGI KAMI</span>
+                                                            <span class="text-lg font-black text-[#c0392b] leading-none uppercase tracking-wide">HUBUNGI KAMI</span>
                                                             <span class="text-slate-400 text-[10.5px] font-bold mt-1">Harga kustomisasi</span>
                                                         @endif
                                                     </div>
@@ -1126,7 +1126,7 @@ new class extends Component
                                                     <div class="pt-1">
                                                         <div class="w-full py-2.5 rounded-xl font-extrabold text-xs transition-all duration-300 text-center
                                                             {{ $isSelected 
-                                                                ? 'bg-[#1fa387] text-white shadow-md shadow-[#1fa387]/20' 
+                                                                ? 'bg-[#c0392b] text-white shadow-md shadow-[#c0392b]/20' 
                                                                 : 'bg-slate-50 text-slate-500 border border-slate-200/60 group-hover:bg-slate-100/80' }}"
                                                         >
                                                             {{ $isSelected ? 'Terpilih' : 'Pilih Paket' }}
@@ -1143,7 +1143,7 @@ new class extends Component
                                                             <div class="space-y-1.5">
                                                                 @foreach(array_slice($socialList, 0, 5) as $feat)
                                                                 <div class="flex items-start gap-2">
-                                                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387] shrink-0 mt-0.5">check_circle</span>
+                                                                    <span class="material-symbols-outlined text-[14px] text-[#c0392b] shrink-0 mt-0.5">check_circle</span>
                                                                     <span class="text-[11px] text-slate-600 font-medium leading-snug">{{ $feat }}</span>
                                                                 </div>
                                                                 @endforeach
@@ -1157,7 +1157,7 @@ new class extends Component
                                                             <div class="space-y-1.5">
                                                                 @foreach(array_slice($portalList, 0, 4) as $feat)
                                                                 <div class="flex items-start gap-2">
-                                                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387] shrink-0 mt-0.5">check_circle</span>
+                                                                    <span class="material-symbols-outlined text-[14px] text-[#c0392b] shrink-0 mt-0.5">check_circle</span>
                                                                     <span class="text-[11px] text-slate-600 font-medium leading-snug">{{ $feat }}</span>
                                                                 </div>
                                                                 @endforeach
@@ -1240,7 +1240,7 @@ new class extends Component
                                                  <div class="flex flex-wrap gap-2 text-xs">
                                                      <template x-for="topic in topics()" :key="topic">
                                                          <span
-                                                             class="px-3 py-1.5 rounded-full border border-[#1fa387]/20 bg-[#1fa387]/5 text-[#1fa387] font-bold"
+                                                             class="px-3 py-1.5 rounded-full border border-[#c0392b]/20 bg-[#c0392b]/5 text-[#c0392b] font-bold"
                                                              x-text="toHashtag(topic)"
                                                          ></span>
                                                      </template>
@@ -1307,7 +1307,7 @@ new class extends Component
                                             disabled 
                                             class="px-6 py-2.5 bg-slate-200 text-slate-400 font-black rounded-xl text-xs cursor-not-allowed" 
                                         @else 
-                                            class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#178a71] text-white font-black rounded-xl text-xs transition shadow-lg shadow-[#1fa387]/20 cursor-pointer active:scale-95" 
+                                            class="px-6 py-2.5 bg-[#c0392b] hover:bg-[#178a71] text-white font-black rounded-xl text-xs transition shadow-lg shadow-[#c0392b]/20 cursor-pointer active:scale-95" 
                                         @endif
                                     >
                                         Lanjut
@@ -1323,7 +1323,7 @@ new class extends Component
                                     <button 
                                         type="submit" 
                                         form="createProjectForm"
-                                        class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#178a71] text-white font-black rounded-xl text-xs transition shadow-lg shadow-[#1fa387]/20 cursor-pointer active:scale-95"
+                                        class="px-6 py-2.5 bg-[#c0392b] hover:bg-[#178a71] text-white font-black rounded-xl text-xs transition shadow-lg shadow-[#c0392b]/20 cursor-pointer active:scale-95"
                                     >
                                         Buat Proyek
                                     </button>
@@ -1419,7 +1419,7 @@ new class extends Component
                                                 <span class="text-[9px] text-slate-300">•</span>
                                                 <span class="text-[9px] text-slate-400 font-bold">Dibuat: {{ $projectCreatedAt }}</span>
                                             </div>
-                                            <h2 class="text-xl font-hanken font-extrabold text-[#1fa387] uppercase leading-tight">{{ $project['name'] }}</h2>
+                                            <h2 class="text-xl font-hanken font-extrabold text-[#c0392b] uppercase leading-tight">{{ $project['name'] }}</h2>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -1668,7 +1668,7 @@ new class extends Component
                 >
                     <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden p-8 border border-slate-100 text-center space-y-6">
                         <!-- Checkmark Icon -->
-                        <div class="mx-auto w-12 h-12 bg-[#1fa387] text-white rounded-full flex items-center justify-center shadow-sm shadow-[#1fa387]/20">
+                        <div class="mx-auto w-12 h-12 bg-[#c0392b] text-white rounded-full flex items-center justify-center shadow-sm shadow-[#c0392b]/20">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path>
                             </svg>
@@ -1685,7 +1685,7 @@ new class extends Component
                             <button 
                                 type="button" 
                                 wire:click="closeModals"
-                                class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white font-bold rounded-custom text-sm transition-all"
+                                class="px-6 py-2.5 bg-[#c0392b] hover:bg-[#1a8b73] text-white font-bold rounded-custom text-sm transition-all"
                             >
                                 OK, Terima Kasih
                             </button>
@@ -1761,13 +1761,13 @@ new class extends Component
                                                 wire:click="$set('packageId', {{ $p->id }})"
                                                 class="group relative cursor-pointer rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 bg-white border-2
                                                 {{ $isSelected 
-                                                    ? 'border-[#1fa387] shadow-xl shadow-slate-100/60 scale-[1.01]' 
+                                                    ? 'border-[#c0392b] shadow-xl shadow-slate-100/60 scale-[1.01]' 
                                                     : 'border-slate-100 hover:border-slate-200 hover:shadow-lg' }}"
                                             >
                                                 {{-- Popular / Terpopuler Floating Label --}}
                                                 @if($p->is_popular)
                                                 <div class="absolute -top-3 right-6">
-                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-wider bg-[#1fa387] text-white shadow-sm border-2 border-white">
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-wider bg-[#c0392b] text-white shadow-sm border-2 border-white">
                                                         POPULAR
                                                     </span>
                                                 </div>
@@ -1777,7 +1777,7 @@ new class extends Component
                                                     {{-- Header Card --}}
                                                     <div class="flex items-center justify-between">
                                                         <div class="flex flex-col gap-1">
-                                                            <div class="w-8 h-8 rounded-full bg-[#1fa387]/10 flex items-center justify-center text-[#1fa387]">
+                                                            <div class="w-8 h-8 rounded-full bg-[#c0392b]/10 flex items-center justify-center text-[#c0392b]">
                                                                 @if($p->name == 'Enterprise')
                                                                     <span class="material-symbols-outlined text-[18px]">rocket_launch</span>
                                                                 @else
@@ -1797,7 +1797,7 @@ new class extends Component
                                                             </span>
                                                             <span class="text-slate-400 text-[10.5px] font-bold mt-1">/bulan</span>
                                                         @else
-                                                            <span class="text-lg font-black text-[#1fa387] leading-none uppercase tracking-wide">HUBUNGI KAMI</span>
+                                                            <span class="text-lg font-black text-[#c0392b] leading-none uppercase tracking-wide">HUBUNGI KAMI</span>
                                                             <span class="text-slate-400 text-[10.5px] font-bold mt-1">Harga kustomisasi</span>
                                                         @endif
                                                     </div>
@@ -1806,7 +1806,7 @@ new class extends Component
                                                     <div class="pt-1">
                                                         <div class="w-full py-2.5 rounded-xl font-extrabold text-xs transition-all duration-300 text-center
                                                             {{ $isSelected 
-                                                                ? 'bg-[#1fa387] text-white shadow-md shadow-[#1fa387]/20' 
+                                                                ? 'bg-[#c0392b] text-white shadow-md shadow-[#c0392b]/20' 
                                                                 : 'bg-slate-50 text-slate-500 border border-slate-200/60 group-hover:bg-slate-100/80' }}"
                                                         >
                                                             {{ $isSelected ? 'Terpilih' : 'Pilih Paket' }}
@@ -1823,7 +1823,7 @@ new class extends Component
                                                             <div class="space-y-1.5">
                                                                 @foreach(array_slice($socialList, 0, 5) as $feat)
                                                                 <div class="flex items-start gap-2">
-                                                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387] shrink-0 mt-0.5">check_circle</span>
+                                                                    <span class="material-symbols-outlined text-[14px] text-[#c0392b] shrink-0 mt-0.5">check_circle</span>
                                                                     <span class="text-[11px] text-slate-600 font-medium leading-snug">{{ $feat }}</span>
                                                                 </div>
                                                                 @endforeach
@@ -1837,7 +1837,7 @@ new class extends Component
                                                             <div class="space-y-1.5">
                                                                 @foreach(array_slice($portalList, 0, 4) as $feat)
                                                                 <div class="flex items-start gap-2">
-                                                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387] shrink-0 mt-0.5">check_circle</span>
+                                                                    <span class="material-symbols-outlined text-[14px] text-[#c0392b] shrink-0 mt-0.5">check_circle</span>
                                                                     <span class="text-[11px] text-slate-600 font-medium leading-snug">{{ $feat }}</span>
                                                                 </div>
                                                                 @endforeach
@@ -1904,7 +1904,7 @@ new class extends Component
                                     <div class="flex flex-wrap gap-2 text-xs">
                                         <template x-for="topic in topics()" :key="topic">
                                             <span
-                                                class="px-3 py-1.5 rounded-full border border-[#1fa387]/20 bg-[#1fa387]/5 text-[#1fa387] font-bold"
+                                                class="px-3 py-1.5 rounded-full border border-[#c0392b]/20 bg-[#c0392b]/5 text-[#c0392b] font-bold"
                                                 x-text="toHashtag(topic)"
                                             ></span>
                                         </template>
@@ -1961,7 +1961,7 @@ new class extends Component
                                 </button>
                                 <button 
                                     type="submit" 
-                                    style="background-color: #1fa387;"
+                                    style="background-color: #c0392b;"
                                     class="px-6 py-2.5 hover:opacity-90 text-white font-bold rounded-custom text-sm transition-all cursor-pointer"
                                 >
                                     Simpan Perubahan
@@ -2021,7 +2021,7 @@ new class extends Component
                                         <div class="py-5 flex items-center justify-between gap-6 px-4 rounded-2xl transition duration-150 {{ $idx % 2 === 0 ? 'bg-[#F8F9FA]' : 'bg-white' }} hover:bg-slate-50 border border-transparent hover:border-slate-100">
                                             <div class="flex items-start gap-3 flex-1 min-w-0">
                                                 <!-- Index Badge (Identical to active project card index) -->
-                                                <div class="px-2 py-1 rounded bg-[#1fa387]/10 text-[#1fa387] font-bold text-[10px] tracking-widest border border-[#1fa387]/20 shrink-0">
+                                                <div class="px-2 py-1 rounded bg-[#c0392b]/10 text-[#c0392b] font-bold text-[10px] tracking-widest border border-[#c0392b]/20 shrink-0">
                                                     {{ sprintf('%02d', $idx + 1) }}
                                                 </div>
                                                 
@@ -2033,7 +2033,7 @@ new class extends Component
                                                     </div>
                                                     
                                                     <!-- Uppercase Tosca Title (Identical to active project card title) -->
-                                                    <h4 class="text-sm font-extrabold text-[#1fa387] truncate uppercase tracking-tight">{{ $tp->name }}</h4>
+                                                    <h4 class="text-sm font-extrabold text-[#c0392b] truncate uppercase tracking-tight">{{ $tp->name }}</h4>
                                                     
                                                     <!-- Keywords List -->
                                                     <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
@@ -2049,7 +2049,7 @@ new class extends Component
                                             <div class="flex items-center gap-3 flex-shrink-0">
                                                 <button
                                                     wire:click="confirmRestoreProject({{ $tp->id }})"
-                                                    class="px-5 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer shadow-sm active:scale-[0.98]"
+                                                    class="px-5 py-2.5 bg-[#c0392b] hover:bg-[#1a8b73] text-white text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer shadow-sm active:scale-[0.98]"
                                                 >
                                                     Aktifkan
                                                 </button>
@@ -2137,7 +2137,7 @@ new class extends Component
                                 type="button"
                                 wire:click="runConfirmedProjectAction"
                                 wire:loading.attr="disabled"
-                                class="flex-1 py-2.5 {{ in_array($confirmAction, ['delete', 'force_delete'], true) ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-100' : 'bg-[#1fa387] hover:bg-[#1a8b73] shadow-emerald-100' }} text-white font-bold rounded-xl text-xs transition duration-150 active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                                class="flex-1 py-2.5 {{ in_array($confirmAction, ['delete', 'force_delete'], true) ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-100' : 'bg-[#c0392b] hover:bg-[#1a8b73] shadow-emerald-100' }} text-white font-bold rounded-xl text-xs transition duration-150 active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                             >
                                 <svg wire:loading wire:target="runConfirmedProjectAction" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                 <span>
@@ -2169,7 +2169,7 @@ new class extends Component
                 style="display: none;"
             >
                 <div class="flex items-start gap-3 p-4">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" :class="toastType === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]'">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" :class="toastType === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-[#c0392b]/10 text-[#c0392b]'">
                         <span class="font-black text-lg" x-text="toastType === 'error' ? '!' : '✓'"></span>
                     </div>
                     <div class="min-w-0 pt-0.5">
