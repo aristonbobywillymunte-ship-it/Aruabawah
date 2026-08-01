@@ -9,7 +9,7 @@
     </div>
 @endsection
 
-<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
+<div class="mx-auto w-full max-w-7xl space-y-6 font-sans" wire:poll.5s>
     <!-- Action Buttons (Di dalam Root Div Livewire agar aktif) -->
     <div class="flex flex-col sm:flex-row items-center justify-end gap-3 w-full">
         <button 
