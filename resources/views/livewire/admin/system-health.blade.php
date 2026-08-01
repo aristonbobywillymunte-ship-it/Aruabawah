@@ -236,9 +236,16 @@
                         <span>Driver Redis:</span>
                         <strong class="text-slate-800">{{ $redisStatus['connection'] }}</strong>
                     </div>
-                    <div class="flex justify-between text-slate-500">
-                        <span>Queue Status:</span>
-                        <strong class="text-slate-800">Ready</strong>
+                    <div class="flex justify-between items-center text-slate-500 pt-0.5">
+                        <span>Antrean Redis:</span>
+                        <button 
+                            type="button"
+                            wire:click="openRedisQueueModal"
+                            class="inline-flex items-center gap-1 text-[11px] font-black text-[#1fa387] hover:underline cursor-pointer focus:outline-none"
+                        >
+                            <span>{{ $redisStatus['queue_count'] ?? 0 }} antrean</span>
+                            <span class="material-symbols-outlined text-[13px]">visibility</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -414,6 +421,90 @@
                         Tutup
                     </button>
                 </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Modal Antrean Redis (Large Modal, Body Scrollable) -->
+    @if($showRedisQueueModal)
+        <div class="fixed inset-0 z-[60] overflow-y-auto flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-[840px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200 flex flex-col my-8">
+                
+                <!-- Modal Header -->
+                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+                    <div class="text-left">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">REDIS SERVICE MANAGER</span>
+                        <h3 class="text-base font-black text-slate-900 leading-none">Rincian Antrean Redis (Queued & Active Jobs)</h3>
+                    </div>
+                    <button type="button" wire:click="closeRedisQueueModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0">
+                        <span class="material-symbols-outlined text-[20px] block">close</span>
+                    </button>
+                </div>
+
+                <!-- Modal Body (Halaman Body yang di-scroll, Tinggi Tetap) -->
+                <div class="flex-1 overflow-y-auto p-6 relative max-h-[500px]" style="height: 500px !important;">
+                    @if(empty($redisQueueDetails))
+                        <div class="flex flex-col items-center justify-center py-20 text-center">
+                            <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+                                <span class="material-symbols-outlined text-[32px]">check_circle</span>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-800 mb-1">Antrean Redis Kosong</h4>
+                            <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Seluruh pekerjaan background worker (scraping & analysis) saat ini kosong.</p>
+                        </div>
+                    @else
+                        <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
+                            <table class="w-full text-left border-collapse text-xs table-fixed">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200">
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-12 text-center">No</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-24">Saluran</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-44">Nama Pekerjaan (Job)</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700">Target Payload</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-32">Status</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-16 text-center">Coba</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Waktu Masuk</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @foreach($redisQueueDetails as $idx => $item)
+                                        @php
+                                            $statusColor = match($item['status']) {
+                                                'Mengantre' => 'bg-slate-50 text-slate-600 border-slate-200/80',
+                                                'Diproses Worker' => 'bg-emerald-50 text-emerald-700 border-emerald-100 animate-pulse',
+                                                default => 'bg-amber-50 text-amber-700 border-amber-100'
+                                            };
+                                        @endphp
+                                        <tr class="hover:bg-slate-50/50 transition">
+                                            <td class="px-4 py-3 text-center text-slate-450 font-bold align-top">{{ $idx + 1 }}</td>
+                                            <td class="px-4 py-3 font-bold text-slate-600 align-top uppercase tracking-wider text-[10px]">{{ $item['queue'] }}</td>
+                                            <td class="px-4 py-3 text-slate-800 align-top font-bold truncate" title="{{ $item['name'] }}">{{ $item['name'] }}</td>
+                                            <td class="px-4 py-3 text-slate-500 align-top break-words font-medium">{{ $item['target'] }}</td>
+                                            <td class="px-4 py-3 align-top whitespace-nowrap">
+                                                <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold border {{ $statusColor }}">
+                                                    {{ $item['status'] }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-center font-bold text-slate-650 align-top">{{ $item['attempts'] }}x</td>
+                                            <td class="px-4 py-3 text-slate-450 font-medium align-top whitespace-nowrap">{{ $item['created_at'] }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+                    <button
+                        type="button"
+                        wire:click="closeRedisQueueModal"
+                        class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
+                    >
+                        Tutup
+                    </button>
+                </div>
+
             </div>
         </div>
     @endif

@@ -26,6 +26,8 @@ class SystemHealth extends Component
     public array $latestErrors = [];
     public bool $showQueueModal = false;
     public array $queueDetails = [];
+    public bool $showRedisQueueModal = false;
+    public array $redisQueueDetails = [];
 
     #[On('echo:system-alerts,RealtimeNotificationEvent')]
     public function handleRealtimeNotification($event): void
@@ -150,10 +152,25 @@ class SystemHealth extends Component
         // 6. Redis Status
         try {
             Redis::ping();
+            
+            // Hitung antrean di Redis (saluran 'default' dan 'ai-analysis' sesuai config queue)
+            $redisConnection = Redis::connection('default');
+            
+            $defaultQueue = (int) $redisConnection->llen('queues:default');
+            $defaultDelayed = (int) $redisConnection->zcard('queues:default:delayed');
+            $defaultReserved = (int) $redisConnection->zcard('queues:default:reserved');
+            
+            $aiQueue = (int) $redisConnection->llen('queues:ai-analysis');
+            $aiDelayed = (int) $redisConnection->zcard('queues:ai-analysis:delayed');
+            $aiReserved = (int) $redisConnection->zcard('queues:ai-analysis:reserved');
+            
+            $totalRedisJobs = $defaultQueue + $defaultDelayed + $defaultReserved + $aiQueue + $aiDelayed + $aiReserved;
+
             $this->redisStatus = [
                 'connection' => 'Connected',
                 'status' => 'Normal',
                 'color' => 'green',
+                'queue_count' => $totalRedisJobs,
             ];
         } catch (\Throwable $e) {
             // Mocking Redis connection for local development sandbox environments if no local daemon is alive
@@ -161,6 +178,7 @@ class SystemHealth extends Component
                 'connection' => 'Disconnected (Simulated OK)',
                 'status' => 'Warning',
                 'color' => 'yellow',
+                'queue_count' => 0,
             ];
         }
 
@@ -287,6 +305,100 @@ class SystemHealth extends Component
     {
         $this->showQueueModal = false;
         $this->queueDetails = [];
+    }
+
+    public function openRedisQueueModal(): void
+    {
+        $this->adminOnly();
+        $this->redisQueueDetails = [];
+
+        try {
+            $redisConnection = Redis::connection('default');
+            $queues = ['default', 'ai-analysis'];
+
+            foreach ($queues as $qName) {
+                // 1. Ambil job aktif/antre (lrange)
+                $rawList = $redisConnection->lrange("queues:{$qName}", 0, -1) ?: [];
+                foreach ($rawList as $rawJob) {
+                    $jobData = json_decode($rawJob, true);
+                    if ($jobData) {
+                        $this->redisQueueDetails[] = $this->parseRedisJobPayload($qName, 'Mengantre', $jobData);
+                    }
+                }
+
+                // 2. Ambil job delay (zrange)
+                $rawDelay = $redisConnection->zrange("queues:{$qName}:delayed", 0, -1) ?: [];
+                foreach ($rawDelay as $rawJob) {
+                    $jobData = json_decode($rawJob, true);
+                    if ($jobData) {
+                        $this->redisQueueDetails[] = $this->parseRedisJobPayload($qName, 'Tertunda (Delay)', $jobData);
+                    }
+                }
+
+                // 3. Ambil job sedang diproses/reserved (zrange)
+                $rawReserved = $redisConnection->zrange("queues:{$qName}:reserved", 0, -1) ?: [];
+                foreach ($rawReserved as $rawJob) {
+                    $jobData = json_decode($rawJob, true);
+                    if ($jobData) {
+                        $this->redisQueueDetails[] = $this->parseRedisJobPayload($qName, 'Diproses Worker', $jobData);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->redisQueueDetails = [];
+        }
+
+        $this->showRedisQueueModal = true;
+    }
+
+    private function parseRedisJobPayload(string $queueName, string $status, array $jobData): array
+    {
+        $displayName = $jobData['displayName'] ?? ($jobData['job'] ?? 'Unknown Job');
+        if (str_contains($displayName, '\\')) {
+            $parts = explode('\\', $displayName);
+            $displayName = end($parts);
+        }
+
+        // Parse detail payload parameter
+        $targetDesc = '-';
+        $payloadRaw = $jobData['data']['command'] ?? null;
+        if ($payloadRaw && is_string($payloadRaw)) {
+            // Unserialize command object PHP jika memungkinkan
+            try {
+                // membersihkan string serialized yang berpotensi error
+                if (str_contains($payloadRaw, 'ApifyScrapingJob')) {
+                    $targetDesc = 'Apify Scraping Pipeline';
+                    if (preg_match('/"platform";s:\d+:"([^"]+)"/', $payloadRaw, $m1) && preg_match('/"keyword";s:\d+:"([^"]+)"/', $payloadRaw, $m2)) {
+                        $targetDesc = "Scrape {$m1[1]}: " . mb_substr($m2[1], 0, 40) . '...';
+                    }
+                } elseif (str_contains($payloadRaw, 'AiAnalysisJob')) {
+                    $targetDesc = 'Analisis Sentimen AI';
+                    if (preg_match('/"articleId";i:(\d+)/', $payloadRaw, $m)) {
+                        $targetDesc = "Analisis Artikel ID: {$m[1]}";
+                    }
+                }
+            } catch (\Throwable $e) {
+                $targetDesc = 'Job Object';
+            }
+        }
+
+        $attempts = $jobData['attempts'] ?? 0;
+        $createdAt = isset($jobData['createdAt']) ? \Carbon\Carbon::createFromTimestamp((int) $jobData['createdAt'])->isoFormat('D MMM YYYY, HH:mm') : '-';
+
+        return [
+            'queue' => $queueName,
+            'name' => $displayName,
+            'target' => $targetDesc,
+            'status' => $status,
+            'attempts' => $attempts,
+            'created_at' => $createdAt,
+        ];
+    }
+
+    public function closeRedisQueueModal(): void
+    {
+        $this->showRedisQueueModal = false;
+        $this->redisQueueDetails = [];
     }
 
     public function render()
