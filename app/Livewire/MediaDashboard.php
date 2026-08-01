@@ -354,9 +354,9 @@ class MediaDashboard extends Component
         $this->projectName = $project->name;
         $this->resolvedProjectCache = null;
 
-        // Atur agar default terfilter berdasarkan bulan berjalan (tanggal 1 hingga hari ini)
-        $this->startDate = now()->startOfMonth()->format('Y-m-d');
-        $this->endDate = now()->format('Y-m-d');
+        // Set default filter tanggal kosong (null) agar langsung menampilkan seluruh data (Semua Waktu)
+        $this->startDate = null;
+        $this->endDate = null;
         $this->search = '';
         $this->selectedSentiment = [];
         $this->selectedSources = [];
