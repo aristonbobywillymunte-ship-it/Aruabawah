@@ -1072,7 +1072,7 @@ new class extends Component
                                         
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                             <!-- Opsi Paket-paket dari DB -->
-                                            @foreach($activePackagesEdit as $p)
+                                            @foreach($activePackages as $p)
                                             @php
                                                 $hasData = !empty($p->advantages) || !empty($p->social_media_features) || !empty($p->news_portal_features);
                                                 $isSelected = (int) $packageId === (int) $p->id;
