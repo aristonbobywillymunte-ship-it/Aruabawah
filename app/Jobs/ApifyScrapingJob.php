@@ -2142,7 +2142,7 @@ class ApifyScrapingJob implements ShouldQueue
             // Fallback: coba dari raw_json jika belum ada di tabel
             $rawJsonDecoded = json_decode((string) $mainPost->raw_json, true) ?: [];
             $rawComments = $rawJsonDecoded['comments'] ?? [];
-            if (! empty($rawComments)) {
+            if (is_array($rawComments) && ! empty($rawComments)) {
                 $commentLines[] = "\n\n--- Komentar Publik (" . count($rawComments) . " komentar) ---";
                 foreach (array_slice($rawComments, 0, 50) as $idx => $c) {
                     $num = $idx + 1;
