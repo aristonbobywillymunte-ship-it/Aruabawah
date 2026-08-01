@@ -93,16 +93,31 @@ class AiAnalysisJob implements ShouldQueue
         }
 
         $projectId = $this->payload['project_id'] ?? null;
-        if ($projectId && !\App\Models\Project::where('id', $projectId)->exists()) {
-            Log::warning("[Pipeline] Lewati analisis: Proyek ID {$projectId} tidak ditemukan di database.");
-            $dispatchStateService->markFailed(
-                $this->payload,
-                'project_not_found',
-                "Project ID {$projectId} not found.",
-                $promptTemplateId,
-                $providerContextHash
-            );
-            return; // Keluar dengan aman, tidak dimasukkan ke failed_jobs
+        if ($projectId) {
+            $project = \App\Models\Project::find($projectId);
+            if (!$project) {
+                Log::warning("[Pipeline] Lewati analisis: Proyek ID {$projectId} tidak ditemukan di database.");
+                $dispatchStateService->markFailed(
+                    $this->payload,
+                    'project_not_found',
+                    "Project ID {$projectId} not found.",
+                    $promptTemplateId,
+                    $providerContextHash
+                );
+                return;
+            }
+
+            if (!$project->is_active) {
+                Log::warning("[Pipeline] Lewati analisis: Proyek ID {$projectId} ({$project->name}) berstatus NONAKTIF.");
+                $dispatchStateService->markFailed(
+                    $this->payload,
+                    'project_inactive',
+                    "Project ID {$projectId} is inactive.",
+                    $promptTemplateId,
+                    $providerContextHash
+                );
+                return;
+            }
         }
 
         $template = AiPromptTemplate::query()
