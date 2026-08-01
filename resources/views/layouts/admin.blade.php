@@ -61,7 +61,6 @@
                                 ['route' => 'admin.ai-providers', 'icon' => 'psychology', 'label' => 'AI Provider'],
                                 ['route' => 'admin.scraping-settings', 'icon' => 'settings', 'label' => 'Scraping Settings'],
                                 ['route' => 'admin.branding', 'icon' => 'palette', 'label' => 'Branding Aplikasi'],
-                                ['route' => 'admin.pipeline-monitor', 'icon' => 'monitor_heart', 'label' => 'Pipeline Monitor'],
                                 ['route' => 'admin.news-sources', 'icon' => 'feed', 'label' => 'Manajemen Sumber Berita'],
                                 ['route' => 'admin.ai-prompt-templates', 'icon' => 'terminal', 'label' => 'AI Prompt Templates'],
                                 ['route' => 'admin.telegram-settings', 'icon' => 'send', 'label' => 'Telegram Settings'],
