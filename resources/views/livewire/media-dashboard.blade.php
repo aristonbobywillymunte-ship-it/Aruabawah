@@ -20,6 +20,7 @@
      x-data="{
          isMobile: window.innerWidth < 900,
          openMobileMenu: false,
+         mobileFilterOpen: false,
          showTikTokCommentsModal: @entangle('showTikTokCommentsModal').live,
          showInstagramCommentsModal: @entangle('showInstagramCommentsModal').live,
          showFacebookCommentsModal: @entangle('showFacebookCommentsModal').live,
