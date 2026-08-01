@@ -307,7 +307,7 @@ class AiProviders extends Component
         $this->name = $provider->name;
         $this->provider_type = $provider->provider_type;
         $this->base_url = $provider->base_url ?? '';
-        $this->api_key = $provider->api_key ?? '';
+        $this->api_key = ''; // Kosongkan input agar tidak memicu double encryption
         $this->model_name = $provider->model_name;
         $this->temperature = $provider->temperature;
         $this->max_tokens = $provider->max_tokens;
@@ -344,7 +344,6 @@ class AiProviders extends Component
             'name' => $this->name,
             'provider_type' => $this->provider_type,
             'base_url' => $this->base_url ?: null,
-            'api_key' => $this->api_key ?: null,
             'model_name' => $this->model_name,
             'temperature' => $this->temperature,
             'max_tokens' => $this->max_tokens,
@@ -354,6 +353,11 @@ class AiProviders extends Component
             'is_active' => $this->is_active,
             'is_default' => $this->is_default,
         ];
+
+        // Hanya simpan api_key jika pengguna memasukkan input baru
+        if (filled($this->api_key)) {
+            $data['api_key'] = $this->api_key;
+        }
 
         if ($this->isEditing && $this->editingId) {
             AiProvider::findOrFail($this->editingId)->update($data);
