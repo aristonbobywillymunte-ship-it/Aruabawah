@@ -298,7 +298,12 @@
                         {{ $err }}
                     </div>
                 @endforeach
-                </div>
+                @endforeach
+            </div>
+        @else
+            <p class="text-xs text-slate-400 italic">Tidak ada log error terkini. Seluruh sistem berjalan normal.</p>
+        @endif
+    </div>
 
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
@@ -409,9 +414,4 @@
             </div>
         </div>
     @endif
-</div>
-        @else
-            <p class="text-xs text-slate-400 italic">Tidak ada log error terkini. Seluruh sistem berjalan normal.</p>
-        @endif
-    </div>
 </div>
