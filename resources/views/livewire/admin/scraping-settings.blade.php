@@ -47,6 +47,7 @@
                     >
                         <span>{{ $setting->is_active ? 'Matikan' : 'Aktifkan' }}</span>
                     </button>
+                </div>
             </div>
         </div>
 
