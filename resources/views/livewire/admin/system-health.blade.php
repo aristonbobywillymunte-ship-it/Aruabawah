@@ -95,6 +95,12 @@
                         <span>Token Akses:</span>
                         <strong class="text-slate-800">{{ $apifyStatus['token'] }}</strong>
                     </div>
+                    <div class="flex justify-between text-slate-500 pt-0.5">
+                        <span>Jumlah Antrean:</span>
+                        <strong class="font-bold {{ $apifyStatus['queue_count'] > 0 ? 'text-[#1fa387]' : 'text-slate-800' }}">
+                            {{ $apifyStatus['queue_count'] }} run
+                        </strong>
+                    </div>
                 </div>
             </div>
             <div class="mt-4 flex items-center gap-1.5 text-[10px] font-bold pt-2 border-t border-slate-100 {{ $apifyStatus['color'] === 'red' ? 'text-rose-600' : 'text-slate-500' }}">

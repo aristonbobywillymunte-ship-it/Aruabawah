@@ -68,6 +68,12 @@ class SystemHealth extends Component
         $apifySetting = ApifySetting::first();
         $activeActors = ApifyActor::where('status', 'active')->count();
         $inactiveActors = ApifyActor::where('status', 'inactive')->count();
+        
+        // Menghitung jumlah antrean dispatch Apify yang sedang berjalan/menunggu
+        $apifyQueueCount = DB::table('apify_dispatch_states')
+            ->whereIn('status', ['queued', 'processing', 'retry_wait'])
+            ->count();
+
         $failedActors = ApifyActor::where('status', 'active')
             ->where('last_run_status', 'failed')
             ->get()
@@ -91,6 +97,7 @@ class SystemHealth extends Component
             'token' => ($apifySetting && $apifySetting->api_token) ? 'Tersedia' : 'Belum Diisi',
             'active_actors' => $activeActors,
             'inactive_actors' => $inactiveActors,
+            'queue_count' => $apifyQueueCount,
             'status' => $status,
             'color' => $color,
             'failed_message' => $failedMessage,
