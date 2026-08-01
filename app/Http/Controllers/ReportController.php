@@ -60,7 +60,7 @@ class ReportController extends Controller
         $socialMediaItems = $this->getSocialMediaItems($projectId, $startDate, $endDate);
         $viralMeta = $this->resolveViralMeta($articles, $startDate, $endDate);
 
-        [$wawasanSummary, $wawasanRecs, $viralInsightSummary] = $this->resolveProjectAiInsights($project);
+        [$wawasanSummary, $wawasanRecs, $viralInsightSummary] = $this->resolveProjectAiInsights($project, $startDate, $endDate);
 
         $total    = $articles->count();
         $positive = $articles->where('sentiment', 'positive')->count();
@@ -136,24 +136,15 @@ class ReportController extends Controller
         ));
     }
 
-    private function resolveProjectAiInsights(Project $project): array
+    private function resolveProjectAiInsights(Project $project, ?string $startDate = null, ?string $endDate = null): array
     {
+        // Selalu regenerasi AI insight secara sinkron agar teks kesimpulan AI 100% cocok dengan filter tanggal PDF yang diminta.
+        GenerateProjectAiInsightJob::dispatchSync($project->id, $startDate, $endDate);
+        $project->refresh();
+
         $summary = trim((string) ($project->ai_insight_summary ?? ''));
         $recommendations = $project->ai_insight_recommendations;
         $viralSummary = trim((string) ($project->ai_insight_viral_summary ?? ''));
-
-        if ($summary !== '' && is_array($recommendations) && $recommendations !== [] && $viralSummary !== '') {
-            return [$summary, $recommendations, $viralSummary];
-        }
-
-        if ($summary === '' || ! is_array($recommendations) || $recommendations === [] || $viralSummary === '') {
-            GenerateProjectAiInsightJob::dispatchSync($project->id);
-            $project->refresh();
-
-            $summary = trim((string) ($project->ai_insight_summary ?? ''));
-            $recommendations = $project->ai_insight_recommendations;
-            $viralSummary = trim((string) ($project->ai_insight_viral_summary ?? ''));
-        }
 
         $recommendations = $this->normalizeRecommendationList($recommendations);
 
