@@ -1559,15 +1559,21 @@ class NewsSourceSuggestionTester
 
         $rawCleaned = preg_replace('/^(?:senin|selasa|rabu|kamis|jum\'?at|sabtu|minggu)\s*,\s*/i', '', $raw);
 
+        // Prioritaskan format Indonesia dd/mm/yyyy atau dd-mm-yyyy secara ketat
+        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/', $rawCleaned, $matches)) {
+            try {
+                $day = (int) $matches[1];
+                $month = (int) $matches[2];
+                $year = (int) $matches[3];
+                if ($day >= 1 && $day <= 31 && $month >= 1 && $month <= 12) {
+                    return \Carbon\Carbon::create($year, $month, $day, 0, 0, 0)->startOfDay();
+                }
+            } catch (\Throwable $e) {}
+        }
+
         try {
             return \Carbon\Carbon::parse($rawCleaned);
         } catch (\Throwable $e) {}
-
-        if (preg_match('/^\d{2}\/\d{2}\/\d{4}/', $rawCleaned)) {
-            try {
-                return \Carbon\Carbon::createFromFormat('d/m/Y', substr($rawCleaned, 0, 10))->startOfDay();
-            } catch (\Throwable $e) {}
-        }
 
         $months = [
             'januari' => 'January', 'februari' => 'February', 'maret' => 'March', 'april' => 'April',
