@@ -1709,26 +1709,7 @@ new class extends Component
                                         class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
                                     >
                                     @error('telegramChatId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
-                                </div>
-
-                            <!-- Kata Kunci Penyaring (Wajib) -->
-                                <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-bold text-slate-800">Kata Kunci Penyaring (Wajib)</label>
-                                    <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
-                                </div>
-                                <p class="text-xs text-slate-400 leading-tight">Kata kunci tambahan yang wajib ada di dalam judul atau isi portal. Data berita dan sosial media hanya akan ditampilkan jika mengandung kata kunci pencarian (scraping) DAN minimal salah satu dari kata kunci penyaring (wajib) yang Anda masukkan di sini.</p>
-                                <input 
-                                    wire:model="contextKeywords" 
-                                    type="text" 
-                                    placeholder="Contoh: Soekarno, Hatta, Sudirman"
-                                    class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
-                                >
-                                @error('contextKeywords') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
-                                <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
-                                </div>
-
-                            <!-- Main Keywords Field (Kata Kunci Pencarian (Scraping)) -->
+                                                    <!-- Main Keywords Field (Kata Kunci Pencarian (Scraping)) -->
                                 <div class="space-y-2">
                                 <div class="flex items-center justify-between">
                                     <label class="text-sm font-bold text-slate-800 block">Kata Kunci Pencarian (Scraping)</label>
@@ -1773,6 +1754,25 @@ new class extends Component
                                     </div>
                                 </div>
                                 </div>
+
+                                <!-- Filter Keyword (Kata Kunci Penyaring) - Pindah ke bawah dan Opsional -->
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800 block">Kata Kunci Penyaring (Opsional)</label>
+                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-200 rounded-full">Opsional</span>
+                                    </div>
+                                    <p class="text-xs text-slate-400 leading-normal">
+                                        Kata kunci opsional untuk memperketat penyaringan data di dashboard. Jika kolom ini dikosongkan, sistem akan otomatis menampilkan semua data yang cocok dengan <strong>Kata Kunci Pencarian (Scraping)</strong> di atas.
+                                    </p>
+                                    <input 
+                                        wire:model="contextKeywords" 
+                                        type="text" 
+                                        placeholder="Contoh: Soekarno, Hatta, Sudirman (Kosongkan jika tidak ingin disaring ganda)"
+                                        class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
+                                    >
+                                    @error('contextKeywords') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                    <p class="text-[10px] text-slate-400 mt-1">Pisahkan dengan koma.</p>
+                                </div>                  </div>
 
                             <!-- Dikecualikan Column (Kata Kunci Pengecualian) -->
                                 <div class="space-y-2">
