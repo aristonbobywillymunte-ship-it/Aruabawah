@@ -29,7 +29,7 @@ class AiAnalysisJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private const MIN_ANALYSIS_LENGTH = 500;
+    private const MIN_ANALYSIS_LENGTH = 100;
 
     // Retry terjadwal dikelola lewat dispatch state + scheduler, bukan release job
     // yang sama berulang-ulang sampai attempts worker habis.
