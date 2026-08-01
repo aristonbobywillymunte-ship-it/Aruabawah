@@ -274,8 +274,6 @@
                 <span>{{ $schedulerStatus['color'] == 'green' ? 'Otomatisasi Berjalan Normal' : 'Scheduler Berhenti/Mati!' }}</span>
             </div>
         </div>
-
-        </div>
     </div>
 
     <!-- Error logs display if available -->
