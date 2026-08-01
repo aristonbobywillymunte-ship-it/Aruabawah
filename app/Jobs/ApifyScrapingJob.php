@@ -844,9 +844,9 @@ class ApifyScrapingJob implements ShouldQueue
         // [Cost Tracking] Catat biaya aktual dari Apify API ke database (murni additive, tidak mengubah alur)
         if ($state && !empty($runData)) {
             $state->update([
-                'actual_cost_usd'   => data_get($runData, 'usageTotalCostUsd'),
-                'items_collected'   => data_get($runData, 'stats.itemCount'),
-                'run_duration_secs' => data_get($runData, 'stats.runTimeSecs'),
+                'actual_cost_usd'   => data_get($runData, 'usageTotalCostUsd') ?? data_get($runData, 'usageTotalUsd'),
+                'items_collected'   => (int) data_get($runData, 'stats.itemCount'),
+                'run_duration_secs' => (int) data_get($runData, 'stats.runTimeSecs'),
             ]);
         }
 
