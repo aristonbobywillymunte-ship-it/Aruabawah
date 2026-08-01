@@ -1,4 +1,30 @@
 <div class="space-y-6 text-left" wire:poll.5s>
+    <!-- Error logs display if available -->
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[18px] text-rose-500">error</span>
+                <span>Log Error / Kegagalan Terkini</span>
+            </div>
+            @if(count($latestErrors) > 0)
+                <button wire:click="clearErrors" class="text-[10px] font-bold text-slate-400 hover:text-rose-600 px-2.5 py-1 border border-slate-200 hover:border-rose-100 hover:bg-rose-50/50 rounded-lg transition cursor-pointer">
+                    Bersihkan Log
+                </button>
+            @endif
+        </h3>
+        @if(count($latestErrors) > 0)
+            <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                @foreach($latestErrors as $err)
+                    <div class="text-[11px] font-mono p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 leading-relaxed">
+                        {{ $err }}
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <p class="text-xs text-slate-400 italic">Tidak ada log error terkini. Seluruh sistem berjalan normal.</p>
+        @endif
+    </div>
+
     <!-- Grid Card Status Health -->
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <!-- Card 1: AI Provider Status -->
@@ -276,31 +302,6 @@
         </div>
     </div>
 
-    <!-- Error logs display if available -->
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
-            <div class="flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[18px] text-rose-500">error</span>
-                <span>Log Error / Kegagalan Terkini</span>
-            </div>
-            @if(count($latestErrors) > 0)
-                <button wire:click="clearErrors" class="text-[10px] font-bold text-slate-400 hover:text-rose-600 px-2.5 py-1 border border-slate-200 hover:border-rose-100 hover:bg-rose-50/50 rounded-lg transition cursor-pointer">
-                    Bersihkan Log
-                </button>
-            @endif
-        </h3>
-        @if(count($latestErrors) > 0)
-            <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
-                @foreach($latestErrors as $err)
-                    <div class="text-[11px] font-mono p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 leading-relaxed">
-                        {{ $err }}
-                    </div>
-                @endforeach
-            </div>
-        @else
-            <p class="text-xs text-slate-400 italic">Tidak ada log error terkini. Seluruh sistem berjalan normal.</p>
-        @endif
-    </div>
 
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
