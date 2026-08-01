@@ -6,27 +6,28 @@
             <h1 class="text-2xl font-black text-slate-900 mt-1">Telegram Settings</h1>
             <p class="text-xs text-slate-500 mt-1">Konfigurasi bot token dan chat ID tujuan notifikasi krisis atau ancaman tinggi.</p>
         </div>
-
-        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-            <button 
-                wire:click="openTestModal" 
-                class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 px-5 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
-            >
-                <span class="material-symbols-outlined text-[18px]">send</span>
-                <span>Uji Kirim Pesan</span>
-            </button>
-            <button 
-                wire:click="createRecipient" 
-                class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
-            >
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                <span>Tambah Penerima</span>
-            </button>
-        </div>
     </div>
 @endsection
 
 <div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
+    <!-- Action Buttons (Di dalam Root Div Livewire agar aktif) -->
+    <div class="flex flex-col sm:flex-row items-center justify-end gap-3 w-full">
+        <button 
+            wire:click="openTestModal" 
+            class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 px-5 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
+        >
+            <span class="material-symbols-outlined text-[18px]">send</span>
+            <span>Uji Kirim Pesan</span>
+        </button>
+        <button 
+            wire:click="createRecipient" 
+            class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
+        >
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            <span>Tambah Penerima</span>
+        </button>
+    </div>
+
     <!-- Global Telegram Settings & Info Card -->
     <div class="grid gap-6 md:grid-cols-3">
         <!-- Configuration Card (Span 2) -->
