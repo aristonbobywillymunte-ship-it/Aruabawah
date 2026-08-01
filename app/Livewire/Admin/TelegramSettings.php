@@ -92,7 +92,12 @@ class TelegramSettings extends Component
     public function loadGlobalSettings(): void
     {
         $setting = $this->setting();
-        $this->bot_token = $setting->bot_token ?? '';
+        try {
+            $this->bot_token = $setting->bot_token ?? '';
+        } catch (\Throwable $e) {
+            // Jika token gagal didekripsi (APP_KEY tidak cocok/invalid payload), kosongkan agar tidak crash
+            $this->bot_token = '';
+        }
         $this->default_chat_id = $setting->default_chat_id ?? '';
         $this->is_active = (bool) ($setting->is_active ?? false);
     }
