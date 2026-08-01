@@ -1,4 +1,4 @@
-<div class="space-y-6 text-left">
+<div class="space-y-6 text-left" wire:poll.5s>
     <!-- Grid Card Status Health -->
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <!-- Card 1: AI Provider Status -->
