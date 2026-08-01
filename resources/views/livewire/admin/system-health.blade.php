@@ -319,7 +319,7 @@
                 </div>
 
                 <!-- Modal Body (Table dengan Spinner Loading) -->
-                <div class="flex-1 min-h-0 overflow-y-auto p-6 relative">
+                <div class="flex-1 min-h-0 max-h-[280px] overflow-y-auto p-6 relative">
                     <!-- Loading overlay jika ada aksi di background -->
                     <div wire:loading wire:target="openQueueModal" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center">
                         <div class="flex flex-col items-center gap-3">
