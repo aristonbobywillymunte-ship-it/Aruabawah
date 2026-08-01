@@ -6,12 +6,16 @@
     <title>@yield('title', 'Admin Dashboard') — {{ \App\Helpers\AppBrandingHelper::getAppName() }} Media Intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet" />
     @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
     <style>
+        /* Terapkan Plus Jakarta Sans secara global di admin panel */
+        body, html, input, button, select, textarea {
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+        }
         /* Mengunci navigasi sidebar di desktop agar tetap di posisinya saat halaman di-scroll */
         @media (min-width: 1024px) {
             aside {

@@ -1093,31 +1093,29 @@ new class extends Component
                                                             <span class="material-symbols-outlined text-[15px] font-bold block">check</span>
                                                         @endif
                                                     </div>
-                                                </div>
-
-                                                <div class="space-y-4">
+                                                                                              <div class="space-y-4">
                                                     {{-- Header Card --}}
                                                     <div class="pr-8">
                                                         <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-                                                            <h3 class="text-sm font-black text-slate-900 tracking-tight">{{ $p->name }}</h3>
+                                                            <h3 class="text-sm font-extrabold text-slate-900 tracking-tight transition-colors duration-300 group-hover:text-[#1fa387]">{{ $p->name }}</h3>
                                                             @if($p->is_popular)
-                                                            <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-amber-400 text-white shadow-sm border border-amber-300">
+                                                            <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm border border-amber-300 transform transition-transform duration-300 group-hover:scale-105">
                                                                 ⭐ Terpopuler
                                                             </span>
                                                             @endif
                                                         </div>
                                                         <div class="flex items-baseline gap-1 mt-1">
                                                             @if($p->price > 0)
-                                                                <span class="text-xl font-black text-slate-800 leading-none">Rp {{ number_format($p->price, 0, ',', '.') }}</span>
+                                                                <span class="text-xl font-extrabold text-slate-800 leading-none">Rp {{ number_format($p->price, 0, ',', '.') }}</span>
                                                                 <span class="text-slate-400 text-[10px] font-semibold">/bulan</span>
                                                             @else
-                                                                <span class="text-sm font-black text-[#1fa387] leading-none uppercase tracking-wide">Hubungi Kami</span>
+                                                                <span class="text-sm font-extrabold text-[#1fa387] leading-none uppercase tracking-wide">Hubungi Kami</span>
                                                             @endif
                                                         </div>
                                                     </div>
 
                                                     {{-- Teks Deskripsi --}}
-                                                    <p class="text-[11px] text-slate-450 leading-relaxed font-medium">
+                                                    <p class="text-[11px] text-slate-450 leading-relaxed font-medium transition-colors duration-300 group-hover:text-slate-600">
                                                         {{ $p->description ?: 'Solusi handal untuk otomatisasi scraping dan pelacakan isu media.' }}
                                                     </p>
 
@@ -1127,16 +1125,16 @@ new class extends Component
                                                         @if(!empty($socialList))
                                                         <div class="space-y-2">
                                                             <div class="flex items-center gap-1.5">
-                                                                <span class="material-symbols-outlined text-[13px] text-sky-500 font-bold">share</span>
+                                                                <span class="material-symbols-outlined text-[13px] text-sky-500 font-bold transition-transform duration-300 group-hover:scale-110">share</span>
                                                                 <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Medsos & Keunggulan</span>
                                                             </div>
                                                             <div class="space-y-1.5">
                                                                 @foreach(array_slice($socialList, 0, 3) as $feat)
                                                                 <div class="flex items-start gap-2">
-                                                                    <span class="w-4 h-4 rounded-md bg-sky-50 flex items-center justify-center shrink-0 border border-sky-100/40 mt-0.5">
+                                                                    <span class="w-4 h-4 rounded-md bg-sky-50 flex items-center justify-center shrink-0 border border-sky-100/40 mt-0.5 transform transition-all duration-300 group-hover:bg-sky-100 group-hover:border-sky-300/40 group-hover:translate-x-0.5">
                                                                         <span class="material-symbols-outlined text-[10px] text-sky-500 font-black">check</span>
                                                                     </span>
-                                                                    <span class="text-[11px] text-slate-600 font-medium leading-tight min-w-0">{{ $feat }}</span>
+                                                                    <span class="text-[11px] text-slate-600 font-medium leading-tight min-w-0 transition-colors duration-300 group-hover:text-slate-800">{{ $feat }}</span>
                                                                 </div>
                                                                 @endforeach
                                                             </div>
@@ -1147,16 +1145,16 @@ new class extends Component
                                                         @if(!empty($portalList))
                                                         <div class="space-y-2">
                                                             <div class="flex items-center gap-1.5">
-                                                                <span class="material-symbols-outlined text-[13px] text-violet-500 font-bold">newspaper</span>
+                                                                <span class="material-symbols-outlined text-[13px] text-violet-500 font-bold transition-transform duration-300 group-hover:scale-110">newspaper</span>
                                                                 <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Portal Berita</span>
                                                             </div>
                                                             <div class="space-y-1.5">
                                                                 @foreach(array_slice($portalList, 0, 3) as $feat)
                                                                 <div class="flex items-start gap-2">
-                                                                    <span class="w-4 h-4 rounded-md bg-violet-50 flex items-center justify-center shrink-0 border border-violet-100/40 mt-0.5">
+                                                                    <span class="w-4 h-4 rounded-md bg-violet-50 flex items-center justify-center shrink-0 border border-violet-100/40 mt-0.5 transform transition-all duration-300 group-hover:bg-violet-100 group-hover:border-violet-300/40 group-hover:translate-x-0.5">
                                                                         <span class="material-symbols-outlined text-[10px] text-violet-500 font-black">check</span>
                                                                     </span>
-                                                                    <span class="text-[11px] text-slate-600 font-medium leading-tight min-w-0">{{ $feat }}</span>
+                                                                    <span class="text-[11px] text-slate-600 font-medium leading-tight min-w-0 transition-colors duration-300 group-hover:text-slate-800">{{ $feat }}</span>
                                                                 </div>
                                                                 @endforeach
                                                             </div>
@@ -1166,9 +1164,9 @@ new class extends Component
                                                 </div>
 
                                                 {{-- Footer Badge --}}
-                                                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[10px] font-black text-[#1fa387]">
-                                                    <span class="material-symbols-outlined text-[14px]">smart_toy</span>
-                                                    <span>{{ $p->actors_count }} Robot Aktif Siaga</span>
+                                                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[10px] font-black text-[#1fa387] transition-all duration-300">
+                                                    <span class="material-symbols-outlined text-[14px] transform transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110">smart_toy</span>
+                                                    <span class="group-hover:translate-x-0.5 transition-transform duration-300">{{ $p->actors_count }} Robot Aktif Siaga</span>
                                                 </div>
                                             </div>
                                             @endforeach
