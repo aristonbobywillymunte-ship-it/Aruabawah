@@ -87,84 +87,6 @@
         </div>
     </div>
 
-    <!-- [NEW] Widget Ringkasan Biaya Aktual Apify (Dipindahkan ke Bagian Atas) -->
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-left">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Laporan Keuangan</p>
-                <h2 class="text-sm font-black text-slate-900 mt-0.5">Ringkasan Biaya Aktual per Run</h2>
-                <p class="text-[10px] text-slate-400 mt-0.5">Biaya nyata yang dikenakan Apify setelah setiap proses scraping selesai (30 hari terakhir).</p>
-            </div>
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-700">
-                <span class="material-symbols-outlined text-[14px]">payments</span>
-                Total: ${{ $costSummary['total_all'] ?? '0.0000' }}
-            </span>
-        </div>
-
-        @if(!$costSummary['has_data'])
-            <div class="flex flex-col items-center justify-center py-8 text-center bg-slate-50 rounded-2xl border border-slate-100">
-                <span class="material-symbols-outlined text-[32px] text-slate-300 mb-2">receipt_long</span>
-                <p class="text-xs font-bold text-slate-500">Belum ada data biaya</p>
-                <p class="text-[10px] text-slate-400 mt-1 max-w-[280px] leading-relaxed">Data biaya aktual akan muncul secara otomatis setelah run scraping berikutnya selesai dijalankan.</p>
-            </div>
-        @else
-            {{-- Ringkasan per Platform --}}
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
-                @foreach($costSummary['by_platform'] as $platform => $stat)
-                @php
-                    $icon = match($platform) {
-                        'Facebook'  => 'thumb_up',
-                        'Instagram' => 'photo_camera',
-                        'TikTok'    => 'music_video',
-                        default     => 'language',
-                    };
-                    $colors = match($platform) {
-                        'Facebook'  => ['bg-blue-50','border-blue-100','text-blue-700','text-blue-500'],
-                        'Instagram' => ['bg-pink-50','border-pink-100','text-pink-700','text-pink-500'],
-                        'TikTok'    => ['bg-slate-900','border-slate-700','text-white','text-slate-300'],
-                        default     => ['bg-slate-50','border-slate-200','text-slate-700','text-slate-400'],
-                    };
-                @endphp
-                <div class="rounded-2xl border {{ $colors[1] }} {{ $colors[0] }} p-3.5">
-                    <div class="flex items-center gap-1.5 mb-2">
-                        <span class="material-symbols-outlined text-[14px] {{ $colors[3] }}">{{ $icon }}</span>
-                        <span class="text-[10px] font-bold {{ $colors[2] }}">{{ $platform }}</span>
-                    </div>
-                    <p class="text-lg font-black {{ $colors[2] }}">${{ $stat['total_cost'] }}</p>
-                    <p class="text-[10px] {{ $colors[3] }} mt-0.5">{{ $stat['run_count'] }} run · rata ${{ $stat['avg_cost'] }}/run</p>
-                </div>
-                @endforeach
-            </div>
-
-            {{-- Tabel 10 Run Terbaru --}}
-            <div class="border border-slate-200 rounded-2xl overflow-hidden">
-                <table class="w-full text-left text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200">
-                            <th class="px-4 py-2.5 font-bold text-slate-600">Platform</th>
-                            <th class="px-4 py-2.5 font-bold text-slate-600">Aktor</th>
-                            <th class="px-4 py-2.5 font-bold text-slate-600 text-right">Biaya (USD)</th>
-                            <th class="px-4 py-2.5 font-bold text-slate-600 text-center">Item</th>
-                            <th class="px-4 py-2.5 font-bold text-slate-600 text-center">Durasi</th>
-                            <th class="px-4 py-2.5 font-bold text-slate-600">Selesai</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach($costSummary['recent_runs'] as $run)
-                        <tr class="hover:bg-slate-50/50 transition">
-                            <td class="px-4 py-2.5 font-bold text-slate-700">{{ $run['platform'] }}</td>
-                            <td class="px-4 py-2.5 text-slate-500 truncate max-w-[180px]">{{ $run['actor_name'] }}</td>
-                            <td class="px-4 py-2.5 font-bold text-emerald-600 text-right">${{ $run['cost'] }}</td>
-                            <td class="px-4 py-2.5 text-slate-500 text-center">{{ $run['items'] }}</td>
-                            <td class="px-4 py-2.5 text-slate-400 text-center">{{ $run['duration'] }}</td>
-                            <td class="px-4 py-2.5 text-slate-400 whitespace-nowrap">{{ $run['completed_at'] }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
-    </div>
 
     <!-- Main Section Grid -->
     <div class="grid gap-6 font-sans">
@@ -290,8 +212,85 @@
                     </tbody>
                 </table>
             </div>
+    </div>
+
+    <!-- [NEW] Widget Ringkasan Biaya Aktual Apify (Dipindahkan kembali ke Bawah) -->
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-left mt-6">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Laporan Keuangan</p>
+                <h2 class="text-sm font-black text-slate-900 mt-0.5">Ringkasan Biaya Aktual per Run</h2>
+                <p class="text-[10px] text-slate-400 mt-0.5">Biaya nyata yang dikenakan Apify setelah setiap proses scraping selesai (30 hari terakhir).</p>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-100 text-[11px] font-bold text-emerald-700">
+                <span class="material-symbols-outlined text-[14px]">payments</span>
+                Total: ${{ $costSummary['total_all'] ?? '0.0000' }}
+            </span>
         </div>
 
+        @if(!$costSummary['has_data'])
+            <div class="flex flex-col items-center justify-center py-8 text-center bg-slate-50 rounded-2xl border border-slate-100">
+                <span class="material-symbols-outlined text-[32px] text-slate-300 mb-2">receipt_long</span>
+                <p class="text-xs font-bold text-slate-500">Belum ada data biaya</p>
+                <p class="text-[10px] text-slate-400 mt-1 max-w-[280px] leading-relaxed">Data biaya aktual akan muncul secara otomatis setelah run scraping berikutnya selesai dijalankan.</p>
+            </div>
+        @else
+            {{-- Ringkasan per Platform --}}
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
+                @foreach($costSummary['by_platform'] as $platform => $stat)
+                @php
+                    $icon = match($platform) {
+                        'Facebook'  => 'thumb_up',
+                        'Instagram' => 'photo_camera',
+                        'TikTok'    => 'music_video',
+                        default     => 'language',
+                    };
+                    $colors = match($platform) {
+                        'Facebook'  => ['bg-blue-50','border-blue-100','text-blue-700','text-blue-500'],
+                        'Instagram' => ['bg-pink-50','border-pink-100','text-pink-700','text-pink-500'],
+                        'TikTok'    => ['bg-slate-900','border-slate-700','text-white','text-slate-300'],
+                        default     => ['bg-slate-50','border-slate-200','text-slate-700','text-slate-400'],
+                    };
+                @endphp
+                <div class="rounded-2xl border {{ $colors[1] }} {{ $colors[0] }} p-3.5">
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <span class="material-symbols-outlined text-[14px] {{ $colors[3] }}">{{ $icon }}</span>
+                        <span class="text-[10px] font-bold {{ $colors[2] }}">{{ $platform }}</span>
+                    </div>
+                    <p class="text-lg font-black {{ $colors[2] }}">${{ $stat['total_cost'] }}</p>
+                    <p class="text-[10px] {{ $colors[3] }} mt-0.5">{{ $stat['run_count'] }} run · rata ${{ $stat['avg_cost'] }}/run</p>
+                </div>
+                @endforeach
+            </div>
+
+            {{-- Tabel 10 Run Terbaru --}}
+            <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200">
+                            <th class="px-4 py-2.5 font-bold text-slate-600">Platform</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-600">Aktor</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-600 text-right">Biaya (USD)</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-600 text-center">Item</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-600 text-center">Durasi</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-600">Selesai</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($costSummary['recent_runs'] as $run)
+                        <tr class="hover:bg-slate-50/50 transition">
+                            <td class="px-4 py-2.5 font-bold text-slate-700">{{ $run['platform'] }}</td>
+                            <td class="px-4 py-2.5 text-slate-500 truncate max-w-[180px]">{{ $run['actor_name'] }}</td>
+                            <td class="px-4 py-2.5 font-bold text-emerald-600 text-right">${{ $run['cost'] }}</td>
+                            <td class="px-4 py-2.5 text-slate-500 text-center">{{ $run['items'] }}</td>
+                            <td class="px-4 py-2.5 text-slate-400 text-center">{{ $run['duration'] }}</td>
+                            <td class="px-4 py-2.5 text-slate-400 whitespace-nowrap">{{ $run['completed_at'] }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
     </div>
 
 
