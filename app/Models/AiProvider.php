@@ -29,6 +29,7 @@ class AiProvider extends Model
     ];
 
     protected $casts = [
+        'api_key' => 'encrypted',
         'temperature' => 'float',
         'max_tokens' => 'integer',
         'requests_per_minute' => 'integer',
