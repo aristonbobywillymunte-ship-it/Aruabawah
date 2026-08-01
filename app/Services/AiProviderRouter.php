@@ -147,6 +147,14 @@ class AiProviderRouter
 
                     // Success!
                     Log::info("[AiRouter] Success using provider: {$providerName}{$articleContext}");
+                    
+                    // Otomatis sinkronisasi default jika provider sukses berbeda dengan default saat ini
+                    if (!$provider->is_default) {
+                        Log::info("[AiRouter] Auto-switching default AI provider to {$providerName} due to previous failure fallback.");
+                        AiProvider::where('is_default', true)->update(['is_default' => false]);
+                        $provider->update(['is_default' => true]);
+                    }
+
                     return [
                         'provider' => $provider,
                         'text' => $text,

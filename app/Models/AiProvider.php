@@ -59,10 +59,12 @@ class AiProvider extends Model
             ->where('is_default', true)
             ->first();
 
+        // Jika default provider ada dan siap pakai, kembalikan langsung
         if ($currentDefault && $currentDefault->isEligibleForUse()) {
-            return $currentDefault->refresh();
+            return $currentDefault;
         }
 
+        // Cari provider aktif alternatif yang siap pakai (tidak cooldown)
         $eligible = static::query()
             ->where('is_active', true)
             ->where(function ($query) {
@@ -71,17 +73,13 @@ class AiProvider extends Model
             })
             ->orderBy('priority')
             ->orderBy('id')
-            ->get();
+            ->first();
 
-        if ($eligible->isEmpty()) {
-            static::query()->where('is_default', true)->update(['is_default' => false]);
-            return null;
+        if ($eligible) {
+            return $eligible;
         }
 
-        $preferred = $eligible->first();
-        static::query()->where('is_default', true)->update(['is_default' => false]);
-        $preferred->forceFill(['is_default' => true])->save();
-
-        return $preferred->refresh();
+        // Jika tidak ada alternatif, tetap kembalikan default saat ini sebagai upaya terakhir
+        return $currentDefault;
     }
 }
