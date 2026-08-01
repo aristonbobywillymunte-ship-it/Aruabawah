@@ -47,19 +47,6 @@
                     >
                         <span>{{ $setting->is_active ? 'Matikan' : 'Aktifkan' }}</span>
                     </button>
-                </div>
-                <div class="flex items-center justify-between gap-3 border-t border-slate-200/60 pt-2">
-                    <div class="flex items-center gap-2">
-                        <span class="flex h-2 w-2 relative">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full {{ $setting->enable_realtime ? 'bg-cyan-400' : 'bg-slate-300' }} opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 {{ $setting->enable_realtime ? 'bg-cyan-500' : 'bg-slate-400' }}"></span>
-                        </span>
-                        <span class="text-[11px] font-bold text-slate-600">Real-time (Reverb)</span>
-                    </div>
-                    <span class="text-[11px] font-bold {{ $setting->enable_realtime ? 'text-cyan-600' : 'text-slate-500' }}">
-                        {{ $setting->enable_realtime ? 'Aktif' : 'Nonaktif' }}
-                    </span>
-                </div>
             </div>
         </div>
 
