@@ -464,14 +464,12 @@ class ProjectsList extends Component
     {
         $this->validate([
             'name' => 'required|min:3|unique:projects,name',
-            'contextKeywords' => 'required',
             'topicsString' => 'required',
             'telegramChatId' => 'required',
         ], [
             'name.required' => 'Nama proyek wajib diisi.',
             'name.min' => 'Nama proyek minimal harus 3 karakter.',
             'name.unique' => 'Nama proyek ini sudah digunakan, silakan pilih nama lain.',
-            'contextKeywords.required' => 'Kata kunci penyaring (wajib) wajib diisi.',
             'topicsString.required' => 'Kata kunci pencarian (scraping) wajib diisi.',
             'telegramChatId.required' => 'Telegram Chat ID wajib diisi.',
         ]);
@@ -549,14 +547,12 @@ class ProjectsList extends Component
     {
         $this->validate([
             'editName'         => 'required|min:3|unique:projects,name,' . $this->editProjectId,
-            'contextKeywords'  => 'required',
             'editTopicsString' => 'required',
             'telegramChatId'   => 'required',
         ], [
             'editName.required'         => 'Nama proyek wajib diisi.',
             'editName.min'              => 'Nama proyek minimal 3 karakter.',
             'editName.unique'           => 'Nama proyek sudah digunakan.',
-            'contextKeywords.required'  => 'Kata kunci penyaring (wajib) wajib diisi.',
             'editTopicsString.required' => 'Kata kunci pencarian (scraping) wajib diisi.',
             'telegramChatId.required'   => 'Telegram Chat ID wajib diisi.',
         ]);
