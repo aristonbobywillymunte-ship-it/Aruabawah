@@ -238,22 +238,33 @@ class SystemHealth extends Component
                 }
             }
 
+            $article = null;
+            $social = null;
+
             if ($item->analyzable_type === 'article') {
                 $article = DB::table('articles')->where('id', $item->analyzable_id)->first();
-                if ($article) {
-                    $contentTitle = $article->title ?: ($article->source_name ?: 'Portal News Item');
-                    $contentDate = $article->published_at ? \Carbon\Carbon::parse($article->published_at)->isoFormat('D MMM YYYY, HH:mm') : '-';
+                // Fallback ke social jika tidak ketemu di articles
+                if (!$article) {
+                    $social = DB::table('social_media_items')->where('id', $item->analyzable_id)->first();
                 }
-            } elseif ($item->analyzable_type === 'social') {
+            } else {
                 $social = DB::table('social_media_items')->where('id', $item->analyzable_id)->first();
-                if ($social) {
-                    $text = data_get($social, 'text') ?? data_get($social, 'content');
-                    $author = data_get($social, 'author') ?? data_get($social, 'author_name');
-                    $contentTitle = $text ? mb_substr(strip_tags($text), 0, 80) . '...' : ($author ? 'Post dari ' . $author : 'Post Media Sosial');
-                    
-                    $postCreatedAt = data_get($social, 'posted_at') ?? (data_get($social, 'post_created_at') ?? data_get($social, 'created_at'));
-                    $contentDate = $postCreatedAt ? \Carbon\Carbon::parse($postCreatedAt)->isoFormat('D MMM YYYY, HH:mm') : '-';
+                // Fallback ke articles jika tidak ketemu di social
+                if (!$social) {
+                    $article = DB::table('articles')->where('id', $item->analyzable_id)->first();
                 }
+            }
+
+            if ($article) {
+                $contentTitle = $article->title ?: ($article->source_name ?: 'Portal News Item');
+                $contentDate = $article->published_at ? \Carbon\Carbon::parse($article->published_at)->isoFormat('D MMM YYYY, HH:mm') : '-';
+            } elseif ($social) {
+                $text = data_get($social, 'text') ?? data_get($social, 'content');
+                $author = data_get($social, 'author') ?? data_get($social, 'author_name');
+                $contentTitle = $text ? mb_substr(strip_tags($text), 0, 80) . '...' : ($author ? 'Post dari ' . $author : 'Post Media Sosial');
+                
+                $postCreatedAt = data_get($social, 'posted_at') ?? (data_get($social, 'post_created_at') ?? data_get($social, 'created_at'));
+                $contentDate = $postCreatedAt ? \Carbon\Carbon::parse($postCreatedAt)->isoFormat('D MMM YYYY, HH:mm') : '-';
             }
 
             return [
