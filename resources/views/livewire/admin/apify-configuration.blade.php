@@ -270,6 +270,7 @@
                         <tr class="bg-slate-50 border-b border-slate-200">
                             <th class="px-4 py-2.5 font-bold text-slate-600">Platform</th>
                             <th class="px-4 py-2.5 font-bold text-slate-600">Aktor</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-600">Proyek</th>
                             <th class="px-4 py-2.5 font-bold text-slate-600 text-right">Biaya (USD)</th>
                             <th class="px-4 py-2.5 font-bold text-slate-600 text-center">Item</th>
                             <th class="px-4 py-2.5 font-bold text-slate-600 text-center">Durasi</th>
@@ -281,6 +282,7 @@
                         <tr class="hover:bg-slate-50/50 transition">
                             <td class="px-4 py-2.5 font-bold text-slate-700">{{ $run['platform'] }}</td>
                             <td class="px-4 py-2.5 text-slate-500 truncate max-w-[180px]">{{ $run['actor_name'] }}</td>
+                            <td class="px-4 py-2.5 font-bold text-[#1fa387] truncate max-w-[140px]" title="{{ $run['project_name'] }}">{{ $run['project_name'] }}</td>
                             <td class="px-4 py-2.5 font-bold text-emerald-600 text-right">${{ $run['cost'] }}</td>
                             <td class="px-4 py-2.5 text-slate-500 text-center">{{ $run['items'] }}</td>
                             <td class="px-4 py-2.5 text-slate-400 text-center">{{ $run['duration'] }}</td>

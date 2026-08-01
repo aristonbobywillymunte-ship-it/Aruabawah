@@ -158,7 +158,7 @@ class ApifyConfiguration extends Component
             ->whereNotNull('actual_cost_usd')
             ->where('completed_at', '>=', now()->subDays(30))
             ->orderBy('completed_at', 'desc')
-            ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id')
+            ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id')
             ->limit(100)
             ->get();
 
@@ -170,6 +170,10 @@ class ApifyConfiguration extends Component
 
         $recent = $rows->take(10)->map(function ($r) {
             $actor = DB::table('apify_actors')->where('id', $r->actor_id)->value('actor_name');
+            $projectName = 'N/A';
+            if ($r->project_id) {
+                $projectName = DB::table('projects')->where('id', $r->project_id)->value('name') ?? 'N/A';
+            }
             return [
                 'platform'     => $r->platform,
                 'actor_name'   => $actor ?? '-',
@@ -177,6 +181,7 @@ class ApifyConfiguration extends Component
                 'items'        => $r->items_collected ?? '-',
                 'duration'     => $r->run_duration_secs ? $r->run_duration_secs . 's' : '-',
                 'completed_at' => $r->completed_at ? \Carbon\Carbon::parse($r->completed_at)->isoFormat('D MMM, HH:mm') : '-',
+                'project_name' => $projectName,
             ];
         })->toArray();
 
