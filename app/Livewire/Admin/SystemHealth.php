@@ -247,8 +247,11 @@ class SystemHealth extends Component
             } elseif ($item->analyzable_type === 'social') {
                 $social = DB::table('social_media_items')->where('id', $item->analyzable_id)->first();
                 if ($social) {
-                    $contentTitle = $social->content ? mb_substr(strip_tags($social->content), 0, 80) . '...' : ($social->author_name ? 'Post dari ' . $social->author_name : 'Post Media Sosial');
-                    $postCreatedAt = data_get($social, 'post_created_at') ?? data_get($social, 'created_at');
+                    $text = data_get($social, 'text') ?? data_get($social, 'content');
+                    $author = data_get($social, 'author') ?? data_get($social, 'author_name');
+                    $contentTitle = $text ? mb_substr(strip_tags($text), 0, 80) . '...' : ($author ? 'Post dari ' . $author : 'Post Media Sosial');
+                    
+                    $postCreatedAt = data_get($social, 'posted_at') ?? (data_get($social, 'post_created_at') ?? data_get($social, 'created_at'));
                     $contentDate = $postCreatedAt ? \Carbon\Carbon::parse($postCreatedAt)->isoFormat('D MMM YYYY, HH:mm') : '-';
                 }
             }
