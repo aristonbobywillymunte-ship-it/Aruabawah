@@ -1062,110 +1062,114 @@ new class extends Component
                                             ->get();
                                     @endphp
                                     @if($activePackages->isNotEmpty())
-                                    <div class="space-y-3">
-                                        <div class="flex items-center justify-between">
-                                            <div>
-                                                <label class="text-sm font-bold text-slate-800 block">Paket Scraper Apify</label>
-                                                <p class="text-xs text-slate-400 mt-0.5">Tentukan paket scraper yang terasosiasi ke proyek ini.</p>
-                                            </div>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="text-sm font-bold text-slate-800 block">Paket Scraper Apify</label>
+                                            <p class="text-xs text-slate-400 mt-0.5">Tentukan paket scraper yang terasosiasi ke proyek ini.</p>
                                         </div>
-                                        
-                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                                             <!-- Opsi Paket-paket dari DB -->
                                             @foreach($activePackages as $p)
                                             @php
                                                 $hasData = !empty($p->advantages) || !empty($p->social_media_features) || !empty($p->news_portal_features);
                                                 $isSelected = (int) $packageId === (int) $p->id;
                                             @endphp
-                                            <div 
+                                            <div
                                                 wire:click="$set('packageId', {{ $p->id }})"
-                                                class="group relative cursor-pointer rounded-3xl border p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 bg-white
-                                                {{ $isSelected ? 'border-[#1fa387] bg-gradient-to-br from-[#1fa387]/[0.02] to-[#1fa387]/[0.06] ring-1 ring-[#1fa387]/30 shadow-md shadow-[#1fa387]/5' : 'border-slate-200/80 hover:border-[#1fa387]/40' }}"
+                                                class="group relative cursor-pointer rounded-2xl flex flex-col transition-all duration-300 overflow-hidden
+                                                {{ $isSelected
+                                                    ? 'shadow-xl shadow-slate-900/20 ring-2 ring-[#1fa387] -translate-y-1'
+                                                    : 'border border-slate-200 hover:border-[#1fa387]/50 hover:shadow-lg hover:-translate-y-0.5 bg-white' }}"
                                             >
-                                                {{-- Checkbox Accent Indicator --}}
-                                                <div class="absolute top-4 right-4 z-10">
-                                                    <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300
-                                                        {{ $isSelected ? 'border-[#1fa387] bg-[#1fa387] text-white' : 'border-slate-300 bg-white group-hover:border-[#1fa387]/60' }}"
-                                                    >
-                                                        @if($isSelected)
-                                                            <span class="material-symbols-outlined text-[15px] font-bold block">check</span>
+                                                {{-- Card Top Header --}}
+                                                <div class="{{ $isSelected ? 'bg-gradient-to-br from-slate-800 via-slate-900 to-[#0d3d2f]' : 'bg-white' }} p-5 pb-4 relative transition-all duration-300">
+                                                    {{-- Check Badge --}}
+                                                    <div class="absolute top-4 right-4">
+                                                        <div class="w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300
+                                                            {{ $isSelected ? 'bg-[#1fa387] text-white' : 'border-2 border-slate-300 bg-white/80 group-hover:border-[#1fa387]' }}">
+                                                            @if($isSelected)
+                                                                <span class="material-symbols-outlined text-[12px] font-black leading-none">check</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    {{-- Nama + Badge --}}
+                                                    <div class="flex items-start gap-2 flex-wrap pr-7 mb-3">
+                                                        <span class="text-[13px] font-black tracking-tight leading-tight {{ $isSelected ? 'text-white' : 'text-slate-900 group-hover:text-[#1fa387]' }} transition-colors duration-300">
+                                                            {{ $p->name }}
+                                                        </span>
+                                                        @if($p->is_popular)
+                                                        <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[7.5px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-sm whitespace-nowrap">
+                                                            ⭐ TERPOPULER
+                                                        </span>
+                                                        @endif
+                                                    </div>
+                                                    {{-- Harga --}}
+                                                    <div class="flex items-baseline gap-1">
+                                                        @if($p->price > 0)
+                                                            <span class="text-2xl font-black leading-none {{ $isSelected ? 'text-white' : 'text-slate-900' }} transition-colors duration-300">
+                                                                Rp {{ number_format($p->price, 0, ',', '.') }}
+                                                            </span>
+                                                            <span class="text-[10px] font-semibold text-slate-400">/bulan</span>
+                                                        @else
+                                                            <span class="text-sm font-black uppercase tracking-widest {{ $isSelected ? 'text-[#4ade80]' : 'text-[#1fa387]' }} transition-colors duration-300">HUBUNGI KAMI</span>
                                                         @endif
                                                     </div>
                                                 </div>
-                                                <div class="space-y-4">
-                                                    {{-- Header Card --}}
-                                                    <div class="pr-8">
-                                                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-                                                            <h3 class="text-sm font-extrabold text-slate-900 tracking-tight transition-colors duration-300 group-hover:text-[#1fa387]">{{ $p->name }}</h3>
-                                                            @if($p->is_popular)
-                                                            <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm border border-amber-300 transform transition-transform duration-300 group-hover:scale-105">
-                                                                ⭐ Terpopuler
-                                                            </span>
-                                                            @endif
-                                                        </div>
-                                                        <div class="flex items-baseline gap-1 mt-1">
-                                                            @if($p->price > 0)
-                                                                <span class="text-xl font-extrabold text-slate-800 leading-none">Rp {{ number_format($p->price, 0, ',', '.') }}</span>
-                                                                <span class="text-slate-400 text-[10px] font-semibold">/bulan</span>
-                                                            @else
-                                                                <span class="text-sm font-extrabold text-[#1fa387] leading-none uppercase tracking-wide">Hubungi Kami</span>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-
-                                                    {{-- Teks Deskripsi --}}
-                                                    <p class="text-[11px] text-slate-450 leading-relaxed font-medium transition-colors duration-300 group-hover:text-slate-600">
+                                                {{-- Card Body --}}
+                                                <div class="{{ $isSelected ? 'bg-slate-900/95' : 'bg-slate-50/70' }} p-4 flex-1 flex flex-col gap-3 transition-all duration-300">
+                                                    <p class="text-[10.5px] leading-relaxed {{ $isSelected ? 'text-slate-400' : 'text-slate-500' }} transition-colors duration-300">
                                                         {{ $p->description ?: 'Solusi handal untuk otomatisasi scraping dan pelacakan isu media.' }}
                                                     </p>
-
-                                                    {{-- Keunggulan Features List --}}
-                                                    <div class="space-y-3.5 pt-3.5 border-t border-slate-100">
-                                                        @php $socialList = $hasData ? ($p->social_media_features ?? []) : []; @endphp
+                                                    @if($hasData)
+                                                    <div class="space-y-3 pt-1">
+                                                        @php $socialList = $p->social_media_features ?? []; @endphp
                                                         @if(!empty($socialList))
-                                                        <div class="space-y-2">
-                                                            <div class="flex items-center gap-1.5">
-                                                                <span class="material-symbols-outlined text-[13px] text-sky-500 font-bold transition-transform duration-300 group-hover:scale-110">share</span>
-                                                                <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Medsos & Keunggulan</span>
+                                                        <div>
+                                                            <div class="flex items-center gap-1.5 mb-2">
+                                                                <div class="flex items-center gap-1 px-2 py-0.5 rounded-md {{ $isSelected ? 'bg-sky-900/60 border border-sky-700/50' : 'bg-sky-50 border border-sky-100' }} transition-all duration-300">
+                                                                    <span class="material-symbols-outlined text-[11px] {{ $isSelected ? 'text-sky-400' : 'text-sky-500' }}">share</span>
+                                                                    <span class="text-[8px] font-black uppercase tracking-widest {{ $isSelected ? 'text-sky-400' : 'text-sky-600' }}">MEDSOS &amp; KEUNGGULAN</span>
+                                                                </div>
                                                             </div>
                                                             <div class="space-y-1.5">
-                                                                @foreach(array_slice($socialList, 0, 3) as $feat)
+                                                                @foreach(array_slice($socialList, 0, 5) as $feat)
                                                                 <div class="flex items-start gap-2">
-                                                                    <span class="w-4 h-4 rounded-md bg-sky-50 flex items-center justify-center shrink-0 border border-sky-100/40 mt-0.5 transform transition-all duration-300 group-hover:bg-sky-100 group-hover:border-sky-300/40 group-hover:translate-x-0.5">
-                                                                        <span class="material-symbols-outlined text-[10px] text-sky-500 font-black">check</span>
-                                                                    </span>
-                                                                    <span class="text-[11px] text-slate-600 font-medium leading-tight min-w-0 transition-colors duration-300 group-hover:text-slate-800">{{ $feat }}</span>
+                                                                    <span class="material-symbols-outlined text-[12px] {{ $isSelected ? 'text-sky-400' : 'text-sky-500' }} mt-0.5 shrink-0 transition-colors duration-300">check_circle</span>
+                                                                    <span class="text-[10.5px] {{ $isSelected ? 'text-slate-300' : 'text-slate-600' }} font-medium leading-snug transition-colors duration-300">{{ $feat }}</span>
                                                                 </div>
                                                                 @endforeach
                                                             </div>
                                                         </div>
                                                         @endif
-
-                                                        @php $portalList = $hasData ? ($p->news_portal_features ?? []) : []; @endphp
+                                                        @php $portalList = $p->news_portal_features ?? []; @endphp
                                                         @if(!empty($portalList))
-                                                        <div class="space-y-2">
-                                                            <div class="flex items-center gap-1.5">
-                                                                <span class="material-symbols-outlined text-[13px] text-violet-500 font-bold transition-transform duration-300 group-hover:scale-110">newspaper</span>
-                                                                <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Portal Berita</span>
+                                                        <div>
+                                                            <div class="flex items-center gap-1.5 mb-2">
+                                                                <div class="flex items-center gap-1 px-2 py-0.5 rounded-md {{ $isSelected ? 'bg-violet-900/60 border border-violet-700/50' : 'bg-violet-50 border border-violet-100' }} transition-all duration-300">
+                                                                    <span class="material-symbols-outlined text-[11px] {{ $isSelected ? 'text-violet-400' : 'text-violet-500' }}">newspaper</span>
+                                                                    <span class="text-[8px] font-black uppercase tracking-widest {{ $isSelected ? 'text-violet-400' : 'text-violet-600' }}">PORTAL BERITA</span>
+                                                                </div>
                                                             </div>
                                                             <div class="space-y-1.5">
-                                                                @foreach(array_slice($portalList, 0, 3) as $feat)
+                                                                @foreach(array_slice($portalList, 0, 4) as $feat)
                                                                 <div class="flex items-start gap-2">
-                                                                    <span class="w-4 h-4 rounded-md bg-violet-50 flex items-center justify-center shrink-0 border border-violet-100/40 mt-0.5 transform transition-all duration-300 group-hover:bg-violet-100 group-hover:border-violet-300/40 group-hover:translate-x-0.5">
-                                                                        <span class="material-symbols-outlined text-[10px] text-violet-500 font-black">check</span>
-                                                                    </span>
-                                                                    <span class="text-[11px] text-slate-600 font-medium leading-tight min-w-0 transition-colors duration-300 group-hover:text-slate-800">{{ $feat }}</span>
+                                                                    <span class="material-symbols-outlined text-[12px] {{ $isSelected ? 'text-violet-400' : 'text-violet-500' }} mt-0.5 shrink-0 transition-colors duration-300">check_circle</span>
+                                                                    <span class="text-[10.5px] {{ $isSelected ? 'text-slate-300' : 'text-slate-600' }} font-medium leading-snug transition-colors duration-300">{{ $feat }}</span>
                                                                 </div>
                                                                 @endforeach
                                                             </div>
                                                         </div>
                                                         @endif
                                                     </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                             @endforeach
                                         </div>
                                         @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                     </div>
+                                    @endif
                                     @endif
                                 @else
                                     <form id="createProjectForm" wire:submit.prevent="createProject" class="space-y-6">
@@ -1736,110 +1740,115 @@ new class extends Component
                                         ->orderBy('name')
                                         ->get();
                                 @endphp
-                                @if($activePackagesEdit->isNotEmpty())
-                                <div class="space-y-3">
-                                    <div class="flex items-center justify-between">
+                                    @if($activePackagesEdit->isNotEmpty())
+                                    <div class="space-y-4">
                                         <div>
                                             <label class="text-sm font-bold text-slate-800 block">Paket Scraper Apify</label>
                                             <p class="text-xs text-slate-400 mt-0.5">Tentukan paket scraper yang terasosiasi ke proyek ini.</p>
                                         </div>
-                                    </div>
-                                                   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-                                        <!-- Opsi Paket-paket dari DB -->
-                                        @foreach($activePackagesEdit as $p)
-                                        @php
-                                            $hasData = !empty($p->advantages) || !empty($p->social_media_features) || !empty($p->news_portal_features);
-                                            $isSelected = (int) $packageId === (int) $p->id;
-                                        @endphp
-                                        <div 
-                                            wire:click="$set('packageId', {{ $p->id }})"
-                                            class="group relative cursor-pointer rounded-3xl border p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 bg-white
-                                            {{ $isSelected ? 'border-[#1fa387] bg-gradient-to-br from-[#1fa387]/[0.02] to-[#1fa387]/[0.06] ring-1 ring-[#1fa387]/30 shadow-md shadow-[#1fa387]/5' : 'border-slate-200/80 hover:border-[#1fa387]/40' }}"
-                                        >
-                                            {{-- Checkbox Accent Indicator --}}
-                                            <div class="absolute top-4 right-4 z-10">
-                                                <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300
-                                                    {{ $isSelected ? 'border-[#1fa387] bg-[#1fa387] text-white' : 'border-slate-300 bg-white group-hover:border-[#1fa387]/60' }}"
-                                                >
-                                                    @if($isSelected)
-                                                        <span class="material-symbols-outlined text-[15px] font-bold block">check</span>
-                                                    @endif
-                                                </div>
-                                            </div>
 
-                                            <div class="space-y-4">
-                                                {{-- Header Card --}}
-                                                <div class="pr-8">
-                                                    <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-                                                        <h3 class="text-sm font-extrabold text-slate-900 tracking-tight transition-colors duration-300 group-hover:text-[#1fa387]">{{ $p->name }}</h3>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                            <!-- Opsi Paket-paket dari DB -->
+                                            @foreach($activePackagesEdit as $p)
+                                            @php
+                                                $hasData = !empty($p->advantages) || !empty($p->social_media_features) || !empty($p->news_portal_features);
+                                                $isSelected = (int) $packageId === (int) $p->id;
+                                            @endphp
+                                            <div
+                                                wire:click="$set('packageId', {{ $p->id }})"
+                                                class="group relative cursor-pointer rounded-2xl flex flex-col transition-all duration-300 overflow-hidden
+                                                {{ $isSelected
+                                                    ? 'shadow-xl shadow-slate-900/20 ring-2 ring-[#1fa387] -translate-y-1'
+                                                    : 'border border-slate-200 hover:border-[#1fa387]/50 hover:shadow-lg hover:-translate-y-0.5 bg-white' }}"
+                                            >
+                                                {{-- Card Top Header --}}
+                                                <div class="{{ $isSelected ? 'bg-gradient-to-br from-slate-800 via-slate-900 to-[#0d3d2f]' : 'bg-white' }} p-5 pb-4 relative transition-all duration-300">
+                                                    {{-- Check Badge --}}
+                                                    <div class="absolute top-4 right-4">
+                                                        <div class="w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300
+                                                            {{ $isSelected ? 'bg-[#1fa387] text-white' : 'border-2 border-slate-300 bg-white/80 group-hover:border-[#1fa387]' }}">
+                                                            @if($isSelected)
+                                                                <span class="material-symbols-outlined text-[12px] font-black leading-none">check</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    {{-- Nama + Badge --}}
+                                                    <div class="flex items-start gap-2 flex-wrap pr-7 mb-3">
+                                                        <span class="text-[13px] font-black tracking-tight leading-tight {{ $isSelected ? 'text-white' : 'text-slate-900 group-hover:text-[#1fa387]' }} transition-colors duration-300">
+                                                            {{ $p->name }}
+                                                        </span>
                                                         @if($p->is_popular)
-                                                        <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm border border-amber-300 transform transition-transform duration-300 group-hover:scale-105">
-                                                            ⭐ Terpopuler
+                                                        <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[7.5px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-sm whitespace-nowrap">
+                                                            ⭐ TERPOPULER
                                                         </span>
                                                         @endif
                                                     </div>
-                                                    <div class="flex items-baseline gap-1 mt-1">
+                                                    {{-- Harga --}}
+                                                    <div class="flex items-baseline gap-1">
                                                         @if($p->price > 0)
-                                                            <span class="text-xl font-extrabold text-slate-800 leading-none">Rp {{ number_format($p->price, 0, ',', '.') }}</span>
-                                                            <span class="text-slate-400 text-[10px] font-semibold">/bulan</span>
+                                                            <span class="text-2xl font-black leading-none {{ $isSelected ? 'text-white' : 'text-slate-900' }} transition-colors duration-300">
+                                                                Rp {{ number_format($p->price, 0, ',', '.') }}
+                                                            </span>
+                                                            <span class="text-[10px] font-semibold text-slate-400">/bulan</span>
                                                         @else
-                                                            <span class="text-sm font-extrabold text-[#1fa387] leading-none uppercase tracking-wide">Hubungi Kami</span>
+                                                            <span class="text-sm font-black uppercase tracking-widest {{ $isSelected ? 'text-[#4ade80]' : 'text-[#1fa387]' }} transition-colors duration-300">HUBUNGI KAMI</span>
                                                         @endif
                                                     </div>
                                                 </div>
-
-                                                {{-- Teks Deskripsi --}}
-                                                <p class="text-[11px] text-slate-450 leading-relaxed font-medium transition-colors duration-300 group-hover:text-slate-600">
-                                                    {{ $p->description ?: 'Solusi handal untuk otomatisasi scraping dan pelacakan isu media.' }}
-                                                </p>
-
-                                                {{-- Keunggulan Features List --}}
-                                                <div class="space-y-3.5 pt-3.5 border-t border-slate-100">
-                                                    @php $socialList = $hasData ? ($p->social_media_features ?? []) : []; @endphp
-                                                    @if(!empty($socialList))
-                                                    <div class="space-y-2">
-                                                        <div class="flex items-center gap-1.5">
-                                                            <span class="material-symbols-outlined text-[13px] text-sky-500 font-bold transition-transform duration-300 group-hover:scale-110">share</span>
-                                                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Medsos & Keunggulan</span>
-                                                        </div>
-                                                        <div class="space-y-1.5">
-                                                            @foreach(array_slice($socialList, 0, 3) as $feat)
-                                                            <div class="flex items-start gap-2">
-                                                                <span class="w-4 h-4 rounded-md bg-sky-50 flex items-center justify-center shrink-0 border border-sky-100/40 mt-0.5 transform transition-all duration-300 group-hover:bg-sky-100 group-hover:border-sky-300/40 group-hover:translate-x-0.5">
-                                                                    <span class="material-symbols-outlined text-[10px] text-sky-500 font-black">check</span>
-                                                                </span>
-                                                                <span class="text-[11px] text-slate-600 font-medium leading-tight min-w-0 transition-colors duration-300 group-hover:text-slate-800">{{ $feat }}</span>
+                                                {{-- Card Body --}}
+                                                <div class="{{ $isSelected ? 'bg-slate-900/95' : 'bg-slate-50/70' }} p-4 flex-1 flex flex-col gap-3 transition-all duration-300">
+                                                    <p class="text-[10.5px] leading-relaxed {{ $isSelected ? 'text-slate-400' : 'text-slate-500' }} transition-colors duration-300">
+                                                        {{ $p->description ?: 'Solusi handal untuk otomatisasi scraping dan pelacakan isu media.' }}
+                                                    </p>
+                                                    @if($hasData)
+                                                    <div class="space-y-3 pt-1">
+                                                        @php $socialList = $p->social_media_features ?? []; @endphp
+                                                        @if(!empty($socialList))
+                                                        <div>
+                                                            <div class="flex items-center gap-1.5 mb-2">
+                                                                <div class="flex items-center gap-1 px-2 py-0.5 rounded-md {{ $isSelected ? 'bg-sky-900/60 border border-sky-700/50' : 'bg-sky-50 border border-sky-100' }} transition-all duration-300">
+                                                                    <span class="material-symbols-outlined text-[11px] {{ $isSelected ? 'text-sky-400' : 'text-sky-500' }}">share</span>
+                                                                    <span class="text-[8px] font-black uppercase tracking-widest {{ $isSelected ? 'text-sky-400' : 'text-sky-600' }}">MEDSOS &amp; KEUNGGULAN</span>
+                                                                </div>
                                                             </div>
-                                                            @endforeach
-                                                        </div>
-                                                    </div>
-                                                    @endif
-
-                                                    @php $portalList = $hasData ? ($p->news_portal_features ?? []) : []; @endphp
-                                                    @if(!empty($portalList))
-                                                    <div class="space-y-2">
-                                                        <div class="flex items-center gap-1.5">
-                                                            <span class="material-symbols-outlined text-[13px] text-violet-500 font-bold transition-transform duration-300 group-hover:scale-110">newspaper</span>
-                                                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Portal Berita</span>
-                                                        </div>
-                                                        <div class="space-y-1.5">
-                                                            @foreach(array_slice($portalList, 0, 3) as $feat)
-                                                            <div class="flex items-start gap-2">
-                                                                <span class="w-4 h-4 rounded-md bg-violet-50 flex items-center justify-center shrink-0 border border-violet-100/40 mt-0.5 transform transition-all duration-300 group-hover:bg-violet-100 group-hover:border-violet-300/40 group-hover:translate-x-0.5">
-                                                                    <span class="material-symbols-outlined text-[10px] text-violet-500 font-black">check</span>
-                                                                </span>
-                                                                <span class="text-[11px] text-slate-600 font-medium leading-tight min-w-0 transition-colors duration-300 group-hover:text-slate-800">{{ $feat }}</span>
+                                                            <div class="space-y-1.5">
+                                                                @foreach(array_slice($socialList, 0, 5) as $feat)
+                                                                <div class="flex items-start gap-2">
+                                                                    <span class="material-symbols-outlined text-[12px] {{ $isSelected ? 'text-sky-400' : 'text-sky-500' }} mt-0.5 shrink-0 transition-colors duration-300">check_circle</span>
+                                                                    <span class="text-[10.5px] {{ $isSelected ? 'text-slate-300' : 'text-slate-600' }} font-medium leading-snug transition-colors duration-300">{{ $feat }}</span>
+                                                                </div>
+                                                                @endforeach
                                                             </div>
-                                                            @endforeach
                                                         </div>
+                                                        @endif
+                                                        @php $portalList = $p->news_portal_features ?? []; @endphp
+                                                        @if(!empty($portalList))
+                                                        <div>
+                                                            <div class="flex items-center gap-1.5 mb-2">
+                                                                <div class="flex items-center gap-1 px-2 py-0.5 rounded-md {{ $isSelected ? 'bg-violet-900/60 border border-violet-700/50' : 'bg-violet-50 border border-violet-100' }} transition-all duration-300">
+                                                                    <span class="material-symbols-outlined text-[11px] {{ $isSelected ? 'text-violet-400' : 'text-violet-500' }}">newspaper</span>
+                                                                    <span class="text-[8px] font-black uppercase tracking-widest {{ $isSelected ? 'text-violet-400' : 'text-violet-600' }}">PORTAL BERITA</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="space-y-1.5">
+                                                                @foreach(array_slice($portalList, 0, 4) as $feat)
+                                                                <div class="flex items-start gap-2">
+                                                                    <span class="material-symbols-outlined text-[12px] {{ $isSelected ? 'text-violet-400' : 'text-violet-500' }} mt-0.5 shrink-0 transition-colors duration-300">check_circle</span>
+                                                                    <span class="text-[10.5px] {{ $isSelected ? 'text-slate-300' : 'text-slate-600' }} font-medium leading-snug transition-colors duration-300">{{ $feat }}</span>
+                                                                </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                        @endif
                                                     </div>
                                                     @endif
                                                 </div>
+                                            </div>
+                                            @endforeach
                                         </div>
-                                        @endforeach
+                                        @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                     </div>
-                                    @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
-                                </div>
+                                    @endif
                                 @endif
 
                                 <!-- Telegram Chat ID -->
