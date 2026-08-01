@@ -1162,12 +1162,6 @@ new class extends Component
                                                         @endif
                                                     </div>
                                                 </div>
-
-                                                {{-- Footer Badge --}}
-                                                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[10px] font-black text-[#1fa387] transition-all duration-300">
-                                                    <span class="material-symbols-outlined text-[14px] transform transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110">smart_toy</span>
-                                                    <span class="group-hover:translate-x-0.5 transition-transform duration-300">{{ $p->actors_count }} Robot Aktif Siaga</span>
-                                                </div>
                                             </div>
                                             @endforeach
                                         </div>
@@ -1830,10 +1824,6 @@ new class extends Component
                                                         </div>
                                                     </div>
                                                     @endif
-                                                </div>
-                                            </div>
-                                            <div class="mt-4 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[9px] font-bold text-[#1fa387]">
-                                                <span class="material-symbols-outlined text-[12px]">smart_toy</span> {{ $p->actors_count }} Actor Aktif
                                             </div>
                                         </div>
                                         @endforeach
