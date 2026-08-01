@@ -108,15 +108,35 @@ class AiAnalysisJob implements ShouldQueue
             }
 
             if (!$project->is_active) {
-                Log::warning("[Pipeline] Lewati analisis: Proyek ID {$projectId} ({$project->name}) berstatus NONAKTIF.");
-                $dispatchStateService->markFailed(
-                    $this->payload,
-                    'project_inactive',
-                    "Project ID {$projectId} is inactive.",
-                    $promptTemplateId,
-                    $providerContextHash
-                );
-                return;
+                // Cek apakah artikel/sosmed ini terhubung ke proyek lain yang aktif
+                $hasActiveProject = false;
+                if ($type === 'social') {
+                    $hasActiveProject = \DB::table('project_social_media_items')
+                        ->join('projects', 'project_social_media_items.project_id', '=', 'projects.id')
+                        ->where('project_social_media_items.social_media_item_id', $id)
+                        ->where('projects.is_active', true)
+                        ->exists();
+                } else {
+                    $hasActiveProject = \DB::table('project_articles')
+                        ->join('projects', 'project_articles.project_id', '=', 'projects.id')
+                        ->where('project_articles.article_id', $id)
+                        ->where('projects.is_active', true)
+                        ->exists();
+                }
+
+                if (!$hasActiveProject) {
+                    Log::warning("[Pipeline] Lewati analisis: Proyek ID {$projectId} ({$project->name}) berstatus NONAKTIF dan artikel/sosmed ini tidak terhubung ke proyek aktif mana pun.");
+                    $dispatchStateService->markFailed(
+                        $this->payload,
+                        'project_inactive',
+                        "Project ID {$projectId} is inactive and no active cross-linked projects found.",
+                        $promptTemplateId,
+                        $providerContextHash
+                    );
+                    return;
+                }
+                
+                Log::info("[Pipeline] Tetap proses analisis: Proyek saat ini ({$project->name}) nonaktif, tetapi artikel/sosmed terhubung ke proyek aktif lain.");
             }
         }
 
