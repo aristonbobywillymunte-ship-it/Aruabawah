@@ -1531,6 +1531,7 @@ new class extends Component
                                 <div class="mt-auto" x-data="{ openingProject: false }">
                                     <a 
                                         href="{{ route('home', ['project' => base64_encode($project['id']), 'tab' => base64_encode('penyebutan')]) }}"
+                                        @click="openingProject = true"
                                         class="block w-full py-3 border border-primary text-primary rounded-xl text-center text-sm font-bold hover:bg-primary/5 cursor-pointer transition-colors"
                                     >
                                         <span x-show="!openingProject" class="inline-flex items-center justify-center gap-2">
