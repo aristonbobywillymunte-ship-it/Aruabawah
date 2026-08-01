@@ -85,6 +85,8 @@
                 </button>
             </div>
         </div>
+    </div>
+
     <!-- [NEW] Widget Ringkasan Biaya Aktual Apify (Dipindahkan ke Bagian Atas) -->
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-left">
         <div class="flex items-center justify-between mb-4">
