@@ -226,6 +226,10 @@ class ApifyScrapingJob implements ShouldQueue
             $dispatchKeyParts[] = $normalizedKeyword;
         }
 
+        if ($forceDispatch) {
+            $dispatchKeyParts[] = 'force_' . time() . '_' . rand(1000, 9999);
+        }
+
         $dispatchKey = hash('sha256', implode('|', $dispatchKeyParts));
 
         try {
