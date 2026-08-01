@@ -732,8 +732,8 @@
                         >
                             @if($articlesList->isEmpty())
                             <div class="bg-white border border-slate-200 rounded-2xl p-12 text-center space-y-4 shadow-sm">
-                                <svg class="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 0 0 0118 0z"></path>
+                                <svg class="w-12 h-12 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.182 16.318A4.486 4.486 0 0012.016 15a4.486 4.486 0 00-3.198 1.318M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                                 <p class="text-sm font-semibold text-slate-600">Belum ada penyebutan media ditemukan untuk proyek ini.</p>
                             </div>
