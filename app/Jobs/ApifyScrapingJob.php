@@ -799,6 +799,15 @@ class ApifyScrapingJob implements ShouldQueue
             ]);
         }
 
+        // [Cost Tracking] Catat biaya aktual dari Apify API ke database (murni additive, tidak mengubah alur)
+        if ($state && !empty($runData)) {
+            $state->update([
+                'actual_cost_usd'   => data_get($runData, 'usageTotalCostUsd'),
+                'items_collected'   => data_get($runData, 'stats.itemCount'),
+                'run_duration_secs' => data_get($runData, 'stats.runTimeSecs'),
+            ]);
+        }
+
         // Fetch dataset items
         $datasetResp = Http::withToken($token)
             ->get("https://api.apify.com/v2/datasets/{$datasetId}/items", [
