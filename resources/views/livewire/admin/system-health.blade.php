@@ -386,7 +386,14 @@
                                             <td class="px-4 py-3 font-bold text-slate-600 align-top whitespace-nowrap">{{ $item['type'] }}</td>
                                             <td class="px-4 py-3 text-slate-550 align-top whitespace-nowrap font-medium">{{ $item['content_date'] }}</td>
                                             <td class="px-4 py-3 text-slate-800 align-top">
-                                                <div class="line-clamp-2 leading-relaxed" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
+                                                @if(!empty($item['url']))
+                                                    <a href="{{ $item['url'] }}" target="_blank" class="line-clamp-2 leading-relaxed font-semibold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1" title="{{ $item['title'] }}">
+                                                        <span>{{ $item['title'] }}</span>
+                                                        <span class="material-symbols-outlined text-[14px] shrink-0">open_in_new</span>
+                                                    </a>
+                                                @else
+                                                    <div class="line-clamp-2 leading-relaxed" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
+                                                @endif
                                                 @if($item['status'] === 'retry_wait' && $item['error_message'])
                                                     <div class="text-[9px] text-rose-500 font-semibold mt-1 bg-rose-50/40 p-1 px-2 rounded-lg border border-rose-100/50 break-words whitespace-normal">
                                                         Error: {{ $item['error_message'] }}

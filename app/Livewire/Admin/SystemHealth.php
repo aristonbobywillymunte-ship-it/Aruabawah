@@ -273,9 +273,11 @@ class SystemHealth extends Component
                 }
             }
 
+            $contentUrl = null;
             if ($article) {
                 $contentTitle = $article->title ?: ($article->source_name ?: 'Portal News Item');
                 $contentDate = $article->published_at ? \Carbon\Carbon::parse($article->published_at)->isoFormat('D MMM YYYY, HH:mm') : '-';
+                $contentUrl = $article->url ?: $article->canonical_url;
             } elseif ($social) {
                 $text = data_get($social, 'text') ?? data_get($social, 'content');
                 $author = data_get($social, 'author') ?? data_get($social, 'author_name');
@@ -283,6 +285,7 @@ class SystemHealth extends Component
                 
                 $postCreatedAt = data_get($social, 'posted_at') ?? (data_get($social, 'post_created_at') ?? data_get($social, 'created_at'));
                 $contentDate = $postCreatedAt ? \Carbon\Carbon::parse($postCreatedAt)->isoFormat('D MMM YYYY, HH:mm') : '-';
+                $contentUrl = data_get($social, 'post_url') ?? data_get($social, 'url');
             }
 
             return [
@@ -295,6 +298,7 @@ class SystemHealth extends Component
                 'attempts' => $item->attempts,
                 'error_message' => $item->error_message ?: '-',
                 'created_at' => $item->created_at ? \Carbon\Carbon::parse($item->created_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+                'url' => $contentUrl,
             ];
         })->toArray();
 
