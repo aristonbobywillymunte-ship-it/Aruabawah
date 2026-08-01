@@ -305,7 +305,7 @@
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
         <div wire:key="ai-queue-details-modal" x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
-            <div class="w-full max-w-2xl h-[450px] overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain flex flex-col">
+            <div class="w-full max-w-2xl bg-white shadow-2xl text-left overscroll-contain flex flex-col rounded-[24px] overflow-hidden" style="height: 450px !important; max-height: 450px !important;">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
                     <div class="min-w-0 flex-1 pr-4">
@@ -319,7 +319,7 @@
                 </div>
 
                 <!-- Modal Body (Table dengan Spinner Loading) -->
-                <div class="flex-1 h-[300px] overflow-y-auto p-6 relative">
+                <div class="flex-1 overflow-y-auto p-6 relative" style="height: 310px !important; max-height: 310px !important;">
                     <!-- Loading overlay jika ada aksi di background -->
                     <div wire:loading wire:target="openQueueModal" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center">
                         <div class="flex flex-col items-center gap-3">
