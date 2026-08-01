@@ -346,6 +346,7 @@
                                     <tr class="bg-slate-50 border-b border-slate-200">
                                         <th class="px-4 py-3 font-bold text-slate-700 w-12 text-center">No</th>
                                         <th class="px-4 py-3 font-bold text-slate-700 w-28">Tipe</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Tanggal Konten</th>
                                         <th class="px-4 py-3 font-bold text-slate-700">Judul / Konten</th>
                                         <th class="px-4 py-3 font-bold text-slate-700 w-36">Proyek</th>
                                         <th class="px-4 py-3 font-bold text-slate-700 w-28">Status</th>
@@ -372,6 +373,7 @@
                                         <tr class="hover:bg-slate-50/50 transition">
                                             <td class="px-4 py-3 text-center text-slate-400 font-bold align-top">{{ $idx + 1 }}</td>
                                             <td class="px-4 py-3 font-bold text-slate-600 align-top whitespace-nowrap">{{ $item['type'] }}</td>
+                                            <td class="px-4 py-3 text-slate-550 align-top whitespace-nowrap font-medium">{{ $item['content_date'] }}</td>
                                             <td class="px-4 py-3 text-slate-800 align-top">
                                                 <div class="line-clamp-2 leading-relaxed" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
                                                 @if($item['status'] === 'retry_wait' && $item['error_message'])

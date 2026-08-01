@@ -222,6 +222,7 @@ class SystemHealth extends Component
         $this->queueDetails = $rawItems->map(function ($item) {
             $projectName = 'N/A';
             $contentTitle = 'N/A';
+            $contentDate = '-';
 
             if ($item->project_id) {
                 $project = DB::table('projects')->where('id', $item->project_id)->first();
@@ -234,11 +235,13 @@ class SystemHealth extends Component
                 $article = DB::table('articles')->where('id', $item->analyzable_id)->first();
                 if ($article) {
                     $contentTitle = $article->title ?: ($article->source_name ?: 'Portal News Item');
+                    $contentDate = $article->published_at ? \Carbon\Carbon::parse($article->published_at)->isoFormat('D MMM YYYY, HH:mm') : '-';
                 }
             } elseif ($item->analyzable_type === 'social') {
                 $social = DB::table('social_media_items')->where('id', $item->analyzable_id)->first();
                 if ($social) {
                     $contentTitle = $social->content ? mb_substr(strip_tags($social->content), 0, 80) . '...' : ($social->author_name ? 'Post dari ' . $social->author_name : 'Post Media Sosial');
+                    $contentDate = $social->post_created_at ? \Carbon\Carbon::parse($social->post_created_at)->isoFormat('D MMM YYYY, HH:mm') : '-';
                 }
             }
 
@@ -246,6 +249,7 @@ class SystemHealth extends Component
                 'id' => $item->id,
                 'type' => $item->analyzable_type === 'article' ? 'Portal Berita' : 'Media Sosial',
                 'title' => $contentTitle,
+                'content_date' => $contentDate,
                 'project' => $projectName,
                 'status' => $item->status,
                 'attempts' => $item->attempts,
