@@ -1075,6 +1075,9 @@ new class extends Component
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <!-- Opsi Paket-paket dari DB -->
                                             @foreach($activePackages as $p)
+                                            @php
+                                                $hasData = !empty($p->advantages) || !empty($p->social_media_features) || !empty($p->news_portal_features);
+                                            @endphp
                                             <div 
                                                 wire:click="$set('packageId', {{ $p->id }})"
                                                 class="cursor-pointer rounded-2xl border p-4 flex flex-col justify-between transition-all duration-200 hover:shadow-md hover:scale-[1.01] active:scale-[0.99]
@@ -1082,15 +1085,75 @@ new class extends Component
                                             >
                                                 <div>
                                                     <div class="flex items-center justify-between mb-2">
-                                                        <span class="text-xs font-black text-slate-800 truncate pr-2" title="{{ $p->name }}">{{ $p->name }}</span>
-                                                        <span class="material-symbols-outlined text-[16px] {{ (int) $packageId === (int) $p->id ? 'text-[#1fa387]' : 'text-slate-355' }}">
+                                                        <div class="flex items-center gap-1.5 min-w-0">
+                                                            <span class="text-xs font-black text-slate-800 truncate" title="{{ $p->name }}">{{ $p->name }}</span>
+                                                            @if($p->is_popular)
+                                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white shadow-sm">
+                                                                ⭐ Terpopuler
+                                                            </span>
+                                                            @endif
+                                                        </div>
+                                                        <span class="material-symbols-outlined text-[16px] {{ (int) $packageId === (int) $p->id ? 'text-[#1fa387]' : 'text-slate-355' }} shrink-0">
                                                             {{ (int) $packageId === (int) $p->id ? 'check_circle' : 'radio_button_unchecked' }}
                                                         </span>
                                                     </div>
-                                                    <p class="text-[10px] text-slate-400 leading-normal line-clamp-2">{{ $p->description ?: 'Tidak ada deskripsi paket.' }}</p>
+                                                    
+                                                    <div class="flex items-end gap-1 mb-2">
+                                                        @if($p->price > 0)
+                                                            <span class="text-base font-black text-slate-700 leading-none">Rp {{ number_format($p->price, 0, ',', '.') }}</span>
+                                                            <span class="text-slate-400 text-[10px] font-semibold">/bulan</span>
+                                                        @else
+                                                            <span class="text-xs font-black text-[#1fa387] leading-none">Hubungi Kami</span>
+                                                        @endif
+                                                    </div>
+
+                                                    <p class="text-[9px] text-slate-400 leading-normal line-clamp-2 mb-3">{{ $p->description ?: 'Tidak ada deskripsi paket.' }}</p>
+                                                    
+                                                    {{-- Keunggulan / Fitur List --}}
+                                                    <div class="space-y-3 pt-2.5 border-t border-slate-100/70">
+                                                        @php $socialList = $hasData ? ($p->social_media_features ?? []) : []; @endphp
+                                                        @if(!empty($socialList))
+                                                        <div>
+                                                            <div class="flex items-center gap-1 mb-1">
+                                                                <span class="material-symbols-outlined text-[10px] text-sky-500">share</span>
+                                                                <span class="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400">Sosial Media & Keunggulan</span>
+                                                            </div>
+                                                            <div class="space-y-1">
+                                                                @foreach(array_slice($socialList, 0, 3) as $feat)
+                                                                <div class="flex items-start gap-1">
+                                                                    <span class="w-3.5 h-3.5 rounded bg-sky-50 flex items-center justify-center shrink-0 border border-sky-100/50 mt-0.5">
+                                                                        <span class="material-symbols-outlined text-[8px] text-sky-500">check</span>
+                                                                    </span>
+                                                                    <span class="text-[9px] text-slate-500 font-medium leading-tight break-words min-w-0">{{ $feat }}</span>
+                                                                </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                        @endif
+
+                                                        @php $portalList = $hasData ? ($p->news_portal_features ?? []) : []; @endphp
+                                                        @if(!empty($portalList))
+                                                        <div>
+                                                            <div class="flex items-center gap-1 mb-1">
+                                                                <span class="material-symbols-outlined text-[10px] text-violet-500">newspaper</span>
+                                                                <span class="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400">Portal Berita</span>
+                                                            </div>
+                                                            <div class="space-y-1">
+                                                                @foreach(array_slice($portalList, 0, 3) as $feat)
+                                                                <div class="flex items-start gap-1">
+                                                                    <span class="w-3.5 h-3.5 rounded bg-violet-50 flex items-center justify-center shrink-0 border border-violet-100/50 mt-0.5">
+                                                                        <span class="material-symbols-outlined text-[8px] text-violet-500">check</span>
+                                                                    </span>
+                                                                    <span class="text-[9px] text-slate-500 font-medium leading-tight break-words min-w-0">{{ $feat }}</span>
+                                                                </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                        @endif
+                                                    </div>
                                                 </div>
-                                                <div class="mt-4 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[10px] font-bold text-[#1fa387]">
-                                                    <span class="material-symbols-outlined text-[14px]">smart_toy</span> {{ $p->actors_count }} Actor Aktif
+                                                <div class="mt-4 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[9px] font-bold text-[#1fa387]">
+                                                    <span class="material-symbols-outlined text-[12px]">smart_toy</span> {{ $p->actors_count }} Actor Aktif
                                                 </div>
                                             </div>
                                             @endforeach
@@ -1679,6 +1742,9 @@ new class extends Component
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <!-- Opsi Paket-paket dari DB -->
                                         @foreach($activePackagesEdit as $p)
+                                        @php
+                                            $hasData = !empty($p->advantages) || !empty($p->social_media_features) || !empty($p->news_portal_features);
+                                        @endphp
                                         <div 
                                             wire:click="$set('packageId', {{ $p->id }})"
                                             class="cursor-pointer rounded-2xl border p-4 flex flex-col justify-between transition-all duration-200 hover:shadow-md hover:scale-[1.01] active:scale-[0.99]
@@ -1686,15 +1752,75 @@ new class extends Component
                                         >
                                             <div>
                                                 <div class="flex items-center justify-between mb-2">
-                                                    <span class="text-xs font-black text-slate-800 truncate pr-2" title="{{ $p->name }}">{{ $p->name }}</span>
-                                                    <span class="material-symbols-outlined text-[16px] {{ (int) $packageId === (int) $p->id ? 'text-[#1fa387]' : 'text-slate-355' }}">
+                                                    <div class="flex items-center gap-1.5 min-w-0">
+                                                        <span class="text-xs font-black text-slate-800 truncate" title="{{ $p->name }}">{{ $p->name }}</span>
+                                                        @if($p->is_popular)
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white shadow-sm">
+                                                            ⭐ Terpopuler
+                                                        </span>
+                                                        @endif
+                                                    </div>
+                                                    <span class="material-symbols-outlined text-[16px] {{ (int) $packageId === (int) $p->id ? 'text-[#1fa387]' : 'text-slate-355' }} shrink-0">
                                                         {{ (int) $packageId === (int) $p->id ? 'check_circle' : 'radio_button_unchecked' }}
                                                     </span>
                                                 </div>
-                                                <p class="text-[10px] text-slate-400 leading-normal line-clamp-2">{{ $p->description ?: 'Tidak ada deskripsi paket.' }}</p>
+                                                
+                                                <div class="flex items-end gap-1 mb-2">
+                                                    @if($p->price > 0)
+                                                        <span class="text-base font-black text-slate-700 leading-none">Rp {{ number_format($p->price, 0, ',', '.') }}</span>
+                                                        <span class="text-slate-400 text-[10px] font-semibold">/bulan</span>
+                                                    @else
+                                                        <span class="text-xs font-black text-[#1fa387] leading-none">Hubungi Kami</span>
+                                                    @endif
+                                                </div>
+
+                                                <p class="text-[9px] text-slate-400 leading-normal line-clamp-2 mb-3">{{ $p->description ?: 'Tidak ada deskripsi paket.' }}</p>
+                                                
+                                                {{-- Keunggulan / Fitur List --}}
+                                                <div class="space-y-3 pt-2.5 border-t border-slate-100/70">
+                                                    @php $socialList = $hasData ? ($p->social_media_features ?? []) : []; @endphp
+                                                    @if(!empty($socialList))
+                                                    <div>
+                                                        <div class="flex items-center gap-1 mb-1">
+                                                            <span class="material-symbols-outlined text-[10px] text-sky-500">share</span>
+                                                            <span class="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400">Sosial Media & Keunggulan</span>
+                                                        </div>
+                                                        <div class="space-y-1">
+                                                            @foreach(array_slice($socialList, 0, 3) as $feat)
+                                                            <div class="flex items-start gap-1">
+                                                                    <span class="w-3.5 h-3.5 rounded bg-sky-50 flex items-center justify-center shrink-0 border border-sky-100/50 mt-0.5">
+                                                                    <span class="material-symbols-outlined text-[8px] text-sky-500">check</span>
+                                                                </span>
+                                                                <span class="text-[9px] text-slate-500 font-medium leading-tight break-words min-w-0">{{ $feat }}</span>
+                                                            </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                    @endif
+
+                                                    @php $portalList = $hasData ? ($p->news_portal_features ?? []) : []; @endphp
+                                                    @if(!empty($portalList))
+                                                    <div>
+                                                        <div class="flex items-center gap-1 mb-1">
+                                                            <span class="material-symbols-outlined text-[10px] text-violet-500">newspaper</span>
+                                                            <span class="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400">Portal Berita</span>
+                                                        </div>
+                                                        <div class="space-y-1">
+                                                            @foreach(array_slice($portalList, 0, 3) as $feat)
+                                                            <div class="flex items-start gap-1">
+                                                                    <span class="w-3.5 h-3.5 rounded bg-violet-50 flex items-center justify-center shrink-0 border border-violet-100/50 mt-0.5">
+                                                                    <span class="material-symbols-outlined text-[8px] text-violet-500">check</span>
+                                                                </span>
+                                                                <span class="text-[9px] text-slate-500 font-medium leading-tight break-words min-w-0">{{ $feat }}</span>
+                                                            </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                    @endif
+                                                </div>
                                             </div>
-                                            <div class="mt-4 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[10px] font-bold text-[#1fa387]">
-                                                <span class="material-symbols-outlined text-[14px]">smart_toy</span> {{ $p->actors_count }} Actor Aktif
+                                            <div class="mt-4 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[9px] font-bold text-[#1fa387]">
+                                                <span class="material-symbols-outlined text-[12px]">smart_toy</span> {{ $p->actors_count }} Actor Aktif
                                             </div>
                                         </div>
                                         @endforeach
