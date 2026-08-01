@@ -269,8 +269,11 @@ class TelegramSettings extends Component
         }
 
         try {
+            // Pengecekan Chat ID: Telegram personal chat ID bernilai positif.
+            // ID group/supergroup bernilai negatif. Jangan paksa menambahkan minus 
+            // jika target adalah personal chat (panjang karakter biasanya 9-10 digit).
             $targetChatId = $this->test_chat_id;
-            if (is_numeric($targetChatId) && !str_starts_with($targetChatId, '-')) {
+            if (is_numeric($targetChatId) && !str_starts_with($targetChatId, '-') && strlen($targetChatId) > 10) {
                 $targetChatId = '-' . $targetChatId;
             }
             // Real Telegram API Request Call
