@@ -1,30 +1,26 @@
 <div class="space-y-6 text-left" wire:poll.5s>
-    <!-- Error logs display if available -->
-    <div class="rounded-2xl border {{ count($latestErrors) > 0 ? 'border-rose-100 bg-rose-50/40' : 'border-slate-200 bg-white' }} px-4 py-2.5 shadow-sm">
+    <!-- Error logs display if available (hanya tampil jika ada error) -->
+    @if(count($latestErrors) > 0)
+    <div class="rounded-2xl border border-rose-100 bg-rose-50/40 px-4 py-2.5 shadow-sm">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[15px] {{ count($latestErrors) > 0 ? 'text-rose-500' : 'text-slate-400' }}">error</span>
-                <span class="text-[11px] font-bold {{ count($latestErrors) > 0 ? 'text-rose-700' : 'text-slate-500' }}">Log Error / Kegagalan Terkini</span>
-                @if(count($latestErrors) > 0)
-                    <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-bold ml-1">{{ count($latestErrors) }}</span>
-                @endif
+                <span class="material-symbols-outlined text-[15px] text-rose-500">error</span>
+                <span class="text-[11px] font-bold text-rose-700">Log Error / Kegagalan Terkini</span>
+                <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-bold ml-1">{{ count($latestErrors) }}</span>
             </div>
-            @if(count($latestErrors) > 0)
-                <button wire:click="clearErrors" class="text-[10px] font-bold text-rose-400 hover:text-rose-600 px-2 py-0.5 border border-rose-200 hover:bg-rose-50 rounded-lg transition cursor-pointer">
-                    Bersihkan
-                </button>
-            @endif
+            <button wire:click="clearErrors" class="text-[10px] font-bold text-rose-400 hover:text-rose-600 px-2 py-0.5 border border-rose-200 hover:bg-rose-50 rounded-lg transition cursor-pointer">
+                Bersihkan
+            </button>
         </div>
-        @if(count($latestErrors) > 0)
-            <div class="mt-2 space-y-1 max-h-24 overflow-y-auto">
-                @foreach($latestErrors as $err)
-                    <div class="text-[10px] font-mono px-2.5 py-1.5 bg-white border border-rose-100 rounded-lg text-rose-600 leading-relaxed">
-                        {{ $err }}
-                    </div>
-                @endforeach
-            </div>
-        @endif
+        <div class="mt-2 space-y-1 max-h-24 overflow-y-auto">
+            @foreach($latestErrors as $err)
+                <div class="text-[10px] font-mono px-2.5 py-1.5 bg-white border border-rose-100 rounded-lg text-rose-600 leading-relaxed">
+                    {{ $err }}
+                </div>
+            @endforeach
+        </div>
     </div>
+    @endif
 
     <!-- Grid Card Status Health -->
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
