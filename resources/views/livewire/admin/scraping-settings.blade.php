@@ -60,7 +60,7 @@
                         <span class="text-xs font-bold text-slate-800">{{ $setting->google_news_interval }} menit</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-semibold text-slate-500">Portal Crawling</span>
+                        <span class="text-xs font-semibold text-slate-500">Portal Lokal (Manual)</span>
                         <span class="text-xs font-bold text-slate-800">{{ $setting->portal_crawling_interval }} menit</span>
                     </div>
                 </div>
@@ -94,7 +94,7 @@
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left p-6 space-y-4">
         <h2 class="text-sm font-bold text-slate-800">Catatan Konfigurasi Pipeline</h2>
         <p class="text-xs text-slate-500 leading-relaxed">
-            Semua link berita yang ditemukan dari Google News maupun Portal Crawling akan disaring terlebih dahulu ke dalam tabel **Candidate Links**. 
+            Semua link berita yang ditemukan dari Google News maupun Portal Lokal (Manual) akan disaring terlebih dahulu ke dalam tabel **Candidate Links**. 
             Setelah lolos seleksi kata kunci, tautan terpilih dipindahkan ke **Scraping Items** untuk diambil oleh *Scraper Worker* dengan limit maksimal **{{ $setting->limit_per_run }}** artikel per proses jalan.
         </p>
     </div>
@@ -121,7 +121,7 @@
                             @error('google_news_interval') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Interval Crawling Portal (Menit)</label>
+                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Interval Portal Lokal Manual (Menit)</label>
                             <input wire:model="portal_crawling_interval" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
                             @error('portal_crawling_interval') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                         </div>
