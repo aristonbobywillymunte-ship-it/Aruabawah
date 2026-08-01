@@ -18,10 +18,20 @@
             </div>
             <button 
                 wire:click="create" 
-                class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm cursor-pointer"
+                wire:loading.attr="disabled"
+                class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm cursor-pointer min-w-[130px]"
             >
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                <span>Tambah Provider</span>
+                <span wire:loading.remove class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                    <span>Tambah Provider</span>
+                </span>
+                <span wire:loading class="flex items-center gap-1.5">
+                    <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Loading...</span>
+                </span>
             </button>
         </div>
     </div>
@@ -58,10 +68,20 @@
                     </div>
                     <button 
                         wire:click="openTest({{ $defaultProvider->id }})" 
-                        class="inline-flex h-8 items-center gap-1.5 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-3.5 text-[11px] font-bold transition shadow-sm cursor-pointer"
+                        wire:loading.attr="disabled"
+                        class="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-3.5 text-[11px] font-bold transition shadow-sm cursor-pointer min-w-[120px]"
                     >
-                        <span class="material-symbols-outlined text-[15px]">network_check</span>
-                        <span>Test Connection</span>
+                        <span class="flex items-center gap-1.5" wire:loading.remove wire:target="openTest({{ $defaultProvider->id }})">
+                            <span class="material-symbols-outlined text-[15px]">network_check</span>
+                            <span>Test Connection</span>
+                        </span>
+                        <span class="flex items-center gap-1.5" wire:loading wire:target="openTest({{ $defaultProvider->id }})">
+                            <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Loading...</span>
+                        </span>
                     </button>
                 </div>
             @endif
@@ -141,9 +161,17 @@
                                 @else
                                     <button 
                                         wire:click="setDefault({{ $provider->id }})" 
-                                        class="text-[9px] font-bold text-slate-400 hover:text-[#1fa387] border border-slate-200 hover:border-[#1fa387] bg-slate-50 px-2 py-0.5 rounded-md transition cursor-pointer"
+                                        wire:loading.attr="disabled"
+                                        class="inline-flex items-center justify-center text-[9px] font-bold text-slate-400 hover:text-[#1fa387] border border-slate-200 hover:border-[#1fa387] bg-slate-50 px-2 py-0.5 rounded-md transition cursor-pointer min-w-[75px]"
                                     >
-                                        SET DEFAULT
+                                        <span wire:loading.remove wire:target="setDefault({{ $provider->id }})">SET DEFAULT</span>
+                                        <span wire:loading wire:target="setDefault({{ $provider->id }})" class="flex items-center gap-1">
+                                            <svg class="animate-spin h-2.5 w-2.5 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>...</span>
+                                        </span>
                                     </button>
                                 @endif
                             </td>
@@ -162,38 +190,66 @@
                                     <!-- Edit Button -->
                                     <button 
                                         wire:click="edit({{ $provider->id }})" 
+                                        wire:loading.attr="disabled"
                                         class="p-1.5 text-slate-500 hover:text-[#1fa387] bg-slate-50 hover:bg-[#1fa387]/5 border border-slate-200 hover:border-[#1fa387] rounded-lg transition cursor-pointer"
                                         title="Ubah Konfigurasi"
                                     >
-                                        <span class="material-symbols-outlined text-[15px] block">edit</span>
+                                        <span wire:loading.remove wire:target="edit({{ $provider->id }})" class="material-symbols-outlined text-[15px] block">edit</span>
+                                        <span wire:loading wire:target="edit({{ $provider->id }})" class="flex items-center justify-center">
+                                            <svg class="animate-spin h-3.5 w-3.5 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </span>
                                     </button>
                                     
                                     <!-- Test Connection Button -->
                                     <button 
                                         wire:click="openTest({{ $provider->id }})" 
+                                        wire:loading.attr="disabled"
                                         class="p-1.5 text-slate-500 hover:text-amber-600 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-500 rounded-lg transition cursor-pointer"
                                         title="Uji Koneksi Prompt"
                                     >
-                                        <span class="material-symbols-outlined text-[15px] block">play_arrow</span>
+                                        <span wire:loading.remove wire:target="openTest({{ $provider->id }})" class="material-symbols-outlined text-[15px] block">play_arrow</span>
+                                        <span wire:loading wire:target="openTest({{ $provider->id }})" class="flex items-center justify-center">
+                                            <svg class="animate-spin h-3.5 w-3.5 text-amber-500" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </span>
                                     </button>
 
                                     <!-- Quick Connection Test -->
                                     <button 
                                         wire:click="testConnectionDirect({{ $provider->id }})" 
+                                        wire:loading.attr="disabled"
                                         class="p-1.5 text-slate-500 hover:text-[#1fa387] bg-slate-50 hover:bg-[#1fa387]/5 border border-slate-200 hover:border-[#1fa387] rounded-lg transition cursor-pointer"
                                         title="Uji Koneksi Cepat"
                                     >
-                                        <span class="material-symbols-outlined text-[15px] block">flash_on</span>
+                                        <span wire:loading.remove wire:target="testConnectionDirect({{ $provider->id }})" class="material-symbols-outlined text-[15px] block">flash_on</span>
+                                        <span wire:loading wire:target="testConnectionDirect({{ $provider->id }})" class="flex items-center justify-center">
+                                            <svg class="animate-spin h-3.5 w-3.5 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </span>
                                     </button>
                                     
                                     <!-- Toggle Active/Inactive Status -->
                                     <button 
                                         wire:click="requestToggleStatus({{ $provider->id }})" 
+                                        wire:loading.attr="disabled"
                                         class="p-1.5 {{ $provider->is_active ? 'text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100' : 'text-slate-400 bg-slate-50 border-slate-200 hover:bg-slate-100' }} border rounded-lg transition cursor-pointer"
                                         title="{{ $provider->is_active ? 'Nonaktifkan' : 'Aktifkan' }}"
                                     >
-                                        <span class="material-symbols-outlined text-[15px] block">
+                                        <span wire:loading.remove wire:target="requestToggleStatus({{ $provider->id }})" class="material-symbols-outlined text-[15px] block">
                                             {{ $provider->is_active ? 'toggle_on' : 'toggle_off' }}
+                                        </span>
+                                        <span wire:loading wire:target="requestToggleStatus({{ $provider->id }})" class="flex items-center justify-center">
+                                            <svg class="animate-spin h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
                                         </span>
                                     </button>
 
@@ -201,10 +257,17 @@
                                     @if(!$provider->is_default)
                                         <button 
                                             wire:click="requestDelete({{ $provider->id }})" 
+                                            wire:loading.attr="disabled"
                                             class="p-1.5 text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-500 rounded-lg transition cursor-pointer"
                                             title="Hapus Provider"
                                         >
-                                            <span class="material-symbols-outlined text-[15px] block">delete</span>
+                                            <span wire:loading.remove wire:target="requestDelete({{ $provider->id }})" class="material-symbols-outlined text-[15px] block">delete</span>
+                                            <span wire:loading wire:target="requestDelete({{ $provider->id }})" class="flex items-center justify-center">
+                                                <svg class="animate-spin h-3.5 w-3.5 text-rose-500" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                            </span>
                                         </button>
                                     @endif
                                 </div>
