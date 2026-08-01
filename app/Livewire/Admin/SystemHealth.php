@@ -365,6 +365,7 @@ class SystemHealth extends Component
 
         // Parse detail payload parameter
         $targetDesc = '-';
+        $projectName = 'N/A';
         $payloadRaw = $jobData['data']['command'] ?? null;
         if ($payloadRaw && is_string($payloadRaw)) {
             // Unserialize command object PHP jika memungkinkan
@@ -379,6 +380,15 @@ class SystemHealth extends Component
                     $targetDesc = 'Analisis Sentimen AI';
                     if (preg_match('/"articleId";i:(\d+)/', $payloadRaw, $m)) {
                         $targetDesc = "Analisis Artikel ID: {$m[1]}";
+                    }
+                }
+
+                // Cari project_id dari payload string serialized
+                if (preg_match('/"project_id";[is]:\d+:"?([^";]+)"?/', $payloadRaw, $mProj)) {
+                    $projId = (int) $mProj[1];
+                    $project = DB::table('projects')->where('id', $projId)->first();
+                    if ($project) {
+                        $projectName = $project->name;
                     }
                 }
             } catch (\Throwable $e) {
@@ -396,6 +406,7 @@ class SystemHealth extends Component
             'status' => $status,
             'attempts' => $attempts,
             'created_at' => $createdAt,
+            'project' => $projectName,
         ];
     }
 

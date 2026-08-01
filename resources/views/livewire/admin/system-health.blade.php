@@ -467,6 +467,7 @@
                                         <th class="px-4 py-3 font-bold text-slate-700 w-24">Saluran</th>
                                         <th class="px-4 py-3 font-bold text-slate-700 w-44">Nama Pekerjaan (Job)</th>
                                         <th class="px-4 py-3 font-bold text-slate-700">Target Payload</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Proyek</th>
                                         <th class="px-4 py-3 font-bold text-slate-700 w-32">Status</th>
                                         <th class="px-4 py-3 font-bold text-slate-700 w-16 text-center">Coba</th>
                                         <th class="px-4 py-3 font-bold text-slate-700 w-36">Waktu Masuk</th>
@@ -486,6 +487,9 @@
                                             <td class="px-4 py-3 font-bold text-slate-600 align-top uppercase tracking-wider text-[10px]">{{ $item['queue'] }}</td>
                                             <td class="px-4 py-3 text-slate-800 align-top font-bold truncate" title="{{ $item['name'] }}">{{ $item['name'] }}</td>
                                             <td class="px-4 py-3 text-slate-500 align-top break-words font-medium">{{ $item['target'] }}</td>
+                                            <td class="px-4 py-3 font-bold text-[#1fa387] align-top truncate" title="{{ $item['project'] ?? 'N/A' }}">
+                                                {{ $item['project'] ?? 'N/A' }}
+                                            </td>
                                             <td class="px-4 py-3 align-top whitespace-nowrap">
                                                 <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold border {{ $statusColor }}">
                                                     {{ $item['status'] }}
