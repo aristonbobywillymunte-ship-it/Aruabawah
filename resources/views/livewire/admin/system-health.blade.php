@@ -270,37 +270,6 @@
             </div>
         </div>
 
-        <!-- Card 8: Laravel Reverb -->
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
-            <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">WebSocket Server</span>
-                    @php
-                        $reverbColorClass = match($reverbStatus['color']) {
-                            'green' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
-                            default => 'bg-rose-50 text-rose-700 border-rose-100'
-                        };
-                    @endphp
-                    <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold border {{ $reverbColorClass }}">
-                        {{ $reverbStatus['status'] }}
-                    </span>
-                </div>
-                <h3 class="text-sm font-black text-slate-900 mt-1">Laravel Reverb</h3>
-                <div class="space-y-1 text-xs">
-                    <div class="flex justify-between text-slate-500">
-                        <span>Pesan Instan:</span>
-                        <strong class="text-slate-800">Real-time Push</strong>
-                    </div>
-                    <div class="flex justify-between text-slate-500">
-                        <span>Port Server:</span>
-                        <strong class="text-slate-800">8080 (WS)</strong>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-4 flex items-center gap-1.5 text-[10px] font-bold {{ $reverbStatus['color'] == 'green' ? 'text-[#1fa387]' : 'text-rose-500' }} pt-2 border-t border-slate-100">
-                <span class="material-symbols-outlined text-[13px]">{{ $reverbStatus['color'] == 'green' ? 'sensors' : 'sensors_off' }}</span>
-                <span>{{ $reverbStatus['color'] == 'green' ? 'WebSocket Aktif & Siaga' : 'WebSocket Offline / Mati' }}</span>
-            </div>
         </div>
     </div>
 
