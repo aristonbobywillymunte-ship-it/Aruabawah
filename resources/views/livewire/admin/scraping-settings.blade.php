@@ -53,7 +53,7 @@
         <!-- Card 2: Discovery Intervals -->
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between text-left">
             <div>
-                <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">Interval Pencarian & Crawling</h2>
+                <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">Interval Pencarian & Perayapan</h2>
                 <div class="space-y-4">
                     <div class="flex justify-between items-center border-b border-slate-100 pb-2">
                         <span class="text-xs font-semibold text-slate-500">Google News Discovery</span>
@@ -65,7 +65,7 @@
                     </div>
                 </div>
             </div>
-            <p class="text-[10px] text-slate-400 mt-4 leading-relaxed">Scheduler akan memicu pencarian berita baru secara berkala sesuai waktu di atas.</p>
+            <p class="text-[10px] text-slate-400 mt-4 leading-relaxed">Scheduler akan memicu pencarian dan perayapan berita baru secara berkala sesuai waktu di atas.</p>
         </div>
 
         <!-- Card 3: Scraping Rules & Limits -->
