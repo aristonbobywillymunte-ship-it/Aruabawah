@@ -305,7 +305,7 @@
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
         <div wire:key="ai-queue-details-modal" x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
-            <div class="w-full max-w-2xl bg-white shadow-2xl text-left overscroll-contain flex flex-col rounded-[24px] overflow-hidden" style="height: 450px !important; max-height: 450px !important;">
+            <div class="w-11/12 max-w-5xl bg-white shadow-2xl text-left overscroll-contain flex flex-col rounded-[24px] overflow-hidden" style="height: 450px !important; max-height: 450px !important;">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
                     <div class="min-w-0 flex-1 pr-4">
@@ -344,11 +344,13 @@
                             <table class="w-full text-left border-collapse text-xs table-fixed">
                                 <thead>
                                     <tr class="bg-slate-50 border-b border-slate-200">
-                                        <th class="px-3 py-3 font-bold text-slate-700 w-10 text-center">No</th>
-                                        <th class="px-3 py-3 font-bold text-slate-700 w-44">Judul / Konten</th>
-                                        <th class="px-3 py-3 font-bold text-slate-700 w-28">Proyek</th>
-                                        <th class="px-3 py-3 font-bold text-slate-700 w-24">Status</th>
-                                        <th class="px-3 py-3 font-bold text-slate-700 w-14 text-center">Retry</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-12 text-center">No</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-28">Tipe</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700">Judul / Konten</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Proyek</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-28">Status</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-16 text-center">Retry</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Dibuat</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -368,25 +370,26 @@
                                             };
                                         @endphp
                                         <tr class="hover:bg-slate-50/50 transition">
-                                            <td class="px-3 py-3 text-center text-slate-400 font-bold align-top">{{ $idx + 1 }}</td>
-                                            <td class="px-3 py-3 text-slate-800 align-top">
+                                            <td class="px-4 py-3 text-center text-slate-400 font-bold align-top">{{ $idx + 1 }}</td>
+                                            <td class="px-4 py-3 font-bold text-slate-600 align-top whitespace-nowrap">{{ $item['type'] }}</td>
+                                            <td class="px-4 py-3 text-slate-800 align-top">
                                                 <div class="line-clamp-2 leading-relaxed" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
-                                                <div class="text-[9px] text-slate-400 font-medium mt-0.5">{{ $item['type'] }}</div>
                                                 @if($item['status'] === 'retry_wait' && $item['error_message'])
                                                     <div class="text-[9px] text-rose-500 font-semibold mt-1 bg-rose-50/40 p-1 px-2 rounded-lg border border-rose-100/50 break-words whitespace-normal">
                                                         Error: {{ $item['error_message'] }}
                                                     </div>
                                                 @endif
                                             </td>
-                                            <td class="px-3 py-3 font-bold text-[#1fa387] align-top truncate" title="{{ $item['project'] }}">
+                                            <td class="px-4 py-3 font-bold text-[#1fa387] align-top truncate" title="{{ $item['project'] }}">
                                                 {{ $item['project'] }}
                                             </td>
-                                            <td class="px-3 py-3 align-top">
+                                            <td class="px-4 py-3 align-top whitespace-nowrap">
                                                 <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold border {{ $statusColor }}">
                                                     {{ $statusLabel }}
                                                 </span>
                                             </td>
-                                            <td class="px-3 py-3 text-center font-bold text-slate-600 align-top">{{ $item['attempts'] }}x</td>
+                                            <td class="px-4 py-3 text-center font-bold text-slate-600 align-top">{{ $item['attempts'] }}x</td>
+                                            <td class="px-4 py-3 text-slate-400 font-medium align-top whitespace-nowrap">{{ $item['created_at'] }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
