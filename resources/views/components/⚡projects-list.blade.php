@@ -1170,7 +1170,6 @@ new class extends Component
                                         @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                     </div>
                                     @endif
-                                    @endif
                                 @else
                                     <form id="createProjectForm" wire:submit.prevent="createProject" class="space-y-6">
                                         <!-- Project Name Field -->
