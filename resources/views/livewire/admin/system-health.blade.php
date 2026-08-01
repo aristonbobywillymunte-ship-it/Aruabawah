@@ -27,10 +27,15 @@
                         <span>Fallback:</span>
                         <strong class="text-slate-800">{{ $aiStatus['fallback'] }}</strong>
                     </div>
-                    <div class="flex justify-between text-slate-500 pt-0.5">
+                    <div 
+                        wire:click="openQueueModal" 
+                        class="flex justify-between text-slate-500 hover:text-primary transition-all cursor-pointer group pt-0.5"
+                        title="Klik untuk melihat detail antrean berjalan"
+                    >
                         <span>Antrean Berjalan:</span>
-                        <strong class="text-slate-800 {{ $aiStatus['queue_count'] > 0 ? 'text-amber-600 animate-pulse font-bold' : '' }}">
+                        <strong class="text-slate-800 {{ $aiStatus['queue_count'] > 0 ? 'text-amber-600 animate-pulse font-bold' : '' }} group-hover:underline flex items-center gap-0.5">
                             {{ $aiStatus['queue_count'] }} antrean
+                            <span class="material-symbols-outlined text-[14px]">visibility</span>
                         </strong>
                     </div>
                 </div>
@@ -293,7 +298,118 @@
                         {{ $err }}
                     </div>
                 @endforeach
+                </div>
+
+    <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
+    @if($showQueueModal)
+        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+            <div class="w-full max-w-4xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain flex flex-col max-h-[85vh]">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
+                    <div class="min-w-0 flex-1 pr-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Sistem Kesehatan AI</p>
+                        <h2 class="text-base font-black text-slate-900 mt-0.5">Daftar Antrean Berjalan (AI Pipeline)</h2>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Menampilkan status antrean yang sedang diproses maupun menunggu dicoba ulang.</p>
+                    </div>
+                    <button type="button" wire:click="closeQueueModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0">
+                        <span class="material-symbols-outlined text-[20px] block">close</span>
+                    </button>
+                </div>
+
+                <!-- Modal Body (Table dengan Spinner Loading) -->
+                <div class="flex-1 min-h-0 overflow-y-auto p-6 relative">
+                    <!-- Loading overlay jika ada aksi di background -->
+                    <div wire:loading wire:target="openQueueModal" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center">
+                        <div class="flex flex-col items-center gap-3">
+                            <svg class="animate-spin h-8 w-8 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="text-xs font-bold text-slate-600">Memuat data antrean...</span>
+                        </div>
+                    </div>
+
+                    @if(empty($queueDetails))
+                        <div class="flex flex-col items-center justify-center py-16 text-center">
+                            <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+                                <span class="material-symbols-outlined text-[32px]">check_circle</span>
+                            </div>
+                            <h4 class="text-sm font-bold text-slate-800 mb-1">Seluruh Antrean Kosong</h4>
+                            <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Seluruh proses analisis sentimen AI telah selesai dikerjakan.</p>
+                        </div>
+                    @else
+                        <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200">
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-12 text-center">No</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-28">Tipe</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700">Judul / Konten</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Proyek</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-28">Status</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-16 text-center">Retry</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Dibuat</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @foreach($queueDetails as $idx => $item)
+                                        @php
+                                            $statusColor = match($item['status']) {
+                                                'queued' => 'bg-slate-50 text-slate-600 border-slate-200/80',
+                                                'processing' => 'bg-cyan-50 text-cyan-700 border-cyan-100 animate-pulse',
+                                                'retry_wait' => 'bg-amber-50 text-amber-700 border-amber-100',
+                                                default => 'bg-rose-50 text-rose-700 border-rose-100'
+                                            };
+                                            $statusLabel = match($item['status']) {
+                                                'queued' => 'Mengantre',
+                                                'processing' => 'Diproses AI',
+                                                'retry_wait' => 'Tunda Ulang',
+                                                default => 'Gagal'
+                                            };
+                                        @endphp
+                                        <tr class="hover:bg-slate-50/50 transition">
+                                            <td class="px-4 py-3 text-center text-slate-400 font-bold">{{ $idx + 1 }}</td>
+                                            <td class="px-4 py-3 font-bold text-slate-600 whitespace-nowrap">{{ $item['type'] }}</td>
+                                            <td class="px-4 py-3 text-slate-800 align-middle">
+                                                <div class="line-clamp-2 leading-relaxed" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
+                                                @if($item['status'] === 'retry_wait' && $item['error_message'])
+                                                    <div class="text-[10px] text-rose-500 font-semibold mt-1 bg-rose-50/40 p-1 px-2 rounded-lg border border-rose-100/50">
+                                                        Error: {{ $item['error_message'] }}
+                                                    </div>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 font-bold text-[#1fa387] whitespace-nowrap truncate max-w-[150px]" title="{{ $item['project'] }}">
+                                                {{ $item['project'] }}
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-[9px] font-bold border {{ $statusColor }}">
+                                                    {{ $statusLabel }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-center font-bold text-slate-600">{{ $item['attempts'] }}x</td>
+                                            <td class="px-4 py-3 text-slate-400 font-medium whitespace-nowrap">{{ $item['created_at'] }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+                    <button
+                        type="button"
+                        wire:click="closeQueueModal"
+                        class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
+                    >
+                        Tutup
+                    </button>
+                </div>
             </div>
+        </div>
+    @endif
+</div>
         @else
             <p class="text-xs text-slate-400 italic">Tidak ada log error terkini. Seluruh sistem berjalan normal.</p>
         @endif

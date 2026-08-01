@@ -24,6 +24,8 @@ class SystemHealth extends Component
     public array $schedulerStatus = [];
     public array $reverbStatus = [];
     public array $latestErrors = [];
+    public bool $showQueueModal = false;
+    public array $queueDetails = [];
 
     #[On('echo:system-alerts,RealtimeNotificationEvent')]
     public function handleRealtimeNotification($event): void
@@ -205,6 +207,60 @@ class SystemHealth extends Component
         \App\Models\ScrapingItem::whereNotNull('error_message')->update(['error_message' => null]);
         \App\Models\AiProvider::whereNotNull('last_error')->update(['last_error' => null]);
         $this->checkHealth();
+    }
+
+    public function openQueueModal(): void
+    {
+        $this->adminOnly();
+        
+        $rawItems = DB::table('ai_analysis_dispatch_states')
+            ->whereIn('status', ['queued', 'processing', 'retry_wait'])
+            ->orderBy('id', 'desc')
+            ->limit(50)
+            ->get();
+
+        $this->queueDetails = $rawItems->map(function ($item) {
+            $projectName = 'N/A';
+            $contentTitle = 'N/A';
+
+            if ($item->project_id) {
+                $project = DB::table('projects')->where('id', $item->project_id)->first();
+                if ($project) {
+                    $projectName = $project->name;
+                }
+            }
+
+            if ($item->analyzable_type === 'article') {
+                $article = DB::table('articles')->where('id', $item->analyzable_id)->first();
+                if ($article) {
+                    $contentTitle = $article->title ?: ($article->source_name ?: 'Portal News Item');
+                }
+            } elseif ($item->analyzable_type === 'social') {
+                $social = DB::table('social_media_items')->where('id', $item->analyzable_id)->first();
+                if ($social) {
+                    $contentTitle = $social->content ? mb_substr(strip_tags($social->content), 0, 80) . '...' : ($social->author_name ? 'Post dari ' . $social->author_name : 'Post Media Sosial');
+                }
+            }
+
+            return [
+                'id' => $item->id,
+                'type' => $item->analyzable_type === 'article' ? 'Portal Berita' : 'Media Sosial',
+                'title' => $contentTitle,
+                'project' => $projectName,
+                'status' => $item->status,
+                'attempts' => $item->attempts,
+                'error_message' => $item->error_message ?: '-',
+                'created_at' => $item->created_at ? \Carbon\Carbon::parse($item->created_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+            ];
+        })->toArray();
+
+        $this->showQueueModal = true;
+    }
+
+    public function closeQueueModal(): void
+    {
+        $this->showQueueModal = false;
+        $this->queueDetails = [];
     }
 
     public function render()
