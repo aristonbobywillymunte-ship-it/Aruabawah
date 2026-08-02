@@ -295,8 +295,25 @@
 
             {{-- Pagination Links --}}
             @if($recentRuns->hasPages())
-            <div class="mt-4 flex justify-center pb-2">
-                {{ $recentRuns->links() }}
+            <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500 font-sans">
+                <div>
+                    Menampilkan <span class="font-extrabold text-slate-700">{{ $recentRuns->firstItem() }}</span> sampai <span class="font-extrabold text-slate-700">{{ $recentRuns->lastItem() }}</span> dari <span class="font-extrabold text-slate-700">{{ $recentRuns->total() }}</span> riwayat run
+                </div>
+                <div class="flex items-center gap-1">
+                    {{-- Previous Page Link --}}
+                    @if($recentRuns->onFirstPage())
+                        <span class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-300 cursor-not-allowed text-[11px] font-bold select-none">Sebelumnya</span>
+                    @else
+                        <button type="button" wire:click="previousPage('page')" wire:loading.attr="disabled" class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-bold transition shadow-sm active:scale-95">Sebelumnya</button>
+                    @endif
+
+                    {{-- Next Page Link --}}
+                    @if($recentRuns->hasMorePages())
+                        <button type="button" wire:click="nextPage('page')" wire:loading.attr="disabled" class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-bold transition shadow-sm active:scale-95">Berikutnya</button>
+                    @else
+                        <span class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-300 cursor-not-allowed text-[11px] font-bold select-none">Berikutnya</span>
+                    @endif
+                </div>
             </div>
             @endif
         @endif
