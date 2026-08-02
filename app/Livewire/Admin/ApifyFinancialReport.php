@@ -57,32 +57,71 @@ class ApifyFinancialReport extends Component
         $this->modalLoading = true;
         $this->selectedItems = [];
 
-        // Ambil data item sosial media yang masuk untuk project_id, platform, dan keyword ini
-        $queryKeyword = trim($keyword);
-        $rawItems = DB::table('social_media_items')
-            ->where('platform', $platform)
-            ->when($projectId, function($q) use ($projectId) {
-                $q->where('project_id', $projectId);
-            })
-            ->where(function($q) use ($queryKeyword) {
-                $q->where('post_url', $queryKeyword)
-                  ->orWhere('post_url', 'like', '%' . $queryKeyword . '%')
-                  ->orWhere('content', 'like', '%' . $queryKeyword . '%');
-            })
-            ->orderBy('posted_at', 'desc')
-            ->get();
+        // Deteksi apakah keyword ini adalah URL (biasanya indikasi perayapan komentar / Comment Scraper)
+        $isCommentRun = filter_var($keyword, FILTER_VALIDATE_URL) !== false;
 
-        $this->selectedItems = $rawItems->map(function($item) {
-            return [
-                'post_url' => $item->post_url,
-                'author_name' => $item->author_name ?? 'N/A',
-                'content' => Str::limit($item->content, 150),
-                'likes' => (int) $item->like_count,
-                'comments' => (int) $item->comment_count,
-                'shares' => (int) $item->share_count,
-                'posted_at' => $item->posted_at ? \Carbon\Carbon::parse($item->posted_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
-            ];
-        })->toArray();
+        if ($isCommentRun) {
+            // Ambil postingan utama terlebih dahulu
+            $queryKeyword = trim($keyword);
+            $mainPost = DB::table('social_media_items')
+                ->where('platform', $platform)
+                ->when($projectId, function($q) use ($projectId) {
+                    $q->where('project_id', $projectId);
+                })
+                ->where(function($q) use ($queryKeyword) {
+                    $q->where('post_url', $queryKeyword)
+                      ->orWhere('post_url', 'like', '%' . $queryKeyword . '%');
+                })
+                ->first();
+
+            if ($mainPost) {
+                // Ambil daftar komentar untuk postingan utama ini
+                $comments = DB::table('social_media_comments')
+                    ->where('social_media_item_id', $mainPost->id)
+                    ->orderBy('posted_at', 'desc')
+                    ->orderBy('id', 'desc')
+                    ->get();
+
+                $this->selectedItems = $comments->map(function($c) use ($mainPost) {
+                    return [
+                        'post_url' => $mainPost->post_url,
+                        'author_name' => $c->author_name ?? 'Pengguna',
+                        'content' => $c->content ?? '[tanpa teks]',
+                        'likes' => (int) $c->like_count,
+                        'comments' => 0, // Komentar tidak memiliki sub-komentar di tabel ini
+                        'shares' => 0,
+                        'posted_at' => $c->posted_at ? \Carbon\Carbon::parse($c->posted_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+                    ];
+                })->toArray();
+            }
+        } else {
+            // Ambil data postingan utama (Search Post)
+            $queryKeyword = trim($keyword);
+            $rawItems = DB::table('social_media_items')
+                ->where('platform', $platform)
+                ->when($projectId, function($q) use ($projectId) {
+                    $q->where('project_id', $projectId);
+                })
+                ->where(function($q) use ($queryKeyword) {
+                    $q->where('post_url', $queryKeyword)
+                      ->orWhere('post_url', 'like', '%' . $queryKeyword . '%')
+                      ->orWhere('content', 'like', '%' . $queryKeyword . '%');
+                })
+                ->orderBy('posted_at', 'desc')
+                ->get();
+
+            $this->selectedItems = $rawItems->map(function($item) {
+                return [
+                    'post_url' => $item->post_url,
+                    'author_name' => $item->author_name ?? 'N/A',
+                    'content' => Str::limit($item->content, 150),
+                    'likes' => (int) $item->like_count,
+                    'comments' => (int) $item->comment_count,
+                    'shares' => (int) $item->share_count,
+                    'posted_at' => $item->posted_at ? \Carbon\Carbon::parse($item->posted_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+                ];
+            })->toArray();
+        }
 
         $this->modalLoading = false;
     }
