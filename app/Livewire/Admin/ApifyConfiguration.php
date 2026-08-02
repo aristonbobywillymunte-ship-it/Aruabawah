@@ -220,53 +220,72 @@ class ApifyConfiguration extends Component
         $this->adminOnly();
 
         $setting = $this->setting();
-        $token = trim($this->apiToken ?: $setting->api_token);
 
-        if (blank($token)) {
-            $this->connectionStatus = 'error';
-            $this->lastTestStatus = 'failed';
-            $this->lastTestMessage = 'Token belum diisi.';
-            $this->notify('error', 'Token API Key kosong.');
-            return;
-        }
+        // 1. Array penampung token dan status kolomnya
+        $tokensToTest = [
+            'api_token'                  => 'connection_status',
+            'api_token_backup_1'         => 'connection_status_backup_1',
+            'api_token_backup_2'         => 'connection_status_backup_2',
+            'api_token_backup_3'         => 'connection_status_backup_3',
+        ];
 
-        try {
-            // Real HTTP Connection Test to Apify users API endpoint
-            $response = \Illuminate\Support\Facades\Http::timeout(12)
-                ->get("https://api.apify.com/v2/users/me?token={$token}");
+        $results = [];
 
-            if ($response->successful()) {
-                $setting->connection_status = 'connected';
-                $setting->last_test_status = 'success';
-                $setting->last_test_dataset_id = null;
-                $setting->last_test_message = 'Koneksi ke akun Apify berhasil diverifikasi.';
-                $setting->last_test_at = now();
-                $setting->save();
+        foreach ($tokensToTest as $tokenField => $statusField) {
+            $token = trim($setting->$tokenField);
 
-                $this->notify('success', 'Koneksi ke server Apify berhasil terhubung.');
-            } else {
-                $status = (int) $response->status();
-                if ($status === 401) {
-                    throw new \RuntimeException('Token Apify tidak valid. Periksa kembali token yang disimpan.');
-                }
-
-                throw new \RuntimeException('Apify tidak merespons dengan benar. Kode: ' . $status . '.');
+            if (blank($token)) {
+                $setting->$statusField = 'belum_dicek';
+                continue;
             }
-        } catch (\Throwable $e) {
-            $setting->connection_status = 'error';
-            $setting->last_test_status = 'failed';
-            $setting->last_test_message = $e->getMessage();
-            $setting->last_test_at = now();
-            $setting->save();
 
-            $this->notify('error', 'Koneksi Apify gagal: ' . $e->getMessage());
+            try {
+                $response = \Illuminate\Support\Facades\Http::timeout(10)
+                    ->get("https://api.apify.com/v2/users/me?token={$token}");
+
+                if ($response->successful()) {
+                    $setting->$statusField = 'connected';
+                    $results[] = $this->getTokenFieldLabel($tokenField) . ' Connected';
+                } else {
+                    $setting->$statusField = 'error';
+                    $results[] = $this->getTokenFieldLabel($tokenField) . ' Error (HTTP ' . $response->status() . ')';
+                }
+            } catch (\Throwable $e) {
+                $setting->$statusField = 'error';
+                $results[] = $this->getTokenFieldLabel($tokenField) . ' Error (' . $e->getMessage() . ')';
+            }
         }
+
+        // Simpan log tes terakhir di token yang sedang terpilih aktif
+        $activeField = match((int) $setting->active_token_index) {
+            1 => 'connection_status_backup_1',
+            2 => 'connection_status_backup_2',
+            3 => 'connection_status_backup_3',
+            default => 'connection_status',
+        };
+
+        $setting->connection_status = $setting->$activeField;
+        $setting->last_test_status = $setting->$activeField === 'connected' ? 'success' : 'failed';
+        $setting->last_test_message = implode(', ', $results);
+        $setting->last_test_at = now();
+        $setting->save();
 
         $this->connectionStatus = $setting->connection_status;
-        $this->lastTestStatus = $setting->last_test_status ?? '';
-        $this->lastTestDatasetId = $setting->last_test_dataset_id ?? '';
-        $this->lastTestMessage = $setting->last_test_message ?? '';
-        $this->lastTestAt = $setting->last_test_at?->toDateTimeString();
+        $this->lastTestStatus = $setting->last_test_status;
+        $this->lastTestMessage = $setting->last_test_message;
+        $this->lastTestAt = $setting->last_test_at->toDateTimeString();
+
+        $this->notify('success', 'Uji koneksi semua token selesai: ' . $setting->last_test_message);
+    }
+
+    private function getTokenFieldLabel(string $field): string
+    {
+        return match($field) {
+            'api_token_backup_1' => 'Backup 1',
+            'api_token_backup_2' => 'Backup 2',
+            'api_token_backup_3' => 'Backup 3',
+            default => 'Token Utama',
+        };
     }
 
     public function createActor(): void

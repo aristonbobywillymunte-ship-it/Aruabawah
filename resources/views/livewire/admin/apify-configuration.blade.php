@@ -39,23 +39,69 @@
         <!-- Connection Status Card -->
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between text-left">
             <div>
-                <div class="flex items-center justify-between">
-                    <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status Koneksi</h2>
-                    <span class="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold {{ $connectionStatus === 'connected' ? 'bg-emerald-50 text-emerald-700' : ($connectionStatus === 'error' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-600') }}">
-                        {{ $connectionStatus === 'connected' ? 'Terhubung' : ($connectionStatus === 'error' ? 'Error' : 'Belum Dicek') }}
-                    </span>
+                <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Status Koneksi Masing-Masing Token</h2>
+                
+                <!-- Status List per Token -->
+                <div class="space-y-2">
+                    <!-- Token Utama -->
+                    <div class="flex items-center justify-between text-xs py-1 border-b border-slate-50">
+                        <span class="font-bold text-slate-650">Token Utama</span>
+                        <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider 
+                            {{ $setting->connection_status === 'connected' ? 'bg-emerald-50 text-emerald-700' : ($setting->connection_status === 'error' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-500') }}">
+                            {{ $setting->connection_status === 'connected' ? 'Connected' : ($setting->connection_status === 'error' ? 'Error' : 'Belum Dicek') }}
+                        </span>
+                    </div>
+
+                    <!-- Token Backup 1 -->
+                    <div class="flex items-center justify-between text-xs py-1 border-b border-slate-50">
+                        <span class="font-bold text-slate-650">Backup 1</span>
+                        @if(filled($setting->api_token_backup_1))
+                            <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider 
+                                {{ $setting->connection_status_backup_1 === 'connected' ? 'bg-emerald-50 text-emerald-700' : ($setting->connection_status_backup_1 === 'error' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-500') }}">
+                                {{ $setting->connection_status_backup_1 === 'connected' ? 'Connected' : ($setting->connection_status_backup_1 === 'error' ? 'Error' : 'Belum Dicek') }}
+                            </span>
+                        @else
+                            <span class="text-[10px] text-slate-350 italic">Kosong</span>
+                        @endif
+                    </div>
+
+                    <!-- Token Backup 2 -->
+                    <div class="flex items-center justify-between text-xs py-1 border-b border-slate-50">
+                        <span class="font-bold text-slate-650">Backup 2</span>
+                        @if(filled($setting->api_token_backup_2))
+                            <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider 
+                                {{ $setting->connection_status_backup_2 === 'connected' ? 'bg-emerald-50 text-emerald-700' : ($setting->connection_status_backup_2 === 'error' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-500') }}">
+                                {{ $setting->connection_status_backup_2 === 'connected' ? 'Connected' : ($setting->connection_status_backup_2 === 'error' ? 'Error' : 'Belum Dicek') }}
+                            </span>
+                        @else
+                            <span class="text-[10px] text-slate-350 italic">Kosong</span>
+                        @endif
+                    </div>
+
+                    <!-- Token Backup 3 -->
+                    <div class="flex items-center justify-between text-xs py-1">
+                        <span class="font-bold text-slate-650">Backup 3</span>
+                        @if(filled($setting->api_token_backup_3))
+                            <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider 
+                                {{ $setting->connection_status_backup_3 === 'connected' ? 'bg-emerald-50 text-emerald-700' : ($setting->connection_status_backup_3 === 'error' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-500') }}">
+                                {{ $setting->connection_status_backup_3 === 'connected' ? 'Connected' : ($setting->connection_status_backup_3 === 'error' ? 'Error' : 'Belum Dicek') }}
+                            </span>
+                        @else
+                            <span class="text-[10px] text-slate-350 italic">Kosong</span>
+                        @endif
+                    </div>
                 </div>
-                <p class="mt-2 text-xs text-slate-500 leading-relaxed">Status integrasi server Apify bisa diblok sementara kalau limit tercapai. Sistem akan coba pulih otomatis.</p>
             </div>
             
-            <div class="mt-4 rounded-2xl bg-slate-50 p-4 border border-slate-100">
+            <div class="mt-4 rounded-2xl bg-slate-50 p-3 border border-slate-100 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <span class="flex h-2 w-2 relative">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full {{ $connectionStatus === 'connected' ? 'bg-emerald-400' : ($connectionStatus === 'error' ? 'bg-rose-400' : 'bg-slate-300') }} opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 {{ $connectionStatus === 'connected' ? 'bg-emerald-500' : ($connectionStatus === 'error' ? 'bg-rose-500' : 'bg-slate-400') }}"></span>
                     </span>
-                    <span class="text-[11px] font-bold text-slate-600">{{ $lastTestAt ? 'Uji terakhir: ' . $lastTestAt : 'Belum pernah diuji' }}</span>
+                    <span class="text-[10px] font-bold text-slate-600">Terakhir: {{ $lastTestAt ? \Carbon\Carbon::parse($lastTestAt)->format('H:i') : '-' }}</span>
                 </div>
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Rotasi Aktif</span>
             </div>
         </div>
 
