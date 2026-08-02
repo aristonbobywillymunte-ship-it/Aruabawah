@@ -60,29 +60,84 @@
         </div>
 
         <!-- Token Card -->
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:col-span-2 text-left flex flex-col justify-between font-sans">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:col-span-2 text-left font-sans">
             <div>
-                <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Apify API Token</h2>
-                <p class="mt-1 text-xs text-slate-500">Masukkan API Token akun Apify Anda untuk menghubungkan data dengan scraper. Kalau limit penuh, sistem menunggu pulih otomatis.</p>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Apify API Tokens (Utama & Backup)</h2>
+                    <span class="inline-flex rounded-xl px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-100">
+                        Aktif: {{ $setting->getActiveTokenLabel() }}
+                    </span>
+                </div>
+                <p class="mt-1 text-xs text-slate-500">Dukung rotasi token otomatis. Jika token yang aktif terkena limit penggunaan, sistem akan otomatis beralih menggunakan token backup yang tersedia.</p>
             </div>
             
-            <div class="mt-4 flex flex-col sm:flex-row items-end gap-3">
-                <div class="flex-1 w-full text-left">
-                    <label class="mb-1.5 block text-xs font-bold text-slate-700">Token Akses API</label>
-                    <input 
-                        wire:model="apiToken" 
-                        type="password" 
-                        placeholder="apify_api_xxxxxxxxxxxxxxxxxxxxxx" 
-                        class="h-10 w-full rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition"
-                    />
+            <div class="mt-4 space-y-4">
+                <!-- Grid Token -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Token Utama -->
+                    <div class="text-left">
+                        <label class="mb-1 block text-xs font-bold text-slate-700">Token Utama (Index 0)</label>
+                        <input 
+                            wire:model="apiToken" 
+                            type="password" 
+                            placeholder="apify_api_xxxxxxxxxxxxxxxxxxxxxx" 
+                            class="h-9 w-full rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition"
+                        />
+                    </div>
+
+                    <!-- Token Backup 1 -->
+                    <div class="text-left">
+                        <label class="mb-1 block text-xs font-bold text-slate-700">Token Backup 1 (Index 1)</label>
+                        <input 
+                            wire:model="apiTokenBackup1" 
+                            type="password" 
+                            placeholder="apify_api_backup1_xxxxxxxxxxxxxxx" 
+                            class="h-9 w-full rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition"
+                        />
+                    </div>
+
+                    <!-- Token Backup 2 -->
+                    <div class="text-left">
+                        <label class="mb-1 block text-xs font-bold text-slate-700">Token Backup 2 (Index 2)</label>
+                        <input 
+                            wire:model="apiTokenBackup2" 
+                            type="password" 
+                            placeholder="apify_api_backup2_xxxxxxxxxxxxxxx" 
+                            class="h-9 w-full rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition"
+                        />
+                    </div>
+
+                    <!-- Token Backup 3 -->
+                    <div class="text-left">
+                        <label class="mb-1 block text-xs font-bold text-slate-700">Token Backup 3 (Index 3)</label>
+                        <input 
+                            wire:model="apiTokenBackup3" 
+                            type="password" 
+                            placeholder="apify_api_backup3_xxxxxxxxxxxxxxx" 
+                            class="h-9 w-full rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition"
+                        />
+                    </div>
                 </div>
-                <button 
-                    wire:click="saveToken" 
-                    class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm w-full sm:w-auto cursor-pointer"
-                >
-                    <span class="material-symbols-outlined text-[18px]">lock</span>
-                    <span>Simpan Token</span>
-                </button>
+
+                <!-- Pemilih Manual & Simpan -->
+                <div class="flex flex-col sm:flex-row items-end sm:items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                    <div class="w-full sm:w-64 text-left">
+                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Pilih Token Aktif Secara Manual</label>
+                        <select wire:model="activeTokenIndex" class="h-9 w-full rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 outline-none transition cursor-pointer">
+                            <option value="0">Token Utama</option>
+                            <option value="1">Token Backup 1</option>
+                            <option value="2">Token Backup 2</option>
+                            <option value="3">Token Backup 3</option>
+                        </select>
+                    </div>
+                    <button 
+                        wire:click="saveToken" 
+                        class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm w-full sm:w-auto cursor-pointer"
+                    >
+                        <span class="material-symbols-outlined text-[18px]">lock</span>
+                        <span>Simpan Semua Token</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

@@ -442,7 +442,7 @@ class ApifyScrapingJob implements ShouldQueue
             }
             return;
         }
-        $token = $setting->api_token;
+        $token = $setting->getActiveToken();
 
         // Load matching actor
         $actorId = $this->params['actor_id'] ?? null;
@@ -610,22 +610,33 @@ class ApifyScrapingJob implements ShouldQueue
                 || str_contains($msgLower, 'invalid');
 
             if ($isCredentialOrLimitError) {
-                // Set status retry_wait cepat (5 menit) agar bisa langsung diulang saat token diperbarui
-                $cooldownMinutes = 5;
-                $retryAt = now()->addMinutes($cooldownMinutes);
+                // ROTASI TOKEN OTOMATIS:
+                // Token limit atau bermasalah terdeteksi, kita rotasi ke backup berikutnya.
+                $oldTokenLabel = $setting->getActiveTokenLabel();
+                $newTokenLabel = $setting->rotateToNextToken();
                 
+                Log::warning("[Apify] Token limit terdeteksi ({$oldTokenLabel}). Berhasil merotasi otomatis ke {$newTokenLabel}.");
+
+                // Re-dispatch job scraping yang gagal ini agar langsung dicoba ulang menggunakan token baru secara instan
+                $retryParams = $this->params;
+                $retryParams['force_dispatch'] = true; // bypass cooldown cache
+                
+                // Kurangi sisa try job secara manual agar tidak infinite loop jika semua backup limit
+                if ($this->attempts() < $this->tries) {
+                    Log::info("[Apify] Mengirim ulang job scraping dengan token cadangan baru ({$newTokenLabel}).");
+                    self::dispatch($retryParams);
+                }
+
                 $actor->update([
                     'last_run_at' => now(), 
                     'last_run_status' => 'retry_wait', 
-                    'last_run_message' => substr("Limit/Token error: " . $msg, 0, 500)
+                    'last_run_message' => substr("Limit/Token error pada {$oldTokenLabel}. Sistem memindahkan token otomatis ke {$newTokenLabel}.", 0, 500)
                 ]);
                 
-                Cache::put("apify_actor_retry_at:{$actor->id}", $retryAt->toDateTimeString(), $retryAt);
                 if ($state) {
                     $state->update([
-                        'status' => 'retry_wait', 
-                        'next_retry_at' => $retryAt,
-                        'last_error_message' => substr($msg, 0, 500)
+                        'status' => 'failed', 
+                        'last_error_message' => substr("Limit/Token error pada {$oldTokenLabel}. Sistem memindahkan token otomatis ke {$newTokenLabel}. Msg: " . $msg, 0, 500)
                     ]);
                 }
             } else {

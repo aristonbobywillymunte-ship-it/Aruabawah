@@ -14,6 +14,11 @@ use Livewire\Component;
 class ApifyConfiguration extends Component
 {
     public string $apiToken = '';
+    public string $apiTokenBackup1 = '';
+    public string $apiTokenBackup2 = '';
+    public string $apiTokenBackup3 = '';
+    public int $activeTokenIndex = 0;
+
     public string $connectionStatus = 'belum_dicek';
     public string $lastTestStatus = '';
     public string $lastTestDatasetId = '';
@@ -117,6 +122,11 @@ class ApifyConfiguration extends Component
 
         $setting = $this->setting();
         $this->apiToken = $setting->api_token ?? '';
+        $this->apiTokenBackup1 = $setting->api_token_backup_1 ?? '';
+        $this->apiTokenBackup2 = $setting->api_token_backup_2 ?? '';
+        $this->apiTokenBackup3 = $setting->api_token_backup_3 ?? '';
+        $this->activeTokenIndex = (int) ($setting->active_token_index ?? 0);
+
         $this->connectionStatus = $setting->connection_status ?? 'belum_dicek';
         $this->lastTestStatus = $setting->last_test_status ?? '';
         $this->lastTestDatasetId = $setting->last_test_dataset_id ?? '';
@@ -147,21 +157,17 @@ class ApifyConfiguration extends Component
         ]);
     }
 
-
-
     public function saveToken(): void
     {
         $this->adminOnly();
 
-        $token = trim($this->apiToken);
-
-        if ($token === '') {
-            $this->notify('error', 'Token API Key masih kosong.');
-            return;
-        }
-
         $setting = $this->setting();
-        $setting->api_token = $token;
+        $setting->api_token = trim($this->apiToken) ?: null;
+        $setting->api_token_backup_1 = trim($this->apiTokenBackup1) ?: null;
+        $setting->api_token_backup_2 = trim($this->apiTokenBackup2) ?: null;
+        $setting->api_token_backup_3 = trim($this->apiTokenBackup3) ?: null;
+        $setting->active_token_index = (int) $this->activeTokenIndex;
+        
         $setting->connection_status = 'belum_dicek';
         $setting->last_test_status = null;
         $setting->last_test_dataset_id = null;
@@ -169,14 +175,19 @@ class ApifyConfiguration extends Component
         $setting->last_test_at = null;
         $setting->save();
 
-        $this->apiToken = $token;
+        $this->apiToken = $setting->api_token ?? '';
+        $this->apiTokenBackup1 = $setting->api_token_backup_1 ?? '';
+        $this->apiTokenBackup2 = $setting->api_token_backup_2 ?? '';
+        $this->apiTokenBackup3 = $setting->api_token_backup_3 ?? '';
+        $this->activeTokenIndex = (int) $setting->active_token_index;
+
         $this->connectionStatus = 'belum_dicek';
         $this->lastTestStatus = '';
         $this->lastTestDatasetId = '';
         $this->lastTestMessage = '';
         $this->lastTestAt = null;
 
-        $this->notify('success', 'Token Apify berhasil disimpan.');
+        $this->notify('success', 'Semua Token API Apify berhasil disimpan.');
     }
 
     public function syncManagedActors(): void
