@@ -514,11 +514,11 @@
                             </div>
                         </div>
 
-                        <!-- Interval Perayapan Khusus Paket -->
+                        <!-- Interval Pengambilan Khusus Paket -->
                         <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                             <div>
                                 <div class="flex items-center justify-between mb-2">
-                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Interval Perayapan Berita (Menit)</label>
+                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Interval Pengambilan Berita (Menit)</label>
                                     <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">Wajib</span>
                                 </div>
                                 <input wire:model="news_interval_minutes" type="number" min="1" placeholder="Contoh: 5"
@@ -527,7 +527,7 @@
                             </div>
                             <div>
                                 <div class="flex items-center justify-between mb-2">
-                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Interval Perayapan Media Sosial (Menit)</label>
+                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Interval Pengambilan Media Sosial (Menit)</label>
                                     <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">Wajib</span>
                                 </div>
                                 <input wire:model="social_interval_minutes" type="number" min="1" placeholder="Contoh: 10"
