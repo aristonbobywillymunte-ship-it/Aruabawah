@@ -14,9 +14,23 @@ class ApifyFinancialReport extends Component
 
     // Filter project
     public ?int $projectId = null;
+    
+    // Filter dates
+    public ?string $startDate = null;
+    public ?string $endDate = null;
 
     // Reset pagination on filter update
     public function updatedProjectId()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStartDate()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedEndDate()
     {
         $this->resetPage();
     }
@@ -39,7 +53,14 @@ class ApifyFinancialReport extends Component
         // Load costs per run with pagination (20 per page)
         $recentRuns = DB::table('apify_dispatch_states')
             ->whereNotNull('actual_cost_usd')
-            ->where('completed_at', '>=', now()->subDays(30))
+            ->when($this->startDate, function($q) {
+                $q->whereDate('completed_at', '>=', $this->startDate);
+            }, function($q) {
+                $q->where('completed_at', '>=', now()->subDays(30));
+            })
+            ->when($this->endDate, function($q) {
+                $q->whereDate('completed_at', '<=', $this->endDate);
+            })
             ->when($this->projectId, function($q) {
                 $q->where('project_id', $this->projectId);
             })
@@ -76,7 +97,14 @@ class ApifyFinancialReport extends Component
     {
         $rows = DB::table('apify_dispatch_states')
             ->whereNotNull('actual_cost_usd')
-            ->where('completed_at', '>=', now()->subDays(30))
+            ->when($this->startDate, function($q) {
+                $q->whereDate('completed_at', '>=', $this->startDate);
+            }, function($q) {
+                $q->where('completed_at', '>=', now()->subDays(30));
+            })
+            ->when($this->endDate, function($q) {
+                $q->whereDate('completed_at', '<=', $this->endDate);
+            })
             ->when($this->projectId, function($q) {
                 $q->where('project_id', $this->projectId);
             })

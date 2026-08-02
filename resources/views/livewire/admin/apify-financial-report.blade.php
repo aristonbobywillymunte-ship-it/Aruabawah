@@ -12,19 +12,30 @@
         </span>
     </div>
 
-    <!-- Filter Section per Proyek -->
-    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm text-left mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-2">
+    <!-- Filter Section per Proyek & Tanggal -->
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm text-left mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        <div class="flex items-center gap-2 shrink-0">
             <span class="material-symbols-outlined text-[18px] text-slate-400">filter_alt</span>
             <span class="text-xs font-black text-slate-700 uppercase tracking-wider">Filter Laporan</span>
         </div>
-        <div class="w-full sm:w-72">
-            <select wire:model.live="projectId" class="w-full bg-[#F8F9FA] border border-slate-300 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387] rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 transition cursor-pointer">
-                <option value="">Semua Proyek (Tanpa Filter)</option>
-                @foreach($projects as $p)
-                    <option value="{{ $p->id }}">{{ $p->name }}</option>
-                @endforeach
-            </select>
+        
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:justify-end">
+            <!-- Proyek Dropdown -->
+            <div class="w-full sm:w-60">
+                <select wire:model.live="projectId" class="w-full bg-[#F8F9FA] border border-slate-300 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387] rounded-xl px-4 py-2 text-xs font-bold text-slate-750 transition cursor-pointer">
+                    <option value="">Semua Proyek (Tanpa Filter)</option>
+                    @foreach($projects as $p)
+                        <option value="{{ $p->id }}">{{ $p->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Date Range Inputs -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <input type="date" wire:model.live="startDate" class="bg-[#F8F9FA] border border-slate-300 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387] rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition cursor-pointer" placeholder="Mulai Tanggal">
+                <span class="text-xs text-slate-400 font-bold">s/d</span>
+                <input type="date" wire:model.live="endDate" class="bg-[#F8F9FA] border border-slate-300 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387] rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition cursor-pointer" placeholder="Sampai Tanggal">
+            </div>
         </div>
     </div>
 
