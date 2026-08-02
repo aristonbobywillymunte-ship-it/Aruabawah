@@ -122,7 +122,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Token Utama -->
                     <div class="text-left">
-                        <label class="mb-1 block text-xs font-bold text-slate-700">Token Utama (Index 0)</label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-slate-700">Token Utama (Index 0)</label>
+                            <span class="inline-flex rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-wider 
+                                {{ $setting->connection_status === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($setting->connection_status === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
+                                {{ $setting->connection_status === 'connected' ? 'Connected' : ($setting->connection_status === 'error' ? 'Error' : 'Belum Dicek') }}
+                            </span>
+                        </div>
                         <input 
                             wire:model="apiToken" 
                             type="password" 
@@ -133,7 +139,17 @@
 
                     <!-- Token Backup 1 -->
                     <div class="text-left">
-                        <label class="mb-1 block text-xs font-bold text-slate-700">Token Backup 1 (Index 1)</label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-slate-700">Token Backup 1 (Index 1)</label>
+                            @if(filled($setting->api_token_backup_1))
+                                <span class="inline-flex rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-wider 
+                                    {{ $setting->connection_status_backup_1 === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($setting->connection_status_backup_1 === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
+                                    {{ $setting->connection_status_backup_1 === 'connected' ? 'Connected' : ($setting->connection_status_backup_1 === 'error' ? 'Error' : 'Belum Dicek') }}
+                                </span>
+                            @else
+                                <span class="text-[9px] text-slate-350 italic">Kosong</span>
+                            @endif
+                        </div>
                         <input 
                             wire:model="apiTokenBackup1" 
                             type="password" 
@@ -144,7 +160,17 @@
 
                     <!-- Token Backup 2 -->
                     <div class="text-left">
-                        <label class="mb-1 block text-xs font-bold text-slate-700">Token Backup 2 (Index 2)</label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-slate-700">Token Backup 2 (Index 2)</label>
+                            @if(filled($setting->api_token_backup_2))
+                                <span class="inline-flex rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-wider 
+                                    {{ $setting->connection_status_backup_2 === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($setting->connection_status_backup_2 === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
+                                    {{ $setting->connection_status_backup_2 === 'connected' ? 'Connected' : ($setting->connection_status_backup_2 === 'error' ? 'Error' : 'Belum Dicek') }}
+                                </span>
+                            @else
+                                <span class="text-[9px] text-slate-350 italic">Kosong</span>
+                            @endif
+                        </div>
                         <input 
                             wire:model="apiTokenBackup2" 
                             type="password" 
@@ -155,7 +181,17 @@
 
                     <!-- Token Backup 3 -->
                     <div class="text-left">
-                        <label class="mb-1 block text-xs font-bold text-slate-700">Token Backup 3 (Index 3)</label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-slate-700">Token Backup 3 (Index 3)</label>
+                            @if(filled($setting->api_token_backup_3))
+                                <span class="inline-flex rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-wider 
+                                    {{ $setting->connection_status_backup_3 === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($setting->connection_status_backup_3 === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
+                                    {{ $setting->connection_status_backup_3 === 'connected' ? 'Connected' : ($setting->connection_status_backup_3 === 'error' ? 'Error' : 'Belum Dicek') }}
+                                </span>
+                            @else
+                                <span class="text-[9px] text-slate-350 italic">Kosong</span>
+                            @endif
+                        </div>
                         <input 
                             wire:model="apiTokenBackup3" 
                             type="password" 
