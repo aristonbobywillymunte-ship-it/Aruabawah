@@ -364,7 +364,7 @@ class ApifyActor extends Model
 
     protected function distributedSocialLimit(int $totalLimit, array $keywords): int
     {
-        return max(1, (int) $totalLimit);
+        return $this->perKeywordLimit($totalLimit, $keywords);
     }
 
     protected function normalizeFacebookCommentUrl(string $value): string
