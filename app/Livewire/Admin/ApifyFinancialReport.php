@@ -61,13 +61,10 @@ class ApifyFinancialReport extends Component
         $isCommentRun = filter_var($keyword, FILTER_VALIDATE_URL) !== false;
 
         if ($isCommentRun) {
-            // Ambil postingan utama terlebih dahulu
+            // Ambil postingan utama terlebih dahulu (Tanpa batasan project_id karena audit log / data mentah)
             $queryKeyword = trim($keyword);
             $mainPost = DB::table('social_media_items')
                 ->where('platform', $platform)
-                ->when($projectId, function($q) use ($projectId) {
-                    $q->where('project_id', $projectId);
-                })
                 ->where(function($q) use ($queryKeyword) {
                     $q->where('post_url', $queryKeyword)
                       ->orWhere('post_url', 'like', '%' . $queryKeyword . '%');
@@ -88,7 +85,7 @@ class ApifyFinancialReport extends Component
                         'author_name' => $c->author_name ?? 'Pengguna',
                         'content' => $c->content ?? '[tanpa teks]',
                         'likes' => (int) $c->like_count,
-                        'comments' => 0, // Komentar tidak memiliki sub-komentar di tabel ini
+                        'comments' => 0,
                         'shares' => 0,
                         'posted_at' => $c->posted_at ? \Carbon\Carbon::parse($c->posted_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
                     ];
@@ -96,16 +93,20 @@ class ApifyFinancialReport extends Component
             }
         } else {
             // Ambil data postingan utama (Search Post)
+            // Memecah kata kunci (misal "bank kaltimtara,bank kaltim") untuk mencari kecocokan global
             $queryKeyword = trim($keyword);
+            $keywordsList = array_filter(array_map('trim', explode(',', $queryKeyword)));
+            if (empty($keywordsList)) {
+                $keywordsList = [$queryKeyword];
+            }
+
             $rawItems = DB::table('social_media_items')
                 ->where('platform', $platform)
-                ->when($projectId, function($q) use ($projectId) {
-                    $q->where('project_id', $projectId);
-                })
-                ->where(function($q) use ($queryKeyword) {
-                    $q->where('post_url', $queryKeyword)
-                      ->orWhere('post_url', 'like', '%' . $queryKeyword . '%')
-                      ->orWhere('content', 'like', '%' . $queryKeyword . '%');
+                ->where(function($q) use ($keywordsList) {
+                    foreach ($keywordsList as $kw) {
+                        $q->orWhere('content', 'like', '%' . $kw . '%')
+                          ->orWhere('post_url', 'like', '%' . $kw . '%');
+                    }
                 })
                 ->orderBy('posted_at', 'desc')
                 ->get();
