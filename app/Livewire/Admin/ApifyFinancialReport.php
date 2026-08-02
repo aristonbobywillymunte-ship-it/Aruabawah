@@ -12,6 +12,15 @@ class ApifyFinancialReport extends Component
 
     protected $paginationTheme = 'bootstrap';
 
+    // Filter project
+    public ?int $projectId = null;
+
+    // Reset pagination on filter update
+    public function updatedProjectId()
+    {
+        $this->resetPage();
+    }
+
     protected function adminOnly(): void
     {
         abort_unless(auth()->user()?->isAdmin(), 403);
@@ -21,10 +30,19 @@ class ApifyFinancialReport extends Component
     {
         $this->adminOnly();
 
+        // Query projects listing for the select option dropdown
+        $projects = DB::table('projects')
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
+
         // Load costs per run with pagination (20 per page)
         $recentRuns = DB::table('apify_dispatch_states')
             ->whereNotNull('actual_cost_usd')
             ->where('completed_at', '>=', now()->subDays(30))
+            ->when($this->projectId, function($q) {
+                $q->where('project_id', $this->projectId);
+            })
             ->orderBy('completed_at', 'desc')
             ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id')
             ->paginate(20);
@@ -50,6 +68,7 @@ class ApifyFinancialReport extends Component
         return view('livewire.admin.apify-financial-report', [
             'recentRuns' => $recentRuns,
             'costSummary' => $this->loadCostSummary(),
+            'projects' => $projects,
         ]);
     }
 
@@ -58,6 +77,9 @@ class ApifyFinancialReport extends Component
         $rows = DB::table('apify_dispatch_states')
             ->whereNotNull('actual_cost_usd')
             ->where('completed_at', '>=', now()->subDays(30))
+            ->when($this->projectId, function($q) {
+                $q->where('project_id', $this->projectId);
+            })
             ->orderBy('completed_at', 'desc')
             ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id')
             ->get();

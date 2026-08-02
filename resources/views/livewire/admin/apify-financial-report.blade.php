@@ -12,6 +12,22 @@
         </span>
     </div>
 
+    <!-- Filter Section per Proyek -->
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm text-left mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">filter_alt</span>
+            <span class="text-xs font-black text-slate-700 uppercase tracking-wider">Filter Laporan</span>
+        </div>
+        <div class="w-full sm:w-72">
+            <select wire:model.live="projectId" class="w-full bg-[#F8F9FA] border border-slate-300 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387] rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 transition cursor-pointer">
+                <option value="">Semua Proyek (Tanpa Filter)</option>
+                @foreach($projects as $p)
+                    <option value="{{ $p->id }}">{{ $p->name }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+
     <!-- Ringkasan per Platform -->
     @if(!$costSummary['has_data'])
         <div class="flex flex-col items-center justify-center py-16 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
