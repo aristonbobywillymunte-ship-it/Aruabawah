@@ -124,10 +124,10 @@
                     <div class="w-full sm:w-64 text-left">
                         <label class="mb-1.5 block text-xs font-bold text-slate-700">Pilih Token Aktif Secara Manual</label>
                         <select wire:model="activeTokenIndex" class="h-9 w-full rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 outline-none transition cursor-pointer">
-                            <option value="0">Token Utama</option>
-                            <option value="1">Token Backup 1</option>
-                            <option value="2">Token Backup 2</option>
-                            <option value="3">Token Backup 3</option>
+                            <option value="0">Token Utama (Index 0)</option>
+                            <option value="1">Token Backup 1 (Index 1)</option>
+                            <option value="2">Token Backup 2 (Index 2)</option>
+                            <option value="3">Token Backup 3 (Index 3)</option>
                         </select>
                     </div>
                     <button 

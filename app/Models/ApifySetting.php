@@ -53,10 +53,10 @@ class ApifySetting extends Model
     public function getActiveTokenLabel(): string
     {
         return match ((int) $this->active_token_index) {
-            1 => 'Backup Token 1',
-            2 => 'Backup Token 2',
-            3 => 'Backup Token 3',
-            default => 'Token Utama',
+            1 => 'Token Backup 1 (Index 1)',
+            2 => 'Token Backup 2 (Index 2)',
+            3 => 'Token Backup 3 (Index 3)',
+            default => 'Token Utama (Index 0)',
         };
     }
 
