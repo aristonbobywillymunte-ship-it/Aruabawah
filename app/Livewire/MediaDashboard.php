@@ -731,7 +731,16 @@ class MediaDashboard extends Component
             $resolver = app(NewsSourceIconResolver::class);
             $resolved = $resolver->resolve($source?->base_url ?: ('https://' . $domain), $source?->domain ?: $domain, $source?->name ?: $sourceName);
 
-            return $resolved ?: $this->defaultPortalLogoUrl($domain);
+            if ($resolved) {
+                return $resolved;
+            }
+
+            // Jika diawali dengan Google News/RSS, berikan logo Google News resmi sebagai default fallback
+            if (str_contains($normalized, 'google news') || str_contains($normalized, 'google')) {
+                return $this->defaultPortalLogoUrl('news.google.com');
+            }
+
+            return $this->defaultPortalLogoUrl($domain);
         });
     }
 
@@ -942,7 +951,13 @@ class MediaDashboard extends Component
 
     protected function defaultPortalLogoUrl(string $domain): string
     {
-        return "https://www.google.com/s2/favicons?sz=64&domain=" . urlencode($domain) . "&default=404";
+        $domainLower = strtolower(trim($domain));
+        if ($domainLower === 'google.com' || $domainLower === 'news.google.com' || str_contains($domainLower, 'google')) {
+            // High quality Google News logo
+            return "https://upload.wikimedia.org/wikipedia/commons/d/da/Google_News_icon.svg";
+        }
+        
+        return "https://www.google.com/s2/favicons?sz=128&domain=" . urlencode($domain) . "&default=404";
     }
 
     public function getProjectArticleCount(): int
