@@ -115,8 +115,8 @@
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-bold text-slate-700">Token Utama (Index 0)</label>
                             <span class="inline-flex rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-wider 
-                                {{ $setting->connection_status === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($setting->connection_status === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
-                                {{ $setting->connection_status === 'connected' ? 'Connected' : ($setting->connection_status === 'error' ? 'Error' : 'Belum Dicek') }}
+                                {{ $connectionStatus === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($connectionStatus === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
+                                {{ $connectionStatus === 'connected' ? 'Connected' : ($connectionStatus === 'error' ? 'Error' : 'Belum Dicek') }}
                             </span>
                         </div>
                         <input 
@@ -131,10 +131,10 @@
                     <div class="text-left">
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-bold text-slate-700">Token Backup 1 (Index 1)</label>
-                            @if(filled($setting->api_token_backup_1))
+                            @if(filled($apiTokenBackup1))
                                 <span class="inline-flex rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-wider 
-                                    {{ $setting->connection_status_backup_1 === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($setting->connection_status_backup_1 === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
-                                    {{ $setting->connection_status_backup_1 === 'connected' ? 'Connected' : ($setting->connection_status_backup_1 === 'error' ? 'Error' : 'Belum Dicek') }}
+                                    {{ $connectionStatusBackup1 === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($connectionStatusBackup1 === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
+                                    {{ $connectionStatusBackup1 === 'connected' ? 'Connected' : ($connectionStatusBackup1 === 'error' ? 'Error' : 'Belum Dicek') }}
                                 </span>
                             @else
                                 <span class="text-[9px] text-slate-350 italic">Kosong</span>
@@ -152,10 +152,10 @@
                     <div class="text-left">
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-bold text-slate-700">Token Backup 2 (Index 2)</label>
-                            @if(filled($setting->api_token_backup_2))
+                            @if(filled($apiTokenBackup2))
                                 <span class="inline-flex rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-wider 
-                                    {{ $setting->connection_status_backup_2 === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($setting->connection_status_backup_2 === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
-                                    {{ $setting->connection_status_backup_2 === 'connected' ? 'Connected' : ($setting->connection_status_backup_2 === 'error' ? 'Error' : 'Belum Dicek') }}
+                                    {{ $connectionStatusBackup2 === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($connectionStatusBackup2 === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
+                                    {{ $connectionStatusBackup2 === 'connected' ? 'Connected' : ($connectionStatusBackup2 === 'error' ? 'Error' : 'Belum Dicek') }}
                                 </span>
                             @else
                                 <span class="text-[9px] text-slate-350 italic">Kosong</span>
@@ -173,10 +173,10 @@
                     <div class="text-left">
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-bold text-slate-700">Token Backup 3 (Index 3)</label>
-                            @if(filled($setting->api_token_backup_3))
+                            @if(filled($apiTokenBackup3))
                                 <span class="inline-flex rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-wider 
-                                    {{ $setting->connection_status_backup_3 === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($setting->connection_status_backup_3 === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
-                                    {{ $setting->connection_status_backup_3 === 'connected' ? 'Connected' : ($setting->connection_status_backup_3 === 'error' ? 'Error' : 'Belum Dicek') }}
+                                    {{ $connectionStatusBackup3 === 'connected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : ($connectionStatusBackup3 === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-slate-100 text-slate-500') }}">
+                                    {{ $connectionStatusBackup3 === 'connected' ? 'Connected' : ($connectionStatusBackup3 === 'error' ? 'Error' : 'Belum Dicek') }}
                                 </span>
                             @else
                                 <span class="text-[9px] text-slate-350 italic">Kosong</span>

@@ -20,6 +20,9 @@ class ApifyConfiguration extends Component
     public int $activeTokenIndex = 0;
 
     public string $connectionStatus = 'belum_dicek';
+    public string $connectionStatusBackup1 = 'belum_dicek';
+    public string $connectionStatusBackup2 = 'belum_dicek';
+    public string $connectionStatusBackup3 = 'belum_dicek';
     public string $lastTestStatus = '';
     public string $lastTestDatasetId = '';
     public string $lastTestMessage = '';
@@ -128,6 +131,9 @@ class ApifyConfiguration extends Component
         $this->activeTokenIndex = (int) ($setting->active_token_index ?? 0);
 
         $this->connectionStatus = $setting->connection_status ?? 'belum_dicek';
+        $this->connectionStatusBackup1 = $setting->connection_status_backup_1 ?? 'belum_dicek';
+        $this->connectionStatusBackup2 = $setting->connection_status_backup_2 ?? 'belum_dicek';
+        $this->connectionStatusBackup3 = $setting->connection_status_backup_3 ?? 'belum_dicek';
         $this->lastTestStatus = $setting->last_test_status ?? '';
         $this->lastTestDatasetId = $setting->last_test_dataset_id ?? '';
         $this->lastTestMessage = $setting->last_test_message ?? '';
@@ -278,6 +284,9 @@ class ApifyConfiguration extends Component
         $setting->save();
 
         $this->connectionStatus = $setting->connection_status;
+        $this->connectionStatusBackup1 = $setting->connection_status_backup_1;
+        $this->connectionStatusBackup2 = $setting->connection_status_backup_2;
+        $this->connectionStatusBackup3 = $setting->connection_status_backup_3;
         $this->lastTestStatus = $setting->last_test_status;
         $this->lastTestMessage = $setting->last_test_message;
         $this->lastTestAt = $setting->last_test_at->toDateTimeString();
