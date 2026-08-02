@@ -1063,12 +1063,6 @@ new class extends Component
                                     @endphp
                                     @if($activePackages->isNotEmpty())
                                     <div class="space-y-3">
-                                        <div class="flex items-center justify-between">
-                                            <div>
-                                                <label class="text-sm font-bold text-slate-800 block">Paket Scraper Apify</label>
-                                                <p class="text-xs text-slate-400 mt-0.5">Tentukan paket scraper yang terasosiasi ke proyek ini.</p>
-                                            </div>
-                                        </div>
                                         
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                             <!-- Opsi Paket-paket dari DB -->
@@ -1743,12 +1737,6 @@ new class extends Component
                                 @endphp
                                 @if($activePackagesEdit->isNotEmpty())
                                 <div class="space-y-3">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <label class="text-sm font-bold text-slate-800 block">Paket Scraper Apify</label>
-                                            <p class="text-xs text-slate-400 mt-0.5">Tentukan paket scraper yang terasosiasi ke proyek ini.</p>
-                                        </div>
-                                    </div>
                                     
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <!-- Opsi Paket-paket dari DB -->
