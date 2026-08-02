@@ -349,7 +349,7 @@ class SystemHealth extends Component
                 'project' => $projectName,
                 'status' => $item->status,
                 'attempts' => $item->attempts,
-                'error_message' => $item->error_message ?: '-',
+                'error_message' => ($item->last_error_message ?? $item->last_error_code) ?: '-',
                 'queued_at' => $item->queued_at ? \Carbon\Carbon::parse($item->queued_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
                 'started_at' => $item->started_at ? \Carbon\Carbon::parse($item->started_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
                 'completed_at' => $item->completed_at ? \Carbon\Carbon::parse($item->completed_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
