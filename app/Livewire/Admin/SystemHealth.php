@@ -28,6 +28,8 @@ class SystemHealth extends Component
     public array $queueDetails = [];
     public bool $showRedisQueueModal = false;
     public array $redisQueueDetails = [];
+    public bool $showApifyQueueModal = false;
+    public array $apifyQueueDetails = [];
 
     #[On('echo:system-alerts,RealtimeNotificationEvent')]
     public function handleRealtimeNotification($event): void
@@ -309,6 +311,58 @@ class SystemHealth extends Component
     {
         $this->showQueueModal = false;
         $this->queueDetails = [];
+    }
+
+    public function openApifyQueueModal(): void
+    {
+        $this->adminOnly();
+        
+        $rawItems = DB::table('apify_dispatch_states')
+            ->whereIn('status', ['queued', 'processing', 'retry_wait'])
+            ->orderBy('id', 'desc')
+            ->limit(50)
+            ->get();
+
+        $this->apifyQueueDetails = $rawItems->map(function ($item) {
+            $projectName = 'N/A';
+            if ($item->project_id) {
+                $project = DB::table('projects')->where('id', $item->project_id)->first();
+                if ($project) {
+                    $projectName = $project->name;
+                }
+            }
+
+            $actorName = 'N/A';
+            if ($item->actor_id) {
+                $actor = DB::table('apify_actors')->where('id', $item->actor_id)->first();
+                if ($actor) {
+                    $actorName = $actor->actor_name;
+                }
+            }
+
+            return [
+                'id' => $item->id,
+                'run_id' => $item->run_id ?: '-',
+                'platform' => $item->platform,
+                'actor' => $actorName,
+                'keyword' => $item->keyword ?: '-',
+                'project' => $projectName,
+                'status' => $item->status,
+                'attempts' => $item->attempts,
+                'error_message' => $item->error_message ?: '-',
+                'queued_at' => $item->queued_at ? \Carbon\Carbon::parse($item->queued_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+                'started_at' => $item->started_at ? \Carbon\Carbon::parse($item->started_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+                'completed_at' => $item->completed_at ? \Carbon\Carbon::parse($item->completed_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+            ];
+        })->toArray();
+
+        $this->showApifyQueueModal = true;
+    }
+
+    public function closeApifyQueueModal(): void
+    {
+        $this->showApifyQueueModal = false;
+        $this->apifyQueueDetails = [];
     }
 
     public function openRedisQueueModal(): void
