@@ -287,7 +287,6 @@ class ApifyConfiguration extends Component
         };
 
         $setting->active_token_index = (int) $this->activeTokenIndex;
-        $setting->connection_status = $setting->$activeField;
         $setting->last_test_status = $setting->$activeField === 'connected' ? 'success' : 'failed';
         $setting->last_test_message = implode(', ', $results);
         $setting->last_test_at = now();
