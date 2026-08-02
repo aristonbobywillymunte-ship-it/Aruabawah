@@ -130,11 +130,11 @@
 
             {{-- Modal Display Hasil Scraping --}}
             @if($showItemsModal)
-                <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
-                    <div class="w-full max-w-4xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain flex flex-col max-h-[85vh]">
+                <div wire:key="apify-financial-items-modal" x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+                    <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left overscroll-contain flex flex-col rounded-[24px] overflow-hidden" style="height: 640px !important; max-height: 640px !important;">
                         
                         {{-- Modal Header --}}
-                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0">
+                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
                             <div>
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Platform: {{ $selectedPlatform }}</p>
                                 <h2 class="text-base font-black text-slate-900 mt-0.5">Hasil Perayapan (Scraped Items)</h2>
@@ -144,8 +144,8 @@
                             </button>
                         </div>
 
-                        {{-- Modal Body (Scrollable & loading state) --}}
-                        <div class="flex-1 overflow-y-auto min-h-[300px] p-6 relative">
+                        {{-- Modal Body (Scrollable & loading state, fixed height) --}}
+                        <div class="flex-1 overflow-y-auto p-6 relative" style="height: 500px !important; max-height: 500px !important;">
                             
                             {{-- Loading State --}}
                             @if($modalLoading)
