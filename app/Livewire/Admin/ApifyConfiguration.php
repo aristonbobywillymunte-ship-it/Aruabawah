@@ -249,7 +249,11 @@ class ApifyConfiguration extends Component
             $dbStatusField = $config['db_status'];
 
             if (blank($token)) {
-                $setting->$dbTokenField = null;
+                // Gunakan token yang sudah terlanjur tersimpan di database sebagai fallback
+                $token = trim($setting->$dbTokenField);
+            }
+
+            if (blank($token)) {
                 $setting->$dbStatusField = 'belum_dicek';
                 continue;
             }
