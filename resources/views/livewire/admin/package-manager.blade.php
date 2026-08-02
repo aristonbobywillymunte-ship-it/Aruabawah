@@ -127,6 +127,18 @@
                             @endif
                         </div>
                         <p class="text-slate-400 text-[11px] leading-relaxed">{{ $pkg->description ?: 'Solusi lengkap untuk kebutuhan monitoring & scraping skala enterprise.' }}</p>
+                        
+                        {{-- Scraping Intervals Information --}}
+                        <div class="mt-3 grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-[10px] text-slate-500 font-semibold">
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[14px] text-violet-500">newspaper</span>
+                                <span>Berita: {{ $pkg->news_interval_minutes ?? 5 }}m</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[14px] text-sky-500">share</span>
+                                <span>Sosmed: {{ $pkg->social_interval_minutes ?? 10 }}m</span>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Divider --}}
@@ -249,6 +261,18 @@
                             @endif
                         </div>
                         <p class="text-slate-400 text-[11px] leading-relaxed">{{ $pkg->description ?: 'Paket standar dengan fungsionalitas scraping yang handal.' }}</p>
+                        
+                        {{-- Scraping Intervals Information --}}
+                        <div class="mt-3 grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-[10px] text-slate-500 font-semibold">
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[14px] text-violet-500">newspaper</span>
+                                <span>Berita: {{ $pkg->news_interval_minutes ?? 5 }}m</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[14px] text-sky-500">share</span>
+                                <span>Sosmed: {{ $pkg->social_interval_minutes ?? 10 }}m</span>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Divider --}}
@@ -487,6 +511,28 @@
                                     </button>
                                 </div>
                                 <div class="text-[9px] leading-tight {{ $is_popular ? 'text-amber-600' : 'text-slate-500' }}">Tampilkan badge "Terpopuler" di kartu paket.</div>
+                            </div>
+                        </div>
+
+                        <!-- Interval Perayapan Khusus Paket -->
+                        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Interval Perayapan Berita (Menit)</label>
+                                    <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">Wajib</span>
+                                </div>
+                                <input wire:model="news_interval_minutes" type="number" min="1" placeholder="Contoh: 5"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('news_interval_minutes') border-rose-300 bg-rose-50/50 @enderror" />
+                                @error('news_interval_minutes') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Interval Perayapan Media Sosial (Menit)</label>
+                                    <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">Wajib</span>
+                                </div>
+                                <input wire:model="social_interval_minutes" type="number" min="1" placeholder="Contoh: 10"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('social_interval_minutes') border-rose-300 bg-rose-50/50 @enderror" />
+                                @error('social_interval_minutes') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     </div>

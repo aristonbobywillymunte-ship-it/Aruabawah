@@ -17,6 +17,8 @@ class Package extends Model
         'advantages',
         'is_active',
         'use_portal',
+        'news_interval_minutes',
+        'social_interval_minutes',
         'is_popular',
     ];
 
@@ -27,6 +29,8 @@ class Package extends Model
         'advantages' => 'array',
         'is_active' => 'boolean',
         'use_portal' => 'boolean',
+        'news_interval_minutes' => 'integer',
+        'social_interval_minutes' => 'integer',
         'is_popular' => 'boolean',
     ];
 

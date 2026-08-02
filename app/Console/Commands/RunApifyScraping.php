@@ -233,10 +233,15 @@ class RunApifyScraping extends Command
                     $hasQueue = ($candidateCount > 0);
                 }
 
-                // Comment scraper must keep checking the queue every scheduler tick.
+                 // Comment scraper must keep checking the queue every scheduler tick.
                 // Do not block it behind the long actor interval when the queue is empty.
-                if (! $isCommentScraper && $lastProjectActorRunAt && $actor->interval_minutes && !$hasQueue && !$forceDispatch) {
-                    $nextRunAt = $lastProjectActorRunAt->copy()->addMinutes($actor->interval_minutes);
+                $socialInterval = $actor->interval_minutes;
+                if ($project->package && isset($project->package->social_interval_minutes)) {
+                    $socialInterval = (int) $project->package->social_interval_minutes;
+                }
+                
+                if (! $isCommentScraper && $lastProjectActorRunAt && $socialInterval && !$hasQueue && !$forceDispatch) {
+                    $nextRunAt = $lastProjectActorRunAt->copy()->addMinutes($socialInterval);
                     if (now()->lessThan($nextRunAt) && !$filterPlatform) {
                         $this->line("Skipping {$actor->platform} — next run at {$nextRunAt->format('H:i')}");
                         $socialLog->info('[Social] Actor skipped: interval not due.', [
@@ -246,6 +251,7 @@ class RunApifyScraping extends Command
                             'actor_id' => $actor->id,
                             'last_project_run_at' => $lastProjectActorRunAt->toDateTimeString(),
                             'next_run_at' => $nextRunAt->toDateTimeString(),
+                            'effective_interval' => $socialInterval,
                         ]);
                         $skipStats['interval_not_due']++;
                         continue;

@@ -155,6 +155,26 @@ class RunNewsPortalScraping extends Command
                     ]);
                     continue;
                 }
+
+                // Check news interval defined in package
+                $newsInterval = (int) ($project->package->news_interval_minutes ?? 5);
+                if ($newsInterval > 0 && !$filterProjectId) {
+                    $lastNewsScrapedAt = Cache::get('news_last_scrape_at:' . $project->id);
+                    if ($lastNewsScrapedAt) {
+                        $lastScrapedTime = \Carbon\Carbon::parse($lastNewsScrapedAt);
+                        $nextNewsRunAt = $lastScrapedTime->copy()->addMinutes($newsInterval);
+                        if (now()->lessThan($nextNewsRunAt)) {
+                            $this->line("Skipping project [{$project->name}] — news interval not met. Next run at {$nextNewsRunAt->format('H:i')}");
+                            $portalLog->info('[Portal] Project skipped: news interval not met.', [
+                                'project_id' => $project->id,
+                                'project_name' => $project->name,
+                                'last_run_at' => $lastScrapedTime->toDateTimeString(),
+                                'next_run_at' => $nextNewsRunAt->toDateTimeString(),
+                            ]);
+                            continue;
+                        }
+                    }
+                }
             } else {
                 $this->line("Skipping project [{$project->name}] — Tidak memiliki paket aktif.");
                 $portalLog->warning('[Portal] Project skipped: no active package.', [
@@ -217,6 +237,7 @@ class RunNewsPortalScraping extends Command
                     $totalInserted += (int) ($outcome['newly_inserted'] ?? 0);
                     $totalReused += (int) ($outcome['reused_existing'] ?? 0);
                 }
+                Cache::put('news_last_scrape_at:' . $project->id, now()->toDateTimeString(), now()->addDays(7));
             } catch (\Throwable $e) {
                 $this->error("Error scraping project [{$project->name}]: " . $e->getMessage());
                 $portalLog->error("Error scraping project [{$project->name}]", [

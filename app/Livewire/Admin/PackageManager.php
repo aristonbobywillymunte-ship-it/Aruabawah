@@ -31,6 +31,8 @@ class PackageManager extends Component
     public array $advantages = [];
     public bool $is_active = true;
     public bool $use_portal = true;
+    public int $news_interval_minutes = 5;
+    public int $social_interval_minutes = 10;
     public bool $is_popular = false;
 
     // ─── CRUD-based Limits & Features (Advantages Wrapper) ───────────────
@@ -95,15 +97,17 @@ class PackageManager extends Component
     protected function rules(): array
     {
         return [
-            'name'                  => 'required|string|max:255',
-            'description'           => 'nullable|string|max:1000',
-            'price'                 => 'required|numeric|min:0',
-            'social_media_features' => 'nullable|array',
-            'news_portal_features'  => 'nullable|array',
-            'advantages'            => 'nullable|array',
-            'is_active'             => 'boolean',
-            'use_portal'            => 'boolean',
-            'is_popular'            => 'boolean',
+            'name'                    => 'required|string|max:255',
+            'description'             => 'nullable|string|max:1000',
+            'price'                   => 'required|numeric|min:0',
+            'social_media_features'   => 'nullable|array',
+            'news_portal_features'    => 'nullable|array',
+            'advantages'              => 'nullable|array',
+            'is_active'               => 'boolean',
+            'use_portal'              => 'boolean',
+            'news_interval_minutes'   => 'required|integer|min:1',
+            'social_interval_minutes' => 'required|integer|min:1',
+            'is_popular'              => 'boolean',
         ];
     }
 
@@ -212,7 +216,7 @@ class PackageManager extends Component
     public function editPackage(int $id): void
     {
         $pkg = Package::findOrFail($id);
-        $this->editingPackageId = $id;
+        $this->editingPackageId      = $id;
         $this->name                  = $pkg->name;
         $this->description           = $pkg->description ?? '';
         $this->price                 = (string) ($pkg->price ?? '0');
@@ -221,6 +225,8 @@ class PackageManager extends Component
         $this->advantages            = $pkg->advantages ?? [];
         $this->is_active             = $pkg->is_active;
         $this->use_portal            = (bool) ($pkg->use_portal ?? true);
+        $this->news_interval_minutes = (int) ($pkg->news_interval_minutes ?? 5);
+        $this->social_interval_minutes = (int) ($pkg->social_interval_minutes ?? 10);
         $this->is_popular            = (bool) ($pkg->is_popular ?? false);
         
         // Parse advantages to find toggles and clean them up
@@ -274,15 +280,17 @@ class PackageManager extends Component
         $this->compilePropertiesToAdvantages();
 
         $data = [
-            'name'                  => trim($this->name),
-            'description'           => trim($this->description) ?: null,
-            'price'                 => (float) $this->price,
-            'social_media_features' => $this->social_media_features ?: null,
-            'news_portal_features'  => $this->news_portal_features ?: null,
-            'advantages'            => $this->advantages ?: null,
-            'is_active'             => $this->is_active,
-            'use_portal'            => $this->use_portal,
-            'is_popular'            => $this->is_popular,
+            'name'                    => trim($this->name),
+            'description'             => trim($this->description) ?: null,
+            'price'                   => (float) $this->price,
+            'social_media_features'   => $this->social_media_features ?: null,
+            'news_portal_features'    => $this->news_portal_features ?: null,
+            'advantages'              => $this->advantages ?: null,
+            'is_active'               => $this->is_active,
+            'use_portal'              => $this->use_portal,
+            'news_interval_minutes'   => $this->news_interval_minutes,
+            'social_interval_minutes' => $this->social_interval_minutes,
+            'is_popular'              => $this->is_popular,
         ];
 
         if ($this->editingPackageId) {
@@ -610,6 +618,8 @@ class PackageManager extends Component
         $this->advantages            = [];
         $this->is_active             = true;
         $this->use_portal            = true;
+        $this->news_interval_minutes = 5;
+        $this->social_interval_minutes = 10;
         $this->is_popular            = false;
         
         // Reset limit properties
