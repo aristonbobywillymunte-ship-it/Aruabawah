@@ -1078,10 +1078,15 @@
                                             @endphp
 
                                             @if(!$isSocialMediaCheck)
-                                                @if(str_contains($article->source_name, ' '))
-                                                    <span class="px-2.5 py-1 text-[10px] font-bold bg-amber-50 text-amber-700 rounded-lg border border-amber-200 uppercase tracking-wide">Hasil Google News</span>
-                                                @else
+                                                @php
+                                                    $isRegisteredManual = \App\Models\NewsSource::whereRaw('LOWER(domain) = ?', [$srcLowerCheck])
+                                                        ->orWhereRaw('LOWER(name) = ?', [$srcLowerCheck])
+                                                        ->exists();
+                                                @endphp
+                                                @if($isRegisteredManual)
                                                     <span class="px-2.5 py-1 text-[10px] font-bold bg-sky-50 text-sky-700 rounded-lg border border-sky-200 uppercase tracking-wide">Portal Manual</span>
+                                                @else
+                                                    <span class="px-2.5 py-1 text-[10px] font-bold bg-amber-50 text-amber-700 rounded-lg border border-amber-200 uppercase tracking-wide">Hasil Google News</span>
                                                 @endif
                                             @endif
                                         </div>
