@@ -221,38 +221,44 @@ class ApifyConfiguration extends Component
 
         $setting = $this->setting();
 
-        // 1. Array penampung token dan status kolomnya
+        // Ambil token dari properti form Livewire saat ini (agar perubahan yang baru diketik bisa langsung diuji)
         $tokensToTest = [
-            'api_token'                  => 'connection_status',
-            'api_token_backup_1'         => 'connection_status_backup_1',
-            'api_token_backup_2'         => 'connection_status_backup_2',
-            'api_token_backup_3'         => 'connection_status_backup_3',
+            'apiToken'        => ['db_token' => 'api_token',          'db_status' => 'connection_status'],
+            'apiTokenBackup1' => ['db_token' => 'api_token_backup_1', 'db_status' => 'connection_status_backup_1'],
+            'apiTokenBackup2' => ['db_token' => 'api_token_backup_2', 'db_status' => 'connection_status_backup_2'],
+            'apiTokenBackup3' => ['db_token' => 'api_token_backup_3', 'db_status' => 'connection_status_backup_3'],
         ];
 
         $results = [];
 
-        foreach ($tokensToTest as $tokenField => $statusField) {
-            $token = trim($setting->$tokenField);
+        foreach ($tokensToTest as $propName => $config) {
+            $token = trim($this->$propName);
+            $dbTokenField = $config['db_token'];
+            $dbStatusField = $config['db_status'];
 
             if (blank($token)) {
-                $setting->$statusField = 'belum_dicek';
+                $setting->$dbTokenField = null;
+                $setting->$dbStatusField = 'belum_dicek';
                 continue;
             }
+
+            // Simpan token yang diuji ke database agar persisten
+            $setting->$dbTokenField = $token;
 
             try {
                 $response = \Illuminate\Support\Facades\Http::timeout(10)
                     ->get("https://api.apify.com/v2/users/me?token={$token}");
 
                 if ($response->successful()) {
-                    $setting->$statusField = 'connected';
-                    $results[] = $this->getTokenFieldLabel($tokenField) . ' Connected';
+                    $setting->$dbStatusField = 'connected';
+                    $results[] = $this->getTokenFieldLabel($dbTokenField) . ' Connected';
                 } else {
-                    $setting->$statusField = 'error';
-                    $results[] = $this->getTokenFieldLabel($tokenField) . ' Error (HTTP ' . $response->status() . ')';
+                    $setting->$dbStatusField = 'error';
+                    $results[] = $this->getTokenFieldLabel($dbTokenField) . ' Error (HTTP ' . $response->status() . ')';
                 }
             } catch (\Throwable $e) {
-                $setting->$statusField = 'error';
-                $results[] = $this->getTokenFieldLabel($tokenField) . ' Error (' . $e->getMessage() . ')';
+                $setting->$dbStatusField = 'error';
+                $results[] = $this->getTokenFieldLabel($dbTokenField) . ' Error (' . $e->getMessage() . ')';
             }
         }
 
@@ -281,10 +287,10 @@ class ApifyConfiguration extends Component
     private function getTokenFieldLabel(string $field): string
     {
         return match($field) {
-            'api_token_backup_1' => 'Backup 1',
-            'api_token_backup_2' => 'Backup 2',
-            'api_token_backup_3' => 'Backup 3',
-            default => 'Token Utama',
+            'api_token_backup_1' => 'Token Backup 1 (Index 1)',
+            'api_token_backup_2' => 'Token Backup 2 (Index 2)',
+            'api_token_backup_3' => 'Token Backup 3 (Index 3)',
+            default => 'Token Utama (Index 0)',
         };
     }
 

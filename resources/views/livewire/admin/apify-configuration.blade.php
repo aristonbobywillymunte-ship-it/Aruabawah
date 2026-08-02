@@ -12,7 +12,7 @@
         <div class="flex items-center gap-3">
             <button 
                 type="button"
-                onclick="Livewire.dispatch('testConnection')" 
+                wire:click="testConnection" 
                 class="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-4 text-xs font-bold transition shadow-sm cursor-pointer"
             >
                 <span class="material-symbols-outlined text-[18px]">network_check</span>
