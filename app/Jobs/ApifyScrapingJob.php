@@ -1802,15 +1802,16 @@ class ApifyScrapingJob implements ShouldQueue
     {
         $message = strtolower((string) $message);
 
+        // Jika limit kuota habis atau token mati, sistem disetel untuk cooldown selama 10 menit saja
         if (str_contains($message, 'monthly usage hard limit exceeded') || str_contains($message, 'platform-feature-disabled')) {
-            return max(60, $baseMinutes * 6);
+            return 10;
         }
 
         if (str_contains($message, 'timeout') || str_contains($message, 'connection') || str_contains($message, 'could not')) {
-            return max(15, $baseMinutes);
+            return 10;
         }
 
-        return max(10, $baseMinutes);
+        return 10;
     }
 
     protected function isPlaceholderOrNoiseContent(?string $content): bool
