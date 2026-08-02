@@ -118,6 +118,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/apify', function () {
         return view('admin.apify');
     })->middleware('admin')->name('admin.apify');
+    Route::get('/admin/apify-financials', function () {
+        return view('admin.apify-financial-report');
+    })->middleware('admin')->name('admin.apify-financials');
     Route::get('/admin/packages', function () {
         return view('admin.packages');
     })->middleware('admin')->name('admin.packages');
