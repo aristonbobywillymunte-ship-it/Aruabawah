@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -35,9 +36,61 @@ class ApifyFinancialReport extends Component
         $this->resetPage();
     }
 
+    // Modal state for items collected view
+    public bool $showItemsModal = false;
+    public bool $modalLoading = false;
+    public array $selectedItems = [];
+    public string $selectedPlatform = '';
+    public string $selectedKeyword = '';
+
     protected function adminOnly(): void
     {
         abort_unless(auth()->user()?->isAdmin(), 403);
+    }
+
+    public function openItems($projectId, $platform, $keyword)
+    {
+        $this->adminOnly();
+        $this->selectedPlatform = $platform;
+        $this->selectedKeyword = $keyword;
+        $this->showItemsModal = true;
+        $this->modalLoading = true;
+        $this->selectedItems = [];
+
+        // Ambil data item sosial media yang masuk untuk project_id, platform, dan keyword ini
+        $queryKeyword = trim($keyword);
+        $rawItems = DB::table('social_media_items')
+            ->where('platform', $platform)
+            ->when($projectId, function($q) use ($projectId) {
+                $q->where('project_id', $projectId);
+            })
+            ->where(function($q) use ($queryKeyword) {
+                $q->where('post_url', $queryKeyword)
+                  ->orWhere('post_url', 'like', '%' . $queryKeyword . '%')
+                  ->orWhere('content', 'like', '%' . $queryKeyword . '%');
+            })
+            ->orderBy('posted_at', 'desc')
+            ->get();
+
+        $this->selectedItems = $rawItems->map(function($item) {
+            return [
+                'post_url' => $item->post_url,
+                'author_name' => $item->author_name ?? 'N/A',
+                'content' => Str::limit($item->content, 150),
+                'likes' => (int) $item->like_count,
+                'comments' => (int) $item->comment_count,
+                'shares' => (int) $item->share_count,
+                'posted_at' => $item->posted_at ? \Carbon\Carbon::parse($item->posted_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+            ];
+        })->toArray();
+
+        $this->modalLoading = false;
+    }
+
+    public function closeItemsModal()
+    {
+        $this->showItemsModal = false;
+        $this->selectedItems = [];
     }
 
     public function render()
@@ -65,7 +118,7 @@ class ApifyFinancialReport extends Component
                 $q->where('project_id', $this->projectId);
             })
             ->orderBy('completed_at', 'desc')
-            ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id')
+            ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id', 'keyword')
             ->paginate(20);
 
         // Transform collections items
@@ -79,10 +132,12 @@ class ApifyFinancialReport extends Component
                 'platform'     => $r->platform,
                 'actor_name'   => $actor ?? '-',
                 'cost'         => number_format((float) $r->actual_cost_usd, 4),
-                'items'        => $r->items_collected ?? '-',
+                'items'        => $r->items_collected ?? 0,
                 'duration'     => $r->run_duration_secs ? $r->run_duration_secs . 's' : '-',
                 'completed_at' => $r->completed_at ? \Carbon\Carbon::parse($r->completed_at)->isoFormat('D MMM, HH:mm') : '-',
                 'project_name' => $projectName,
+                'project_id'   => $r->project_id,
+                'keyword'      => $r->keyword,
             ];
         });
 

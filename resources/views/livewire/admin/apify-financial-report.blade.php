@@ -106,7 +106,20 @@
                             <td class="px-4 py-3 text-slate-500 truncate max-w-[180px]">{{ $run['actor_name'] }}</td>
                             <td class="px-4 py-3 font-bold text-[#1fa387] truncate max-w-[140px]" title="{{ $run['project_name'] }}">{{ $run['project_name'] }}</td>
                             <td class="px-4 py-3 font-bold text-emerald-600 text-right">${{ $run['cost'] }}</td>
-                            <td class="px-4 py-3 text-slate-500 text-center">{{ $run['items'] }}</td>
+                            <td class="px-4 py-3 text-slate-500 text-center">
+                                @if($run['items'] > 0)
+                                    <button 
+                                        type="button"
+                                        wire:click="openItems({{ $run['project_id'] ? $run['project_id'] : 'null' }}, '{{ $run['platform'] }}', '{{ addslashes($run['keyword']) }}')"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1fa387]/10 hover:bg-[#1fa387]/20 text-[#1fa387] font-black tracking-wide transition active:scale-95 cursor-pointer shadow-sm text-[10px]"
+                                    >
+                                        <span class="material-symbols-outlined text-[13px] font-bold">visibility</span>
+                                        <span>{{ $run['items'] }} Item</span>
+                                    </button>
+                                @else
+                                    <span class="text-slate-400 font-semibold text-[10px] bg-slate-50 border border-slate-100 rounded-lg px-2 py-1 select-none">0 Item</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-slate-400 text-center">{{ $run['duration'] }}</td>
                             <td class="px-4 py-3 text-slate-400 whitespace-nowrap">{{ $run['completed_at'] }}</td>
                         </tr>
@@ -114,6 +127,90 @@
                     </tbody>
                 </table>
             </div>
+
+            {{-- Modal Display Hasil Scraping --}}
+            @if($showItemsModal)
+                <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+                    <div class="w-full max-w-4xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain flex flex-col max-h-[85vh]">
+                        
+                        {{-- Modal Header --}}
+                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Platform: {{ $selectedPlatform }}</p>
+                                <h2 class="text-base font-black text-slate-900 mt-0.5">Hasil Perayapan (Scraped Items)</h2>
+                            </div>
+                            <button type="button" wire:click="closeItemsModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer">
+                                <span class="material-symbols-outlined text-[20px] block">close</span>
+                            </button>
+                        </div>
+
+                        {{-- Modal Body (Scrollable & loading state) --}}
+                        <div class="flex-1 overflow-y-auto min-h-[300px] p-6 relative">
+                            
+                            {{-- Loading State --}}
+                            @if($modalLoading)
+                                <div class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10">
+                                    <svg class="animate-spin h-8 w-8 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span class="text-xs font-bold text-slate-600 mt-3">Mengambil data hasil scraping...</span>
+                                </div>
+                            @endif
+
+                            @if(empty($selectedItems) && !$modalLoading)
+                                <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+                                    <span class="material-symbols-outlined text-[48px] text-slate-300">database_off</span>
+                                    <p class="text-xs font-bold mt-2">Tidak ada data item tersimpan yang cocok dengan filter pencarian.</p>
+                                    <p class="text-[10px] text-slate-400 mt-1 max-w-md text-center">Keyword: {{ $selectedKeyword }}</p>
+                                </div>
+                            @elseif(!$modalLoading)
+                                <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                                    <table class="w-full text-left text-xs border-collapse">
+                                        <thead>
+                                            <tr class="bg-slate-50 border-b border-slate-200">
+                                                <th class="px-4 py-3 font-bold text-slate-600">Pembuat (Author)</th>
+                                                <th class="px-4 py-3 font-bold text-slate-600">Konten/Isi Postingan</th>
+                                                <th class="px-4 py-3 font-bold text-slate-600 text-center">Statistik</th>
+                                                <th class="px-4 py-3 font-bold text-slate-600 text-center">Tanggal Post</th>
+                                                <th class="px-4 py-3 font-bold text-slate-600 text-center">Tautan</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            @foreach($selectedItems as $item)
+                                                <tr class="hover:bg-slate-50/40 transition-colors">
+                                                    <td class="px-4 py-3 font-bold text-slate-800 whitespace-nowrap">{{ $item['author_name'] }}</td>
+                                                    <td class="px-4 py-3 text-slate-600 leading-relaxed font-medium min-w-[280px]">{{ $item['content'] }}</td>
+                                                    <td class="px-4 py-3 text-slate-500 whitespace-nowrap text-center leading-normal">
+                                                        <div class="font-bold text-[#1fa387]">{{ $item['likes'] }} Likes</div>
+                                                        <div class="text-[10px] text-slate-400 font-semibold">{{ $item['comments'] }} Komentar</div>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-slate-400 whitespace-nowrap text-center font-semibold">{{ $item['posted_at'] }}</td>
+                                                    <td class="px-4 py-3 text-center whitespace-nowrap">
+                                                        @if(filter_var($item['post_url'], FILTER_VALIDATE_URL))
+                                                            <a href="{{ $item['post_url'] }}" target="_blank" class="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-slate-100 hover:bg-[#1fa387]/10 text-slate-500 hover:text-[#1fa387] transition shadow-sm active:scale-90" title="Buka Link Postingan">
+                                                                <span class="material-symbols-outlined text-[16px] block">open_in_new</span>
+                                                            </a>
+                                                        @else
+                                                            <span class="text-slate-350 italic text-[10px]">-</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Modal Footer --}}
+                        <div class="bg-slate-50 border-t border-slate-100 px-6 py-4 flex items-center justify-between shrink-0">
+                            <span class="text-[10px] text-slate-400 font-semibold">Total: {{ count($selectedItems) }} postingan berhasil ditarik.</span>
+                            <button type="button" wire:click="closeItemsModal" class="h-9 px-5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-sm">Tutup</button>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             {{-- Pagination Links --}}
             @if($recentRuns->hasPages())
