@@ -175,6 +175,9 @@ class ApifyConfiguration extends Component
         $setting->active_token_index = (int) $this->activeTokenIndex;
         
         $setting->connection_status = 'belum_dicek';
+        $setting->connection_status_backup_1 = 'belum_dicek';
+        $setting->connection_status_backup_2 = 'belum_dicek';
+        $setting->connection_status_backup_3 = 'belum_dicek';
         $setting->last_test_status = null;
         $setting->last_test_dataset_id = null;
         $setting->last_test_message = null;
@@ -188,6 +191,9 @@ class ApifyConfiguration extends Component
         $this->activeTokenIndex = (int) $setting->active_token_index;
 
         $this->connectionStatus = 'belum_dicek';
+        $this->connectionStatusBackup1 = 'belum_dicek';
+        $this->connectionStatusBackup2 = 'belum_dicek';
+        $this->connectionStatusBackup3 = 'belum_dicek';
         $this->lastTestStatus = '';
         $this->lastTestDatasetId = '';
         $this->lastTestMessage = '';
