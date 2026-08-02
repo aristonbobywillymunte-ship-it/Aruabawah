@@ -278,7 +278,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        @foreach($costSummary['recent_runs'] as $run)
+                        @foreach($recentRuns as $run)
                         <tr class="hover:bg-slate-50/50 transition">
                             <td class="px-4 py-2.5 font-bold text-slate-700">{{ $run['platform'] }}</td>
                             <td class="px-4 py-2.5 text-slate-500 truncate max-w-[180px]">{{ $run['actor_name'] }}</td>
@@ -292,6 +292,13 @@
                     </tbody>
                 </table>
             </div>
+
+            {{-- Pagination Links --}}
+            @if($recentRuns->hasPages())
+            <div class="mt-4 flex justify-center pb-2">
+                {{ $recentRuns->links() }}
+            </div>
+            @endif
         @endif
     </div>
 

@@ -10,9 +10,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class ApifyConfiguration extends Component
 {
+    use WithPagination;
     public string $apiToken = '';
     public string $connectionStatus = 'belum_dicek';
     public string $lastTestStatus = '';
@@ -135,40 +137,16 @@ class ApifyConfiguration extends Component
         $primarySlugs = collect($this->registry()->managedSlugs());
         $legacySlugs = collect($this->registry()->legacySlugs());
 
-        return view('livewire.admin.apify-configuration', [
-            'actors' => $actors,
-            'primaryActors' => $actors->whereIn('actor_slug', $primarySlugs)->values(),
-            'legacyActors' => $actors->whereIn('actor_slug', $legacySlugs)->values(),
-            'setting' => $this->setting(),
-            'primaryActorDefs' => $this->registry()->primaryActors(),
-            'legacyActorDefs' => $this->registry()->legacyActors(),
-            'instagramActorDefs' => $this->instagramActorDefinitions(),
-            'tiktokActorDefs' => $this->tikTokActorDefinitions(),
-            'costSummary' => $this->loadCostSummary(),
-        ]);
-    }
-
-    /**
-     * Memuat ringkasan biaya aktual Apify dari 30 hari terakhir.
-     * Hanya membaca data — tidak ada side-effect ke sistem yang ada.
-     */
-    private function loadCostSummary(): array
-    {
-        $rows = DB::table('apify_dispatch_states')
+        // Paginate the actual costs per run query with 20 items per page
+        $recentRuns = DB::table('apify_dispatch_states')
             ->whereNotNull('actual_cost_usd')
             ->where('completed_at', '>=', now()->subDays(30))
             ->orderBy('completed_at', 'desc')
             ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id')
-            ->limit(100)
-            ->get();
+            ->paginate(20);
 
-        $byPlatform = $rows->groupBy('platform')->map(fn($g) => [
-            'total_cost' => round($g->sum('actual_cost_usd'), 4),
-            'run_count'  => $g->count(),
-            'avg_cost'   => round($g->avg('actual_cost_usd'), 4),
-        ])->toArray();
-
-        $recent = $rows->take(10)->map(function ($r) {
+        // Transform collection items to contain project name and actor name cleanly
+        $recentRuns->getCollection()->transform(function ($r) {
             $actor = DB::table('apify_actors')->where('id', $r->actor_id)->value('actor_name');
             $projectName = 'N/A';
             if ($r->project_id) {
@@ -183,11 +161,43 @@ class ApifyConfiguration extends Component
                 'completed_at' => $r->completed_at ? \Carbon\Carbon::parse($r->completed_at)->isoFormat('D MMM, HH:mm') : '-',
                 'project_name' => $projectName,
             ];
-        })->toArray();
+        });
+
+        return view('livewire.admin.apify-configuration', [
+            'actors' => $actors,
+            'primaryActors' => $actors->whereIn('actor_slug', $primarySlugs)->values(),
+            'legacyActors' => $actors->whereIn('actor_slug', $legacySlugs)->values(),
+            'setting' => $this->setting(),
+            'primaryActorDefs' => $this->registry()->primaryActors(),
+            'legacyActorDefs' => $this->registry()->legacyActors(),
+            'instagramActorDefs' => $this->instagramActorDefinitions(),
+            'tiktokActorDefs' => $this->tikTokActorDefinitions(),
+            'costSummary' => $this->loadCostSummary(),
+            'recentRuns' => $recentRuns,
+        ]);
+    }
+
+    /**
+     * Memuat ringkasan biaya aktual Apify dari 30 hari terakhir.
+     * Hanya membaca data — tidak ada side-effect ke sistem yang ada.
+     */
+    private function loadCostSummary(): array
+    {
+        $rows = DB::table('apify_dispatch_states')
+            ->whereNotNull('actual_cost_usd')
+            ->where('completed_at', '>=', now()->subDays(30))
+            ->orderBy('completed_at', 'desc')
+            ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id')
+            ->get();
+
+        $byPlatform = $rows->groupBy('platform')->map(fn($g) => [
+            'total_cost' => round($g->sum('actual_cost_usd'), 4),
+            'run_count'  => $g->count(),
+            'avg_cost'   => round($g->avg('actual_cost_usd'), 4),
+        ])->toArray();
 
         return [
             'by_platform' => $byPlatform,
-            'recent_runs' => $recent,
             'total_all'   => round($rows->sum('actual_cost_usd'), 4),
             'has_data'    => $rows->isNotEmpty(),
         ];
