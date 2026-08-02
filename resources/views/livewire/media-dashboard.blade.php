@@ -841,14 +841,11 @@
                                             $socialItem = $this->resolveSocialMediaItemForArticle($article);
                                             if ($socialItem) {
                                                 $likesCount = $socialItem->like_count ?? 0;
-                                                $commentsCount = $socialItem->comment_count ?? 0;
+                                                $commentsCount = count($this->resolveCommentsForSocialItem($socialItem));
                                             }
                                             if ($this->isInstagramArticle($article)) {
-                                                $commentsCount = count($this->resolveCommentsForSocialItem($socialItem));
                                                 $instagramCommentsClickable = $commentsCount > 0;
                                             } elseif ($this->isFacebookArticle($article)) {
-                                                $facebookResolvedComments = $this->resolveCommentsForSocialItem($socialItem);
-                                                $commentsCount = count($facebookResolvedComments);
                                                 $facebookCommentsClickable = $commentsCount > 0;
                                             }
                                         }

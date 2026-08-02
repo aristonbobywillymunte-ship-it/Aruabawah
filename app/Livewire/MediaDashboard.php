@@ -1472,6 +1472,20 @@ class MediaDashboard extends Component
             ->orderByDesc('posted_at')
             ->orderByDesc('id')
             ->get()
+            ->filter(function (SocialMediaComment $comment) {
+                // Sembunyikan komentar yang berisi log error Apify (solusi 1)
+                $rawJsonDecoded = json_decode($comment->raw_json, true);
+                if (isset($rawJsonDecoded['error']) || isset($rawJsonDecoded['requestErrorMessages'])) {
+                    return false;
+                }
+                
+                // Tambahan filter jika content diisi tulisan 'Tidak ada teks komentar.' dari database
+                if ($comment->content === 'Tidak ada teks komentar.') {
+                    return false;
+                }
+                
+                return true;
+            })
             ->map(function (SocialMediaComment $comment) {
                 return [
                     'author_name' => $comment->author_name ?: 'Pengguna',
@@ -1481,6 +1495,7 @@ class MediaDashboard extends Component
                     'like_count' => (int) $comment->like_count,
                 ];
             })
+            ->values()
             ->all();
 
         if ($databaseComments !== []) {
