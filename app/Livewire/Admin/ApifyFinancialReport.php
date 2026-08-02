@@ -42,17 +42,19 @@ class ApifyFinancialReport extends Component
     public array $selectedItems = [];
     public string $selectedPlatform = '';
     public string $selectedKeyword = '';
+    public string $selectedRunId = '';
 
     protected function adminOnly(): void
     {
         abort_unless(auth()->user()?->isAdmin(), 403);
     }
 
-    public function openItems($projectId, $platform, $keyword)
+    public function openItems($projectId, $platform, $keyword, $runId = '-')
     {
         $this->adminOnly();
         $this->selectedPlatform = $platform;
         $this->selectedKeyword = $keyword;
+        $this->selectedRunId = $runId ?: '-';
         $this->showItemsModal = true;
         $this->modalLoading = true;
         $this->selectedItems = [];
@@ -158,7 +160,7 @@ class ApifyFinancialReport extends Component
                 $q->where('project_id', $this->projectId);
             })
             ->orderBy('completed_at', 'desc')
-            ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id', 'keyword')
+            ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id', 'keyword', 'run_id')
             ->paginate(20);
 
         // Transform collections items
@@ -178,6 +180,7 @@ class ApifyFinancialReport extends Component
                 'project_name' => $projectName,
                 'project_id'   => $r->project_id,
                 'keyword'      => $r->keyword,
+                'run_id'       => $r->run_id ?? '-',
             ];
         });
 

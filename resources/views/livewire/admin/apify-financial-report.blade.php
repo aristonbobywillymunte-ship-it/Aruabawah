@@ -110,7 +110,7 @@
                                 @if($run['items'] > 0)
                                     <button 
                                         type="button"
-                                        wire:click="openItems({{ $run['project_id'] ? $run['project_id'] : 'null' }}, '{{ $run['platform'] }}', '{{ addslashes($run['keyword']) }}')"
+                                        wire:click="openItems({{ $run['project_id'] ? $run['project_id'] : 'null' }}, '{{ $run['platform'] }}', '{{ addslashes($run['keyword']) }}', '{{ $run['run_id'] }}')"
                                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1fa387]/10 hover:bg-[#1fa387]/20 text-[#1fa387] font-black tracking-wide transition active:scale-95 cursor-pointer shadow-sm text-[10px]"
                                     >
                                         <span class="material-symbols-outlined text-[13px] font-bold">visibility</span>
@@ -136,7 +136,7 @@
                         {{-- Modal Header --}}
                         <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
                             <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Platform: {{ $selectedPlatform }}</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Platform: {{ $selectedPlatform }} &nbsp;&bull;&nbsp; Run ID: {{ $selectedRunId }}</p>
                                 <h2 class="text-base font-black text-slate-900 mt-0.5">Hasil Perayapan (Scraped Items)</h2>
                             </div>
                             <button type="button" wire:click="closeItemsModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer">
