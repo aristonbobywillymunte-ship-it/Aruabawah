@@ -263,13 +263,14 @@ class ApifyConfiguration extends Component
         }
 
         // Simpan log tes terakhir di token yang sedang terpilih aktif
-        $activeField = match((int) $setting->active_token_index) {
+        $activeField = match((int) $this->activeTokenIndex) {
             1 => 'connection_status_backup_1',
             2 => 'connection_status_backup_2',
             3 => 'connection_status_backup_3',
-            default => 'connection_status',
+            default => 'connection_status', // 0
         };
 
+        $setting->active_token_index = (int) $this->activeTokenIndex;
         $setting->connection_status = $setting->$activeField;
         $setting->last_test_status = $setting->$activeField === 'connected' ? 'success' : 'failed';
         $setting->last_test_message = implode(', ', $results);
