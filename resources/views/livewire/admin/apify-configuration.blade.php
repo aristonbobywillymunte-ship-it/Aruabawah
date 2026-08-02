@@ -9,16 +9,6 @@
                 Konfigurasi actor di halaman ini hanya template sistem. Runtime proyek membaca <span class="font-bold">limit</span>, <span class="font-bold">RAM</span>, dan <span class="font-bold">cost per run</span> dari <span class="font-bold">paket proyek</span>.
             </div>
         </div>
-        <div class="flex items-center gap-3">
-            <button 
-                type="button"
-                wire:click="testConnection" 
-                class="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-4 text-xs font-bold transition shadow-sm cursor-pointer"
-            >
-                <span class="material-symbols-outlined text-[18px]">network_check</span>
-                <span>Uji Koneksi API</span>
-            </button>
-        </div>
     </div>
 @endsection
 
@@ -212,13 +202,23 @@
                             <option value="3">Token Backup 3 (Index 3)</option>
                         </select>
                     </div>
-                    <button 
-                        wire:click="saveToken" 
-                        class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm w-full sm:w-auto cursor-pointer"
-                    >
-                        <span class="material-symbols-outlined text-[18px]">lock</span>
-                        <span>Simpan Semua Token</span>
-                    </button>
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <button 
+                            type="button"
+                            wire:click="testConnection" 
+                            class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 text-xs font-bold transition shadow-sm w-full sm:w-auto cursor-pointer"
+                        >
+                            <span class="material-symbols-outlined text-[18px]">network_check</span>
+                            <span>Uji Koneksi API</span>
+                        </button>
+                        <button 
+                            wire:click="saveToken" 
+                            class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm w-full sm:w-auto cursor-pointer"
+                        >
+                            <span class="material-symbols-outlined text-[18px]">lock</span>
+                            <span>Simpan Semua Token</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
