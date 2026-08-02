@@ -36,9 +36,12 @@
             <p class="text-xs text-slate-400 mt-1.5 max-w-[320px] leading-relaxed">Data biaya aktual akan muncul secara otomatis setelah run scraping berikutnya selesai dijalankan.</p>
         </div>
     @else
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-left">
-            @foreach($costSummary['by_platform'] as $platform => $stat)
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 text-left">
+            @foreach($costSummary['by_platform'] as $name => $stat)
             @php
+                $platform = $stat['platform'];
+                $type = $stat['type'];
+                
                 $icon = match($platform) {
                     'Facebook'  => 'thumb_up',
                     'Instagram' => 'photo_camera',
@@ -46,19 +49,24 @@
                     default     => 'language',
                 };
                 $colors = match($platform) {
-                    'Facebook'  => ['bg-blue-50/70','border-blue-100','text-blue-700','text-blue-500'],
-                    'Instagram' => ['bg-pink-50/70','border-pink-100','text-pink-700','text-pink-500'],
+                    'Facebook'  => ['bg-blue-50/60','border-blue-100/70','text-blue-700','text-blue-500'],
+                    'Instagram' => ['bg-pink-50/60','border-pink-100/70','text-pink-700','text-pink-500'],
                     'TikTok'    => ['bg-slate-900','border-slate-800','text-white','text-slate-400'],
-                    default     => ['bg-slate-50/70','border-slate-200','text-slate-700','text-slate-455'],
+                    default     => ['bg-slate-50/60','border-slate-200','text-slate-700','text-slate-400'],
                 };
             @endphp
             <div class="rounded-3xl border {{ $colors[1] }} {{ $colors[0] }} p-5 shadow-sm">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined text-[16px] {{ $colors[3] }}">{{ $icon }}</span>
-                    <span class="text-xs font-black uppercase tracking-wider {{ $colors[2] }}">{{ $platform }}</span>
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[16px] {{ $colors[3] }}">{{ $icon }}</span>
+                        <span class="text-xs font-black uppercase tracking-wider {{ $colors[2] }}">{{ $platform }}</span>
+                    </div>
+                    <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-white/70 border border-slate-200/50 text-slate-600 shadow-sm">
+                        {{ $type }}
+                    </span>
                 </div>
                 <p class="text-2xl font-black {{ $colors[2] }}">${{ $stat['total_cost'] }}</p>
-                <p class="text-xs {{ $colors[3] }} mt-1 font-semibold">{{ $stat['run_count'] }} run · rata ${{ $stat['avg_cost'] }}/run</p>
+                <p class="text-xs {{ $colors[3] }} mt-1.5 font-semibold">{{ $stat['run_count'] }} run · rata ${{ $stat['avg_cost'] }}/run</p>
             </div>
             @endforeach
         </div>

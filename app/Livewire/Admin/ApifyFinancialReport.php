@@ -84,11 +84,46 @@ class ApifyFinancialReport extends Component
             ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id')
             ->get();
 
-        $byPlatform = $rows->groupBy('platform')->map(fn($g) => [
-            'total_cost' => round($g->sum('actual_cost_usd'), 4),
-            'run_count'  => $g->count(),
-            'avg_cost'   => round($g->avg('actual_cost_usd'), 4),
-        ])->toArray();
+        // Ambil data fungsionalitas aktor untuk pemetaan tipe
+        $actorTypes = DB::table('apify_actors')
+            ->pluck('function_type', 'id')
+            ->toArray();
+
+        // Kelompokkan berdasarkan Platform + Tipe Scraper (Post vs Komen)
+        $grouped = [];
+        foreach ($rows as $r) {
+            $rawType = $actorTypes[$r->actor_id] ?? 'Search Post';
+            // Terjemahkan tipe ke 'Post' atau 'Komen'
+            $typeLabel = (str_contains(strtolower($rawType), 'comment') || str_contains(strtolower($rawType), 'komen')) ? 'Komentar' : 'Post';
+            
+            $key = $r->platform . ' (' . $typeLabel . ')';
+
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'platform' => $r->platform,
+                    'type' => $typeLabel,
+                    'costs' => [],
+                ];
+            }
+            $grouped[$key]['costs'][] = (float) $r->actual_cost_usd;
+        }
+
+        $byPlatform = [];
+        foreach ($grouped as $name => $g) {
+            $costs = $g['costs'];
+            $count = count($costs);
+            $total = array_sum($costs);
+            $byPlatform[$name] = [
+                'platform'   => $g['platform'],
+                'type'       => $g['type'],
+                'total_cost' => round($total, 4),
+                'run_count'  => $count,
+                'avg_cost'   => $count > 0 ? round($total / $count, 4) : 0,
+            ];
+        }
+
+        // Urutkan kelompok agar konsisten (Instagram, Facebook, TikTok)
+        ksort($byPlatform);
 
         return [
             'by_platform' => $byPlatform,
