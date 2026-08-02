@@ -15,6 +15,7 @@ use Livewire\WithPagination;
 class ApifyConfiguration extends Component
 {
     use WithPagination;
+    protected $paginationTheme = 'bootstrap';
     public string $apiToken = '';
     public string $connectionStatus = 'belum_dicek';
     public string $lastTestStatus = '';
