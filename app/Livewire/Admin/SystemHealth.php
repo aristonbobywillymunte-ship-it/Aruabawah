@@ -10,6 +10,7 @@ use App\Models\TelegramSetting;
 use App\Models\RiskNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\Attributes\On;
 
