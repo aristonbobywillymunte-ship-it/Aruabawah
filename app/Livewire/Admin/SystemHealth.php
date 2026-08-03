@@ -225,7 +225,28 @@ class SystemHealth extends Component
             })
             ->toArray();
 
-        $this->latestErrors = array_merge($scrapeErrors, $aiErrors);
+        $apifyErrors = ApifyActor::where('last_run_status', 'failed')
+            ->whereNotNull('last_run_message')
+            ->latest('updated_at')
+            ->limit(3)
+            ->get()
+            ->map(function ($item) {
+                return '[Apify Scraper] ' . $item->platform . ' (' . $item->function_type . ') - ' . Str::limit($item->last_run_message, 120);
+            })
+            ->toArray();
+
+        $apifyQueueErrors = DB::table('apify_dispatch_states')
+            ->where('status', 'retry_wait')
+            ->whereNotNull('last_error_message')
+            ->orderBy('id', 'desc')
+            ->limit(3)
+            ->get()
+            ->map(function ($item) {
+                return '[Apify Queue] ' . $item->platform . ' - ' . Str::limit($item->last_error_message, 120);
+            })
+            ->toArray();
+
+        $this->latestErrors = array_merge($scrapeErrors, $aiErrors, $apifyErrors, $apifyQueueErrors);
     }
 
     public function clearErrors(): void
@@ -233,6 +254,16 @@ class SystemHealth extends Component
         $this->adminOnly();
         \App\Models\ScrapingItem::whereNotNull('error_message')->update(['error_message' => null]);
         \App\Models\AiProvider::whereNotNull('last_error')->update(['last_error' => null]);
+        \App\Models\ApifyActor::where('last_run_status', 'failed')->update([
+            'last_run_status' => null,
+            'last_run_message' => null
+        ]);
+        DB::table('apify_dispatch_states')
+            ->where('status', 'retry_wait')
+            ->update([
+                'status' => 'failed', // change to final failed or clear error message
+                'last_error_message' => null
+            ]);
         $this->checkHealth();
     }
 
