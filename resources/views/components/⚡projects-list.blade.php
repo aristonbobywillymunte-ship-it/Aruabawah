@@ -1736,11 +1736,11 @@ new class extends Component
                                 @if($activePackagesEdit->isNotEmpty())
                                 <div class="space-y-2">
                                     <div class="flex items-center justify-between">
-                                        <label class="text-sm font-bold text-slate-800 block">Pilih Paket</label>
-                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
+                                        <label class="text-sm font-bold text-slate-800 block">Paket Aktif</label>
+                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 rounded-full">Terkunci</span>
                                     </div>
                                     <div class="relative">
-                                        <select wire:model="packageId" class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 transition appearance-none">
+                                        <select wire:model="packageId" disabled class="w-full bg-slate-100 border border-slate-350 rounded-custom px-4 py-3 text-sm text-slate-500 cursor-not-allowed appearance-none">
                                             <option value="">-- Pilih Paket --</option>
                                             @foreach($activePackagesEdit as $p)
                                                 <option value="{{ $p->id }}">{{ $p->name }} @if($p->price > 0) (Rp {{ number_format($p->price, 0, ',', '.') }}/bln) @else (Kustom) @endif</option>

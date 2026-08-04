@@ -614,7 +614,7 @@ class ProjectsList extends Component
             'topics' => $topics,
             'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
-            'package_id' => $this->packageId ?: null,
+            // package_id di-guard sesuai permintaan user agar tidak bisa di-edit
         ]);
 
         // Save or update telegram recipients without minus (-) sign (supporting multi chat ids)
