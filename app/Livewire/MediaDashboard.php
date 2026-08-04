@@ -306,43 +306,72 @@ class MediaDashboard extends Component
 
         $project = $this->resolveProjectOrFail($this->projectId);
 
-        return \App\Models\Article::query()
-            ->select('articles.*')
+        // Kueri 1: Berita Portal Asli dari tabel articles (kecualikan kategori social dan platform sosmed)
+        $portalQuery = \Illuminate\Support\Facades\DB::table('articles')
+            ->select([
+                'articles.id as id',
+                'articles.url as url',
+                'articles.canonical_url as canonical_url',
+                'articles.title as title',
+                'articles.content as content',
+                'articles.source_name as source_name',
+                'articles.published_at as published_at',
+                \Illuminate\Support\Facades\DB::raw("'portal' as item_type"),
+                'articles.created_at as created_at',
+                'articles.updated_at as updated_at',
+                \Illuminate\Support\Facades\DB::raw("NULL as author_name"),
+                \Illuminate\Support\Facades\DB::raw("NULL as author_url"),
+                \Illuminate\Support\Facades\DB::raw("NULL as media_url"),
+                \Illuminate\Support\Facades\DB::raw("NULL as thumbnail_url"),
+                \Illuminate\Support\Facades\DB::raw("0 as like_count"),
+                \Illuminate\Support\Facades\DB::raw("0 as comment_count"),
+                \Illuminate\Support\Facades\DB::raw("0 as share_count"),
+                \Illuminate\Support\Facades\DB::raw("0 as view_count"),
+                \Illuminate\Support\Facades\DB::raw("0 as follower_count"),
+                'articles.category as category',
+            ])
             ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
             ->where('project_articles.project_id', $project->id)
-            ->with(['aiAnalysisResult'])
-            ->whereHas('aiAnalysisResult', function ($ai) {
-                $ai->completeOfficialAiResult();
+            ->where(function ($q) {
+                $q->whereNull('articles.category')
+                  ->orWhere('articles.category', '!=', 'social');
             })
-            ->where(function ($query) {
-                $query->where(function ($nonSocial) {
-                    $nonSocial->whereRaw("lower(coalesce(articles.category, '')) <> 'social'")
-                        ->whereRaw("lower(coalesce(articles.source_name, '')) not in ('facebook', 'instagram', 'tiktok')");
-                })->orWhere(function ($social) {
-                    $social
-                        ->where(function ($socialSource) {
-                            $socialSource->whereRaw("lower(coalesce(articles.category, '')) = 'social'")
-                                ->orWhereRaw("lower(coalesce(articles.source_name, '')) in ('facebook', 'instagram', 'tiktok')");
-                        })
-                        ->whereRaw("coalesce(articles.url, '') not like 'apify-%'")
-                        ->whereRaw("coalesce(articles.canonical_url, '') not like 'apify-%'")
-                        ->whereRaw("coalesce(articles.title, '') not in ('Post dari TikTok', 'Post dari Instagram', 'Post dari Facebook')");
-                });
+            ->whereNotIn(\Illuminate\Support\Facades\DB::raw('lower(coalesce(articles.source_name, \'\'))'), ['facebook', 'instagram', 'tiktok']);
+
+        // Kueri 2: Media Sosial asli dari tabel social_media_items
+        $socialQuery = \Illuminate\Support\Facades\DB::table('social_media_items')
+            ->select([
+                'social_media_items.id as id',
+                'social_media_items.post_url as url',
+                'social_media_items.post_url as canonical_url',
+                \Illuminate\Support\Facades\DB::raw("('Post dari ' || social_media_items.platform || ' oleh ' || COALESCE(social_media_items.author_name, 'Pengguna')) as title"),
+                'social_media_items.content as content',
+                'social_media_items.platform as source_name',
+                'social_media_items.posted_at as published_at',
+                \Illuminate\Support\Facades\DB::raw("'social' as item_type"),
+                'social_media_items.created_at as created_at',
+                'social_media_items.updated_at as updated_at',
+                'social_media_items.author_name as author_name',
+                'social_media_items.author_url as author_url',
+                \Illuminate\Support\Facades\DB::raw("NULL as media_url"),
+                \Illuminate\Support\Facades\DB::raw("NULL as thumbnail_url"),
+                'social_media_items.like_count as like_count',
+                'social_media_items.comment_count as comment_count',
+                'social_media_items.share_count as share_count',
+                'social_media_items.view_count as view_count',
+                'social_media_items.follower_count as follower_count',
+                \Illuminate\Support\Facades\DB::raw("'social' as category"),
+            ])
+            ->join('project_social_media_items', 'social_media_items.id', '=', 'project_social_media_items.social_media_item_id')
+            ->where('project_social_media_items.project_id', $project->id)
+            ->where(function ($q) {
+                $q->whereNull('social_media_items.post_url')
+                  ->orWhere('social_media_items.post_url', 'not like', 'apify-%');
             })
-            // Sembunyikan postingan IG/TikTok/Facebook yang komentarnya belum selesai diperiksa.
-            // Artikel dihubungkan ke social_media_items lewat canonical_url/url.
-            // Kondisi: jika ada social_media_item dengan platform sosial yang url-nya cocok
-            // dan comments_checked = false → artikel ini dikecualikan dari tampilan.
-            ->whereNotExists(function ($sub) {
-                $sub->select(\Illuminate\Support\Facades\DB::raw(1))
-                    ->from('social_media_items')
-                    ->where(function ($q) {
-                        $q->whereColumn('social_media_items.post_url', 'articles.canonical_url')
-                          ->orWhereColumn('social_media_items.post_url', 'articles.url');
-                    })
-                    ->whereIn('social_media_items.platform', ['Instagram', 'Facebook'])
-                    ->where('social_media_items.comments_checked', false);
-            });
+            ->where('social_media_items.comments_checked', true); // Hanya tampilkan yang komentar pemeriksaannya sudah selesai
+
+        // Gabungkan kedua kueri menggunakan union (dan jalankan query sebagai eloquent-compatible wrapper)
+        return $portalQuery->union($socialQuery);
     }
 
 
@@ -939,7 +968,7 @@ class MediaDashboard extends Component
         $socialSourceSql = $this->buildSocialSourceSql();
 
         return [
-            'sql' => '(((' . $newsSourceSql['sql'] . ') and (lower(coalesce(title, \'\')) like ? or lower(coalesce(content, excerpt, \'\')) like ? or lower(coalesce(title, \'\')) like ? or lower(coalesce(content, excerpt, \'\')) like ?)) or ((' . $socialSourceSql['sql'] . ') and (lower(coalesce(content, excerpt, \'\')) like ? or lower(coalesce(content, excerpt, \'\')) like ?)))',
+            'sql' => '(((' . $newsSourceSql['sql'] . ') and (lower(coalesce(title, \'\')) like ? or lower(coalesce(content, \'\')) like ? or lower(coalesce(title, \'\')) like ? or lower(coalesce(content, \'\')) like ?)) or ((' . $socialSourceSql['sql'] . ') and (lower(coalesce(content, \'\')) like ? or lower(coalesce(content, \'\')) like ?)))',
             'bindings' => array_merge(
                 $newsSourceSql['bindings'],
                 ['%' . $needle . '%', '%' . $needle . '%', '%' . $hashNeedle . '%', '%' . $hashNeedle . '%'],
@@ -962,15 +991,7 @@ class MediaDashboard extends Component
 
     public function getProjectArticleCount(): int
     {
-        $cacheKey = 'media_dashboard_project_count:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
-
-        if (isset($this->projectArticleCountMemo[$cacheKey])) {
-            return $this->projectArticleCountMemo[$cacheKey];
-        }
-
-        return $this->projectArticleCountMemo[$cacheKey] = (int) Cache::remember($cacheKey, 120, function () {
-            return $this->projectArticlesQuery()->count();
-        });
+        return $this->getTotalArticlesCount();
     }
 
     public function cleanNoiseText(?string $text): string
@@ -1041,12 +1062,71 @@ class MediaDashboard extends Component
 
     public function getViralArticles()
     {
-        return $this->applyActiveFilters($this->projectArticlesQuery())
-            ->where('published_at', '>=', now()->subDays(7))
-            ->orderByDesc('published_at')
+        $unionQuery = $this->projectArticlesQuery();
+        $query = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+            ->setBindings($unionQuery->getBindings());
+
+        $query = $this->applyActiveFilters($query);
+        $articles = $query->where('union_res.published_at', '>=', now()->subDays(7))
+            ->orderByDesc('union_res.published_at')
             ->limit(30)
-            ->with('aiAnalysisResult')
             ->get();
+
+        if ($articles->isEmpty()) {
+            return collect();
+        }
+
+        $portalIds = $articles->where('item_type', 'portal')->pluck('id')->all();
+        $socialIds = $articles->where('item_type', 'social')->pluck('id')->all();
+
+        $portalsMap = collect();
+        if (!empty($portalIds)) {
+            $portalsMap = \App\Models\Article::query()
+                ->with('aiAnalysisResult')
+                ->whereIn('id', $portalIds)
+                ->get()
+                ->keyBy('id');
+        }
+
+        $socialsMap = collect();
+        if (!empty($socialIds)) {
+            $socialsMap = \App\Models\SocialMediaItem::query()
+                ->with('aiAnalysisResult')
+                ->whereIn('id', $socialIds)
+                ->get()
+                ->keyBy('id');
+        }
+
+        $orderedCollection = collect();
+        foreach ($articles as $item) {
+            if ($item->item_type === 'portal') {
+                $model = $portalsMap->get($item->id);
+                if ($model) {
+                    $model->item_type = 'portal';
+                    $orderedCollection->push($model);
+                }
+            } else {
+                $model = $socialsMap->get($item->id);
+                if ($model) {
+                    $mock = new \App\Models\Article();
+                    $mock->id = $model->id;
+                    $mock->title = "Post dari {$model->platform} oleh " . ($model->author_name ?: 'Pengguna');
+                    $mock->content = $model->content;
+                    $mock->source_name = $model->platform;
+                    $mock->published_at = $model->posted_at;
+                    $mock->category = 'social';
+                    $mock->url = $model->post_url;
+                    $mock->canonical_url = $model->post_url;
+                    $mock->item_type = 'social';
+                    if ($model->relationLoaded('aiAnalysisResult')) {
+                        $mock->setRelation('aiAnalysisResult', $model->aiAnalysisResult);
+                    }
+                    $orderedCollection->push($mock);
+                }
+            }
+        }
+
+        return $orderedCollection;
     }
 
     public function formatArticleExcerpt($article, int $limit = 210): string
@@ -1131,8 +1211,10 @@ class MediaDashboard extends Component
             return;
         }
 
-        $article = $this->projectArticlesQuery()
-            ->whereKey($articleId)
+        $unionQuery = $this->projectArticlesQuery();
+        $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+            ->setBindings($unionQuery->getBindings())
+            ->where('union_res.id', $articleId)
             ->first();
 
         if (! $article) {
@@ -1209,14 +1291,28 @@ class MediaDashboard extends Component
             return;
         }
 
-        $article = $this->projectArticlesQuery()
-            ->whereKey($articleId)
+        $unionQuery = $this->projectArticlesQuery();
+        $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+            ->setBindings($unionQuery->getBindings())
+            ->where('union_res.id', $articleId)
+            ->where('union_res.item_type', 'social') // Cegah tabrakan ID dengan menyaring khusus tipe sosial media
             ->first();
 
         if (! $article) {
-            $article = Article::query()
-                ->with(['aiAnalysisResult'])
-                ->find($articleId);
+            // Fallback aman jika query union terlewati
+            $socialItem = SocialMediaItem::query()->find($articleId);
+            if ($socialItem) {
+                // Konversi social item ke mock object agar kompatibel dengan pemrosesan berikutnya
+                $article = (object) [
+                    'id' => $socialItem->id,
+                    'url' => $socialItem->post_url,
+                    'canonical_url' => $socialItem->post_url,
+                    'title' => 'Post dari Instagram oleh ' . ($socialItem->author_name ?? 'Pengguna'),
+                    'source_name' => $socialItem->platform,
+                    'published_at' => $socialItem->posted_at,
+                    'item_type' => 'social',
+                ];
+            }
         }
 
         if (! $article || ! $this->isInstagramArticle($article)) {
@@ -1261,8 +1357,10 @@ class MediaDashboard extends Component
 
     public function openFacebookCommentsModal(int $articleId): void
     {
-        $article = $this->projectArticlesQuery()
-            ->whereKey($articleId)
+        $unionQuery = $this->projectArticlesQuery();
+        $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+            ->setBindings($unionQuery->getBindings())
+            ->where('union_res.id', $articleId)
             ->first();
 
         if (! $article) {
@@ -1308,8 +1406,10 @@ class MediaDashboard extends Component
             return;
         }
 
-        $article = $this->projectArticlesQuery()
-            ->whereKey($articleId)
+        $unionQuery = $this->projectArticlesQuery();
+        $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+            ->setBindings($unionQuery->getBindings())
+            ->where('union_res.id', $articleId)
             ->first();
 
         if (! $article) {
@@ -2017,29 +2117,64 @@ class MediaDashboard extends Component
 
     public function applyActiveFilters($query, $exclude = [])
     {
+        // Query pembungkus union adalah Query Builder biasa yang memiliki toSql() yang mengandung union_res
+        $isUnionWrapper = false;
+        if ($query instanceof \Illuminate\Database\Query\Builder) {
+            $from = $query->from;
+            // Jika dari DB::raw() atau raw SQL string dan mengandung alias 'union_res'
+            if ($from instanceof \Illuminate\Database\Query\Expression) {
+                // Gunakan getValue() untuk mengambil string SQL dari DB::raw() agar aman di Laravel 10/11
+                $fromValue = method_exists($from, 'getValue') ? $from->getValue(\Illuminate\Support\Facades\DB::connection()->getQueryGrammar()) : (string) $from;
+                $isUnionWrapper = str_contains((string) $fromValue, 'union_res');
+            } elseif (is_string($from)) {
+                $isUnionWrapper = str_contains($from, 'union_res');
+            }
+        }
+
         if ($this->search) {
             $matchSql = $this->buildSourceAwareSearchSql($this->search);
 
-            $query->where(function($q) use ($matchSql) {
-                $q->whereRaw($matchSql['sql'], $matchSql['bindings']);
+            $query->where(function($q) use ($matchSql, $isUnionWrapper) {
+                $sql = $matchSql['sql'];
+                if ($isUnionWrapper) {
+                    // Petakan kolom penelusuran search agar sesuai dengan tabel alias union_res
+                    $sql = str_replace('articles.content', 'union_res.content', $sql);
+                    $sql = str_replace('articles.title', 'union_res.title', $sql);
+                }
+                $q->whereRaw($sql, $matchSql['bindings']);
             });
         }
 
         if (!in_array('sentiment', $exclude) && !empty($this->selectedSentiment)) {
-            $query->whereHas('aiAnalysisResult', function($q) {
-                $q->whereIn('sentiment', $this->selectedSentiment);
-            });
+            if ($isUnionWrapper) {
+                $query->whereExists(function ($sub) {
+                    $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('ai_analysis_results as ai')
+                        ->whereRaw("((union_res.item_type = 'portal' AND ai.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai.social_media_item_id = union_res.id))")
+                        ->whereIn('ai.sentiment', $this->selectedSentiment);
+                });
+            } else {
+                $query->whereHas('aiAnalysisResult', function($q) {
+                    $q->whereIn('sentiment', $this->selectedSentiment);
+                });
+            }
         }
 
         if (!in_array('sources', $exclude) && !empty($this->selectedSources)) {
-            $query->where(function($q) {
+            $query->where(function($q) use ($isUnionWrapper) {
                 $selectedSources = array_values(array_unique(array_filter($this->selectedSources)));
                 foreach ($selectedSources as $index => $sourceLabel) {
                     $sourceSql = $this->buildSourceLabelSql($sourceLabel);
+                    $sql = $sourceSql['sql'];
+                    if ($isUnionWrapper) {
+                        $sql = str_replace('articles.source_name', 'union_res.source_name', $sql);
+                        $sql = str_replace('articles.url', 'union_res.url', $sql);
+                        $sql = str_replace('articles.canonical_url', 'union_res.canonical_url', $sql);
+                    }
                     if ($index === 0) {
-                        $q->whereRaw($sourceSql['sql'], $sourceSql['bindings']);
+                        $q->whereRaw($sql, $sourceSql['bindings']);
                     } else {
-                        $q->orWhereRaw($sourceSql['sql'], $sourceSql['bindings']);
+                        $q->orWhereRaw($sql, $sourceSql['bindings']);
                     }
                 }
             });
@@ -2047,19 +2182,18 @@ class MediaDashboard extends Component
 
         if ($this->startDate) {
             $start = \Carbon\Carbon::parse($this->startDate)->startOfDay();
+            $dateField = $isUnionWrapper ? 'union_res.published_at' : 'published_at';
             if ($this->endDate) {
                 $end = \Carbon\Carbon::parse($this->endDate)->endOfDay();
-                $query->whereBetween('published_at', [$start, $end]);
+                $query->whereBetween($dateField, [$start, $end]);
             } else {
                 $end = \Carbon\Carbon::parse($this->startDate)->endOfDay();
-                $query->whereBetween('published_at', [$start, $end]);
+                $query->whereBetween($dateField, [$start, $end]);
             }
         }
 
         return $query;
-    }
-
-    public function getCounts()
+    }    public function getCounts()
     {
         $cacheKey = 'media_dashboard_counts:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
 
@@ -2068,16 +2202,22 @@ class MediaDashboard extends Component
         }
 
         return $this->countsMemo[$cacheKey] = Cache::remember($cacheKey, 300, function () {
-            $baseQuery = $this->projectArticlesQuery();
-            // Counts for the filter panel should reflect the visible article pool,
-            // not disappear just because sentiment AI is still pending.
+            $unionQuery = $this->projectArticlesQuery();
+            $baseQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+                ->setBindings($unionQuery->getBindings());
+
+            // Counts for the filter panel should reflect the visible article pool
             $sourceQuery = $this->applyActiveFilters(clone $baseQuery, ['sources', 'sentiment']);
 
-            // Single aggregation query instead of 8 separate COUNT queries
-            $socialSql = $this->buildSocialSourceSql();
-            $sourceQueryClean = clone $sourceQuery;
-            $sourceQueryClean->getQuery()->columns = []; // RESET SELECT COLUMNS
-            $rawRows = $sourceQueryClean
+            // Hanya hitung data yang SUDAH dinilai AI secara sukses
+            $sourceQuery->whereExists(function ($sub) {
+                $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                    ->from('ai_analysis_results as ai_check')
+                    ->whereRaw("((union_res.item_type = 'portal' AND ai_check.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai_check.social_media_item_id = union_res.id))")
+                    ->where('ai_check.analysis_status', '=', 'success');
+            });
+
+            $rawRows = (clone $sourceQuery)
                 ->select([
                     \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN lower(coalesce(source_name,'')) like 'instagram%' THEN 1 ELSE 0 END) as instagram_count"),
                     \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN lower(coalesce(source_name,'')) like 'tiktok%' THEN 1 ELSE 0 END) as tiktok_count"),
@@ -2097,29 +2237,33 @@ class MediaDashboard extends Component
                 'Twitter'   => (int) ($rawRows->twitter_count ?? 0),
             ];
 
-            // News = total - social platforms (not in any of above)
+            // News = total - social platforms
             $totalAll = (clone $sourceQuery)->count();
             $totalSocial = array_sum($sourceCounts);
             $sourceCounts['News'] = max(0, $totalAll - $totalSocial);
 
             $sentimentQuery = $this->applyActiveFilters(clone $baseQuery, ['sentiment']);
-            $sentimentQueryWithAI = (clone $sentimentQuery)->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-                ->where('ai.analysis_status', 'success')
+            $sentimentQueryWithAI = (clone $sentimentQuery)->join('ai_analysis_results as ai', function ($join) {
+                $join->on(function ($q) {
+                    $q->whereRaw("((union_res.item_type = 'portal' AND ai.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai.social_media_item_id = union_res.id))");
+                })
+                ->whereRaw("ai.analysis_status = 'success'")
                 ->whereNotNull('ai.summary')
                 ->whereNotNull('ai.sentiment')
                 ->whereNotNull('ai.risk_level');
+            });
 
-            $sentimentQueryWithAIClean = clone $sentimentQueryWithAI;
-            $sentimentQueryWithAIClean->getQuery()->columns = []; // RESET SELECT COLUMNS
-            $agg = $sentimentQueryWithAIClean->select([
-                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as pos_count"),
-                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu_count"),
-                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as neg_count"),
-                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'low' THEN 1 ELSE 0 END) as low_count"),
-                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'medium' THEN 1 ELSE 0 END) as med_count"),
-                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'high' THEN 1 ELSE 0 END) as high_count"),
-                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'critical' THEN 1 ELSE 0 END) as crit_count")
-            ])->first();
+            $agg = (clone $sentimentQueryWithAI)
+                ->select([
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as pos_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neu_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as neg_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'low' THEN 1 ELSE 0 END) as low_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'medium' THEN 1 ELSE 0 END) as med_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'high' THEN 1 ELSE 0 END) as high_count"),
+                    \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level = 'critical' THEN 1 ELSE 0 END) as crit_count")
+                ])
+                ->first();
 
             $sentimentCounts = [
                 'positive' => (int) ($agg->pos_count ?? 0),
@@ -2133,7 +2277,6 @@ class MediaDashboard extends Component
                 'high' => (int) ($agg->high_count ?? 0),
                 'critical' => (int) ($agg->crit_count ?? 0),
             ];
-
             return [
                 'sources'    => $sourceCounts,
                 'sentiments' => $sentimentCounts,
@@ -2154,19 +2297,40 @@ class MediaDashboard extends Component
         }
 
         // Selalu hitung langsung agar loadMore tidak tertahan snapshot cache lama.
-        $query = $this->projectArticlesQuery()->select('articles.id', 'articles.published_at');
+        $unionQuery = $this->projectArticlesQuery();
+        
+        // Bungkus kueri UNION agar sorting, filtering, dan join AI tetap aman di Postgresql
+        $query = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+            ->setBindings($unionQuery->getBindings());
+
         $query = $this->applyActiveFilters($query);
+
+        // Hanya tampilkan data yang SUDAH dinilai AI secara sukses dan lengkap (sesuai scope CompleteOfficialAiResult)
+        $query->whereExists(function ($sub) {
+            $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                ->from('ai_analysis_results as ai_check')
+                ->whereRaw("((union_res.item_type = 'portal' AND ai_check.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai_check.social_media_item_id = union_res.id))")
+                ->where('ai_check.analysis_status', '=', 'success')
+                ->where('ai_check.reach_method', 'ai_reader_estimate_v1')
+                ->whereNotNull('ai_check.project_estimated_readers')
+                ->where('ai_check.project_estimated_readers', '>=', 1)
+                ->whereNotNull('ai_check.project_reach_score')
+                ->whereNotNull('ai_check.project_reach_level')
+                ->whereNotNull('ai_check.project_reach_band');
+        });
 
         if ($this->sortBy == 'popular') {
             $query->leftJoin('ai_analysis_results as ai_pop', function ($join) {
-                $join->on('articles.id', '=', 'ai_pop.article_id')
-                    ->where('ai_pop.analysis_status', '=', 'success')
-                    ->where('ai_pop.reach_method', '=', 'ai_reader_estimate_v1');
+                $join->on(function ($q) {
+                    $q->whereRaw("((union_res.item_type = 'portal' AND ai_pop.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai_pop.social_media_item_id = union_res.id))");
+                })
+                ->where('ai_pop.analysis_status', '=', 'success')
+                ->where('ai_pop.reach_method', '=', 'ai_reader_estimate_v1');
             })
             ->orderByRaw('COALESCE(ai_pop.project_estimated_readers, 0) DESC')
-            ->orderBy('articles.published_at', 'desc');
+            ->orderBy('union_res.published_at', 'desc');
         } else {
-            $query->orderBy('articles.published_at', 'desc');
+            $query->orderBy('union_res.published_at', 'desc');
         }
 
         $fetchLimit = max($this->limit * 4, $this->limit);
@@ -2177,17 +2341,68 @@ class MediaDashboard extends Component
         }
 
         $articles = $articles->take($this->limit)->values();
-        $ids = array_values(array_unique(array_map('intval', $articles->pluck('id')->all())));
 
-        if ($ids === []) {
+        if ($articles->isEmpty()) {
             return $this->articlesMemo[$cacheKey] = collect();
         }
 
-        return $this->articlesMemo[$cacheKey] = Article::query()
-            ->with('aiAnalysisResult')
-            ->whereIn('id', $ids)
-            ->orderByRaw('array_position(ARRAY[' . implode(',', $ids) . ']::int[], id)')
-            ->get();
+        // Pisahkan penarikan model riil untuk portal vs media sosial
+        $portalIds = $articles->where('item_type', 'portal')->pluck('id')->all();
+        $socialIds = $articles->where('item_type', 'social')->pluck('id')->all();
+
+        $portalsMap = collect();
+        if (!empty($portalIds)) {
+            $portalsMap = Article::query()
+                ->with('aiAnalysisResult')
+                ->whereIn('id', $portalIds)
+                ->get()
+                ->keyBy('id');
+        }
+
+        $socialsMap = collect();
+        if (!empty($socialIds)) {
+            $socialsMap = SocialMediaItem::query()
+                ->with('aiAnalysisResult')
+                ->whereIn('id', $socialIds)
+                ->get()
+                ->keyBy('id');
+        }
+
+        // Gabungkan kembali sesuai urutan sorting query asli dan lengkapi properti mock agar kompatibel dengan view blade
+        $orderedCollection = collect();
+        foreach ($articles as $item) {
+            if ($item->item_type === 'portal') {
+                $model = $portalsMap->get($item->id);
+                if ($model) {
+                    $model->item_type = 'portal';
+                    $orderedCollection->push($model);
+                }
+            } else {
+                $model = $socialsMap->get($item->id);
+                if ($model) {
+                    // Buat object adapter/mock agar properti social compatible dengan pembacaan $article di view blade
+                    $mock = new Article();
+                    $mock->id = $model->id;
+                    $mock->title = "Post dari {$model->platform} oleh " . ($model->author_name ?: 'Pengguna');
+                    $mock->content = $model->content;
+                    $mock->source_name = $model->platform;
+                    $mock->published_at = $model->posted_at;
+                    $mock->category = 'social';
+                    $mock->url = $model->post_url;
+                    $mock->canonical_url = $model->post_url;
+                    $mock->item_type = 'social';
+                    
+                    // Salin relasi aiAnalysisResult
+                    if ($model->relationLoaded('aiAnalysisResult')) {
+                        $mock->setRelation('aiAnalysisResult', $model->aiAnalysisResult);
+                    }
+                    
+                    $orderedCollection->push($mock);
+                }
+            }
+        }
+
+        return $this->articlesMemo[$cacheKey] = $orderedCollection;
     }
 
     public function getTotalArticlesCount(): int
@@ -2198,7 +2413,27 @@ class MediaDashboard extends Component
             return $this->totalArticlesCountMemo[$cacheKey];
         }
 
-        return $this->totalArticlesCountMemo[$cacheKey] = (int) $this->applyActiveFilters($this->projectArticlesQuery())->count();
+        $unionQuery = $this->projectArticlesQuery();
+        $query = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+            ->setBindings($unionQuery->getBindings());
+
+        $query = $this->applyActiveFilters($query);
+
+        // Hanya hitung data yang SUDAH dinilai AI secara sukses dan lengkap (sesuai scope CompleteOfficialAiResult)
+        $query->whereExists(function ($sub) {
+            $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                ->from('ai_analysis_results as ai_check')
+                ->whereRaw("((union_res.item_type = 'portal' AND ai_check.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai_check.social_media_item_id = union_res.id))")
+                ->where('ai_check.analysis_status', '=', 'success')
+                ->where('ai_check.reach_method', 'ai_reader_estimate_v1')
+                ->whereNotNull('ai_check.project_estimated_readers')
+                ->where('ai_check.project_estimated_readers', '>=', 1)
+                ->whereNotNull('ai_check.project_reach_score')
+                ->whereNotNull('ai_check.project_reach_level')
+                ->whereNotNull('ai_check.project_reach_band');
+        });
+
+        return $this->totalArticlesCountMemo[$cacheKey] = (int) $query->count();
     }
 
     protected function dedupeSocialArticles($articles)
@@ -2294,7 +2529,11 @@ class MediaDashboard extends Component
         }
 
         $points = Cache::remember($cacheKey, 120, function () use ($mode, $metric, $forceMax) {
-            $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['date']);
+            $unionQuery = $this->projectArticlesQuery();
+            $baseQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+                ->setBindings($unionQuery->getBindings());
+
+            $baseQuery = $this->applyActiveFilters($baseQuery, ['date']);
             
             if (!empty($this->selectedKeyword)) {
                 $this->applyKeywordSearch($baseQuery, $this->selectedKeyword);
@@ -2302,7 +2541,7 @@ class MediaDashboard extends Component
             
             $start_date = $this->startDate;
             if (!$start_date) {
-                $oldest = (clone $baseQuery)->orderBy('published_at', 'asc')->value('published_at');
+                $oldest = (clone $baseQuery)->orderBy('union_res.published_at', 'asc')->value('published_at');
                 $start_date = $oldest ? \Carbon\Carbon::parse($oldest)->format('Y-m-d') : now()->subDays(30)->format('Y-m-d');
             }
             
@@ -2316,49 +2555,93 @@ class MediaDashboard extends Component
             
             // Helper closure: compute value based on metric type within a date range
             $countForMetric = function($dateStart, $dateEnd) use ($baseQuery, $metric) {
-                $periodQuery = (clone $baseQuery)->whereBetween('published_at', [
+                $periodQuery = (clone $baseQuery)->whereBetween('union_res.published_at', [
                     $dateStart->format('Y-m-d H:i:s'),
                     $dateEnd->format('Y-m-d H:i:s')
                 ]);
                 if ($metric === 'jangkauan') {
-                    $articleIds = (clone $periodQuery)->select('articles.id')->pluck('id');
-                    if ($articleIds->isEmpty()) return 0;
-                    return (int) \App\Models\AiAnalysisResult::whereIn('article_id', $articleIds)
+                    $items = (clone $periodQuery)->select(['union_res.id', 'union_res.item_type'])->get();
+                    if ($items->isEmpty()) return 0;
+                    
+                    $portalIds = $items->where('item_type', 'portal')->pluck('id')->all();
+                    $socialIds = $items->where('item_type', 'social')->pluck('id')->all();
+                    
+                    return (int) \App\Models\AiAnalysisResult::query()
                         ->where('analysis_status', 'success')
-                        ->whereNotNull('ai_analysis_results.summary')->whereNotNull('sentiment')->whereNotNull('risk_level')
-                        ->where('reach_method', 'ai_reader_estimate_v1')
+                        ->where(function ($q) use ($portalIds, $socialIds) {
+                            $q->whereIn('article_id', $portalIds)
+                              ->orWhereIn('social_media_item_id', $socialIds);
+                        })
                         ->whereNotNull('project_estimated_readers')
                         ->sum('project_estimated_readers');
                 } elseif ($metric === 'sentimen_positif') {
-                    $articleIds = (clone $periodQuery)->select('articles.id')->pluck('id');
-                    if ($articleIds->isEmpty()) return 0;
-                    return (int) \App\Models\AiAnalysisResult::whereIn('article_id', $articleIds)
+                    $items = (clone $periodQuery)->select(['union_res.id', 'union_res.item_type'])->get();
+                    if ($items->isEmpty()) return 0;
+                    
+                    $portalIds = $items->where('item_type', 'portal')->pluck('id')->all();
+                    $socialIds = $items->where('item_type', 'social')->pluck('id')->all();
+                    
+                    return (int) \App\Models\AiAnalysisResult::query()
+                        ->where(function ($q) use ($portalIds, $socialIds) {
+                            $q->whereIn('article_id', $portalIds)
+                              ->orWhereIn('social_media_item_id', $socialIds);
+                        })
                         ->where('analysis_status', 'success')
                         ->where('sentiment', 'positive')
                         ->count();
                 } elseif ($metric === 'sentimen_netral') {
-                    $articleIds = (clone $periodQuery)->select('articles.id')->pluck('id');
-                    if ($articleIds->isEmpty()) return 0;
-                    return (int) \App\Models\AiAnalysisResult::whereIn('article_id', $articleIds)
+                    $items = (clone $periodQuery)->select(['union_res.id', 'union_res.item_type'])->get();
+                    if ($items->isEmpty()) return 0;
+                    
+                    $portalIds = $items->where('item_type', 'portal')->pluck('id')->all();
+                    $socialIds = $items->where('item_type', 'social')->pluck('id')->all();
+                    
+                    return (int) \App\Models\AiAnalysisResult::query()
+                        ->where(function ($q) use ($portalIds, $socialIds) {
+                            $q->whereIn('article_id', $portalIds)
+                              ->orWhereIn('social_media_item_id', $socialIds);
+                        })
                         ->where('analysis_status', 'success')
                         ->where('sentiment', 'neutral')
                         ->count();
                 } elseif ($metric === 'sentimen_negatif') {
-                    $articleIds = (clone $periodQuery)->select('articles.id')->pluck('id');
-                    if ($articleIds->isEmpty()) return 0;
-                    return (int) \App\Models\AiAnalysisResult::whereIn('article_id', $articleIds)
+                    $items = (clone $periodQuery)->select(['union_res.id', 'union_res.item_type'])->get();
+                    if ($items->isEmpty()) return 0;
+                    
+                    $portalIds = $items->where('item_type', 'portal')->pluck('id')->all();
+                    $socialIds = $items->where('item_type', 'social')->pluck('id')->all();
+                    
+                    return (int) \App\Models\AiAnalysisResult::query()
+                        ->where(function ($q) use ($portalIds, $socialIds) {
+                            $q->whereIn('article_id', $portalIds)
+                              ->orWhereIn('social_media_item_id', $socialIds);
+                        })
                         ->where('analysis_status', 'success')
                         ->where('sentiment', 'negative')
                         ->count();
                 } elseif ($metric === 'sentimen') {
-                    $articleIds = (clone $periodQuery)->select('articles.id')->pluck('id');
-                    if ($articleIds->isEmpty()) return 0;
-                    $pos = \App\Models\AiAnalysisResult::whereIn('article_id', $articleIds)
+                    $items = (clone $periodQuery)->select(['union_res.id', 'union_res.item_type'])->get();
+                    if ($items->isEmpty()) return 50;
+                    
+                    $portalIds = $items->where('item_type', 'portal')->pluck('id')->all();
+                    $socialIds = $items->where('item_type', 'social')->pluck('id')->all();
+                    
+                    $pos = \App\Models\AiAnalysisResult::query()
+                        ->where(function ($q) use ($portalIds, $socialIds) {
+                            $q->whereIn('article_id', $portalIds)
+                              ->orWhereIn('social_media_item_id', $socialIds);
+                        })
                         ->where('analysis_status', 'success')->whereNotNull('sentiment')
                         ->where('sentiment', 'positive')->count();
-                    $neg = \App\Models\AiAnalysisResult::whereIn('article_id', $articleIds)
+                        
+                    $neg = \App\Models\AiAnalysisResult::query()
+                        ->where(function ($q) use ($portalIds, $socialIds) {
+                            $q->whereIn('article_id', $portalIds)
+                              ->orWhereIn('social_media_item_id', $socialIds);
+                        })
                         ->where('analysis_status', 'success')->whereNotNull('sentiment')
                         ->where('sentiment', 'negative')->count();
+                        
                     $tot = $pos + $neg;
                     // Return a score: net-positive ratio -100 to +100, shifted to 0-100 for charting
                     return $tot > 0 ? (int) round((($pos - $neg) / $tot) * 50 + 50) : 50;
@@ -2479,18 +2762,30 @@ class MediaDashboard extends Component
             return $this->projectSourcesMemo[$cacheKey];
         }
 
-        $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery(), ['sentiment']);
+        $unionQuery = $this->projectArticlesQuery();
+        $baseQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+            ->setBindings($unionQuery->getBindings());
+
+        $baseQuery = $this->applyActiveFilters($baseQuery, ['sentiment']);
         $rawSourcesClean = clone $baseQuery;
-        $rawSourcesClean->getQuery()->columns = []; // RESET SELECT COLUMNS
+        
+        if ($rawSourcesClean instanceof \Illuminate\Database\Query\Builder) {
+            $rawSourcesClean->columns = [];
+        } else {
+            $rawSourcesClean->getQuery()->columns = [];
+        }
+
         $rawSources = $rawSourcesClean
             ->leftJoin('ai_analysis_results as ai', function ($join) {
-                $join->on('articles.id', '=', 'ai.article_id')
-                     ->where('ai.analysis_status', '=', 'success');
+                $join->on(function ($q) {
+                    $q->whereRaw("((union_res.item_type = 'portal' AND ai.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai.social_media_item_id = union_res.id))");
+                })
+                ->whereRaw("ai.analysis_status = 'success'");
             })
             ->select([
-                \Illuminate\Support\Facades\DB::raw("lower(coalesce(articles.source_name, '')) as source_key"),
-                \Illuminate\Support\Facades\DB::raw("MIN(COALESCE(NULLIF(articles.canonical_url, ''), NULLIF(articles.url, ''))) as sample_url"),
-                \Illuminate\Support\Facades\DB::raw("count(articles.id) as total"),
+                \Illuminate\Support\Facades\DB::raw("lower(coalesce(union_res.source_name, '')) as source_key"),
+                \Illuminate\Support\Facades\DB::raw("MIN(COALESCE(NULLIF(union_res.canonical_url, ''), NULLIF(union_res.url, ''))) as sample_url"),
+                \Illuminate\Support\Facades\DB::raw("count(union_res.id) as total"),
                 \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive"),
                 \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral"),
                 \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
@@ -2547,7 +2842,10 @@ class MediaDashboard extends Component
 
         return $this->wawasanMemo[$cacheKey] = Cache::remember($cacheKey, 120, function () {
             $project = $this->resolveProjectOrFail($this->projectId);
-            $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
+            $unionQuery = $this->projectArticlesQuery();
+            $baseQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+                ->setBindings($unionQuery->getBindings());
+            $baseQuery = $this->applyActiveFilters($baseQuery);
             $total = $baseQuery->count();
             if ($total === 0) {
                 return [
@@ -2583,15 +2881,23 @@ class MediaDashboard extends Component
                 ];
             }
 
-            $baseQueryWithAI = (clone $baseQuery)->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-                ->where('ai.analysis_status', 'success')
+            $baseQueryWithAI = (clone $baseQuery)->join('ai_analysis_results as ai', function ($join) {
+                $join->on(function ($q) {
+                    $q->whereRaw("((union_res.item_type = 'portal' AND ai.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai.social_media_item_id = union_res.id))");
+                })
+                ->whereRaw("ai.analysis_status = 'success'")
                 ->whereNotNull('ai.summary')
                 ->whereNotNull('ai.sentiment')
                 ->whereNotNull('ai.risk_level');
+            });
             $total = (clone $baseQuery)->count();
 
             $sentimentCountsClean = clone $baseQueryWithAI;
-            $sentimentCountsClean->getQuery()->columns = []; // RESET SELECT COLUMNS
+            if ($sentimentCountsClean instanceof \Illuminate\Database\Query\Builder) {
+                $sentimentCountsClean->columns = [];
+            } else {
+                $sentimentCountsClean->getQuery()->columns = [];
+            }
             $sentimentCounts = $sentimentCountsClean
                 ->select([
                     \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive"),
@@ -2647,44 +2953,61 @@ class MediaDashboard extends Component
                 }
                 $recs[] = "Gunakan influencer lokal untuk memperkuat pesan positif di kanal media sosial utama.";
             }
+
             // Top categories
             $categoriesQuery = clone $baseQuery;
-            $categoriesQuery->getQuery()->columns = []; // RESET SELECT COLUMNS
+            if ($categoriesQuery instanceof \Illuminate\Database\Query\Builder) {
+                $categoriesQuery->columns = [];
+            } else {
+                $categoriesQuery->getQuery()->columns = [];
+            }
             $categories = $categoriesQuery->select(['category', \DB::raw('count(*) as total')])
                 ->groupBy('category')
                 ->orderByDesc('total')
                 ->limit(5)
                 ->get()
+                ->map(fn ($row) => (array) $row)
                 ->toArray();
 
             // Top sources with sentiment breakdown
             $sourcesQuery = clone $baseQuery;
-            $sourcesQuery->getQuery()->columns = []; // RESET SELECT COLUMNS
+            if ($sourcesQuery instanceof \Illuminate\Database\Query\Builder) {
+                $sourcesQuery->columns = [];
+            } else {
+                $sourcesQuery->getQuery()->columns = [];
+            }
             $sources = $sourcesQuery->leftJoin('ai_analysis_results as ai', function ($join) {
-                $join->on('articles.id', '=', 'ai.article_id')
-                     ->where('ai.analysis_status', '=', 'success');
+                $join->on(function ($q) {
+                    $q->whereRaw("((union_res.item_type = 'portal' AND ai.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai.social_media_item_id = union_res.id))");
+                })
+                ->whereRaw("ai.analysis_status = 'success'");
             })
             ->select([
-                'articles.source_name',
-                \DB::raw('count(articles.id) as total'),
+                'union_res.source_name',
+                \DB::raw('count(union_res.id) as total'),
                 \DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive"),
                 \DB::raw("SUM(CASE WHEN ai.sentiment = 'neutral' THEN 1 ELSE 0 END) as neutral"),
                 \DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative")
             ])
-            ->groupBy('articles.source_name')
+            ->groupBy('union_res.source_name')
             ->orderByDesc('total')
             ->limit(5)
             ->get()
+            ->map(fn ($row) => (array) $row)
             ->toArray();
 
             $negativeIssuesQuery = clone $baseQueryWithAI;
-            $negativeIssuesQuery->getQuery()->columns = []; // RESET SELECT COLUMNS
+            if ($negativeIssuesQuery instanceof \Illuminate\Database\Query\Builder) {
+                $negativeIssuesQuery->columns = [];
+            } else {
+                $negativeIssuesQuery->getQuery()->columns = [];
+            }
             $negativeIssues = $negativeIssuesQuery
                 ->where('ai.sentiment', 'negative')
                 ->select([
-                    \Illuminate\Support\Facades\DB::raw('COALESCE(ai.main_issue, articles.category, articles.title) as issue'),
+                    \Illuminate\Support\Facades\DB::raw('COALESCE(ai.main_issue, union_res.category, union_res.title) as issue'),
                     \Illuminate\Support\Facades\DB::raw('COUNT(*) as total'),
-                    \Illuminate\Support\Facades\DB::raw('MIN(articles.url) as url')
+                    \Illuminate\Support\Facades\DB::raw('MIN(union_res.url) as url')
                 ])
                 ->groupBy('issue')
                 ->orderByDesc('total')
@@ -2699,19 +3022,23 @@ class MediaDashboard extends Component
                 ->toArray();
 
             $riskTriggersQuery = clone $baseQueryWithAI;
-            $riskTriggersQuery->getQuery()->columns = []; // RESET SELECT COLUMNS
+            if ($riskTriggersQuery instanceof \Illuminate\Database\Query\Builder) {
+                $riskTriggersQuery->columns = [];
+            } else {
+                $riskTriggersQuery->getQuery()->columns = [];
+            }
             $riskTriggers = $riskTriggersQuery
                 ->whereIn('ai.risk_level', ['high', 'critical'])
                 ->orderByRaw("CASE ai.risk_level WHEN 'critical' THEN 2 WHEN 'high' THEN 1 ELSE 0 END DESC")
                 ->orderByDesc('ai.project_estimated_readers')
-                ->orderByDesc('articles.published_at')
+                ->orderByDesc('union_res.published_at')
             ->limit(5)
             ->select([
-                'articles.id',
-                'articles.title',
-                'articles.source_name',
-                'articles.url',
-                'articles.published_at',
+                'union_res.id',
+                'union_res.title',
+                'union_res.source_name',
+                'union_res.url',
+                'union_res.published_at',
                 'ai.risk_level',
                 'ai.risk_reason',
                 'ai.sentiment',
@@ -2733,8 +3060,8 @@ class MediaDashboard extends Component
         $rangeEnd = $this->endDate ? \Carbon\Carbon::parse($this->endDate)->endOfDay() : now()->endOfDay();
         $midpoint = $rangeStart->copy()->addSeconds(max(1, (int) floor($rangeStart->diffInSeconds($rangeEnd) / 2)));
 
-        $currentHalf = (clone $baseQueryWithAI)->whereBetween('articles.published_at', [$midpoint, $rangeEnd]);
-        $previousHalf = (clone $baseQueryWithAI)->whereBetween('articles.published_at', [$rangeStart, $midpoint->copy()->subSecond()]);
+        $currentHalf = (clone $baseQueryWithAI)->whereBetween('union_res.published_at', [$midpoint, $rangeEnd]);
+        $previousHalf = (clone $baseQueryWithAI)->whereBetween('union_res.published_at', [$rangeStart, $midpoint->copy()->subSecond()]);
         $currentTotal = (clone $currentHalf)->count();
         $previousTotal = (clone $previousHalf)->count();
         $currentNegativePct = $currentTotal > 0 ? round(((clone $currentHalf)->where('ai.sentiment', 'negative')->count() / $currentTotal) * 100) : 0;
@@ -2763,7 +3090,7 @@ class MediaDashboard extends Component
         $responseActions[] = ['level' => 'Jaga ritme', 'text' => 'Teruskan publikasi rutin dan cek perubahan sentimen harian.'];
 
         // Kondisi Viral (Viral Status)
-        $recent7d = (clone $baseQuery)->where('published_at', '>=', now()->subDays(7))->count();
+        $recent7d = (clone $baseQuery)->where('union_res.published_at', '>=', now()->subDays(7))->count();
         if ($recent7d >= 100) {
             $viral_status = 'Sangat Viral';
             $viral_color = 'purple';
@@ -2806,8 +3133,12 @@ class MediaDashboard extends Component
         $cacheKey = 'media_dashboard_viral_meta:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
 
         return Cache::remember($cacheKey, 120, function () {
-            $baseQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
-            $recent7d = (clone $baseQuery)->where('published_at', '>=', now()->subDays(7))->count();
+            $unionQuery = $this->projectArticlesQuery();
+            $baseQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+                ->setBindings($unionQuery->getBindings());
+
+            $baseQuery = $this->applyActiveFilters($baseQuery);
+            $recent7d = (clone $baseQuery)->where('union_res.published_at', '>=', now()->subDays(7))->count();
 
             if ($recent7d >= 100) {
                 return [

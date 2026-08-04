@@ -184,6 +184,40 @@ class AiAnalysisDispatchStateService
             \Illuminate\Support\Facades\Log::warning('[AI Dispatch] Skipped claimProcessing due to invalid payload: ' . $e->getMessage(), [
                 'payload_keys' => array_keys($payload),
             ]);
+
+            // Jika payload tidak valid karena data hilang (misal SocialMediaItem/Article/Project tidak ada di DB),
+            // kita cari record dispatch state yang ada dan tandai sebagai failed agar tidak menggantung sebagai queued.
+            $analyzableType = strtolower((string) ($payload['type'] ?? 'article'));
+            $analyzableId = (int) ($payload['id'] ?? $payload['item_id'] ?? 0);
+            if ($analyzableType === 'social') {
+                $analyzableId = (int) ($payload['item_id'] ?? $analyzableId);
+            }
+
+            if ($analyzableId > 0) {
+                // Gunakan query manual agar tidak memicu validation exception lagi
+                $dispatchKey = $this->buildDispatchKey(
+                    $analyzableType,
+                    $analyzableId,
+                    isset($payload['project_id']) ? (int) $payload['project_id'] : null,
+                    $promptTemplateId ?? $this->resolvePromptTemplateId($analyzableType === 'social' ? 'social' : 'article'),
+                    $providerContextHash ?? $this->resolveProviderContextHash()
+                );
+
+                $state = AiAnalysisDispatchState::query()->where('dispatch_key', $dispatchKey)->first();
+                if ($state && $state->status === 'queued') {
+                    $errCode = str_contains($e->getMessage(), 'Project') ? 'project_not_found' : 'empty_content';
+                    $state->forceFill([
+                        'status' => 'failed',
+                        'failure_category' => 'invalid_content',
+                        'last_error_code' => $errCode,
+                        'error_message' => $e->getMessage(),
+                        'last_failed_at' => now(),
+                        'completed_at' => now(),
+                    ])->save();
+                    \Illuminate\Support\Facades\Log::info("[AI Dispatch] Auto-marked orphaned dispatch ID {$state->id} as failed due to missing DB relations.");
+                }
+            }
+
             return null;
         }
 
@@ -478,13 +512,15 @@ class AiAnalysisDispatchStateService
             throw new \InvalidArgumentException("Project ID {$projectId} does not exist.");
         }
         if ($analyzableType === 'social') {
-            if (! \App\Models\Article::query()->where('id', $analyzableId)->exists()) {
-                throw new \InvalidArgumentException("Mirrored Article target with ID {$analyzableId} does not exist.");
+            $itemId = (int) ($payload['item_id'] ?? $analyzableId);
+            if ($itemId <= 0) {
+                throw new \InvalidArgumentException("Social item_id must be specified and greater than 0.");
             }
-            $itemId = (int) ($payload['item_id'] ?? 0);
-            if ($itemId > 0 && ! \App\Models\SocialMediaItem::query()->where('id', $itemId)->exists()) {
+            if (! \App\Models\SocialMediaItem::query()->where('id', $itemId)->exists()) {
                 throw new \InvalidArgumentException("SocialMediaItem target with ID {$itemId} does not exist.");
             }
+            // Gunakan itemId sebagai analyzableId yang sebenarnya jika bertipe social
+            $analyzableId = $itemId;
         } elseif ($analyzableType === 'article') {
             if (! \App\Models\Article::query()->where('id', $analyzableId)->exists()) {
                 throw new \InvalidArgumentException("Article target with ID {$analyzableId} does not exist.");

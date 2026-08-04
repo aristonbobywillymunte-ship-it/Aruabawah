@@ -176,6 +176,14 @@ if ($isActive) {
         ->runInBackground()
         ->appendOutputTo(storage_path('logs/ai-queue-unscored.log'));
 
+    // Auto-heal: restore queued items yang ter-soft-delete dan tandai failed item dari proyek terhapus.
+    // Berjalan setiap 5 menit, tanpa kondisi tambahan agar selalu aktif memantau.
+    Schedule::command('ai:heal-dispatch-states')
+        ->everyFiveMinutes()
+        ->withoutOverlapping()
+        ->runInBackground()
+        ->appendOutputTo(storage_path('logs/ai-heal-dispatch.log'));
+
     Schedule::command('ai:requeue-orphan-queued-states --limit=5 --apply')
         ->everyMinute()
         ->when(function () use ($isActive) {
@@ -237,3 +245,6 @@ Schedule::call(function () {
         exit(0);
     }
 })->everyMinute();
+
+// Sinkronisasi otomatis data Apify setiap jam
+Schedule::command('apify:sync-runs')->hourly();

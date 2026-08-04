@@ -59,6 +59,7 @@
                         @php
                             $menuItems = [
                                 ['route' => 'admin.dashboard', 'icon' => 'dashboard', 'label' => 'Dashboard'],
+                                ['route' => 'admin.pipeline-monitor', 'icon' => 'queue', 'label' => 'Pipeline Antrian'],
                                 ['route' => 'admin.users', 'icon' => 'groups', 'label' => 'Kelola User'],
                                 ['route' => 'admin.apify', 'icon' => 'smart_toy', 'label' => 'Apify'],
                                 ['route' => 'admin.apify-financials', 'icon' => 'payments', 'label' => 'Laporan Keuangan'],

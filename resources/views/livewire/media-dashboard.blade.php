@@ -343,11 +343,17 @@
             $ttCount = $counts['sources']['TikTok'] ?? 0;
             $newsCount = $counts['sources']['News'] ?? 0;
             
-            $baseActiveQuery = $this->applyActiveFilters(clone $this->projectArticlesQuery());
+            $unionQueryForStats = $this->projectArticlesQuery();
+            $baseActiveQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQueryForStats->toSql() . ") as union_res"))
+                ->setBindings($unionQueryForStats->getBindings());
+            $baseActiveQuery = $this->applyActiveFilters($baseActiveQuery);
 
             $platformStats = \App\Models\SocialMediaItem::query()
-                ->join('articles', 'articles.canonical_url', '=', 'social_media_items.post_url')
-                ->whereIn('articles.id', (clone $baseActiveQuery)->select('articles.id'))
+                ->whereIn('social_media_items.id', function($q) use ($baseActiveQuery) {
+                    $q->select('id')
+                      ->fromSub($baseActiveQuery, 'active_union')
+                      ->where('item_type', '=', 'social');
+                })
                 ->selectRaw('social_media_items.platform, SUM(social_media_items.like_count) as likes, SUM(social_media_items.comment_count) as comments')
                 ->groupBy('social_media_items.platform')
                 ->get()
@@ -366,59 +372,60 @@
 
             // Get REAL reach estimates from AI analysis results
             $socials = ['Twitter', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
-            $aiReachSum = function ($builder) {
-                return (int) $builder
+            
+            $aiReachSum = function (array $portalIds, array $socialIds) {
+                if (empty($portalIds) && empty($socialIds)) {
+                    return 0;
+                }
+                return (int) \App\Models\AiAnalysisResult::query()
                     ->where('analysis_status', 'success')
-                    ->whereNotNull('ai_analysis_results.summary')
-                    ->whereNotNull('sentiment')
-                    ->whereNotNull('risk_level')
-                    ->where('reach_method', 'ai_reader_estimate_v1')
+                    ->where(function ($q) use ($portalIds, $socialIds) {
+                        $q->whereIn('article_id', $portalIds)
+                          ->orWhereIn('social_media_item_id', $socialIds);
+                    })
                     ->whereNotNull('project_estimated_readers')
                     ->sum('project_estimated_readers');
             };
 
-            $sourceArticleIds = function (string $sourceLabel) use ($baseActiveQuery) {
+            $sourceArticleItems = function (string $sourceLabel) use ($baseActiveQuery) {
                 $sourceSql = $this->buildSourceLabelSql($sourceLabel);
+                $activeQuery = clone $baseActiveQuery;
+                $sql = $sourceSql['sql'];
+                
+                // Petakan alias kolom pencarian source ke alias union_res
+                $sql = str_replace('articles.source_name', 'union_res.source_name', $sql);
+                $sql = str_replace('articles.url', 'union_res.url', $sql);
+                $sql = str_replace('articles.canonical_url', 'union_res.canonical_url', $sql);
 
-                return (clone $baseActiveQuery)
-                    ->whereRaw($sourceSql['sql'], $sourceSql['bindings'])
-                    ->select('articles.id');
+                $items = $activeQuery
+                    ->whereRaw($sql, $sourceSql['bindings'])
+                    ->select(['union_res.id', 'union_res.item_type'])
+                    ->get();
+                    
+                return [
+                    'portal' => $items->where('item_type', 'portal')->pluck('id')->all(),
+                    'social' => $items->where('item_type', 'social')->pluck('id')->all(),
+                ];
             };
 
-            $socialReach = $aiReachSum(
-                \App\Models\AiAnalysisResult::query()
-                    ->whereIn('article_id', $sourceArticleIds('Instagram')->union(
-                        $sourceArticleIds('TikTok')
-                    )->union(
-                        $sourceArticleIds('Facebook')
-                    )->union(
-                        $sourceArticleIds('Threads')
-                    )->union(
-                        $sourceArticleIds('Youtube')
-                    )->union(
-                        $sourceArticleIds('Twitter')
-                    ))
-            );
+            $fbItems = $sourceArticleItems('Facebook');
+            $fbReach = $aiReachSum($fbItems['portal'], $fbItems['social']);
 
-            $fbReach = $aiReachSum(
-                \App\Models\AiAnalysisResult::query()
-                    ->whereIn('article_id', $sourceArticleIds('Facebook'))
-            );
+            $igItems = $sourceArticleItems('Instagram');
+            $igReach = $aiReachSum($igItems['portal'], $igItems['social']);
 
-            $igReach = $aiReachSum(
-                \App\Models\AiAnalysisResult::query()
-                    ->whereIn('article_id', $sourceArticleIds('Instagram'))
-            );
+            $ttItems = $sourceArticleItems('TikTok');
+            $ttReach = $aiReachSum($ttItems['portal'], $ttItems['social']);
 
-            $ttReach = $aiReachSum(
-                \App\Models\AiAnalysisResult::query()
-                    ->whereIn('article_id', $sourceArticleIds('TikTok'))
-            );
+            $newsItems = $sourceArticleItems('News');
+            $newsReach = $aiReachSum($newsItems['portal'], $newsItems['social']);
 
-            $newsReach = $aiReachSum(
-                \App\Models\AiAnalysisResult::query()
-                    ->whereIn('article_id', $sourceArticleIds('News'))
-            );
+            // Hitung total jangkauan sosial media gabungan
+            $socialReach = 0;
+            foreach (['Instagram', 'TikTok', 'Facebook', 'Threads', 'Youtube', 'Twitter'] as $platformLabel) {
+                $pItems = $sourceArticleItems($platformLabel);
+                $socialReach += $aiReachSum($pItems['portal'], $pItems['social']);
+            }
 
             $totalReach = $socialReach + $newsReach;
 
@@ -427,74 +434,88 @@
 
             $canonicalAiFilter = function($q) {
                 $q->where('analysis_status', 'success')
-                  ->whereNotNull('ai_analysis_results.summary')
+                  ->whereNotNull('summary')
                   ->whereNotNull('sentiment')
                   ->whereNotNull('risk_level');
             };
 
-            // Social sentiments
-            $socPos = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', $sourceArticleIds('Instagram')->union(
-                    $sourceArticleIds('TikTok')
-                )->union(
-                    $sourceArticleIds('Facebook')
-                )->union(
-                    $sourceArticleIds('Threads')
-                )->union(
-                    $sourceArticleIds('Youtube')
-                )->union(
-                    $sourceArticleIds('Twitter')
-                ))
-                ->where('sentiment', 'positive')
-                ->where($canonicalAiFilter)
-                ->count();
-            $socNeu = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', $sourceArticleIds('Instagram')->union(
-                    $sourceArticleIds('TikTok')
-                )->union(
-                    $sourceArticleIds('Facebook')
-                )->union(
-                    $sourceArticleIds('Threads')
-                )->union(
-                    $sourceArticleIds('Youtube')
-                )->union(
-                    $sourceArticleIds('Twitter')
-                ))
-                ->where('sentiment', 'neutral')
-                ->where($canonicalAiFilter)
-                ->count();
-            $socNeg = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', $sourceArticleIds('Instagram')->union(
-                    $sourceArticleIds('TikTok')
-                )->union(
-                    $sourceArticleIds('Facebook')
-                )->union(
-                    $sourceArticleIds('Threads')
-                )->union(
-                    $sourceArticleIds('Youtube')
-                )->union(
-                    $sourceArticleIds('Twitter')
-                ))
-                ->where('sentiment', 'negative')
-                ->where($canonicalAiFilter)
-                ->count();
+            // Ambil ID portal & sosmed dari platform sosial media
+            $socialPortals = [];
+            $socialSocials = [];
+            foreach (['Instagram', 'TikTok', 'Facebook', 'Threads', 'Youtube', 'Twitter'] as $platformLabel) {
+                $pItems = $sourceArticleItems($platformLabel);
+                $socialPortals = array_merge($socialPortals, $pItems['portal']);
+                $socialSocials = array_merge($socialSocials, $pItems['social']);
+            }
+            $socialPortals = array_values(array_unique($socialPortals));
+            $socialSocials = array_values(array_unique($socialSocials));
 
-            // News sentiments
-            $newsPos = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', $sourceArticleIds('News'))
-                ->where('sentiment', 'positive')
-                ->where($canonicalAiFilter)
-                ->count();
-            $newsNeu = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', $sourceArticleIds('News'))
-                ->where('sentiment', 'neutral')
-                ->where($canonicalAiFilter)
-                ->count();
-            $newsNeg = (int) \App\Models\AiAnalysisResult::query()
-                ->whereIn('article_id', $sourceArticleIds('News'))
-                ->where('sentiment', 'negative')
-                ->where($canonicalAiFilter)
-                ->count();
+            // Hitung sentimen sosial media
+            $socPos = 0; $socNeu = 0; $socNeg = 0;
+            if (!empty($socialPortals) || !empty($socialSocials)) {
+                $socPos = (int) \App\Models\AiAnalysisResult::query()
+                    ->where(function ($q) use ($socialPortals, $socialSocials) {
+                        $q->whereIn('article_id', $socialPortals)
+                          ->orWhereIn('social_media_item_id', $socialSocials);
+                    })
+                    ->where('sentiment', 'positive')
+                    ->where($canonicalAiFilter)
+                    ->count();
+
+                $socNeu = (int) \App\Models\AiAnalysisResult::query()
+                    ->where(function ($q) use ($socialPortals, $socialSocials) {
+                        $q->whereIn('article_id', $socialPortals)
+                          ->orWhereIn('social_media_item_id', $socialSocials);
+                    })
+                    ->where('sentiment', 'neutral')
+                    ->where($canonicalAiFilter)
+                    ->count();
+
+                $socNeg = (int) \App\Models\AiAnalysisResult::query()
+                    ->where(function ($q) use ($socialPortals, $socialSocials) {
+                        $q->whereIn('article_id', $socialPortals)
+                          ->orWhereIn('social_media_item_id', $socialSocials);
+                    })
+                    ->where('sentiment', 'negative')
+                    ->where($canonicalAiFilter)
+                    ->count();
+            }
+
+            // Ambil ID portal & sosmed untuk portal berita (News)
+            $newsItems = $sourceArticleItems('News');
+            $newsPortals = $newsItems['portal'];
+            $newsSocials = $newsItems['social'];
+
+            // Hitung sentimen portal berita (News)
+            $newsPos = 0; $newsNeu = 0; $newsNeg = 0;
+            if (!empty($newsPortals) || !empty($newsSocials)) {
+                $newsPos = (int) \App\Models\AiAnalysisResult::query()
+                    ->where(function ($q) use ($newsPortals, $newsSocials) {
+                        $q->whereIn('article_id', $newsPortals)
+                          ->orWhereIn('social_media_item_id', $newsSocials);
+                    })
+                    ->where('sentiment', 'positive')
+                    ->where($canonicalAiFilter)
+                    ->count();
+
+                $newsNeu = (int) \App\Models\AiAnalysisResult::query()
+                    ->where(function ($q) use ($newsPortals, $newsSocials) {
+                        $q->whereIn('article_id', $newsPortals)
+                          ->orWhereIn('social_media_item_id', $newsSocials);
+                    })
+                    ->where('sentiment', 'neutral')
+                    ->where($canonicalAiFilter)
+                    ->count();
+
+                $newsNeg = (int) \App\Models\AiAnalysisResult::query()
+                    ->where(function ($q) use ($newsPortals, $newsSocials) {
+                        $q->whereIn('article_id', $newsPortals)
+                          ->orWhereIn('social_media_item_id', $newsSocials);
+                    })
+                    ->where('sentiment', 'negative')
+                    ->where($canonicalAiFilter)
+                    ->count();
+            }
 
             // Formatter helper
             $fmt = function($num, $suffix = '') {
@@ -523,18 +544,42 @@
             
             $dynamicTopics = [];
             foreach ($keywords as $kw) {
-                $kwQuery = $this->projectArticlesQuery()
-                    ->where(function($q) use ($kw) {
-                        $q->where('title', 'like', '%' . $kw . '%')
-                          ->orWhere('content', 'like', '%' . $kw . '%');
-                    });
-                $this->applyActiveFilters($kwQuery);
+                $kwUnion = $this->projectArticlesQuery();
+                $kwQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $kwUnion->toSql() . ") as union_res"))
+                    ->setBindings($kwUnion->getBindings());
+                
+                $kwQuery = $this->applyActiveFilters($kwQuery);
+                $kwQuery->where(function($q) use ($kw) {
+                    $q->where('union_res.title', 'like', '%' . $kw . '%')
+                      ->orWhere('union_res.content', 'like', '%' . $kw . '%');
+                });
+                
                 $count = $kwQuery->count();
                 if ($count > 0) {
                     // Use AI analysis results for more accurate sentiment
-                    $artIds = (clone $kwQuery)->select('articles.id')->pluck('id');
-                    $pos = \App\Models\AiAnalysisResult::whereIn('article_id', $artIds)->where('sentiment', 'positive')->count();
-                    $neg = \App\Models\AiAnalysisResult::whereIn('article_id', $artIds)->where('sentiment', 'negative')->count();
+                    $items = (clone $kwQuery)->select(['union_res.id', 'union_res.item_type'])->get();
+                    $portalIds = $items->where('item_type', 'portal')->pluck('id')->all();
+                    $socialIds = $items->where('item_type', 'social')->pluck('id')->all();
+                    
+                    $pos = 0; $neg = 0;
+                    if (!empty($portalIds) || !empty($socialIds)) {
+                        $pos = \App\Models\AiAnalysisResult::query()
+                            ->where(function ($q) use ($portalIds, $socialIds) {
+                                $q->whereIn('article_id', $portalIds)
+                                  ->orWhereIn('social_media_item_id', $socialIds);
+                            })
+                            ->where('sentiment', 'positive')
+                            ->count();
+                            
+                        $neg = \App\Models\AiAnalysisResult::query()
+                            ->where(function ($q) use ($portalIds, $socialIds) {
+                                $q->whereIn('article_id', $portalIds)
+                                  ->orWhereIn('social_media_item_id', $socialIds);
+                            })
+                            ->where('sentiment', 'negative')
+                            ->count();
+                    }
+                    
                     $sent = 'Netral';
                     if ($pos > $neg) $sent = 'Positif';
                     elseif ($neg > $pos) $sent = 'Negatif';
@@ -545,17 +590,46 @@
             usort($dynamicTopics, fn($a, $b) => $b['count'] <=> $a['count']);
 
             // 2. Dynamic Actors handles
-            $actorsQuery = $this->projectArticlesQuery();
-            $this->applyActiveFilters($actorsQuery);
+            $actorsUnion = $this->projectArticlesQuery();
+            $actorsQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $actorsUnion->toSql() . ") as union_res"))
+                ->setBindings($actorsUnion->getBindings());
+            $actorsQuery = $this->applyActiveFilters($actorsQuery);
+            
             $dynamicActors = [];
-            $uniqueSources = $actorsQuery->select('source_name')->distinct()->take(5)->pluck('source_name');
+            $uniqueSources = $actorsQuery->select('union_res.source_name')->distinct()->take(5)->pluck('source_name');
             foreach ($uniqueSources as $idx => $src) {
-                $srcQuery = $this->projectArticlesQuery()->where('source_name', $src);
-                $this->applyActiveFilters($srcQuery);
+                $srcUnion = $this->projectArticlesQuery();
+                $srcQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $srcUnion->toSql() . ") as union_res"))
+                    ->setBindings($srcUnion->getBindings());
+                    
+                $srcQuery = $this->applyActiveFilters($srcQuery);
+                $srcQuery->where('union_res.source_name', $src);
                 $count = $srcQuery->count();
                 
-                $pos = (clone $srcQuery)->where('sentiment', 'positive')->count();
-                $neg = (clone $srcQuery)->where('sentiment', 'negative')->count();
+                // Hitung sentimen polymorph
+                $items = (clone $srcQuery)->select(['union_res.id', 'union_res.item_type'])->get();
+                $portalIds = $items->where('item_type', 'portal')->pluck('id')->all();
+                $socialIds = $items->where('item_type', 'social')->pluck('id')->all();
+                
+                $pos = 0; $neg = 0;
+                if (!empty($portalIds) || !empty($socialIds)) {
+                    $pos = \App\Models\AiAnalysisResult::query()
+                        ->where(function ($q) use ($portalIds, $socialIds) {
+                            $q->whereIn('article_id', $portalIds)
+                              ->orWhereIn('social_media_item_id', $socialIds);
+                        })
+                        ->where('sentiment', 'positive')
+                        ->count();
+                        
+                    $neg = \App\Models\AiAnalysisResult::query()
+                        ->where(function ($q) use ($portalIds, $socialIds) {
+                            $q->whereIn('article_id', $portalIds)
+                              ->orWhereIn('social_media_item_id', $socialIds);
+                        })
+                        ->where('sentiment', 'negative')
+                        ->count();
+                }
+                
                 $sent = 'Netral';
                 if ($pos > $neg) $sent = 'Positif';
                 elseif ($neg > $pos) $sent = 'Negatif';
@@ -1673,10 +1747,19 @@
                             @php
                                 $stopWords = ['dan', 'di', 'ke', 'dari', 'yang', 'untuk', 'dengan', 'ini', 'itu', 'pada', 'dalam', 'adalah', 'akan', 'juga', 'sudah', 'ada', 'bisa', 'atau', 'tidak', 'lebih', 'saat', 'oleh', 'para', 'telah', 'agar', 'atas', 'jika', 'karena', 'maka', 'namun', 'pun', 'serta', 'tentang', 'setelah', 'antara', 'hingga', 'ia', 'kami', 'kita', 'mereka', 'anda', 'bagi', 'dua', 'tiga', 'lain', 'hal', 'tahun', 'baru', 'terkait', 'pihak', 'sebuah', 'satu', 'tersebut', 'the', 'a', 'an', 'is', 'in', 'of', 'and', 'to', 'for', 'masa', 'jalan', 'jadi', 'pemerintah', 'gubernur'];
                                 
-                                // Get articles with their AI sentiment
-                                $articles = (clone $this->projectArticlesQuery())
-                                    ->leftJoin('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-                                    ->select('articles.title', \DB::raw("COALESCE(ai.sentiment, articles.sentiment, 'neutral') as word_sentiment"))
+                                // Get articles with their AI sentiment using union_res subquery wrapper to satisfy PostgreSQL UNION column constraint
+                                $wordCloudUnion = $this->projectArticlesQuery();
+                                $wordCloudBase = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $wordCloudUnion->toSql() . ") as union_res"))
+                                    ->setBindings($wordCloudUnion->getBindings());
+                                $wordCloudBase = $this->applyActiveFilters($wordCloudBase);
+
+                                $articles = $wordCloudBase
+                                    ->leftJoin('ai_analysis_results as ai', function ($join) {
+                                        $join->on(function ($q) {
+                                            $q->whereRaw("((union_res.item_type = 'portal' AND ai.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai.social_media_item_id = union_res.id))");
+                                        });
+                                    })
+                                    ->select('union_res.title', \DB::raw("COALESCE(ai.sentiment, 'neutral') as word_sentiment"))
                                     ->limit(200)
                                     ->get();
                                 
@@ -2178,13 +2261,53 @@
                             </div>
                             <div class="space-y-3">
                                 @php
-                                    $popQuery = $this->projectArticlesQuery();
-                                    $this->applyActiveFilters($popQuery);
-                                    $popArticles = $popQuery->with('aiAnalysisResult')->whereHas('aiAnalysisResult', function($q) {
-                                        $q->where('sentiment', 'positive')
-                                          ->where('analysis_status', 'success')
-                                          ->where('reach_method', 'ai_reader_estimate_v1');
-                                    })->take(3)->get();
+                                    $popUnion = $this->projectArticlesQuery();
+                                    $popQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $popUnion->toSql() . ") as union_res"))
+                                        ->setBindings($popUnion->getBindings());
+                                    $popQuery = $this->applyActiveFilters($popQuery);
+                                    
+                                    $popQuery->leftJoin('ai_analysis_results as ai_pop', function ($join) {
+                                        $join->on(function ($q) {
+                                            $q->whereRaw("((union_res.item_type = 'portal' AND ai_pop.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai_pop.social_media_item_id = union_res.id))");
+                                        })
+                                        ->whereRaw("ai_pop.analysis_status = 'success'")
+                                        ->whereRaw("ai_pop.reach_method = 'ai_reader_estimate_v1'");
+                                    })
+                                    ->whereRaw("ai_pop.sentiment = 'positive'")
+                                    ->orderByRaw('COALESCE(ai_pop.project_estimated_readers, 0) DESC')
+                                    ->orderBy('union_res.published_at', 'desc');
+                                    
+                                    $popRaw = $popQuery->take(3)->get();
+                                    
+                                    // Tarik data model riil secara polymorph
+                                    $popArticles = collect();
+                                    foreach ($popRaw as $item) {
+                                        if ($item->item_type === 'portal') {
+                                            $model = \App\Models\Article::with('aiAnalysisResult')->find($item->id);
+                                            if ($model) {
+                                                $model->item_type = 'portal';
+                                                $popArticles->push($model);
+                                            }
+                                        } else {
+                                            $model = \App\Models\SocialMediaItem::with('aiAnalysisResult')->find($item->id);
+                                            if ($model) {
+                                                $mock = new \App\Models\Article();
+                                                $mock->id = $model->id;
+                                                $mock->title = "Post dari {$model->platform} oleh " . ($model->author_name ?: 'Pengguna');
+                                                $mock->content = $model->content;
+                                                $mock->source_name = $model->platform;
+                                                $mock->published_at = $model->posted_at;
+                                                $mock->category = 'social';
+                                                $mock->url = $model->post_url;
+                                                $mock->canonical_url = $model->post_url;
+                                                $mock->item_type = 'social';
+                                                if ($model->relationLoaded('aiAnalysisResult')) {
+                                                    $mock->setRelation('aiAnalysisResult', $model->aiAnalysisResult);
+                                                }
+                                                $popArticles->push($mock);
+                                            }
+                                        }
+                                    }
                                 @endphp
                                 @foreach($popArticles as $popArt)
                                     @php
@@ -2309,9 +2432,41 @@
                             </div>
                             <div class="space-y-3">
                                 @php
-                                    $newQuery = $this->projectArticlesQuery();
-                                    $this->applyActiveFilters($newQuery);
-                                    $newArticles = $newQuery->with('aiAnalysisResult')->orderBy('published_at', 'desc')->take(3)->get();
+                                    $newUnion = $this->projectArticlesQuery();
+                                    $newQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $newUnion->toSql() . ") as union_res"))
+                                        ->setBindings($newUnion->getBindings());
+                                    $newQuery = $this->applyActiveFilters($newQuery);
+                                    $newRaw = $newQuery->orderBy('union_res.published_at', 'desc')->take(3)->get();
+                                    
+                                    // Tarik data model riil secara polymorph
+                                    $newArticles = collect();
+                                    foreach ($newRaw as $item) {
+                                        if ($item->item_type === 'portal') {
+                                            $model = \App\Models\Article::with('aiAnalysisResult')->find($item->id);
+                                            if ($model) {
+                                                $model->item_type = 'portal';
+                                                $newArticles->push($model);
+                                            }
+                                        } else {
+                                            $model = \App\Models\SocialMediaItem::with('aiAnalysisResult')->find($item->id);
+                                            if ($model) {
+                                                $mock = new \App\Models\Article();
+                                                $mock->id = $model->id;
+                                                $mock->title = "Post dari {$model->platform} oleh " . ($model->author_name ?: 'Pengguna');
+                                                $mock->content = $model->content;
+                                                $mock->source_name = $model->platform;
+                                                $mock->published_at = $model->posted_at;
+                                                $mock->category = 'social';
+                                                $mock->url = $model->post_url;
+                                                $mock->canonical_url = $model->post_url;
+                                                $mock->item_type = 'social';
+                                                if ($model->relationLoaded('aiAnalysisResult')) {
+                                                    $mock->setRelation('aiAnalysisResult', $model->aiAnalysisResult);
+                                                }
+                                                $newArticles->push($mock);
+                                            }
+                                        }
+                                    }
                                 @endphp
                                 @foreach($newArticles as $newArt)
                                     @php

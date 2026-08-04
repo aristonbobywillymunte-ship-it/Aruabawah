@@ -13,9 +13,12 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\WithPagination;
 
 class SystemHealth extends Component
 {
+    use WithPagination;
+
     public array $aiStatus = [];
     public array $apifyStatus = [];
     public array $scrapingStatus = [];
@@ -26,11 +29,32 @@ class SystemHealth extends Component
     public array $reverbStatus = [];
     public array $latestErrors = [];
     public bool $showQueueModal = false;
-    public array $queueDetails = [];
+    
+    // Properti filter pencarian & pagination AI Pipeline
+    public string $searchQuery = '';
+    public string $filterStatus = '';
+    public string $filterProject = '';
+    public string $filterType = '';
+    public string $filterActor = '';
+    public int $perPage = 15;
+    
     public bool $showRedisQueueModal = false;
     public array $redisQueueDetails = [];
     public bool $showApifyQueueModal = false;
     public array $apifyQueueDetails = [];
+
+    // State untuk Modal Konfirmasi Error Handling AI
+    public bool $showConfirmModal = false;
+    public string $confirmActionType = '';
+    public ?int $confirmItemId = null;
+
+    protected $queryString = [
+        'searchQuery' => ['except' => ''],
+        'filterStatus' => ['except' => ''],
+        'filterProject' => ['except' => ''],
+        'filterType' => ['except' => ''],
+        'filterActor' => ['except' => ''],
+    ];
 
     #[On('echo:system-alerts,RealtimeNotificationEvent')]
     public function handleRealtimeNotification($event): void
@@ -271,14 +295,188 @@ class SystemHealth extends Component
     public function openQueueModal(): void
     {
         $this->adminOnly();
-        
-        $rawItems = DB::table('ai_analysis_dispatch_states')
-            ->whereIn('status', ['queued', 'processing', 'retry_wait'])
-            ->orderBy('id', 'desc')
-            ->limit(50)
-            ->get();
+        $this->resetPage(); // Reset pagination page Livewire
+        $this->showQueueModal = true;
+    }
 
-        $this->queueDetails = $rawItems->map(function ($item) {
+    public function closeQueueModal(): void
+    {
+        $this->showQueueModal = false;
+    }
+
+    public function openConfirmModal(string $actionType, ?int $itemId = null): void
+    {
+        $this->adminOnly();
+        $this->confirmActionType = $actionType;
+        $this->confirmItemId = $itemId;
+        $this->showConfirmModal = true;
+    }
+
+    public function closeConfirmModal(): void
+    {
+        $this->showConfirmModal = false;
+        $this->confirmActionType = '';
+        $this->confirmItemId = null;
+    }
+
+    public function executeConfirmAction(): void
+    {
+        $this->adminOnly();
+
+        if ($this->confirmActionType === 'clean_ghosts') {
+            DB::table('ai_analysis_dispatch_states')
+                ->whereRaw('LENGTH(dispatch_key) = 32')
+                ->whereIn('status', ['queued', 'processing', 'retry_wait'])
+                ->update([
+                    'status' => 'failed',
+                    'error_message' => 'Legacy MD5 ghost record (cleaned manually)',
+                    'failure_category' => 'ghost_record',
+                    'updated_at' => now(),
+                ]);
+        } elseif ($this->confirmActionType === 'purge_queue') {
+            try {
+                Redis::connection('default')->del('queues:ai-analysis');
+                DB::table('ai_analysis_dispatch_states')
+                    ->whereIn('status', ['queued', 'processing'])
+                    ->update([
+                        'status' => 'failed',
+                        'error_message' => 'Queue purged manually',
+                        'updated_at' => now(),
+                    ]);
+            } catch (\Throwable $e) {
+                // Ignore redis connection issues gracefully
+            }
+        } elseif ($this->confirmActionType === 'clean_apify_ghosts') {
+            DB::table('apify_dispatch_states')
+                ->whereIn('status', ['queued', 'processing'])
+                ->update([
+                    'status' => 'failed',
+                    'message' => 'Data dibersihkan manual dari UI',
+                    'updated_at' => now(),
+                ]);
+        } elseif ($this->confirmActionType === 'purge_apify_queue') {
+            try {
+                // Hati-hati karena apify bisa ada di queue default, kita hanya update DB saja
+                DB::table('apify_dispatch_states')
+                    ->whereIn('status', ['queued', 'processing'])
+                    ->update([
+                        'status' => 'failed',
+                        'message' => 'Antrean Apify dibersihkan secara manual',
+                        'updated_at' => now(),
+                    ]);
+            } catch (\Throwable $e) {
+            }
+        } elseif ($this->confirmActionType === 'force_apify_requeue' && $this->confirmItemId) {
+            $state = DB::table('apify_dispatch_states')->where('id', $this->confirmItemId)->first();
+            if ($state) {
+                DB::table('apify_dispatch_states')
+                    ->where('id', $this->confirmItemId)
+                    ->update([
+                        'status' => 'queued',
+                        'message' => 'Dikirim ulang secara manual',
+                        'attempts' => 0,
+                        'updated_at' => now(),
+                    ]);
+            }
+        } elseif ($this->confirmActionType === 'force_requeue' && $this->confirmItemId) {
+            $state = DB::table('ai_analysis_dispatch_states')->where('id', $this->confirmItemId)->first();
+            if ($state) {
+                DB::table('ai_analysis_dispatch_states')
+                    ->where('id', $this->confirmItemId)
+                    ->update([
+                        'status' => 'queued',
+                        'updated_at' => now(),
+                    ]);
+
+                // Basic payload construction
+                $payloadType = $state->analyzable_type;
+                if (str_contains(strtolower($payloadType), 'social')) {
+                    $payloadType = 'social';
+                } elseif (str_contains(strtolower($payloadType), 'article')) {
+                    $payloadType = 'article';
+                }
+
+                $payload = [
+                    'type' => $payloadType,
+                    'item_id' => $state->analyzable_id,
+                    'project_id' => $state->project_id,
+                ];
+
+                \App\Jobs\AiAnalysisJob::dispatch(array_merge($payload, [
+                    'prompt_template_id' => $state->prompt_template_id,
+                    'provider_context_hash' => $state->provider_context_hash,
+                ]))->onConnection('redis-ai')->onQueue('ai-analysis');
+            }
+        }
+
+        $this->closeConfirmModal();
+        $this->checkHealth();
+    }
+
+    public function getQueueData()
+    {
+        $query = DB::table('ai_analysis_dispatch_states')
+            ->whereIn('status', ['queued', 'processing', 'retry_wait'])
+            ->orderBy('id', 'desc');
+
+        if ($this->filterStatus) {
+            $query->where('status', $this->filterStatus);
+        }
+
+        if ($this->filterType) {
+            $query->where('analyzable_type', $this->filterType);
+        }
+
+        if ($this->filterProject) {
+            $query->where('project_id', $this->filterProject);
+        }
+
+        if ($this->filterActor) {
+            $actor = $this->filterActor;
+            if (str_contains($actor, ' ')) {
+                // Format: 'TikTok Post' / 'TikTok Comment'
+                [$platform, $type] = explode(' ', $actor, 2);
+                if ($type === 'Post') {
+                    $query->where('analyzable_type', 'social')
+                          ->whereIn('analyzable_id', function ($sub) use ($platform) {
+                              $sub->select('id')->from('social_media_items')->where('platform', $platform);
+                          });
+                } elseif ($type === 'Comment') {
+                    // Menyaring postingan sosial media yang memiliki data komentar terkait
+                    // di tabel social_media_comments agar akurat sesuai keadaan fisik database.
+                    $query->where('analyzable_type', 'social')
+                          ->whereIn('analyzable_id', function ($sub) use ($platform) {
+                              $sub->select('social_media_item_id')
+                                  ->from('social_media_comments')
+                                  ->whereIn('social_media_item_id', function ($inner) use ($platform) {
+                                      $inner->select('id')->from('social_media_items')->where('platform', $platform);
+                                  });
+                          });
+                }
+            } elseif ($actor === 'Portal Berita') {
+                $query->where('analyzable_type', 'article')
+                      ->whereNotIn('analyzable_id', function ($sub) {
+                          $sub->select('id')->from('articles')->whereIn('source_name', ['TikTok', 'Instagram', 'Facebook']);
+                      });
+            }
+        }
+
+        if ($this->searchQuery) {
+            $search = '%' . strtolower($this->searchQuery) . '%';
+            $query->where(function($q) use ($search) {
+                $q->where('error_message', 'like', $search)
+                  ->orWhereIn('analyzable_id', function($sub) use ($search) {
+                      $sub->select('id')->from('articles')->where('title', 'like', $search)->orWhere('content', 'like', $search);
+                  })
+                  ->orWhereIn('analyzable_id', function($sub) use ($search) {
+                      $sub->select('id')->from('social_media_items')->where('content', 'like', $search)->orWhere('author_name', 'like', $search);
+                  });
+            });
+        }
+
+        $rawItems = $query->paginate($this->perPage, ['*'], 'queuePage');
+
+        $rawItems->getCollection()->transform(function ($item) {
             $projectName = 'N/A';
             $contentTitle = 'N/A';
             $contentDate = '-';
@@ -295,13 +493,11 @@ class SystemHealth extends Component
 
             if ($item->analyzable_type === 'article') {
                 $article = DB::table('articles')->where('id', $item->analyzable_id)->first();
-                // Fallback ke social jika tidak ketemu di articles
                 if (!$article) {
                     $social = DB::table('social_media_items')->where('id', $item->analyzable_id)->first();
                 }
             } else {
                 $social = DB::table('social_media_items')->where('id', $item->analyzable_id)->first();
-                // Fallback ke articles jika tidak ketemu di social
                 if (!$social) {
                     $article = DB::table('articles')->where('id', $item->analyzable_id)->first();
                 }
@@ -322,9 +518,16 @@ class SystemHealth extends Component
                 $contentUrl = data_get($social, 'post_url') ?? data_get($social, 'url');
             }
 
+            $isActuallySocial = false;
+            if ($article && in_array(strtolower($article->source_name ?? ''), ['facebook', 'instagram', 'tiktok'])) {
+                $isActuallySocial = true;
+            }
+
+            $displayType = ($item->analyzable_type === 'article' && !$isActuallySocial) ? 'Portal Berita' : 'Media Sosial';
+
             return [
                 'id' => $item->id,
-                'type' => $item->analyzable_type === 'article' ? 'Portal Berita' : 'Media Sosial',
+                'type' => $displayType,
                 'title' => $contentTitle,
                 'content_date' => $contentDate,
                 'project' => $projectName,
@@ -334,15 +537,9 @@ class SystemHealth extends Component
                 'created_at' => $item->created_at ? \Carbon\Carbon::parse($item->created_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
                 'url' => $contentUrl,
             ];
-        })->toArray();
+        });
 
-        $this->showQueueModal = true;
-    }
-
-    public function closeQueueModal(): void
-    {
-        $this->showQueueModal = false;
-        $this->queueDetails = [];
+        return $rawItems;
     }
 
     public function openApifyQueueModal(): void

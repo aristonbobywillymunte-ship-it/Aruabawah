@@ -460,6 +460,15 @@ class ContentMatchingService
             $decoded = $rawJson;
         }
 
+        // Fix: Extract postText/text from rawJson if content field is empty/null (common in Facebook scraper data)
+        if (empty($caption) && is_array($decoded)) {
+            $rawText = trim((string) ($decoded['postText'] ?? $decoded['text'] ?? ''));
+            if ($rawText !== '') {
+                $parts[] = $rawText;
+            }
+        }
+
+
         foreach (['hashtags', 'tags'] as $key) {
             $value = is_array($decoded) ? ($decoded[$key] ?? null) : null;
             if (is_array($value)) {

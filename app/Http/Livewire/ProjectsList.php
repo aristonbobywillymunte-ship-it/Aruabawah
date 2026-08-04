@@ -340,42 +340,79 @@ class ProjectsList extends Component
                     ->whereIn('status', ['queued', 'processing', 'retry_wait'])
                     ->count();
 
-                        // Single aggregation query: count total, sentiment breakdown, risk, and reach sum.
-                        // Replaces 4 separate COUNT queries → saves ~900ms per project.
-                        $rescrapeCount = 0;
-                        $totalAiFailed = 0;
+                $rescrapeCount = 0;
+                $totalAiFailed = 0;
 
-                        $aggRow = (clone $articleQuery)
-                            ->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-                            ->where('ai.analysis_status', 'success')
-                            ->where('ai.reach_method', 'ai_reader_estimate_v1')
-                            ->whereNotNull('ai.project_estimated_readers')
-                            ->where('ai.project_estimated_readers', '>=', 1)
-                            ->whereNotNull('ai.project_reach_score')
-                            ->whereNotNull('ai.project_reach_level')
-                            ->whereNotNull('ai.project_reach_band')
-                            ->whereNotNull('ai.summary')
-                            ->whereNotNull('ai.sentiment')
-                            ->whereNotNull('ai.risk_level')
-                            ->select([
-                                \Illuminate\Support\Facades\DB::raw("COUNT(*) as total_ai_valid"),
-                                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'positive' THEN 1 ELSE 0 END) as positive_count"),
-                                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.sentiment = 'negative' THEN 1 ELSE 0 END) as negative_count"),
-                                \Illuminate\Support\Facades\DB::raw("SUM(CASE WHEN ai.risk_level IN ('high','critical') THEN 1 ELSE 0 END) as high_risk_count"),
-                                \Illuminate\Support\Facades\DB::raw("COALESCE(SUM(ai.project_estimated_readers), 0) as total_reach")
-                            ])
-                            ->first();
+                // Portal aggregation (sesuaikan dengan filter di detail dashboard projectArticlesQuery)
+                $aggPortal = (clone $articleQuery)
+                    ->where(function ($q) {
+                        $q->whereNull('articles.category')
+                          ->orWhere('articles.category', '!=', 'social');
+                    })
+                    ->whereNotIn(\Illuminate\Support\Facades\DB::raw('lower(coalesce(articles.source_name, \'\'))'), ['facebook', 'instagram', 'tiktok'])
+                    ->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
+                    ->leftJoin(\Illuminate\Support\Facades\DB::raw('(SELECT article_id, MAX(project_estimated_readers) as max_reach FROM ai_analysis_results WHERE analysis_status = \'success\' AND reach_method = \'ai_reader_estimate_v1\' AND project_estimated_readers >= 1 GROUP BY article_id) reach_sub'), 'articles.id', '=', 'reach_sub.article_id')
+                    ->where('ai.analysis_status', 'success')
+                    ->where('ai.reach_method', 'ai_reader_estimate_v1')
+                    ->whereNotNull('ai.project_estimated_readers')
+                    ->where('ai.project_estimated_readers', '>=', 1)
+                    ->whereNotNull('ai.project_reach_score')
+                    ->whereNotNull('ai.project_reach_level')
+                    ->whereNotNull('ai.project_reach_band')
+                    ->whereNotNull('ai.summary')
+                    ->whereNotNull('ai.sentiment')
+                    ->whereNotNull('ai.risk_level')
+                    ->select([
+                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT articles.id) as total_ai_valid"),
+                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'positive' THEN articles.id END) as positive_count"),
+                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'negative' THEN articles.id END) as negative_count"),
+                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.risk_level IN ('high','critical') THEN articles.id END) as high_risk_count"),
+                        \Illuminate\Support\Facades\DB::raw("COALESCE(SUM(reach_sub.max_reach), 0) as total_reach")
+                    ])
+                    ->first();
 
-                        $totalAiValid     = (int) ($aggRow->total_ai_valid ?? 0);
-                        $positive         = (int) ($aggRow->positive_count ?? 0);
-                        $negative         = (int) ($aggRow->negative_count ?? 0);
-                        $highCriticalRisk = (int) ($aggRow->high_risk_count ?? 0);
-                        $officialReach    = (int) ($aggRow->total_reach ?? 0);
+                // Social aggregation (sesuaikan dengan filter di detail dashboard projectArticlesQuery)
+                $socialQuery = \App\Models\SocialMediaItem::query()
+                    ->join('project_social_media_items', 'social_media_items.id', '=', 'project_social_media_items.social_media_item_id')
+                    ->where('project_social_media_items.project_id', $project->id)
+                    ->where(function ($q) {
+                        $q->whereNull('social_media_items.post_url')
+                          ->orWhere('social_media_items.post_url', 'not like', 'apify-%');
+                    })
+                    ->where('social_media_items.comments_checked', true);
 
-                        $posPercent = $totalAiValid > 0 ? round(($positive / $totalAiValid) * 100) : 0;
-                        $negPercent = $totalAiValid > 0 ? round(($negative / $totalAiValid) * 100) : 0;
+                $aggSocial = (clone $socialQuery)
+                    ->join('ai_analysis_results as ai', 'social_media_items.id', '=', 'ai.social_media_item_id')
+                    ->leftJoin(\Illuminate\Support\Facades\DB::raw('(SELECT social_media_item_id, MAX(project_estimated_readers) as max_reach FROM ai_analysis_results WHERE analysis_status = \'success\' AND reach_method = \'ai_reader_estimate_v1\' AND project_estimated_readers >= 1 GROUP BY social_media_item_id) sreach_sub'), 'social_media_items.id', '=', 'sreach_sub.social_media_item_id')
+                    ->where('ai.analysis_status', 'success')
+                    ->where('ai.reach_method', 'ai_reader_estimate_v1')
+                    ->whereNotNull('ai.project_estimated_readers')
+                    ->where('ai.project_estimated_readers', '>=', 1)
+                    ->whereNotNull('ai.project_reach_score')
+                    ->whereNotNull('ai.project_reach_level')
+                    ->whereNotNull('ai.project_reach_band')
+                    ->whereNotNull('ai.summary')
+                    ->whereNotNull('ai.sentiment')
+                    ->whereNotNull('ai.risk_level')
+                    ->select([
+                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT social_media_items.id) as total_ai_valid"),
+                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'positive' THEN social_media_items.id END) as positive_count"),
+                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'negative' THEN social_media_items.id END) as negative_count"),
+                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.risk_level IN ('high','critical') THEN social_media_items.id END) as high_risk_count"),
+                        \Illuminate\Support\Facades\DB::raw("COALESCE(SUM(sreach_sub.max_reach), 0) as total_reach")
+                    ])
+                    ->first();
 
-                        $mentions = $matchedCounts['articles'] ?? 0;
+                $totalAiValid     = (int) (($aggPortal->total_ai_valid ?? 0) + ($aggSocial->total_ai_valid ?? 0));
+                $positive         = (int) (($aggPortal->positive_count ?? 0) + ($aggSocial->positive_count ?? 0));
+                $negative         = (int) (($aggPortal->negative_count ?? 0) + ($aggSocial->negative_count ?? 0));
+                $highCriticalRisk = (int) (($aggPortal->high_risk_count ?? 0) + ($aggSocial->high_risk_count ?? 0));
+                $officialReach    = (int) (($aggPortal->total_reach ?? 0) + ($aggSocial->total_reach ?? 0));
+
+                $posPercent = $totalAiValid > 0 ? round(($positive / $totalAiValid) * 100) : 0;
+                $negPercent = $totalAiValid > 0 ? round(($negative / $totalAiValid) * 100) : 0;
+
+                $mentions = ($matchedCounts['articles'] ?? 0) + ($matchedCounts['social'] ?? 0);
                         $reach = $officialReach > 0 ? number_format($officialReach, 0, ',', '.') : 'Belum tersedia';
 
                         $lastPortalTime = (clone $articleQuery)->max('published_at');

@@ -126,6 +126,19 @@ class ApifyScrapingJob implements ShouldQueue
             }
         }
 
+        if ($content === '') {
+            $attachmentLabel = data_get($item, 'attachments.0.label');
+            if ($attachmentLabel) {
+                $content = '[Stiker: ' . trim((string) $attachmentLabel) . ']';
+            } elseif (data_get($item, 'media.images') || data_get($item, 'media.first_party_cdn_proxied_images')) {
+                $content = '[Mengirim Animasi GIF/Stiker]';
+            } elseif (isset($item['attachments']) && is_array($item['attachments']) && count($item['attachments']) > 0) {
+                $content = '[Mengirim Lampiran/Stiker]';
+            } else {
+                $content = 'Tidak ada teks komentar.';
+            }
+        }
+
         return [
             'platform' => $platform,
             'comment_id' => (string) ($item['cid'] ?? $item['id'] ?? $item['commentId'] ?? md5(json_encode($item))),
@@ -136,7 +149,7 @@ class ApifyScrapingJob implements ShouldQueue
                 ?? data_get($item, 'ownerProfileUrl')
                 ?? null,
             'avatar_url' => $avatarUrl !== '' ? $avatarUrl : null,
-            'content' => $content !== '' ? $content : 'Tidak ada teks komentar.',
+            'content' => $content,
             'like_count' => (int) (
                 data_get($item, 'diggCount')
                 ?: data_get($item, 'likeCount')
@@ -889,10 +902,19 @@ class ApifyScrapingJob implements ShouldQueue
         $saved = 0;
 
         foreach ($items as $item) {
+            // Cegah penyimpanan item jika Apify mengembalikan error (misal: "no_items" / "Empty or private data")
+            if (isset($item['error']) || isset($item['errorDescription'])) {
+                \Log::warning("[Apify] Skipped dataset item: returned error from Apify.", [
+                    'url' => $item['url'] ?? $item['inputUrl'] ?? null,
+                    'error' => $item['error'] ?? null,
+                ]);
+                continue;
+            }
+
             // Normalise fields across platforms
             $rawPostUrl = $item['videoWebUrl'] ?? $item['submittedVideoUrl'] ?? $item['webVideoUrl'] ?? $item['url'] ?? $item['facebookUrl'] ?? $item['topLevelUrl'] ?? $item['post_url'] ?? $item['postUrl'] ?? $item['link'] ?? null;
             $postUrl    = $this->normalizeSocialPostUrl($rawPostUrl);
-            $content    = $item['postTitle'] ?? $item['message'] ?? $item['text'] ?? $item['caption'] ?? $item['description'] ?? $item['title'] ?? '';
+            $content    = $item['postText'] ?? $item['postTitle'] ?? $item['message'] ?? $item['text'] ?? $item['caption'] ?? $item['description'] ?? $item['title'] ?? '';
             $authorFallback = $platform === 'TikTok' ? 'TikTok' : 'Unknown Author';
             $author     = $item['author']['name']
                 ?? $item['authorMeta']['nickName']
@@ -1188,41 +1210,8 @@ class ApifyScrapingJob implements ShouldQueue
             );
 
             $socialSourceName = $platform === 'TikTok' ? 'TikTok' : $platform;
-            $articleTitle = $platform === 'TikTok' && trim((string) $author) === 'TikTok'
-                ? 'Post dari TikTok'
-                : "Post dari {$platform} oleh {$author}";
-
-            // Mirror as Article for dashboard
-            $articleUrl = $postUrl ?? ('apify-' . md5($content . $platform));
-            $article = \App\Models\Article::where('canonical_url', $articleUrl)
-                ->orWhere('url', $articleUrl)
-                ->first();
-
-            if ($article) {
-                $article->update([
-                    'title'        => $articleTitle,
-                    'content'      => $content,
-                    'source_name'  => $socialSourceName,
-                    'published_at' => $postedAtCarbon,
-                    'sentiment'    => 'neutral',
-                    'category'     => 'social',
-                ]);
-            } else {
-                $article = \App\Models\Article::create([
-                    'url'           => $articleUrl,
-                    'canonical_url' => $articleUrl,
-                    'title'         => $articleTitle,
-                    'content'       => $content,
-                    'source_name'   => $socialSourceName,
-                    'published_at'  => $postedAtCarbon,
-                    'sentiment'     => 'neutral',
-                    'category'      => 'social',
-                ]);
-            }
-
             // Cross-link to ALL active projects that match the keywords (Bank Berita Concept)
             $matchingService = app(\App\Services\ContentMatchingService::class);
-            $matchingService->crossLinkToActiveProjects($article, $projectId);
             if (isset($record) && $record) {
                 $matchingService->crossLinkToActiveProjects($record, $projectId);
             }
@@ -1234,14 +1223,14 @@ class ApifyScrapingJob implements ShouldQueue
             if ($platformNeedsCommentCheck) {
                 Log::info('[Apify] AI dispatch ditunda: menunggu comment scraper untuk ' . $platform . '.', [
                     'post_url'   => $postUrl,
-                    'article_id' => $article->id ?? null,
+                    'social_media_item_id' => $record->id ?? null,
                 ]);
                 continue;
             }
 
-            if (empty($article->id) || empty($projectId)) {
-                Log::warning('[Apify] Skipped AI dispatch: missing article_id or project_id.', [
-                    'article_id' => $article->id ?? null,
+            if (empty($record->id) || empty($projectId)) {
+                Log::warning('[Apify] Skipped AI dispatch: missing social_media_item_id or project_id.', [
+                    'social_media_item_id' => $record->id ?? null,
                     'project_id' => $projectId,
                 ]);
                 continue;
@@ -1252,7 +1241,7 @@ class ApifyScrapingJob implements ShouldQueue
             $providerContextHash = $dispatchStateService->resolveProviderContextHash();
             $decision = $dispatchStateService->reserveQueuedStateAndDispatch([
                 'type' => 'social',
-                'id' => $article->id,
+                'id' => null, // No article ID mirror
                 'item_id' => $record->id,
                 'project_id' => $projectId,
                 'title' => "Post dari {$platform} oleh {$author}",
@@ -2154,25 +2143,6 @@ class ApifyScrapingJob implements ShouldQueue
         int $projectId,
         bool $suppressTelegram = false
     ): void {
-        // Cari artikel yang terhubung ke postingan ini
-        $postUrl = $mainPost->post_url;
-        if (! $postUrl) {
-            return;
-        }
-
-        $article = \App\Models\Article::where('canonical_url', $postUrl)
-            ->orWhere('url', $postUrl)
-            ->orWhere('canonical_url', rtrim($postUrl, '/'))
-            ->orWhere('url', rtrim($postUrl, '/'))
-            ->first();
-
-        if (! $article) {
-            Log::info('[Apify] dispatchAiForPostAfterCommentCheck: artikel tidak ditemukan untuk URL.', [
-                'post_url' => $postUrl,
-            ]);
-            return;
-        }
-
         // Bangun konten gabungan: konten postingan + daftar komentar
         $baseContent = (string) $mainPost->content;
 
@@ -2232,12 +2202,12 @@ class ApifyScrapingJob implements ShouldQueue
 
             $decision = $dispatchStateService->reserveQueuedStateAndDispatch([
                 'type'          => 'social',
-                'id'            => $article->id,
+                'id'            => null, // No article ID mirror
                 'item_id'       => $mainPost->id,
                 'project_id'    => $projectId,
                 'title'         => "Post dari {$platform} oleh {$authorName}",
                 'content'       => $enrichedContent,
-                'url'           => $postUrl,
+                'url'           => $mainPost->post_url ?? '',
                 'source_name'   => $platform,
                 'author_name'   => $authorName,
                 'author_url'    => $mainPost->author_url,
@@ -2252,14 +2222,14 @@ class ApifyScrapingJob implements ShouldQueue
             ], $promptTemplateId, $providerContextHash, forceReset: true);
 
             Log::info('[Apify] AI dispatch setelah comment check.', [
-                'post_url'        => $postUrl,
-                'article_id'      => $article->id,
+                'post_url'        => $mainPost->post_url ?? '',
+                'social_media_item_id' => $mainPost->id,
                 'comment_count'   => $dbComments->count(),
                 'should_dispatch' => $decision['should_dispatch'] ?? false,
             ]);
         } catch (\Throwable $e) {
             Log::warning('[Apify] Gagal dispatch AI setelah comment check.', [
-                'post_url' => $postUrl,
+                'post_url' => $mainPost->post_url ?? '',
                 'error'    => $e->getMessage(),
             ]);
         }

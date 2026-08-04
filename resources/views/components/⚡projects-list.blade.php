@@ -966,6 +966,19 @@ new class extends Component
                             </div>
                         </a>
 
+                        @if(auth()->check() && auth()->user()->isAdmin())
+                        <div class="h-6 w-px bg-slate-200 hidden md:block ml-2"></div>
+                        <nav class="hidden md:flex items-center gap-6 ml-2">
+                            <a href="{{ route('admin.dashboard') }}" wire:navigate class="text-sm font-semibold text-slate-600 hover:text-[#1fa387] transition-colors flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+                                Admin Panel
+                            </a>
+                            <a href="{{ route('admin.pipeline-monitor') }}" wire:navigate class="text-sm font-semibold text-slate-600 hover:text-[#1fa387] transition-colors flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[18px]">queue</span>
+                                Pipeline Antrian
+                            </a>
+                        </nav>
+                        @endif
 
                     </div>
 
@@ -1698,7 +1711,7 @@ new class extends Component
                     x-transition:enter-end="opacity-100"
                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
                 >
-                    <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100 overflow-hidden animate-fade-in" style="height: 80vh; max-height: 650px; display: flex; flex-direction: column;">
+                    <div class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-100 overflow-hidden animate-fade-in" style="height: 80vh; max-height: 650px; display: flex; flex-direction: column;">
                         <!-- Modal Header -->
                         <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0" style="flex-shrink: 0;">
                             <div>
@@ -1738,104 +1751,16 @@ new class extends Component
                                 @if($activePackagesEdit->isNotEmpty())
                                 <div class="space-y-3">
                                     
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <!-- Opsi Paket-paket dari DB -->
+                                    <div class="relative">
+                                        <select wire:model="packageId" class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 transition appearance-none">
+                                            <option value="">-- Pilih Paket --</option>
                                             @foreach($activePackagesEdit as $p)
-                                            @php
-                                                $hasData = !empty($p->advantages) || !empty($p->social_media_features) || !empty($p->news_portal_features);
-                                                $isSelected = (int) $packageId === (int) $p->id;
-                                            @endphp
-                                            <div 
-                                                wire:click="$set('packageId', {{ $p->id }})"
-                                                class="group relative cursor-pointer rounded-3xl p-6 flex flex-col justify-between transition-all duration-300 bg-white border-2
-                                                {{ $isSelected 
-                                                    ? 'border-[#1fa387] shadow-xl shadow-slate-100/60 scale-[1.01]' 
-                                                    : 'border-slate-100 hover:border-slate-200 hover:shadow-lg' }}"
-                                            >
-                                                {{-- Popular / Terpopuler Floating Label --}}
-                                                @if($p->is_popular)
-                                                <div class="absolute -top-3 right-6">
-                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-wider bg-[#1fa387] text-white shadow-sm border-2 border-white">
-                                                        POPULAR
-                                                    </span>
-                                                </div>
-                                                @endif
-
-                                                <div class="space-y-5">
-                                                    {{-- Header Card --}}
-                                                    <div class="flex items-center justify-between">
-                                                        <div class="flex flex-col gap-1">
-                                                            <div class="w-8 h-8 rounded-full bg-[#1fa387]/10 flex items-center justify-center text-[#1fa387]">
-                                                                @if($p->name == 'Enterprise')
-                                                                    <span class="material-symbols-outlined text-[18px]">rocket_launch</span>
-                                                                @else
-                                                                    <span class="material-symbols-outlined text-[18px]">widgets</span>
-                                                                @endif
-                                                            </div>
-                                                            <h3 class="text-base font-extrabold text-slate-800 tracking-tight mt-1.5">{{ $p->name }}</h3>
-                                                            <p class="text-[11px] text-slate-400 leading-normal">{{ $p->description ?: 'Solusi handal untuk otomatisasi scraping dan pelacakan isu media.' }}</p>
-                                                        </div>
-                                                    </div>
-
-                                                    {{-- Price Section --}}
-                                                    <div class="flex flex-col">
-                                                        @if($p->price > 0)
-                                                            <span class="text-3xl font-black text-slate-900 leading-none">
-                                                                Rp {{ number_format($p->price, 0, ',', '.') }}
-                                                            </span>
-                                                            <span class="text-slate-400 text-[10.5px] font-bold mt-1">/bulan</span>
-                                                        @else
-                                                            <span class="text-lg font-black text-[#1fa387] leading-none uppercase tracking-wide">HUBUNGI KAMI</span>
-                                                            <span class="text-slate-400 text-[10.5px] font-bold mt-1">Harga kustomisasi</span>
-                                                        @endif
-                                                    </div>
-
-                                                    {{-- Action Button (Representing Selected State / CTA) --}}
-                                                    <div class="pt-1">
-                                                        <div class="w-full py-2.5 rounded-xl font-extrabold text-xs transition-all duration-300 text-center
-                                                            {{ $isSelected 
-                                                                ? 'bg-[#1fa387] text-white shadow-md shadow-[#1fa387]/20' 
-                                                                : 'bg-slate-50 text-slate-500 border border-slate-200/60 group-hover:bg-slate-100/80' }}"
-                                                        >
-                                                            {{ $isSelected ? 'Terpilih' : 'Pilih Paket' }}
-                                                        </div>
-                                                    </div>
-
-                                                    {{-- Divider --}}
-                                                    <div class="border-t border-slate-100 pt-4 space-y-4">
-                                                        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Fitur Utama</span>
-
-                                                        @php $socialList = $p->social_media_features ?? []; @endphp
-                                                        @if(!empty($socialList))
-                                                        <div class="space-y-2">
-                                                            <div class="space-y-1.5">
-                                                                @foreach(array_slice($socialList, 0, 5) as $feat)
-                                                                <div class="flex items-start gap-2">
-                                                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387] shrink-0 mt-0.5">check_circle</span>
-                                                                    <span class="text-[11px] text-slate-600 font-medium leading-snug">{{ $feat }}</span>
-                                                                </div>
-                                                                @endforeach
-                                                            </div>
-                                                        </div>
-                                                        @endif
-
-                                                        @php $portalList = $p->news_portal_features ?? []; @endphp
-                                                        @if(!empty($portalList))
-                                                        <div class="space-y-2">
-                                                            <div class="space-y-1.5">
-                                                                @foreach(array_slice($portalList, 0, 4) as $feat)
-                                                                <div class="flex items-start gap-2">
-                                                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387] shrink-0 mt-0.5">check_circle</span>
-                                                                    <span class="text-[11px] text-slate-600 font-medium leading-snug">{{ $feat }}</span>
-                                                                </div>
-                                                                @endforeach
-                                                            </div>
-                                                        </div>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </div>
+                                                <option value="{{ $p->id }}">{{ $p->name }} @if($p->price > 0) (Rp {{ number_format($p->price, 0, ',', '.') }}/bln) @else (Kustom) @endif</option>
                                             @endforeach
+                                        </select>
+                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                                            <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                        </div>
                                     </div>
                                     @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>

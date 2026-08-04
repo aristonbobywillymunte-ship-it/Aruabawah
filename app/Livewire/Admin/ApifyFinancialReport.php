@@ -69,7 +69,7 @@ class ApifyFinancialReport extends Component
                 ->where('platform', $platform)
                 ->where(function($q) use ($queryKeyword) {
                     $q->where('post_url', $queryKeyword)
-                      ->orWhere('post_url', 'like', '%' . $queryKeyword . '%');
+                      ->orWhere('post_url', 'ilike', '%' . $queryKeyword . '%');
                 })
                 ->first();
 
@@ -106,12 +106,25 @@ class ApifyFinancialReport extends Component
                 ->where('platform', $platform)
                 ->where(function($q) use ($keywordsList) {
                     foreach ($keywordsList as $kw) {
-                        $q->orWhere('content', 'like', '%' . $kw . '%')
-                          ->orWhere('post_url', 'like', '%' . $kw . '%');
+                        $q->orWhere('content', 'ilike', '%' . $kw . '%')
+                          ->orWhere('post_url', 'ilike', '%' . $kw . '%');
+                          
+                        $kwNoSpace = str_replace(' ', '', $kw);
+                        if ($kwNoSpace !== $kw) {
+                            $q->orWhere('content', 'ilike', '%' . $kwNoSpace . '%')
+                              ->orWhere('post_url', 'ilike', '%' . $kwNoSpace . '%');
+                        }
                     }
                 })
-                ->orderBy('posted_at', 'desc')
-                ->get();
+                ->orderBy('posted_at', 'desc');
+
+            \Log::info("Apify SQL Debug", [
+                'sql' => $rawItems->toSql(),
+                'bindings' => $rawItems->getBindings(),
+                'platform' => $platform,
+            ]);
+
+            $rawItems = $rawItems->get();
 
             $this->selectedItems = $rawItems->map(function($item) {
                 return [
@@ -125,6 +138,12 @@ class ApifyFinancialReport extends Component
                 ];
             })->toArray();
         }
+
+        \Log::info("ApifyFinancialReport openItems called", [
+            'platform' => $platform, 
+            'keyword' => $keyword, 
+            'raw_items_count' => count($this->selectedItems)
+        ]);
 
         $this->modalLoading = false;
     }

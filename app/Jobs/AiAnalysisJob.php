@@ -110,16 +110,17 @@ class AiAnalysisJob implements ShouldQueue
             if (!$project->is_active) {
                 // Cek apakah artikel/sosmed ini terhubung ke proyek lain yang aktif
                 $hasActiveProject = false;
+                $analyzableId = (int) ($this->payload['id'] ?? $this->payload['item_id'] ?? 0);
                 if ($type === 'social') {
                     $hasActiveProject = \DB::table('project_social_media_items')
                         ->join('projects', 'project_social_media_items.project_id', '=', 'projects.id')
-                        ->where('project_social_media_items.social_media_item_id', $id)
+                        ->where('project_social_media_items.social_media_item_id', $analyzableId)
                         ->where('projects.is_active', true)
                         ->exists();
                 } else {
                     $hasActiveProject = \DB::table('project_articles')
                         ->join('projects', 'project_articles.project_id', '=', 'projects.id')
-                        ->where('project_articles.article_id', $id)
+                        ->where('project_articles.article_id', $analyzableId)
                         ->where('projects.is_active', true)
                         ->exists();
                 }
@@ -353,6 +354,12 @@ class AiAnalysisJob implements ShouldQueue
 
             $this->ensureOfficialReachFields($analysisId, $normalized);
             $this->syncSourceRecord($normalized);
+
+            // Trigger touch pada project agar signature cache dashboard langsung ter-update otomatis
+            $projectId = $this->payload['project_id'] ?? null;
+            if ($projectId) {
+                \App\Models\Project::where('id', $projectId)->touch();
+            }
 
             Log::info('[Pipeline] AI analysis result completed', [
                 'article_id' => $normalized['article_id'],
@@ -590,9 +597,12 @@ class AiAnalysisJob implements ShouldQueue
             $reachMethod = 'ai_reader_estimate_v1';
         }
 
+        $isSocial = $type === 'social';
+        $analyzableId = $this->payload['id'] ?? $this->payload['item_id'] ?? null;
+
         return [
-            'article_id' => $this->payload['id'] ?? null,
-            'social_media_item_id' => $this->payload['item_id'] ?? null,
+            'article_id' => !$isSocial ? $analyzableId : null,
+            'social_media_item_id' => $isSocial ? $analyzableId : null,
             'summary' => (string) ($result['summary'] ?? ''),
             'sentiment' => $sentiment,
             'sentiment_score' => (float) ($result['sentiment_score'] ?? 0),

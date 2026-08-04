@@ -179,19 +179,23 @@ class ApifyActor extends Model
 
     protected function buildFacebookInputPayload(?string $keyword, ?array $keywords, int $limit, ?string $dateFrom = null, ?string $dateTo = null): array
     {
-        $payload = $this->resolveTemplatePayload($keyword, $limit, $dateFrom, $dateTo);
-        if (!empty($payload)) {
-            return $payload;
-        }
-
-        $keywords = array_values(array_filter(array_map(
+        $keywordsList = array_values(array_filter(array_map(
             fn ($value) => $this->sanitizeSocialKeyword((string) $value),
             $keywords ?? [$keyword]
         )));
 
-        if ($keywords === []) {
-            $keywords = [$this->sanitizeSocialKeyword((string) ($keyword ?: $this->default_keyword))];
+        if ($keywordsList === []) {
+            $keywordsList = [$this->sanitizeSocialKeyword((string) ($keyword ?: $this->default_keyword))];
         }
+
+        $joinedKeyword = implode(',', array_map(fn($k) => "'" . addslashes((string)$k) . "'", $keywordsList));
+
+        $payload = $this->resolveTemplatePayload($joinedKeyword, $limit, $dateFrom, $dateTo);
+        if (!empty($payload)) {
+            return $payload;
+        }
+
+        // (Keywords list sudah di-resolve di atas)
 
         $config = [];
         if (filled($this->output_mapping)) {
@@ -206,14 +210,14 @@ class ApifyActor extends Model
             $postTimeRange = $this->resolveTimeFilter();
         }
         $useApifyProxy = (bool) data_get($config, 'proxyConfiguration.useApifyProxy', true);
-        $resolvedMaxPosts = $this->distributedSocialLimit($limit, $keywords);
+        $resolvedMaxPosts = $this->distributedSocialLimit($limit, $keywordsList);
         return [
             'maxPosts' => $resolvedMaxPosts,
             'postTimeRange' => $postTimeRange ?: $this->resolveTimeFilter(),
             'proxyConfiguration' => [
                 'useApifyProxy' => $useApifyProxy,
             ],
-            'searchQueries' => $keywords,
+            'searchQueries' => $keywordsList,
         ];
     }
 

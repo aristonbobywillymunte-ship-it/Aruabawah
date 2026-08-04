@@ -288,22 +288,8 @@ class RequeueOrphanQueuedAiStates extends Command
             return [false, 'missing_project', [], []];
         }
 
-        $article = Article::query()->find($state->analyzable_id);
-        if (! $article) {
-            return [false, 'missing_analyzable', [], []];
-        }
-
         if ($state->analyzable_type === 'social') {
-            $canonicalUrl = $article->canonical_url ?: $article->url;
-            $social = SocialMediaItem::query()
-                ->where(function ($query) use ($canonicalUrl, $article) {
-                    $query->where('post_url', $canonicalUrl);
-                    if ($article->url) {
-                        $query->orWhere('post_url', $article->url);
-                    }
-                })
-                ->first();
-
+            $social = SocialMediaItem::query()->find($state->analyzable_id);
             if (! $social) {
                 return [false, 'missing_social_item', [], []];
             }
@@ -321,14 +307,14 @@ class RequeueOrphanQueuedAiStates extends Command
                 'eligible',
                 [
                     'type' => 'social',
-                    'id' => $article->id,
+                    'id' => $social->id,
                     'item_id' => $social->id,
                     'project_id' => $state->project_id,
-                    'title' => $article->title ?: ($social->author_name ? "Post dari {$social->platform} oleh {$social->author_name}" : 'Post sosial'),
+                    'title' => $social->author_name ? "Post dari {$social->platform} oleh {$social->author_name}" : 'Post sosial',
                     'content' => $social->content,
                     'url' => $social->post_url,
                     'source_name' => $social->platform,
-                    'published_at' => optional($social->posted_at)?->toIso8601String() ?? optional($article->published_at)?->toIso8601String(),
+                    'published_at' => optional($social->posted_at)->toIso8601String(),
                     'no_telegram' => true,
                     'prompt_template_id' => $state->prompt_template_id,
                     'provider_context_hash' => $state->provider_context_hash,
@@ -337,6 +323,11 @@ class RequeueOrphanQueuedAiStates extends Command
                     'source' => $social->platform,
                 ],
             ];
+        }
+
+        $article = Article::query()->find($state->analyzable_id);
+        if (! $article) {
+            return [false, 'missing_analyzable', [], []];
         }
 
         if (trim((string) $article->content) === '') {

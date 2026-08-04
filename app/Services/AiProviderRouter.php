@@ -53,9 +53,9 @@ class AiProviderRouter
         }
 
         if (Schema::hasColumn('ai_providers', 'priority')) {
-            $query->orderBy('priority', 'asc')->orderBy('id', 'asc');
+            $query->orderByDesc('is_default')->orderBy('priority', 'asc')->orderBy('id', 'asc');
         } else {
-            $query->orderBy('id', 'asc');
+            $query->orderByDesc('is_default')->orderBy('id', 'asc');
         }
 
         $providers = $query->get();
@@ -116,7 +116,10 @@ class AiProviderRouter
             
             // Periksa Local Rate Limiter
             $rateLimitKey = 'ai-provider-' . $provider->id;
-            $maxRequests = $provider->requests_per_minute ?? 15;
+            $maxRequests = (int) ($provider->requests_per_minute ?? 1);
+            if ($maxRequests <= 0) {
+                $maxRequests = 1;
+            }
             
             if (RateLimiter::tooManyAttempts($rateLimitKey, $maxRequests)) {
                 $seconds = RateLimiter::availableIn($rateLimitKey);
@@ -147,13 +150,6 @@ class AiProviderRouter
 
                     // Success!
                     Log::info("[AiRouter] Success using provider: {$providerName}{$articleContext}");
-                    
-                    // Otomatis sinkronisasi default jika provider sukses berbeda dengan default saat ini
-                    if (!$provider->is_default) {
-                        Log::info("[AiRouter] Auto-switching default AI provider to {$providerName} due to previous failure fallback.");
-                        AiProvider::where('is_default', true)->update(['is_default' => false]);
-                        $provider->update(['is_default' => true]);
-                    }
 
                     return [
                         'provider' => $provider,

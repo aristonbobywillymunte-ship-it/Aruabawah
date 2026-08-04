@@ -316,58 +316,147 @@
 
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
-        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
-            <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left overscroll-contain flex flex-col rounded-[24px] overflow-hidden" style="height: 720px !important; max-height: 720px !important;">
+        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-2 font-sans">
+            <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden" style="height: calc(100vh - 16px);">
                 <!-- Modal Header -->
-                <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
-                    <div class="min-w-0 flex-1 pr-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Sistem Kesehatan AI</p>
-                        <h2 class="text-base font-black text-slate-900 mt-0.5">Daftar Antrean Berjalan (AI Pipeline)</h2>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Menampilkan status antrean yang sedang diproses maupun menunggu dicoba ulang.</p>
+                <div class="flex items-center justify-between border-b border-slate-100 px-6 py-3 shrink-0 bg-slate-50/50">
+                    <div class="min-w-0 flex-1 pr-4 flex items-center gap-3">
+                        <div>
+                            <p class="text-[9px] font-bold uppercase tracking-wider text-[#1fa387]">Sistem Kesehatan AI</p>
+                            <h2 class="text-sm font-black text-slate-900 leading-tight">Daftar Antrean Berjalan <span class="text-slate-400 font-semibold">(AI Pipeline)</span></h2>
+                        </div>
                     </div>
-                    <button type="button" wire:click="closeQueueModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0">
-                        <span class="material-symbols-outlined text-[20px] block">close</span>
+                    <div class="flex items-center gap-2 mr-4">
+                        <button type="button" wire:click="openConfirmModal('clean_ghosts')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition text-[11px] font-bold shadow-sm">
+                            <span class="material-symbols-outlined text-[14px]">cleaning_services</span>
+                            Bersihkan Data
+                        </button>
+                        <button type="button" wire:click="openConfirmModal('purge_queue')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition text-[11px] font-bold shadow-sm">
+                            <span class="material-symbols-outlined text-[14px]">delete_sweep</span>
+                            Kosongkan Redis
+                        </button>
+                    </div>
+                    <button type="button" wire:click="closeQueueModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0">
+                        <span class="material-symbols-outlined text-[18px] block">close</span>
                     </button>
                 </div>
 
-                <!-- Modal Body (Table dengan Spinner Loading) -->
-                <div class="flex-1 overflow-y-auto p-6 relative" style="height: 580px !important; max-height: 580px !important;">
-                    <!-- Loading overlay jika ada aksi di background -->
-                    <div wire:loading wire:target="openQueueModal" class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center">
-                        <div class="flex flex-col items-center gap-3">
-                            <svg class="animate-spin h-8 w-8 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span class="text-xs font-bold text-slate-600">Memuat data antrean...</span>
+                @php
+                    $queueItems = $this->getQueueData();
+                    $activeProjects = DB::table('projects')->whereNull('deleted_at')->get();
+                @endphp
+
+                <!-- Panel Filter & Pencarian Standar (Statis, diletakkan di bawah header, tidak ikut ter-scroll) -->
+                <div class="px-5 py-2.5 bg-slate-50/30 border-b border-slate-100 shrink-0">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        <!-- Pencarian -->
+                        <div class="col-span-2 md:col-span-1">
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    wire:model.live.debounce.350ms="searchQuery"
+                                    placeholder="🔍 Cari kata kunci / error..."
+                                    class="w-full pl-3 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/30 transition bg-white"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Filter Status -->
+                        <div>
+                            <select
+                                wire:model.live="filterStatus"
+                                class="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/30 transition"
+                            >
+                                <option value="">Semua Status</option>
+                                <option value="queued">Mengantre</option>
+                                <option value="processing">Diproses AI</option>
+                                <option value="retry_wait">Tunda (Retry)</option>
+                            </select>
+                        </div>
+
+                        <!-- Filter Tipe Media -->
+                        <div>
+                            <select
+                                wire:model.live="filterType"
+                                class="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/30 transition"
+                            >
+                                <option value="">Semua Tipe</option>
+                                <option value="article">Portal Berita</option>
+                                <option value="social">Media Sosial</option>
+                            </select>
+                        </div>
+
+                        <!-- Filter Aktor -->
+                        <div>
+                            <select
+                                wire:model.live="filterActor"
+                                class="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/30 transition"
+                            >
+                                <option value="">Semua Aktor</option>
+                                <option value="TikTok Post">TikTok Post</option>
+                                <option value="Instagram Post">Instagram Post</option>
+                                <option value="Facebook Post">Facebook Post</option>
+                                <option value="TikTok Comment">TikTok Comment</option>
+                                <option value="Instagram Comment">Instagram Comment</option>
+                                <option value="Facebook Comment">Facebook Comment</option>
+                                <option value="Portal Berita">Portal News</option>
+                            </select>
+                        </div>
+
+                        <!-- Filter Proyek -->
+                        <div>
+                            <select
+                                wire:model.live="filterProject"
+                                class="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/30 transition"
+                            >
+                                <option value="">Semua Proyek</option>
+                                @foreach($activeProjects as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
+                </div>
 
-                    @if(empty($queueDetails))
-                        <div class="flex flex-col items-center justify-center py-16 text-center">
-                            <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                                <span class="material-symbols-outlined text-[32px]">check_circle</span>
+                <!-- Modal Body: overflow-y-auto dengan max-height eksplisit agar footer TIDAK ikut scroll -->
+                <div class="overflow-y-auto p-4 relative" style="flex: 1 1 0; min-height: 0; max-height: calc(100vh - 200px);">
+                    <!-- Loading Overlay seluruh body saat filter/search berubah -->
+                    <div wire:loading wire:target="searchQuery, filterStatus, filterType, filterActor, filterProject, gotoPage"
+                         class="absolute inset-0 z-20 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 rounded-b-[24px]">
+                        <svg class="animate-spin h-7 w-7 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-xs font-bold text-slate-500">Memuat data...</span>
+                    </div>
+                    <!-- Container Tabel -->
+                    <div class="relative">
+
+                        @if($queueItems->isEmpty())
+                            <div class="flex flex-col items-center justify-center py-16 text-center">
+                                <div class="w-16 h-16 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center mb-4 border border-slate-200/50 shadow-sm">
+                                    <span class="material-symbols-outlined text-[32px]">find_in_page</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-800 mb-1">Tidak Ada Hasil Cocok</h4>
+                                <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Sesuaikan kata kunci pencarian atau matikan filter Anda.</p>
                             </div>
-                            <h4 class="text-sm font-bold text-slate-800 mb-1">Seluruh Antrean Kosong</h4>
-                            <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Seluruh proses analisis sentimen AI telah selesai dikerjakan.</p>
-                        </div>
-                    @else
-                        <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
-                            <table class="w-full text-left border-collapse text-xs table-fixed">
+                        @else
+                            <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white mb-3">
+                                <table class="w-full text-left border-collapse text-[11px] table-fixed">
                                 <thead>
                                     <tr class="bg-slate-50 border-b border-slate-200">
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-12 text-center">No</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-28">Tipe</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Tanggal Konten</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700">Judul / Konten</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Proyek</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-28">Status</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-16 text-center">Retry</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Dibuat</th>
+                                        <th class="px-3 py-2 font-bold text-slate-500 w-10 text-center">#</th>
+                                        <th class="px-3 py-2 font-bold text-slate-500 w-24">Tipe</th>
+                                        <th class="px-3 py-2 font-bold text-slate-500 w-32">Tgl Konten</th>
+                                        <th class="px-3 py-2 font-bold text-slate-500">Judul / Konten</th>
+                                        <th class="px-3 py-2 font-bold text-slate-500 w-32">Proyek</th>
+                                        <th class="px-3 py-2 font-bold text-slate-500 w-24">Status</th>
+                                        <th class="px-3 py-2 font-bold text-slate-500 w-14 text-center">Retry</th>
+                                        <th class="px-3 py-2 font-bold text-slate-500 w-32">Dibuat</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
-                                    @foreach($queueDetails as $idx => $item)
+                                    @foreach($queueItems as $idx => $item)
                                         @php
                                             $statusColor = match($item['status']) {
                                                 'queued' => 'bg-slate-50 text-slate-600 border-slate-200/80',
@@ -382,35 +471,51 @@
                                                 default => 'Gagal'
                                             };
                                         @endphp
-                                        <tr class="hover:bg-slate-50/50 transition">
-                                            <td class="px-4 py-3 text-center text-slate-400 font-bold align-top">{{ $idx + 1 }}</td>
-                                            <td class="px-4 py-3 font-bold text-slate-600 align-top whitespace-nowrap">{{ $item['type'] }}</td>
-                                            <td class="px-4 py-3 text-slate-550 align-top whitespace-nowrap font-medium">{{ $item['content_date'] }}</td>
-                                            <td class="px-4 py-3 text-slate-800 align-top">
+                                        <tr class="hover:bg-slate-50/40 transition">
+                                            <td class="px-3 py-2 text-center text-slate-400 font-bold align-middle">
+                                                {{ ($queueItems->currentPage() - 1) * $queueItems->perPage() + $idx + 1 }}
+                                            </td>
+                                            <td class="px-3 py-2 align-middle">
+                                                <span class="inline-flex items-center gap-1 font-semibold text-slate-600">
+                                                    @if(str_contains(strtolower($item['type']), 'sosial') || str_contains(strtolower($item['type']), 'social') || str_contains(strtolower($item['type']), 'media'))
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0"></span>
+                                                    @else
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>
+                                                    @endif
+                                                    {{ $item['type'] }}
+                                                </span>
+                                            </td>
+                                            <td class="px-3 py-2 text-slate-500 align-middle whitespace-nowrap">{{ $item['content_date'] }}</td>
+                                            <td class="px-3 py-2 text-slate-800 align-middle">
                                                 @if(!empty($item['url']))
-                                                    <a href="{{ $item['url'] }}" target="_blank" class="line-clamp-2 leading-relaxed font-semibold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1" title="{{ $item['title'] }}">
-                                                        <span>{{ $item['title'] }}</span>
-                                                        <span class="material-symbols-outlined text-[14px] shrink-0">open_in_new</span>
+                                                    <a href="{{ $item['url'] }}" target="_blank" class="line-clamp-1 font-semibold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-0.5" title="{{ $item['title'] }}">
+                                                        <span class="truncate">{{ $item['title'] }}</span>
+                                                        <span class="material-symbols-outlined text-[12px] shrink-0">open_in_new</span>
                                                     </a>
                                                 @else
-                                                    <div class="line-clamp-2 leading-relaxed" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
+                                                    <div class="line-clamp-1 text-slate-700" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
                                                 @endif
                                                 @if($item['status'] === 'retry_wait' && $item['error_message'])
-                                                    <div class="text-[9px] text-rose-500 font-semibold mt-1 bg-rose-50/40 p-1 px-2 rounded-lg border border-rose-100/50 break-words whitespace-normal">
-                                                        Error: {{ $item['error_message'] }}
+                                                    <div class="text-[9px] text-rose-500 font-medium mt-0.5 truncate" title="{{ $item['error_message'] }}">
+                                                        ⚠ {{ Str::limit($item['error_message'], 60) }}
                                                     </div>
                                                 @endif
                                             </td>
-                                            <td class="px-4 py-3 font-bold text-[#1fa387] align-top truncate" title="{{ $item['project'] }}">
+                                            <td class="px-3 py-2 font-semibold text-[#1fa387] align-middle truncate" title="{{ $item['project'] }}">
                                                 {{ $item['project'] }}
                                             </td>
-                                            <td class="px-4 py-3 align-top whitespace-nowrap">
+                                            <td class="px-3 py-2 align-middle whitespace-nowrap">
                                                 <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold border {{ $statusColor }}">
                                                     {{ $statusLabel }}
                                                 </span>
                                             </td>
-                                            <td class="px-4 py-3 text-center font-bold text-slate-600 align-top">{{ $item['attempts'] }}x</td>
-                                            <td class="px-4 py-3 text-slate-400 font-medium align-top whitespace-nowrap">{{ $item['created_at'] }}</td>
+                                            <td class="px-3 py-2 text-center font-bold text-slate-500 align-middle">
+                                                <button type="button" wire:click="openConfirmModal('force_requeue', {{ $item['id'] }})" class="inline-flex items-center justify-center w-6 h-6 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md transition" title="Kirim Ulang">
+                                                    <span class="material-symbols-outlined text-[14px]">refresh</span>
+                                                </button>
+                                                <span class="block text-[8px] font-normal mt-0.5">{{ $item['attempts'] }}x</span>
+                                            </td>
+                                            <td class="px-3 py-2 text-slate-400 align-middle whitespace-nowrap">{{ $item['created_at'] }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -419,14 +524,117 @@
                     @endif
                 </div>
 
-                <!-- Modal Footer -->
-                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
-                    <button
-                        type="button"
-                        wire:click="closeQueueModal"
-                        class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
-                    >
-                        Tutup
+                <!-- Modal Footer: SELALU FIX di bawah, tidak pernah ikut scroll -->
+                <div style="flex-shrink: 0; flex-grow: 0; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+
+                    {{-- Baris Paginasi + Info --}}
+                    <div class="px-5 py-2 flex items-center justify-between border-b border-slate-100">
+                        {{-- Info jumlah data --}}
+                        <div class="text-[11px] text-slate-400 font-medium">
+                            @if(!$queueItems->isEmpty())
+                                Menampilkan
+                                <span class="font-bold text-slate-600">{{ ($queueItems->currentPage() - 1) * $queueItems->perPage() + 1 }}–{{ min($queueItems->currentPage() * $queueItems->perPage(), $queueItems->total()) }}</span>
+                                dari <span class="font-bold text-slate-600">{{ $queueItems->total() }}</span> antrean
+                            @endif
+                        </div>
+
+                        {{-- Tombol Paginasi --}}
+                        @if($queueItems->hasPages())
+                            <div class="inline-flex items-center -space-x-px rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden text-[11px]">
+                                {{-- First --}}
+                                @if($queueItems->onFirstPage())
+                                    <span class="px-2.5 py-1.5 text-slate-300 font-bold bg-slate-50/50 cursor-not-allowed select-none">First</span>
+                                @else
+                                    <button type="button" wire:click="gotoPage(1, 'queuePage')" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-50 font-bold transition">First</button>
+                                @endif
+
+                                {{-- Prev --}}
+                                @if($queueItems->onFirstPage())
+                                    <span class="px-2 py-1.5 text-slate-300 cursor-not-allowed select-none inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_left</span></span>
+                                @else
+                                    <button type="button" wire:click="previousPage('queuePage')" class="px-2 py-1.5 text-slate-600 hover:bg-slate-50 transition inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_left</span></button>
+                                @endif
+
+                                {{-- Page Numbers --}}
+                                @php
+                                    $startPage = max(1, $queueItems->currentPage() - 1);
+                                    $endPage = min($queueItems->lastPage(), $queueItems->currentPage() + 1);
+                                @endphp
+                                @for($p = $startPage; $p <= $endPage; $p++)
+                                    @if($p == $queueItems->currentPage())
+                                        <span class="px-3 py-1.5 bg-[#1fa387] text-white font-black select-none">{{ $p }}</span>
+                                    @else
+                                        <button type="button" wire:click="gotoPage({{ $p }}, 'queuePage')" class="px-3 py-1.5 text-slate-600 hover:bg-slate-50 font-bold transition">{{ $p }}</button>
+                                    @endif
+                                @endfor
+
+                                {{-- Next --}}
+                                @if($queueItems->hasMorePages())
+                                    <button type="button" wire:click="nextPage('queuePage')" class="px-2 py-1.5 text-slate-600 hover:bg-slate-50 transition inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_right</span></button>
+                                @else
+                                    <span class="px-2 py-1.5 text-slate-300 cursor-not-allowed select-none inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_right</span></span>
+                                @endif
+
+                                {{-- Last --}}
+                                @if($queueItems->hasMorePages())
+                                    <button type="button" wire:click="gotoPage({{ $queueItems->lastPage() }}, 'queuePage')" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-50 font-bold transition">Last</button>
+                                @else
+                                    <span class="px-2.5 py-1.5 text-slate-300 font-bold bg-slate-50/50 cursor-not-allowed select-none">Last</span>
+                                @endif
+                            </div>
+                        @else
+                            <div></div>
+                        @endif
+                    </div>
+
+                    {{-- Baris Tombol Tutup --}}
+                    <div class="px-5 py-2.5 flex justify-end">
+                        <button
+                            type="button"
+                            wire:click="closeQueueModal"
+                            class="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
+                        >
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    @endif
+
+    <!-- Modal Konfirmasi Error Handling -->
+    @if($showConfirmModal)
+        <div class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 font-sans">
+            <div class="w-full max-w-sm bg-white shadow-2xl rounded-2xl overflow-hidden text-center p-6 border border-slate-200">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full {{ $confirmActionType === 'purge_queue' ? 'bg-rose-100 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]' }} mb-4">
+                    <span class="material-symbols-outlined text-[24px]">
+                        {{ $confirmActionType === 'purge_queue' ? 'warning' : ($confirmActionType === 'clean_ghosts' ? 'cleaning_services' : 'refresh') }}
+                    </span>
+                </div>
+                <h3 class="text-lg font-black text-slate-900 mb-2">Konfirmasi Tindakan</h3>
+                <p class="text-xs text-slate-500 mb-6 leading-relaxed">
+                    @if($confirmActionType === 'clean_ghosts')
+                        Apakah Anda yakin ingin membersihkan data antrean hantu (Legacy MD5)? Data ini akan ditandai sebagai batal secara permanen.
+                    @elseif($confirmActionType === 'purge_queue')
+                        Apakah Anda yakin ingin <strong>menghapus secara paksa</strong> seluruh antrean Redis AI? Tindakan ini akan membatalkan semua job yang belum diproses.
+                    @elseif($confirmActionType === 'force_requeue')
+                        Apakah Anda yakin ingin mengirim ulang data antrean ini ke AI secara paksa sekarang juga?
+                    @endif
+                </p>
+                <div class="flex flex-col gap-2">
+                    <button type="button" wire:click="executeConfirmAction" class="w-full inline-flex justify-center items-center gap-2 px-4 py-2 text-sm font-bold text-white {{ $confirmActionType === 'purge_queue' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-[#1fa387] hover:bg-[#15876f]' }} rounded-xl transition shadow-sm" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="executeConfirmAction">Ya, Lanjutkan</span>
+                        <span wire:loading wire:target="executeConfirmAction" class="flex items-center gap-2">
+                            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Memproses...
+                        </span>
+                    </button>
+                    <button type="button" wire:click="closeConfirmModal" class="w-full px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition">
+                        Batal
                     </button>
                 </div>
             </div>
@@ -538,6 +746,22 @@
                     </button>
                 </div>
 
+                <!-- Modal Actions -->
+                <div class="px-6 py-3 border-b border-slate-100 bg-white flex items-center justify-end gap-2">
+                    <button type="button" 
+                            wire:click="openConfirmModal('clean_apify_ghosts')"
+                            class="px-3 py-1.5 text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 rounded border border-amber-200 transition inline-flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">cleaning_services</span>
+                        Bersihkan Data
+                    </button>
+                    <button type="button" 
+                            wire:click="openConfirmModal('purge_apify_queue')"
+                            class="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded border border-rose-200 transition inline-flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">delete_sweep</span>
+                        Kosongkan Redis
+                    </button>
+                </div>
+
                 <!-- Modal Body (Table dengan Tinggi Fix, Scrollable) -->
                 <div class="flex-1 overflow-y-auto p-6 relative" style="height: 500px !important; max-height: 500px !important;">
                     @if(empty($apifyQueueDetails))
@@ -561,6 +785,7 @@
                                         <th class="px-4 py-3 font-bold text-slate-700 w-28">Status</th>
                                         <th class="px-4 py-3 font-bold text-slate-700 w-16 text-center">Coba</th>
                                         <th class="px-4 py-3 font-bold text-slate-700 w-36">Waktu Masuk</th>
+                                        <th class="px-4 py-3 font-bold text-slate-700 w-24 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -594,6 +819,21 @@
                                             </td>
                                             <td class="px-4 py-3 text-center font-bold text-slate-600 align-top">{{ $item['attempts'] }}x</td>
                                             <td class="px-4 py-3 text-slate-450 font-medium align-top whitespace-nowrap">{{ $item['queued_at'] }}</td>
+                                            <td class="px-4 py-3 text-center align-top whitespace-nowrap">
+                                                @if(in_array($item['status'], ['failed', 'retry_wait']))
+                                                    <button type="button"
+                                                            wire:click="openConfirmModal('force_apify_requeue', {{ $item['id'] }})"
+                                                            wire:loading.attr="disabled"
+                                                            wire:target="openConfirmModal('force_apify_requeue', {{ $item['id'] }})"
+                                                            class="px-2 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 text-[10px] font-bold rounded flex items-center justify-center gap-1 mx-auto disabled:opacity-50 transition">
+                                                        <span wire:loading.remove wire:target="openConfirmModal('force_apify_requeue', {{ $item['id'] }})" class="material-symbols-outlined text-[12px]">refresh</span>
+                                                        <span wire:loading wire:target="openConfirmModal('force_apify_requeue', {{ $item['id'] }})" class="w-3 h-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"></span>
+                                                        Kirim Ulang
+                                                    </button>
+                                                @else
+                                                    <span class="text-slate-300">-</span>
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
