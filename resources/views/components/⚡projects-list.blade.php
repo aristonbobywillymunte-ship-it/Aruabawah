@@ -1726,22 +1726,7 @@ new class extends Component
                         <!-- Modal Body (Form) -->
                         <form wire:submit.prevent="updateProject" class="flex flex-col flex-1 min-h-0">
                             <div class="px-8 py-6 space-y-6" style="flex: 1 1 auto; overflow-y: auto;">
-                                <!-- Project Name Field -->
-                                <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-bold text-slate-800 block">Nama Proyek</label>
-                                    <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
-                                </div>
-                                <input 
-                                    wire:model="editName" 
-                                    type="text" 
-                                    placeholder="Contoh: Arsip Sejarah Tokoh Bangsa"
-                                    class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
-                                    >
-                                @error('editName') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- Pilih Paket - Desain Card Selection Grid Premium -->
+                                <!-- Pilih Paket (Paling Atas) -->
                                 @php
                                     $activePackagesEdit = \App\Models\Package::where('is_active', true)
                                         ->withCount('enabledActors as actors_count')
@@ -1749,8 +1734,11 @@ new class extends Component
                                         ->get();
                                 @endphp
                                 @if($activePackagesEdit->isNotEmpty())
-                                <div class="space-y-3">
-                                    
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800 block">Pilih Paket</label>
+                                        <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
+                                    </div>
                                     <div class="relative">
                                         <select wire:model="packageId" class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 transition appearance-none">
                                             <option value="">-- Pilih Paket --</option>
@@ -1765,6 +1753,21 @@ new class extends Component
                                     @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                                 </div>
                                 @endif
+
+                                <!-- Project Name Field -->
+                                <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-bold text-slate-800 block">Nama Proyek</label>
+                                    <span class="px-2.5 py-0.5 text-[10px] font-bold bg-red-50 text-red-500 border border-red-100 rounded-full">Wajib</span>
+                                </div>
+                                <input 
+                                    wire:model="editName" 
+                                    type="text" 
+                                    placeholder="Contoh: Arsip Sejarah Tokoh Bangsa"
+                                    class="w-full bg-[#F8F9FA] border border-slate-350 focus:border-primary focus:ring-1 focus:ring-primary rounded-custom px-4 py-3 text-sm text-slate-855 placeholder-[#727785] transition"
+                                    >
+                                @error('editName') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                </div>
 
                                 <!-- Telegram Chat ID -->
                                 <div class="space-y-2">
