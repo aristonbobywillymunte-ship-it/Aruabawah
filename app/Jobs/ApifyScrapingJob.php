@@ -1368,6 +1368,11 @@ class ApifyScrapingJob implements ShouldQueue
                         $q->where('articles.source_name', 'like', '%instagram%')
                           ->orWhere('articles.url', 'like', '%instagram.com%');
                     });
+                } elseif ($platformLower === 'facebook') {
+                    $articleUrlsQuery->where(function ($q) {
+                        $q->where('articles.source_name', 'like', '%facebook%')
+                          ->orWhere('articles.url', 'like', '%facebook.com%');
+                    });
                 }
 
                 $articleUrls = $articleUrlsQuery
@@ -1399,6 +1404,9 @@ class ApifyScrapingJob implements ShouldQueue
                 } elseif ($platformLower === 'instagram') {
                     $candidateQuery = $candidateQuery
                         ->where('post_url', 'like', '%instagram.com/%');
+                } elseif ($platformLower === 'facebook') {
+                    $candidateQuery = $candidateQuery
+                        ->where('post_url', 'like', '%facebook.com/%');
                 }
 
                 $candidateItems = $candidateQuery
@@ -1513,6 +1521,11 @@ class ApifyScrapingJob implements ShouldQueue
                 $q->where('articles.source_name', 'like', '%instagram%')
                   ->orWhere('articles.url', 'like', '%instagram.com%');
             });
+        } elseif ($platformLower === 'facebook') {
+            $articleUrlsQuery->where(function ($q) {
+                $q->where('articles.source_name', 'like', '%facebook%')
+                  ->orWhere('articles.url', 'like', '%facebook.com%');
+            });
         }
 
         $articleUrls = $articleUrlsQuery
@@ -1537,6 +1550,8 @@ class ApifyScrapingJob implements ShouldQueue
                 ->where('post_url', 'like', '%/video/%');
         } elseif ($platformLower === 'instagram') {
             $candidateQuery->where('post_url', 'like', '%instagram.com/%');
+        } elseif ($platformLower === 'facebook') {
+            $candidateQuery->where('post_url', 'like', '%facebook.com/%');
         }
 
         $results = [];
