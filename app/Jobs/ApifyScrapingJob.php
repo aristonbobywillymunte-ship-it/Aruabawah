@@ -203,6 +203,9 @@ class ApifyScrapingJob implements ShouldQueue
                 } elseif ($platformLower === 'instagram') {
                     $preCheckQuery = $preCheckQuery
                         ->where('post_url', 'like', '%instagram.com/%');
+                } elseif ($platformLower === 'facebook') {
+                    $preCheckQuery = $preCheckQuery
+                        ->where('post_url', 'like', '%facebook.com/%');
                 }
 
                 $candidateCount = $preCheckQuery
@@ -1354,48 +1357,12 @@ class ApifyScrapingJob implements ShouldQueue
             $hasMoreQueue = false;
             if ($projectId) {
                 $platformLower = strtolower($platform);
-                $articleUrlsQuery = \App\Models\Article::query()
-                    ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
-                    ->where('project_articles.project_id', $projectId);
 
-                if ($platformLower === 'tiktok') {
-                    $articleUrlsQuery->where(function ($q) {
-                        $q->where('articles.source_name', 'like', '%tiktok%')
-                          ->orWhere('articles.url', 'like', '%tiktok.com%');
-                    });
-                } elseif ($platformLower === 'instagram') {
-                    $articleUrlsQuery->where(function ($q) {
-                        $q->where('articles.source_name', 'like', '%instagram%')
-                          ->orWhere('articles.url', 'like', '%instagram.com%');
-                    });
-                } elseif ($platformLower === 'facebook') {
-                    $articleUrlsQuery->where(function ($q) {
-                        $q->where('articles.source_name', 'like', '%facebook%')
-                          ->orWhere('articles.url', 'like', '%facebook.com%');
-                    });
-                }
-
-                $articleUrls = $articleUrlsQuery
-                    ->get(['articles.url', 'articles.canonical_url'])
-                    ->flatMap(function($article) {
-                        return [$article->url, $article->canonical_url];
-                    })
-                    ->filter()
-                    ->unique()
-                    ->flatMap(function($url) {
-                        return [
-                            $url,
-                            rtrim($url, '/'),
-                            rtrim($url, '/') . '/'
-                        ];
-                    })
-                    ->unique()
-                    ->values()
-                    ->toArray();
-
+                // Ambil kandidat langsung dari social_media_items tanpa bergantung tabel articles
                 $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $projectId)
                     ->where('platform', $platform)
-                    ->whereNotNull('post_url');
+                    ->whereNotNull('post_url')
+                    ->where('comments_checked', false);
 
                 if ($platformLower === 'tiktok') {
                     $candidateQuery = $candidateQuery
@@ -1410,7 +1377,6 @@ class ApifyScrapingJob implements ShouldQueue
                 }
 
                 $candidateItems = $candidateQuery
-                    ->whereIn('post_url', $articleUrls)
                     ->orderBy('posted_at', 'desc')
                     ->orderBy('id', 'desc')
                     ->get(['post_url']);
@@ -1507,41 +1473,12 @@ class ApifyScrapingJob implements ShouldQueue
     {
         $platformLower = strtolower($platform);
 
-        $articleUrlsQuery = \App\Models\Article::query()
-            ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
-            ->where('project_articles.project_id', $projectId);
-
-        if ($platformLower === 'tiktok') {
-            $articleUrlsQuery->where(function ($q) {
-                $q->where('articles.source_name', 'like', '%tiktok%')
-                  ->orWhere('articles.url', 'like', '%tiktok.com%');
-            });
-        } elseif ($platformLower === 'instagram') {
-            $articleUrlsQuery->where(function ($q) {
-                $q->where('articles.source_name', 'like', '%instagram%')
-                  ->orWhere('articles.url', 'like', '%instagram.com%');
-            });
-        } elseif ($platformLower === 'facebook') {
-            $articleUrlsQuery->where(function ($q) {
-                $q->where('articles.source_name', 'like', '%facebook%')
-                  ->orWhere('articles.url', 'like', '%facebook.com%');
-            });
-        }
-
-        $articleUrls = $articleUrlsQuery
-            ->get(['articles.url', 'articles.canonical_url'])
-            ->flatMap(fn($a) => [$a->url, $a->canonical_url])
-            ->filter()
-            ->unique()
-            ->flatMap(fn($url) => [$url, rtrim($url, '/'), rtrim($url, '/') . '/'])
-            ->unique()
-            ->values()
-            ->toArray();
-
+        // Ambil kandidat langsung dari social_media_items, tanpa bergantung tabel articles.
+        // Hanya ambil postingan yang belum dicek komentarnya (comments_checked = false).
         $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $projectId)
             ->where('platform', $platform)
             ->whereNotNull('post_url')
-            ->whereIn('post_url', $articleUrls)
+            ->where('comments_checked', false)
             ->orderBy('posted_at', 'desc')
             ->orderBy('id', 'desc');
 

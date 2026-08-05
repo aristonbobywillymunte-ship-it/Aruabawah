@@ -967,13 +967,16 @@ class MediaDashboard extends Component
         $newsSourceSql = $this->buildNewsSourceSql();
         $socialSourceSql = $this->buildSocialSourceSql();
 
+        // Untuk berita portal: cari keyword biasa DAN versi hashtag (#keyword).
+        // Untuk sosial media (Facebook, Instagram, TikTok): cari keyword biasa SAJA —
+        // konten sosmed disimpan tanpa hashtag dari Apify, sehingga filter #keyword tidak relevan.
         return [
-            'sql' => '(((' . $newsSourceSql['sql'] . ') and (lower(coalesce(title, \'\')) like ? or lower(coalesce(content, \'\')) like ? or lower(coalesce(title, \'\')) like ? or lower(coalesce(content, \'\')) like ?)) or ((' . $socialSourceSql['sql'] . ') and (lower(coalesce(content, \'\')) like ? or lower(coalesce(content, \'\')) like ?)))',
+            'sql' => '(((' . $newsSourceSql['sql'] . ') and (lower(coalesce(title, \'\')) like ? or lower(coalesce(content, \'\')) like ? or lower(coalesce(title, \'\')) like ? or lower(coalesce(content, \'\')) like ?)) or ((' . $socialSourceSql['sql'] . ') and lower(coalesce(content, \'\')) like ?))',
             'bindings' => array_merge(
                 $newsSourceSql['bindings'],
                 ['%' . $needle . '%', '%' . $needle . '%', '%' . $hashNeedle . '%', '%' . $hashNeedle . '%'],
                 $socialSourceSql['bindings'],
-                ['%' . $needle . '%', '%' . $hashNeedle . '%']
+                ['%' . $needle . '%']
             ),
         ];
     }
