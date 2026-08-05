@@ -440,7 +440,7 @@ class RunApifyScraping extends Command
                         'project_id'  => $project->id,
                         'actor_id'    => $actor->id,
                         'limit'       => $limitPerRun,
-                        'force_dispatch' => $forceDispatch,
+                        'force_dispatch' => $isCommentScraper ? true : $forceDispatch,
                         'no_telegram' => $suppressTelegram,
                     ]);
 
