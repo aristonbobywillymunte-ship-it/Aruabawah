@@ -38,7 +38,9 @@ class Project extends Model
         'ai_insight_updated_at' => 'datetime',
         'is_active' => 'boolean',
         'first_news_scrape_attempt_at' => 'datetime',
+        'news_last_scraped_at' => 'datetime',
     ];
+
 
     protected static function boot()
     {

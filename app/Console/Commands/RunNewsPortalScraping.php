@@ -94,6 +94,11 @@ class RunNewsPortalScraping extends Command
         } else {
             $projects = Project::query()
                 ->where('is_active', true)
+                ->select([
+                    'id', 'name', 'is_active', 'package_id',
+                    'created_at', 'updated_at', 'deleted_at',
+                    'first_news_scrape_attempt_at', 'news_last_scraped_at',
+                ])
                 ->orderBy('created_at')
                 ->orderBy('id')
                 ->get();
@@ -238,6 +243,8 @@ class RunNewsPortalScraping extends Command
                     $totalReused += (int) ($outcome['reused_existing'] ?? 0);
                 }
                 Cache::put('news_last_scrape_at:' . $project->id, now()->toDateTimeString(), now()->addDays(7));
+                // Catat ke DB agar prioritisasi proyek berikutnya akurat (round-robin berbasis DB)
+                $this->projectScrapePriorityService->recordLastScraped($project);
             } catch (\Throwable $e) {
                 $this->error("Error scraping project [{$project->name}]: " . $e->getMessage());
                 $portalLog->error("Error scraping project [{$project->name}]", [

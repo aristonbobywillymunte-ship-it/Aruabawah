@@ -5,10 +5,20 @@ namespace App\Services;
 use App\Models\Project;
 use Illuminate\Support\Collection;
 
+/**
+ * Menentukan urutan prioritas scraping portal berita antar proyek.
+ *
+ * Prioritas:
+ *  1. Proyek yang belum pernah discrape sama sekali (first_news_scrape_attempt_at IS NULL)
+ *     → diurutkan berdasarkan created_at ASC (yang lebih lama pertama)
+ *  2. Proyek yang sudah pernah discrape
+ *     → diurutkan berdasarkan news_last_scraped_at ASC (yang paling lama tidak discrape, paling dulu)
+ *     → jika news_last_scraped_at NULL, fallback ke first_news_scrape_attempt_at ASC
+ *
+ * Dengan ini semua proyek aktif mendapat giliran secara merata (round-robin berbasis waktu).
+ */
 class NewsProjectScrapePriorityService
 {
-    private ?array $lastScanTimestamps = null;
-
     public function filterEligible(Collection $projects): Collection
     {
         return $projects
@@ -41,6 +51,21 @@ class NewsProjectScrapePriorityService
         }
 
         return $updated > 0;
+    }
+
+    /**
+     * Catat waktu terakhir scraping portal berhasil untuk proyek ini.
+     * Dipanggil setelah satu siklus scraping selesai per proyek.
+     */
+    public function recordLastScraped(Project $project): void
+    {
+        $now = now();
+        Project::query()
+            ->whereKey($project->id)
+            ->update(['news_last_scraped_at' => $now]);
+
+        $project->forceFill(['news_last_scraped_at' => $now]);
+        $project->syncOriginalAttribute('news_last_scraped_at');
     }
 
     public function hasAttemptRecord(Project $project): bool
@@ -79,59 +104,39 @@ class NewsProjectScrapePriorityService
             && $this->attemptTimestamp($project) === null;
     }
 
+    /**
+     * Sort key untuk mengurutkan proyek:
+     * [0, created_at, id]   → proyek baru (belum pernah discrape) → prioritas tertinggi
+     * [1, last_scraped, id] → proyek lama → yang paling lama tidak discrape → diutamakan
+     */
     private function prioritySortKey(Project $project): array
     {
-        $lastScanAt = $this->lastScanTimestamp($project);
-        $pending = $this->isPendingFirstAttempt($project) && $lastScanAt === null;
+        $pending = $this->isPendingFirstAttempt($project);
         $createdAt = $project->created_at?->timestamp ?? 0;
-        $attemptAt = $lastScanAt ?? $this->attemptTimestamp($project) ?? $createdAt;
 
-        return $pending
-            ? [0, $createdAt, $project->id]
-            : [1, $attemptAt, $createdAt, $project->id];
-    }
-
-    private function lastScanTimestamp(Project $project): ?int
-    {
-        return $this->lastScanTimestamps()[$project->id] ?? null;
-    }
-
-    private function lastScanTimestamps(): array
-    {
-        if ($this->lastScanTimestamps !== null) {
-            return $this->lastScanTimestamps;
+        if ($pending) {
+            return [0, $createdAt, $project->id];
         }
 
-        $this->lastScanTimestamps = [];
-        $logPath = storage_path('logs/portal-manual.log');
-
-        if (! is_readable($logPath)) {
-            return $this->lastScanTimestamps;
-        }
-
-        $lines = @file($logPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-
-        if (! is_array($lines)) {
-            return $this->lastScanTimestamps;
-        }
-
-        foreach ($lines as $line) {
-            if (! str_contains($line, '[Portal] Project keyword processed.')
-                && ! str_contains($line, '[Portal] Scraping candidate article details.')) {
-                continue;
-            }
-
-            if (! preg_match('/^\[(?<time>[^\]]+)\].*"project_id":(?<project_id>\d+)/', $line, $match)) {
-                continue;
-            }
-
+        // Ambil news_last_scraped_at dari model (sudah di-load dari DB)
+        $lastScrapedAt = $project->news_last_scraped_at;
+        if ($lastScrapedAt instanceof \DateTimeInterface) {
+            $lastScrapedTimestamp = $lastScrapedAt->getTimestamp();
+        } elseif (is_string($lastScrapedAt) && $lastScrapedAt !== '') {
             try {
-                $this->lastScanTimestamps[(int) $match['project_id']] = \Carbon\Carbon::parse($match['time'])->timestamp;
+                $lastScrapedTimestamp = \Carbon\Carbon::parse($lastScrapedAt)->timestamp;
             } catch (\Throwable) {
-                continue;
+                $lastScrapedTimestamp = null;
             }
+        } else {
+            $lastScrapedTimestamp = null;
         }
 
-        return $this->lastScanTimestamps;
+        // Fallback ke first_news_scrape_attempt_at jika news_last_scraped_at belum ada
+        if ($lastScrapedTimestamp === null) {
+            $lastScrapedTimestamp = $this->attemptTimestamp($project) ?? $createdAt;
+        }
+
+        return [1, $lastScrapedTimestamp, $project->id];
     }
 }
