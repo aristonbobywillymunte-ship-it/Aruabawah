@@ -237,8 +237,9 @@ class ApifyScrapingJob implements ShouldQueue
 
         // Social actors should only be dispatched once per project per interval window.
         // Keywords are still sent to Apify in the payload, but they no longer create
-        // separate queue/state entries for the same project and interval block.
-        if (! $isSocialPlatform) {
+        // separate queue/state entries for the same project and interval block,
+        // EXCEPT for Facebook which has a strict 100 character query limit and needs chunking.
+        if (! $isSocialPlatform || $platform === 'Facebook') {
             $dispatchKeyParts[] = $normalizedKeyword;
         }
 
@@ -254,6 +255,9 @@ class ApifyScrapingJob implements ShouldQueue
                 $activeState = \App\Models\ApifyDispatchState::query()
                     ->where('project_id', $projectId)
                     ->where('actor_id', $actorId)
+                    ->when($platform === 'Facebook', function ($q) use ($normalizedKeyword) {
+                        $q->where('normalized_keyword', $normalizedKeyword);
+                    })
                     ->whereIn('status', ['queued', 'processing', 'retry_wait'])
                     ->where(function ($query) use ($now, $activeThreshold) {
                         $query

@@ -433,47 +433,56 @@ class RunApifyScraping extends Command
                     }
 
 
-                    $wasDispatched = ApifyScrapingJob::dispatchSafely([
-                        'platform'    => $actor->platform,
-                        'keyword'     => $dispatchKeywords[0] ?? ($actor->default_keyword ?? ''),
-                        'keywords'    => $dispatchKeywords,
-                        'project_id'  => $project->id,
-                        'actor_id'    => $actor->id,
-                        'limit'       => $limitPerRun,
-                        'force_dispatch' => $isCommentScraper ? true : $forceDispatch,
-                        'no_telegram' => $suppressTelegram,
-                    ]);
+                    $isFacebookMainScraper = $actor->platform === 'Facebook' && ! $isCommentScraper;
+                    $chunks = $isFacebookMainScraper ? array_chunk($dispatchKeywords, 4) : [$dispatchKeywords];
 
-                    if ($wasDispatched) {
-                        if (! $isCommentScraper) {
-                            $mainScraperDispatchedByPlatform[$platformKey] = true;
+                    foreach ($chunks as $chunkIndex => $dispatchKeywordsChunk) {
+                        if (empty($dispatchKeywordsChunk)) {
+                            continue;
                         }
 
-                        $this->info("✓ Dispatched: [{$actor->platform}] keywords=" . implode(', ', $dispatchKeywords) . " project={$project->name}");
-                        Log::info("[Scheduler] Dispatched social ApifyScrapingJob", [
-                            'platform'   => $actor->platform,
-                            'keywords'   => $dispatchKeywords,
-                            'project_id' => $project->id,
-                            'limit'      => $limitPerRun,
+                        $wasDispatched = ApifyScrapingJob::dispatchSafely([
+                            'platform'    => $actor->platform,
+                            'keyword'     => $dispatchKeywordsChunk[0] ?? ($actor->default_keyword ?? ''),
+                            'keywords'    => $dispatchKeywordsChunk,
+                            'project_id'  => $project->id,
+                            'actor_id'    => $actor->id,
+                            'limit'       => $limitPerRun,
+                            'force_dispatch' => $isCommentScraper ? true : $forceDispatch,
+                            'no_telegram' => $suppressTelegram,
                         ]);
-                        $socialLog->info('[Social] Job dispatched.', [
-                            'platform' => $actor->platform,
-                            'project_id' => $project->id,
-                            'project_name' => $project->name,
-                            'keywords' => $dispatchKeywords,
-                            'limit' => $limitPerRun,
-                        ]);
-                        $dispatched++;
-                    } else {
-                        $this->line("Skipping duplicate/stale-safe job: [{$actor->platform}] keywords=" . implode(', ', $dispatchKeywords) . " project={$project->name}");
-                        $socialLog->info('[Social] Actor skipped: duplicate/stale-safe job.', [
-                            'project_id' => $project->id,
-                            'project_name' => $project->name,
-                            'platform' => $actor->platform,
-                            'actor_id' => $actor->id,
-                            'keywords' => $dispatchKeywords,
-                        ]);
-                        $skipStats['duplicate_or_stale']++;
+
+                        if ($wasDispatched) {
+                            if (! $isCommentScraper) {
+                                $mainScraperDispatchedByPlatform[$platformKey] = true;
+                            }
+
+                            $this->info("✓ Dispatched: [{$actor->platform}] keywords=" . implode(', ', $dispatchKeywordsChunk) . " project={$project->name}");
+                            Log::info("[Scheduler] Dispatched social ApifyScrapingJob", [
+                                'platform'   => $actor->platform,
+                                'keywords'   => $dispatchKeywordsChunk,
+                                'project_id' => $project->id,
+                                'limit'      => $limitPerRun,
+                            ]);
+                            $socialLog->info('[Social] Job dispatched.', [
+                                'platform' => $actor->platform,
+                                'project_id' => $project->id,
+                                'project_name' => $project->name,
+                                'keywords' => $dispatchKeywordsChunk,
+                                'limit' => $limitPerRun,
+                            ]);
+                            $dispatched++;
+                        } else {
+                            $this->line("Skipping duplicate/stale-safe job: [{$actor->platform}] keywords=" . implode(', ', $dispatchKeywordsChunk) . " project={$project->name}");
+                            $socialLog->info('[Social] Actor skipped: duplicate/stale-safe job.', [
+                                'project_id' => $project->id,
+                                'project_name' => $project->name,
+                                'platform' => $actor->platform,
+                                'actor_id' => $actor->id,
+                                'keywords' => $dispatchKeywordsChunk,
+                            ]);
+                            $skipStats['duplicate_or_stale']++;
+                        }
                     }
 
                     continue;
