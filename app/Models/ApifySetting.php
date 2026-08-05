@@ -34,8 +34,22 @@ class ApifySetting extends Model
     public function isReadyForScraping(): bool
     {
         return filled($this->getActiveToken())
-            && in_array($this->connection_status, ['connected', 'ready'], true);
+            && in_array($this->getActiveConnectionStatus(), ['connected', 'ready'], true);
     }
+
+    /**
+     * Dapatkan connection_status sesuai dengan token yang sedang aktif.
+     */
+    public function getActiveConnectionStatus(): ?string
+    {
+        return match ((int) $this->active_token_index) {
+            1 => $this->connection_status_backup_1,
+            2 => $this->connection_status_backup_2,
+            3 => $this->connection_status_backup_3,
+            default => $this->connection_status, // 0 = Utama
+        };
+    }
+
 
     /**
      * Dapatkan token yang sedang aktif berdasarkan active_token_index.
