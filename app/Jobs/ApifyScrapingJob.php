@@ -932,6 +932,12 @@ class ApifyScrapingJob implements ShouldQueue
             // Normalise fields across platforms
             $rawPostUrl = $item['videoWebUrl'] ?? $item['submittedVideoUrl'] ?? $item['webVideoUrl'] ?? $item['url'] ?? $item['facebookUrl'] ?? $item['topLevelUrl'] ?? $item['post_url'] ?? $item['postUrl'] ?? $item['link'] ?? null;
             $postUrl    = $this->normalizeSocialPostUrl($rawPostUrl);
+            
+            // Fallback: If it's a comment scraper and postUrl is missing, use the original keyword (which is the post URL)
+            $isCommentScraper = (strtolower((string) $actor->function_type) === 'comment scraper');
+            if (empty($postUrl) && $isCommentScraper && !empty($this->keyword)) {
+                $postUrl = $this->normalizeSocialPostUrl($this->keyword);
+            }
             $content    = $item['postText'] ?? $item['postTitle'] ?? $item['message'] ?? $item['text'] ?? $item['caption'] ?? $item['description'] ?? $item['title'] ?? '';
             $authorFallback = $platform === 'TikTok' ? 'TikTok' : 'Unknown Author';
             $author     = $item['author']['name']
@@ -1359,9 +1365,18 @@ class ApifyScrapingJob implements ShouldQueue
         }
 
         if ($state) {
+            $finalItemsCollected = $state->items_collected;
+            if (strtolower((string) $actor->function_type) === 'comment scraper') {
+                $finalItemsCollected = \App\Models\SocialMediaItem::where(function($q) {
+                    $q->where('post_url', $this->keyword)
+                      ->orWhere('post_url', 'ilike', '%' . $this->keyword . '%');
+                })->sum('comment_count');
+            }
+
             $state->update([
                 'status' => 'success',
                 'completed_at' => now(),
+                'items_collected' => $finalItemsCollected,
                 'last_error_message' => $costLimitReached ? $costLimitNote : ($pollTimeoutReached ? $pollTimeoutNote : null),
             ]);
         }

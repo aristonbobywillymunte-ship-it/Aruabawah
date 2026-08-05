@@ -65,25 +65,29 @@ class ApifyFinancialReport extends Component
         if ($isCommentRun) {
             // Ambil postingan utama terlebih dahulu (Tanpa batasan project_id karena audit log / data mentah)
             $queryKeyword = trim($keyword);
-            $mainPost = DB::table('social_media_items')
+            $mainPosts = DB::table('social_media_items')
                 ->where('platform', $platform)
                 ->where(function($q) use ($queryKeyword) {
                     $q->where('post_url', $queryKeyword)
                       ->orWhere('post_url', 'ilike', '%' . $queryKeyword . '%');
                 })
-                ->first();
+                ->get();
 
-            if ($mainPost) {
-                // Ambil daftar komentar untuk postingan utama ini
+            if ($mainPosts->isNotEmpty()) {
+                $postIds = $mainPosts->pluck('id')->toArray();
+                
+                // Ambil daftar komentar untuk semua variasi postingan utama ini
                 $comments = DB::table('social_media_comments')
-                    ->where('social_media_item_id', $mainPost->id)
+                    ->whereIn('social_media_item_id', $postIds)
                     ->orderBy('posted_at', 'desc')
                     ->orderBy('id', 'desc')
                     ->get();
 
-                $this->selectedItems = $comments->map(function($c) use ($mainPost) {
+                $this->selectedItems = $comments->map(function($c) use ($mainPosts) {
+                    // Cari main post yang bersangkutan untuk mendapatkan post_url aslinya
+                    $relatedPost = $mainPosts->firstWhere('id', $c->social_media_item_id);
                     return [
-                        'post_url' => $mainPost->post_url,
+                        'post_url' => $relatedPost ? $relatedPost->post_url : $queryKeyword,
                         'author_name' => $c->author_name ?? 'Pengguna',
                         'content' => $c->content ?? '[tanpa teks]',
                         'likes' => (int) $c->like_count,

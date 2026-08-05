@@ -93,7 +93,13 @@ class PipelineMonitor extends Component
             ]);
 
             // Re-dispatch the job so it actually runs
-            $analyzable = $state->analyzable;
+            $analyzable = null;
+            if ($state->analyzable_type === 'article') {
+                $analyzable = \App\Models\Article::find($state->analyzable_id);
+            } elseif ($state->analyzable_type === 'social') {
+                $analyzable = \App\Models\SocialMediaItem::find($state->analyzable_id);
+            }
+
             if ($analyzable) {
                 $payload = [
                     'type' => $state->analyzable_type,
@@ -119,6 +125,64 @@ class PipelineMonitor extends Component
             $this->dispatch('admin-toast', payload: $payload);
         } catch (\Throwable $e) {
             $payload = ['type' => 'error', 'title' => 'Gagal retry tugas AI. Silakan cek konfigurasi atau status antrean.', 'message' => ''];
+            if (method_exists($this, 'dispatchBrowserEvent')) {
+                $this->dispatchBrowserEvent('admin-toast', $payload);
+            }
+            $this->dispatch('admin-toast', payload: $payload);
+        }
+    }
+
+    public function retryAllFailedAiStates(): void
+    {
+        try {
+            $failedStates = \App\Models\AiAnalysisDispatchState::where('status', 'failed')->get();
+            $count = 0;
+            foreach ($failedStates as $state) {
+                $state->update([
+                    'status' => 'queued',
+                    'attempts' => 0,
+                    'next_retry_at' => null,
+                    'error_message' => null,
+                    'last_error_code' => null,
+                    'failure_category' => null,
+                    'last_failed_at' => null,
+                ]);
+
+                $analyzable = null;
+                if ($state->analyzable_type === 'article') {
+                    $analyzable = \App\Models\Article::find($state->analyzable_id);
+                } elseif ($state->analyzable_type === 'social') {
+                    $analyzable = \App\Models\SocialMediaItem::find($state->analyzable_id);
+                }
+
+                if ($analyzable) {
+                    $payload = [
+                        'type' => $state->analyzable_type,
+                        'id' => $state->analyzable_id,
+                        'title' => $analyzable->title ?? $analyzable->actor_name ?? '',
+                        'content' => $analyzable->content ?? $analyzable->text ?? '',
+                        'url' => $analyzable->url ?? '',
+                        'project_id' => $state->project_id,
+                        'prompt_template_id' => $state->prompt_template_id,
+                        'provider_context_hash' => $state->provider_context_hash,
+                    ];
+                    app(\App\Services\AiAnalysisDispatchStateService::class)->reserveQueuedStateAndDispatch(
+                        $payload,
+                        $state->prompt_template_id,
+                        $state->provider_context_hash
+                    );
+                    $count++;
+                }
+            }
+
+            $payload = ['type' => 'success', 'title' => "$count tugas AI yang gagal berhasil dikembalikan ke antrean.", 'message' => ''];
+            if (method_exists($this, 'dispatchBrowserEvent')) {
+                $this->dispatchBrowserEvent('admin-toast', $payload);
+            }
+            $this->dispatch('admin-toast', payload: $payload);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Bulk Retry Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            $payload = ['type' => 'error', 'title' => 'Gagal retry massal. Silakan cek log sistem.', 'message' => $e->getMessage()];
             if (method_exists($this, 'dispatchBrowserEvent')) {
                 $this->dispatchBrowserEvent('admin-toast', $payload);
             }

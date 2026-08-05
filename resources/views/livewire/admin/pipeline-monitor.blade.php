@@ -119,6 +119,14 @@
             <option value="ai-analysis">ai-analysis</option>
             <option value="scraping">scraping</option>
         </select>
+        <button 
+            wire:click="retryAllFailedAiStates"
+            wire:confirm="Apakah Anda yakin ingin melakukan retry massal untuk semua AI Analysis yang gagal?"
+            class="flex items-center gap-2 w-full sm:w-auto rounded-xl bg-[#1fa387] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[#17856d]"
+        >
+            <span class="material-symbols-outlined text-[18px]">replay</span>
+            Retry Semua AI yang Gagal
+        </button>
         @endif
     </div>
     {{-- Table --}}

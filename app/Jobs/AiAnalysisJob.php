@@ -732,9 +732,6 @@ class AiAnalysisJob implements ShouldQueue
             $errors[] = 'confidence too high without consumption signals';
         }
 
-        if (!empty($normalized['is_exact_reach'])) {
-            $errors[] = 'is_exact_reach must be false';
-        }
 
         return $errors;
     }

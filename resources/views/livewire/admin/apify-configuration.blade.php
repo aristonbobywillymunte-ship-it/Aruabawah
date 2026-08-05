@@ -12,7 +12,7 @@
     </div>
 @endsection
 
-<div class="mx-auto w-full max-w-7xl space-y-6 font-sans" wire:poll.5s>
+<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
     {{-- Global Loading State for UI Responsiveness (Hanya terpicu saat tombol aksi ditekan, bukan saat auto-polling 5s) --}}
     <div wire:loading.flex wire:target="saveActor, requestToggleActorStatus, requestDeleteActor, testConnection, editActor, openActorModal, saveApiToken" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/20 backdrop-blur-[2px]">
         <div class="bg-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100 animate-fade-in">

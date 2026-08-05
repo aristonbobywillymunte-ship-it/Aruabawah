@@ -1,4 +1,4 @@
-<div class="space-y-6 text-left" wire:poll.5s>
+<div class="space-y-6 text-left">
     <!-- Error logs display if available (hanya tampil jika ada error) -->
     @if(count($latestErrors) > 0)
     <div class="rounded-2xl border border-rose-100 bg-rose-50/40 px-4 py-2.5 shadow-sm">

@@ -58,7 +58,10 @@ class AiProviderClient
                 'temperature' => (float)$temperature,
             ];
 
-            if (isset($options['response_format']) && $options['response_format'] === 'json_object') {
+            $capabilities = is_string($provider->capabilities) ? json_decode($provider->capabilities, true) : (array) $provider->capabilities;
+            $supportsJsonObject = data_get($capabilities, 'supports_json_object', true);
+
+            if ($supportsJsonObject && isset($options['response_format']) && $options['response_format'] === 'json_object') {
                 $requestPayload['response_format'] = ['type' => 'json_object'];
             }
 
