@@ -284,11 +284,11 @@ class PipelineMonitor extends Component
         $aiQueued    = $dispatchStates['queued'] ?? 0;
         $aiRetry     = $dispatchStates['retry_wait'] ?? 0;
         $aiProcessing = $dispatchStates['processing'] ?? 0;
-        $failedJobs  = DB::table('ai_analysis_dispatch_states')
+        $failedJobs  = \App\Models\AiAnalysisDispatchState::query()
             ->where('status', 'failed')
             ->whereNotIn('last_error_code', ['orphan_dispatch_state', 'empty_content', 'invalid_content', 'stale_orphan'])
             ->count();
-        $skippedJobs = DB::table('ai_analysis_dispatch_states')
+        $skippedJobs = \App\Models\AiAnalysisDispatchState::query()
             ->where('status', 'failed')
             ->whereIn('last_error_code', ['orphan_dispatch_state', 'empty_content', 'invalid_content', 'stale_orphan'])
             ->count();

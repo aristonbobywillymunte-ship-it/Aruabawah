@@ -86,9 +86,7 @@ class AiProviderRouter
                 ->get(['id', 'name', 'cooldown_until']);
 
             if ($coolingDownProviders->isNotEmpty()) {
-                $delay = $coolingDownProviders
-                    ->map(fn (AiProvider $provider) => max(30, now()->diffInSeconds($provider->cooldown_until, false) + 30))
-                    ->min() ?? 60;
+                $delay = 300; // Sesuai permintaan pengguna: jika semua AI aktif sedang cooldown, paksa cooldown selama 5 menit
 
                 Log::warning("[AiRouter] All active AI providers are cooling down{$articleContext}. Retrying later in {$delay}s.");
                 throw new AllProvidersCoolingDownException($delay);
@@ -219,8 +217,8 @@ class AiProviderRouter
         }
 
         if (!empty($minuteRateLimitDelays)) {
-            $delay = min($minuteRateLimitDelays);
-            Log::warning("[AiRouter] All eligible providers hit minute rate limit{$articleContext}. Backing off for {$delay}s.");
+            $delay = 300; // Sesuai permintaan pengguna: jika semua AI aktif sudah ter-limit, tunggu 5 menit
+            Log::warning("[AiRouter] All eligible providers hit minute rate limit{$articleContext}. Backing off for 5 minutes ({$delay}s).");
             throw new RateLimitRetryException($delay);
         }
 

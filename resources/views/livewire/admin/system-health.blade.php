@@ -524,28 +524,22 @@
                     @endif
                 </div>
 
-                <!-- Modal Footer: SELALU FIX di bawah, tidak pernah ikut scroll -->
-                <div style="flex-shrink: 0; flex-grow: 0; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                </div> <!-- Tutup Modal Body -->
 
-                    {{-- Baris Paginasi + Info --}}
-                    <div class="px-5 py-2 flex items-center justify-between border-b border-slate-100">
-                        {{-- Info jumlah data --}}
-                        <div class="text-[11px] text-slate-400 font-medium">
-                            @if(!$queueItems->isEmpty())
-                                Menampilkan
-                                <span class="font-bold text-slate-600">{{ ($queueItems->currentPage() - 1) * $queueItems->perPage() + 1 }}–{{ min($queueItems->currentPage() * $queueItems->perPage(), $queueItems->total()) }}</span>
-                                dari <span class="font-bold text-slate-600">{{ $queueItems->total() }}</span> antrean
-                            @endif
+                <!-- Modal Footer: SELALU FIX di bawah, tidak pernah ikut scroll -->
+                <div class="px-5 py-2.5 bg-white border-t border-slate-100 shrink-0 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.05)] z-10 relative">
+                    <div class="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                        <div>
+                            Menampilkan <strong class="text-slate-800">{{ $queueItems->firstItem() ?? 0 }}-{{ $queueItems->lastItem() ?? 0 }}</strong> dari <strong class="text-slate-800">{{ $queueItems->total() }}</strong> antrean
                         </div>
 
-                        {{-- Tombol Paginasi --}}
                         @if($queueItems->hasPages())
-                            <div class="inline-flex items-center -space-x-px rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden text-[11px]">
+                            <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-0.5 shadow-sm">
                                 {{-- First --}}
                                 @if($queueItems->onFirstPage())
-                                    <span class="px-2.5 py-1.5 text-slate-300 font-bold bg-slate-50/50 cursor-not-allowed select-none">First</span>
+                                    <span class="px-2.5 py-1.5 text-slate-300 font-bold bg-slate-50/50 cursor-not-allowed select-none rounded-l-[10px]">First</span>
                                 @else
-                                    <button type="button" wire:click="gotoPage(1, 'queuePage')" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-50 font-bold transition">First</button>
+                                    <button type="button" wire:click="gotoPage(1, 'queuePage')" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-50 font-bold rounded-l-[10px] transition">First</button>
                                 @endif
 
                                 {{-- Prev --}}
@@ -577,26 +571,26 @@
 
                                 {{-- Last --}}
                                 @if($queueItems->hasMorePages())
-                                    <button type="button" wire:click="gotoPage({{ $queueItems->lastPage() }}, 'queuePage')" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-50 font-bold transition">Last</button>
+                                    <button type="button" wire:click="gotoPage({{ $queueItems->lastPage() }}, 'queuePage')" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-50 font-bold rounded-r-[10px] transition">Last</button>
                                 @else
-                                    <span class="px-2.5 py-1.5 text-slate-300 font-bold bg-slate-50/50 cursor-not-allowed select-none">Last</span>
+                                    <span class="px-2.5 py-1.5 text-slate-300 font-bold bg-slate-50/50 cursor-not-allowed select-none rounded-r-[10px]">Last</span>
                                 @endif
                             </div>
                         @else
                             <div></div>
                         @endif
                     </div>
+                </div>
 
-                    {{-- Baris Tombol Tutup --}}
-                    <div class="px-5 py-2.5 flex justify-end">
-                        <button
-                            type="button"
-                            wire:click="closeQueueModal"
-                            class="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
-                        >
-                            Tutup
-                        </button>
-                    </div>
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0 rounded-b-[24px]">
+                    <button
+                        type="button"
+                        wire:click="closeQueueModal"
+                        class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
+                    >
+                        Tutup
+                    </button>
                 </div>
 
             </div>

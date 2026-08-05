@@ -104,19 +104,9 @@ class ApifyFinancialReport extends Component
 
             $rawItems = DB::table('social_media_items')
                 ->where('platform', $platform)
-                ->where(function($q) use ($keywordsList) {
-                    foreach ($keywordsList as $kw) {
-                        $q->orWhere('content', 'ilike', '%' . $kw . '%')
-                          ->orWhere('post_url', 'ilike', '%' . $kw . '%');
-                          
-                        $kwNoSpace = str_replace(' ', '', $kw);
-                        if ($kwNoSpace !== $kw) {
-                            $q->orWhere('content', 'ilike', '%' . $kwNoSpace . '%')
-                              ->orWhere('post_url', 'ilike', '%' . $kwNoSpace . '%');
-                        }
-                    }
-                })
-                ->orderBy('posted_at', 'desc');
+                ->where('project_id', $projectId)
+                ->orderBy('updated_at', 'desc')
+                ->limit(150);
 
             \Log::info("Apify SQL Debug", [
                 'sql' => $rawItems->toSql(),

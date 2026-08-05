@@ -199,7 +199,8 @@ class ApifyConfiguration extends Component
         $this->lastTestMessage = '';
         $this->lastTestAt = null;
 
-        $this->notify('success', 'Semua Token API Apify berhasil disimpan.');
+        $this->notify('success', 'Semua Token API Apify berhasil disimpan. Status error dan cooldown telah di-reset.');
+        $this->resetApifyErrorsAndCooldowns();
     }
 
     public function syncManagedActors(): void
@@ -298,9 +299,31 @@ class ApifyConfiguration extends Component
         $this->connectionStatusBackup3 = $setting->connection_status_backup_3;
         $this->lastTestStatus = $setting->last_test_status;
         $this->lastTestMessage = $setting->last_test_message;
+
+        if ($setting->last_test_status === 'success') {
+            $this->resetApifyErrorsAndCooldowns();
+            $this->notify('info', 'Koneksi sukses! Status error dan cooldown aktor Apify telah di-reset otomatis.');
+        }
+
         $this->lastTestAt = $setting->last_test_at->toDateTimeString();
 
         $this->notify('success', 'Uji koneksi semua token selesai: ' . $setting->last_test_message);
+    }
+
+    private function resetApifyErrorsAndCooldowns(): void
+    {
+        $actors = ApifyActor::all();
+        foreach ($actors as $actor) {
+            \Illuminate\Support\Facades\Cache::forget('apify_actor_retry_at:' . $actor->id);
+        }
+        
+        ApifyActor::where('last_run_status', 'failed')
+            ->update([
+                'last_run_status' => null,
+                'last_run_message' => null,
+            ]);
+            
+        Log::info('Apify configuration reset: Cooldowns and actor errors have been cleared due to token save or test.');
     }
 
     private function getTokenFieldLabel(string $field): string

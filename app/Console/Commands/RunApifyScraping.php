@@ -329,7 +329,9 @@ class RunApifyScraping extends Command
                         // untuk comment scraper, jadi jangan batasi lagi ke URL artikel
                         // dashboard karena beberapa postingan valid belum tentu tercermin
                         // di tabel Article dengan URL yang identik.
-                        $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
+                        $candidateQuery = \App\Models\SocialMediaItem::whereHas('projects', function($q) use ($project) {
+                            $q->where('projects.id', $project->id);
+                        })
                             ->where('platform', $actor->platform)
                             ->where('comments_checked', false)
                             ->whereNotNull('post_url');

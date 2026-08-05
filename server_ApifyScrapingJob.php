@@ -1374,9 +1374,7 @@ class ApifyScrapingJob implements ShouldQueue
                 $platformLower = strtolower($platform);
 
                 // Ambil kandidat langsung dari social_media_items tanpa bergantung tabel articles
-                $candidateQuery = \App\Models\SocialMediaItem::whereHas('projects', function($q) use ($projectId) {
-                    $q->where('projects.id', $projectId);
-                })
+                $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $projectId)
                     ->where('platform', $platform)
                     ->whereNotNull('post_url')
                     ->where('comments_checked', false);
@@ -1492,9 +1490,7 @@ class ApifyScrapingJob implements ShouldQueue
 
         // Ambil kandidat langsung dari social_media_items, tanpa bergantung tabel articles.
         // Hanya ambil postingan yang belum dicek komentarnya (comments_checked = false).
-        $candidateQuery = \App\Models\SocialMediaItem::whereHas('projects', function($q) use ($projectId) {
-            $q->where('projects.id', $projectId);
-        })
+        $candidateQuery = \App\Models\SocialMediaItem::where('project_id', $projectId)
             ->where('platform', $platform)
             ->whereNotNull('post_url')
             ->where('comments_checked', false)

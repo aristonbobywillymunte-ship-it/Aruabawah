@@ -265,6 +265,7 @@ class AiAnalysisJob implements ShouldQueue
                     'provider' => $usedProvider?->provider_type,
                     'model' => $usedProvider?->model_name,
                     'raw_length' => mb_strlen(trim($rawText)),
+                    'raw_text' => $rawText,
                 ]);
                 $dispatchStateService->markFailed(
                     $this->payload,

@@ -111,9 +111,15 @@
                                     <button 
                                         type="button"
                                         wire:click="openItems({{ $run['project_id'] ? $run['project_id'] : 'null' }}, '{{ $run['platform'] }}', '{{ addslashes($run['keyword']) }}', '{{ $run['run_id'] }}')"
+                                        wire:loading.attr="disabled"
+                                        wire:loading.class="opacity-50 cursor-not-allowed"
                                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1fa387]/10 hover:bg-[#1fa387]/20 text-[#1fa387] font-black tracking-wide transition active:scale-95 cursor-pointer shadow-sm text-[10px]"
                                     >
-                                        <span class="material-symbols-outlined text-[13px] font-bold">visibility</span>
+                                        <span wire:loading.remove wire:target="openItems({{ $run['project_id'] ? $run['project_id'] : 'null' }}, '{{ $run['platform'] }}', '{{ addslashes($run['keyword']) }}', '{{ $run['run_id'] }}')" class="material-symbols-outlined text-[13px] font-bold">visibility</span>
+                                        <svg wire:loading wire:target="openItems({{ $run['project_id'] ? $run['project_id'] : 'null' }}, '{{ $run['platform'] }}', '{{ addslashes($run['keyword']) }}', '{{ $run['run_id'] }}')" class="animate-spin h-3 w-3 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
                                         <span>{{ $run['items'] }} Item</span>
                                     </button>
                                 @else
