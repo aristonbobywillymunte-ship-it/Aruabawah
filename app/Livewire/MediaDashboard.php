@@ -1218,6 +1218,7 @@ class MediaDashboard extends Component
         $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
             ->setBindings($unionQuery->getBindings())
             ->where('union_res.id', $articleId)
+            ->where('union_res.item_type', 'social')
             ->first();
 
         if (! $article) {
@@ -1413,6 +1414,7 @@ class MediaDashboard extends Component
         $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
             ->setBindings($unionQuery->getBindings())
             ->where('union_res.id', $articleId)
+            ->where('union_res.item_type', 'social')
             ->first();
 
         if (! $article) {
