@@ -414,6 +414,16 @@ class ApifyScrapingJob implements ShouldQueue
         if ($dispatchStateId) {
             $state = \App\Models\ApifyDispatchState::find($dispatchStateId);
             if ($state) {
+                // Jika state sudah di-cancel atau failed secara manual, batalkan eksekusi job ini
+                // (mencegah job lama dari queue me-reset state yang sudah direset manual)
+                if (in_array($state->status, ['cancelled', 'failed'], true)) {
+                    Log::info("[Apify] Job dibatalkan: dispatch state #{$dispatchStateId} sudah berstatus {$state->status}.", [
+                        'platform' => $platform,
+                        'dispatch_state_id' => $dispatchStateId,
+                    ]);
+                    return;
+                }
+
                 $state->update([
                     'status' => 'processing',
                     'started_at' => now(),
@@ -423,6 +433,7 @@ class ApifyScrapingJob implements ShouldQueue
                 ]);
             }
         }
+
 
         // Validasi keaktifan proyek — lewati jika proyek nonaktif atau tidak ditemukan
         if ($projectId) {
