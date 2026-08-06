@@ -849,4 +849,98 @@
             </div>
         </div>
     @endif
+
+    <style>
+        /* ── Mobile Layout Optimization for System Health Audit Modal ── */
+        @media (max-width: 1023px) {
+            /* Mencegah tinggi modal melampaui layar mobile secara merusak */
+            .fixed.inset-0.z-50.px-4.py-2 {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+                padding-top: 0.5rem !important;
+                padding-bottom: 0.5rem !important;
+            }
+            .w-11/12.max-w-7xl.bg-white {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: calc(100vh - 20px) !important;
+                border-radius: 16px !important;
+            }
+
+            /* Header modal: susun tombol bersihkan/redis secara vertikal */
+            .flex.items-center.justify-between.border-b.px-6.py-3 {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                padding: 1rem !important;
+                gap: 0.75rem !important;
+                position: relative !important;
+            }
+            .flex.items-center.justify-between.border-b.px-6.py-3 .flex-1.pr-4 {
+                padding-right: 2rem !important; /* memberi ruang tombol close */
+            }
+            .flex.items-center.justify-between.border-b.px-6.py-3 .flex.items-center.gap-2 {
+                flex-direction: row !important;
+                width: 100% !important;
+                margin-right: 0 !important;
+                gap: 0.5rem !important;
+            }
+            .flex.items-center.justify-between.border-b.px-6.py-3 .flex.items-center.gap-2 button {
+                flex: 1 !important;
+                justify-content: center !important;
+                height: 34px !important;
+                font-size: 10px !important;
+                padding: 4px 8px !important;
+                border-radius: 8px !important;
+            }
+            /* Pindahkan tombol close ke kanan atas secara absolute */
+            .flex.items-center.justify-between.border-b.px-6.py-3 button[wire\:click*="close"] {
+                position: absolute !important;
+                right: 0.75rem !important;
+                top: 0.75rem !important;
+            }
+
+            /* Filter bar di bawah header */
+            .px-5.py-2\.5.bg-slate-50\/30 {
+                padding: 0.75rem !important;
+            }
+            .grid.grid-cols-2.md\:grid-cols-5.gap-2 {
+                grid-template-columns: 1fr !important; /* satu kolom penuh */
+                gap: 0.5rem !important;
+            }
+            .grid.grid-cols-2.md\:grid-cols-5.gap-2 > div {
+                grid-column: span 1 / span 1 !important;
+            }
+            .grid.grid-cols-2.md\:grid-cols-5.gap-2 input,
+            .grid.grid-cols-2.md\:grid-cols-5.gap-2 select {
+                height: 34px !important;
+                font-size: 11px !important;
+                border-radius: 8px !important;
+            }
+
+            /* Sel data tabel mobile */
+            table.w-full.border-collapse th {
+                font-size: 8.5px !important;
+                padding: 8px 10px !important;
+            }
+            table.w-full.border-collapse td {
+                font-size: 11px !important;
+                padding: 10px 10px !important;
+            }
+            table.w-full.border-collapse td span.inline-flex {
+                font-size: 8.5px !important;
+                padding: 1px 4px !important;
+            }
+            
+            /* Modal Footer */
+            .px-6.py-4.bg-slate-50 {
+                padding: 0.75rem !important;
+            }
+            .px-6.py-4.bg-slate-50 button {
+                width: 100% !important;
+                height: 36px !important;
+                border-radius: 10px !important;
+                font-size: 11px !important;
+            }
+        }
+    </style>
 </div>
