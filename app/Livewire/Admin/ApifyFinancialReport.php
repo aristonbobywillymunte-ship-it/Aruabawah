@@ -109,7 +109,8 @@ class ApifyFinancialReport extends Component
             $rawItems = DB::table('social_media_items')
                 ->where('platform', $platform)
                 ->where('project_id', $projectId)
-                ->orderBy('updated_at', 'desc')
+                ->orderBy('posted_at', 'desc')
+                ->orderBy('id', 'desc')
                 ->limit(150);
 
             \Log::info("Apify SQL Debug", [
