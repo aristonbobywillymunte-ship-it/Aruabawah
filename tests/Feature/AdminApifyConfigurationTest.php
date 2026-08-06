@@ -121,17 +121,20 @@ class AdminApifyConfigurationTest extends TestCase
             'actor_slug' => 'apify/instagram-hashtag-scraper',
         ]);
 
-        // Non-whitelisted slug should fail validation
+        // Non-whitelisted slug should fail validation.
+        // Facebook platform is used here because Instagram auto-resolves unknown slugs to a
+        // known default definition (by design), whereas Facebook preserves whatever slug the user sets.
         Livewire::actingAs($this->adminUser)
             ->test(\App\Livewire\Admin\ApifyConfiguration::class)
-            ->set('platform', 'Instagram')
+            ->set('platform', 'Facebook')
             ->set('actorName', 'Random Scraper')
             ->set('actorSlug', 'some-random/custom-scraper')
             ->set('functionType', 'Search Post')
-            ->set('keyword_field_mapping', 'hashtags')
+            ->set('keyword_field_mapping', 'searchQueries')
             ->set('defaultLimit', 50)
-            ->set('instagram_results_type', 'posts')
-            ->set('instagram_results_limit', 50)
+            ->set('facebook_use_apify_proxy', true)
+            ->set('facebook_post_time_range', '24h')
+            ->set('facebook_max_posts', null)
             ->set('interval_minutes', 240)
             ->set('memory_limit', 1024)
             ->set('range_mode', '7d')
