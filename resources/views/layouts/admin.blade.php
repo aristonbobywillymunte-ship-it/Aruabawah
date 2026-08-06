@@ -59,10 +59,8 @@
             }
         }
         /* Lock outer screen scroll bounds when modals are active */
-        html.overflow-hidden, body.overflow-hidden {
+        body.overflow-hidden {
             overflow: hidden !important;
-            height: 100vh !important;
-            max-height: 100vh !important;
         }
     </style>
 </head>

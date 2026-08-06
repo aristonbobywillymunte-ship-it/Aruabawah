@@ -946,10 +946,8 @@
             }
         }
         /* Mengunci bounce/scroll window belakang saat modal aktif */
-        body.overflow-hidden, html.overflow-hidden {
+        body.overflow-hidden {
             overflow: hidden !important;
-            height: 100vh !important;
-            max-height: 100vh !important;
         }
     </style>
 </div>
