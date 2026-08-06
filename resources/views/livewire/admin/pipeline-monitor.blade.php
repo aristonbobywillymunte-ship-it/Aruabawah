@@ -34,14 +34,14 @@
             <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
             {{ number_format($failedJobs) }} Queue Gagal
         </div>
-            </template>
+            
 @endif
         @if ($aiPending > 0)
         <div class="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200/60 px-3 py-1.5 text-[11px] font-bold text-amber-700">
             <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
             {{ number_format($aiPending) }} Menunggu
         </div>
-            </template>
+            
 @endif
     </div>
 
@@ -151,7 +151,7 @@
                     <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </span>
             </div>
-                </template>
+                
 @endif
 
             {{-- Tab: Scraping Filters --}}
@@ -178,7 +178,7 @@
                     <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </span>
             </div>
-                </template>
+                
 @endif
 
             {{-- Tab: Social Filters --}}
@@ -194,7 +194,7 @@
                     <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </span>
             </div>
-                </template>
+                
 @endif
 
             {{-- Tab: AI Filters --}}
@@ -220,7 +220,7 @@
                     <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </span>
             </div>
-                </template>
+                
 @endif
 
             {{-- Tab: Notifications Filters --}}
@@ -236,7 +236,7 @@
                     <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </span>
             </div>
-                </template>
+                
 @endif
         </div>
 
@@ -715,7 +715,7 @@
                             </span>
                             @if($item->project)
                             <div class="mt-1 text-[11px] font-semibold text-slate-700">{{ $item->project->name }}</div>
-                                </template>
+                                
 @endif
                             <div class="mt-0.5 text-[10px] text-slate-400">{{ $item->created_at ? \Carbon\Carbon::parse($item->created_at)->setTimezone(config('app.timezone', 'Asia/Makassar'))->format('d M Y H:i') : '—' }}</div>
                         </td>
@@ -788,14 +788,14 @@
                             </span>
                             @if($item->project)
                             <div class="mt-1 text-[11px] font-semibold text-slate-700">{{ $item->project->name }}</div>
-                                </template>
+                                
 @endif
                         </td>
                         <td class="px-4 py-3.5">
                             <div class="text-[10px] font-bold text-red-600 uppercase tracking-wider">{{ $item->last_error_code ?? '—' }}</div>
                             @if($item->last_error_code)
                             <div class="mt-1 text-[10px] text-slate-500 leading-normal">{{ $this->failureCodeDescription($item->last_error_code) }}</div>
-                                </template>
+                                
 @endif
                         </td>
                         <td class="px-4 py-3.5 max-w-xs">
@@ -852,7 +852,7 @@
             {{ $items->onEachSide(1)->links('vendor.livewire.tailwind', data: ['scrollTo' => false]) }}
         </div>
     </div>
-        </template>
+        
 @endif
 
     {{-- ══════════════════════════════════════════════ --}}
@@ -886,7 +886,7 @@
                     </div>
                     @else
                     <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-normal">{!! nl2br(e($viewingArticleContent)) !!}</div>
-                        </template>
+                        
 @endif
                 </div>
                 {{-- Footer --}}
@@ -898,7 +898,7 @@
                 </div>
             </div>
                 </div>
-                </template>
+                
 @endif
 
     {{-- ══════════════════════════════════════════════ --}}
@@ -917,7 +917,7 @@
             <div class="px-6 pt-6 pb-4 text-center">
                 <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl"
                      :class="confirmType === 'danger' ? 'bg-red-50' : 'bg-[#1fa387]/10'">
-                    <svg class="w-6 h-6" :class="confirmType === 'danger' ? 'text-red-600' : 'text-[#1fa387]'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                     <svg class="w-6 h-6" :class="confirmType === 'danger' ? 'text-red-600' : 'text-[#1fa387]'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <circle cx="12" cy="12" r="10"/>
                         <line x1="12" y1="8" x2="12" y2="12"/>
                         <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -941,7 +941,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    </template>
 
     <style>
         @keyframes fadeInScale {
