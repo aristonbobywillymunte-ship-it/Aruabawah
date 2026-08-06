@@ -137,10 +137,6 @@ class AdminApifyConfigurationTest extends TestCase
             ->set('range_mode', '7d')
             ->set('priority', 1)
             ->call('saveActor')
-            ->tap(fn ($c) => dd([
-                'errors' => $c->errors(),
-                'in_db' => \App\Models\ApifyActor::where('actor_slug', 'some-random/custom-scraper')->exists()
-            ]))
             ->assertHasErrors(['actorSlug']);
     }
 }
