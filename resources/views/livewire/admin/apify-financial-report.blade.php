@@ -164,7 +164,7 @@
             @if($showItemsModal)
             <template x-teleport="body">
                 <div wire:key="apify-financial-items-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 py-6 font-sans" @touchmove.prevent @wheel.prevent>
-                    <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100dvh-40px)]">
+                    <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[95vh]" style="max-height: calc(100dvh - 40px);">
                         
                         {{-- Modal Header --}}
                         <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
@@ -178,7 +178,7 @@
                         </div>
 
                         {{-- Modal Body (Scrollable & loading state, fixed height) --}}
-                        <div class="flex-1 overflow-y-auto p-4 sm:p-6 relative" style="min-height: 200px; overscroll-behavior: contain;" @touchmove.stop @wheel.stop>
+                        <div class="flex-1 overflow-y-auto p-4 sm:p-6 relative" style="min-height: 0; overscroll-behavior: contain;" @touchmove.stop @wheel.stop>
                             
                             {{-- Loading State --}}
                             @if($modalLoading)

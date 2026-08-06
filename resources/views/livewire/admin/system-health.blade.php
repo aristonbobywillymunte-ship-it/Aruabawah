@@ -319,7 +319,7 @@
     @if($showQueueModal)
     <template x-teleport="body">
         <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-2 py-4 font-sans" @touchmove.prevent @wheel.prevent>
-                <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100dvh-40px)]">
+                <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[95vh]" style="max-height: calc(100dvh - 40px);">
                 <!-- Modal Header -->
                 <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 flex-1 min-w-0">
@@ -745,7 +745,7 @@
     @if($showApifyQueueModal)
     <template x-teleport="body">
         <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 py-6 font-sans" @touchmove.prevent @wheel.prevent>
-                    <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100dvh-40px)]">
+                    <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[95vh]" style="max-height: calc(100dvh - 40px);">
                         <!-- Modal Header -->
                         <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
                             <div class="min-w-0 flex-1">
