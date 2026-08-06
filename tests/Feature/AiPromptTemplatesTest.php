@@ -23,6 +23,19 @@ class AiPromptTemplatesTest extends TestCase
         $this->regularUser = User::factory()->create(['role' => 'user']);
     }
 
+    // ─── Helper: buat default template untuk source_type ─────────────────────
+
+    private function createDefaultTemplate(string $sourceType = 'article'): AiPromptTemplate
+    {
+        return AiPromptTemplate::factory()->create([
+            'source_type' => $sourceType,
+            'is_active'   => true,
+            'is_default'  => true,
+        ]);
+    }
+
+    // ─── Auth ────────────────────────────────────────────────────────────────
+
     public function test_halaman_hanya_bisa_diakses_admin(): void
     {
         $this->actingAs($this->regularUser)
@@ -37,6 +50,8 @@ class AiPromptTemplatesTest extends TestCase
             ->assertOk();
     }
 
+    // ─── Render ───────────────────────────────────────────────────────────────
+
     public function test_komponen_render_tanpa_error(): void
     {
         $this->actingAs($this->admin);
@@ -44,6 +59,8 @@ class AiPromptTemplatesTest extends TestCase
             ->assertStatus(200)
             ->assertSee('AI Prompt Templates');
     }
+
+    // ─── Create ───────────────────────────────────────────────────────────────
 
     public function test_admin_bisa_membuka_modal_tambah(): void
     {
@@ -58,6 +75,7 @@ class AiPromptTemplatesTest extends TestCase
     {
         $this->actingAs($this->admin);
         Livewire::test(AiPromptTemplates::class)
+            ->call('create')
             ->set('name', 'Template QA Test')
             ->set('source_type', 'article')
             ->set('system_prompt', 'Kamu adalah QA tester.')
@@ -73,10 +91,13 @@ class AiPromptTemplatesTest extends TestCase
         ]);
     }
 
+    // ─── Validasi Bahasa Indonesia ─────────────────────────────────────────────
+
     public function test_validasi_name_wajib_dengan_pesan_indonesia(): void
     {
         $this->actingAs($this->admin);
         Livewire::test(AiPromptTemplates::class)
+            ->call('create')
             ->set('name', '')
             ->set('source_type', 'article')
             ->set('system_prompt', 'Sistem prompt.')
@@ -84,13 +105,14 @@ class AiPromptTemplatesTest extends TestCase
             ->set('output_schema', '{"type":"object"}')
             ->call('save')
             ->assertHasErrors(['name'])
-            ->assertSee('Nama Template wajib diisi.');
+            ->assertSeeHtml('Nama Template wajib diisi.');
     }
 
     public function test_validasi_system_prompt_wajib_dengan_pesan_indonesia(): void
     {
         $this->actingAs($this->admin);
         Livewire::test(AiPromptTemplates::class)
+            ->call('create')
             ->set('name', 'Template Valid')
             ->set('source_type', 'article')
             ->set('system_prompt', '')
@@ -98,13 +120,14 @@ class AiPromptTemplatesTest extends TestCase
             ->set('output_schema', '{"type":"object"}')
             ->call('save')
             ->assertHasErrors(['system_prompt'])
-            ->assertSee('Prompt Utama (System Prompt) wajib diisi.');
+            ->assertSeeHtml('Prompt Utama (System Prompt) wajib diisi.');
     }
 
     public function test_validasi_user_prompt_template_wajib_dengan_pesan_indonesia(): void
     {
         $this->actingAs($this->admin);
         Livewire::test(AiPromptTemplates::class)
+            ->call('create')
             ->set('name', 'Template Valid')
             ->set('source_type', 'article')
             ->set('system_prompt', 'Sistem prompt.')
@@ -112,13 +135,14 @@ class AiPromptTemplatesTest extends TestCase
             ->set('output_schema', '{"type":"object"}')
             ->call('save')
             ->assertHasErrors(['user_prompt_template'])
-            ->assertSee('User Prompt Template wajib diisi.');
+            ->assertSeeHtml('User Prompt Template wajib diisi.');
     }
 
     public function test_validasi_output_schema_wajib_dengan_pesan_indonesia(): void
     {
         $this->actingAs($this->admin);
         Livewire::test(AiPromptTemplates::class)
+            ->call('create')
             ->set('name', 'Template Valid')
             ->set('source_type', 'article')
             ->set('system_prompt', 'Sistem prompt.')
@@ -126,14 +150,19 @@ class AiPromptTemplatesTest extends TestCase
             ->set('output_schema', '')
             ->call('save')
             ->assertHasErrors(['output_schema'])
-            ->assertSee('Output Schema (JSON Schema) wajib diisi.');
+            ->assertSeeHtml('Output Schema (JSON Schema) wajib diisi.');
     }
+
+    // ─── Edit ─────────────────────────────────────────────────────────────────
 
     public function test_admin_bisa_edit_template(): void
     {
+        // Buat default terlebih dulu agar template ini tidak diambil alih
+        $this->createDefaultTemplate('social');
         $template = AiPromptTemplate::factory()->create([
             'name'        => 'Template Lama',
             'source_type' => 'social',
+            'is_active'   => true,
             'is_default'  => false,
         ]);
 
@@ -146,10 +175,16 @@ class AiPromptTemplatesTest extends TestCase
             ->assertSet('source_type', 'social');
     }
 
+    // ─── Delete ───────────────────────────────────────────────────────────────
+
     public function test_admin_bisa_hapus_template_non_default(): void
     {
+        // Buat default terlebih dulu agar template yang dihapus tidak menjadi default
+        $this->createDefaultTemplate('report');
         $template = AiPromptTemplate::factory()->create([
-            'is_default' => false,
+            'source_type' => 'report',
+            'is_active'   => true,
+            'is_default'  => false,
         ]);
 
         $this->actingAs($this->admin);
@@ -176,11 +211,16 @@ class AiPromptTemplatesTest extends TestCase
         $this->assertDatabaseHas('ai_prompt_templates', ['id' => $template->id]);
     }
 
+    // ─── Toggle Status ────────────────────────────────────────────────────────
+
     public function test_admin_bisa_toggle_status_template_non_default(): void
     {
+        // Buat default terlebih dulu agar template non-default tidak otomatis diset default
+        $this->createDefaultTemplate('social');
         $template = AiPromptTemplate::factory()->create([
-            'is_active'  => true,
-            'is_default' => false,
+            'source_type' => 'social',
+            'is_active'   => true,
+            'is_default'  => false,
         ]);
 
         $this->actingAs($this->admin);
@@ -209,6 +249,8 @@ class AiPromptTemplatesTest extends TestCase
             'is_active' => true,
         ]);
     }
+
+    // ─── Set Default ──────────────────────────────────────────────────────────
 
     public function test_admin_bisa_set_default_template_aktif(): void
     {
@@ -245,6 +287,8 @@ class AiPromptTemplatesTest extends TestCase
         $this->assertDatabaseHas('ai_prompt_templates', ['id' => $template->id, 'is_default' => false]);
     }
 
+    // ─── Search ───────────────────────────────────────────────────────────────
+
     public function test_pencarian_bisa_filter_template(): void
     {
         AiPromptTemplate::factory()->create(['name' => 'Analisis Berita Utama', 'source_type' => 'article', 'is_default' => false]);
@@ -256,6 +300,8 @@ class AiPromptTemplatesTest extends TestCase
             ->assertSee('Analisis Berita Utama')
             ->assertDontSee('Laporan Sosial Media');
     }
+
+    // ─── Trash ────────────────────────────────────────────────────────────────
 
     public function test_modal_trash_bisa_dibuka_dan_ditutup(): void
     {
@@ -269,7 +315,8 @@ class AiPromptTemplatesTest extends TestCase
 
     public function test_admin_bisa_pulihkan_template_dari_trash(): void
     {
-        $template = AiPromptTemplate::factory()->create(['is_default' => false]);
+        $this->createDefaultTemplate('article');
+        $template = AiPromptTemplate::factory()->create(['source_type' => 'article', 'is_default' => false]);
         $template->delete();
 
         $this->actingAs($this->admin);
@@ -284,7 +331,8 @@ class AiPromptTemplatesTest extends TestCase
 
     public function test_admin_bisa_hapus_permanen_template_dari_trash(): void
     {
-        $template = AiPromptTemplate::factory()->create(['is_default' => false]);
+        $this->createDefaultTemplate('article');
+        $template = AiPromptTemplate::factory()->create(['source_type' => 'article', 'is_default' => false]);
         $template->delete();
 
         $this->actingAs($this->admin);
