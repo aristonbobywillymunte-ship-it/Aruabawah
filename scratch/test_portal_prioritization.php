@@ -7,7 +7,7 @@ $kernel->bootstrap();
 $projects = \App\Models\Project::where('is_active', true)->get();
 echo 'Total Active Projects: ' . $projects->count() . PHP_EOL;
 
-$priorityService = app(\App\Services\ProjectScrapePriorityService::class);
+$priorityService = app(\App\Services\NewsProjectScrapePriorityService::class);
 $prioritized = $priorityService->prioritize($projects);
 echo 'Total Prioritized Projects: ' . $prioritized->count() . PHP_EOL;
 
