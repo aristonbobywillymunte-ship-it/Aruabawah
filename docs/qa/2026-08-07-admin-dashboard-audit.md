@@ -68,3 +68,17 @@ Fitur semasif dan sekrusial Dashboard Health Check ini (terutama yang membaca Re
 2. **Fix N+1 Query `getQueueData`**: Preload relations untuk array `$project_ids`, `$article_ids`, dan `$social_ids` via query array chunks (`whereIn`), kemudian dipetakan ke memory.
 3. **Fix N+1 Query Redis (`parseRedisJobPayload`)**: Kumpulkan semua `project_id` dari string parsing JSON, lalu query hanya 1x (`whereIn('id', $projIds)->pluck('name', 'id')`), kemudian injeksikan nama project ke hasil mapping.
 4. **Buat Unit Test**: Buat class test `AdminSystemHealthTest.php` untuk memastikan Dashboard tidak meledak jika Redis down / Database down.
+
+---
+
+## 5. Pertanyaan Operasional: AI Provider "Aktif Utama"
+
+**Q: Kenapa pada dashboard bagian AI Provider, tulisan "Aktif Utama" isinya cuman 1 provider (contoh: `test1 (qwen3-vl-8b-instruct)`)?**
+
+**A:** Secara arsitektur database dan *routing* AI di project ini, sistem memang dirancang agar **hanya ada tepat 1 (satu) AI Provider** yang berstatus sebagai **Default Utama** (`is_default = true`). 
+Sedangkan sisa provider lainnya yang berstatus aktif akan otomatis dianggap sebagai **Fallback (cadangan)** (ditampilkan sebagai "Tersedia (3)" pada UI).
+
+**Alasan desain ini:**
+1. **Efisiensi Biaya:** Sistem selalu mencoba menggunakan model utama yang paling stabil/murah terlebih dahulu untuk memproses ribuan data secara paralel.
+2. **Auto-Routing:** Jika Provider Utama gagal, *time-out*, atau terkena *rate limit*, *Router AI* akan secara otomatis mengalihkan (fallback) antrean yang gagal tersebut ke salah satu dari 3 provider cadangan tanpa perlu intervensi manusia.
+Oleh karena itu, tampilan "Aktif Utama" hanya memunculkan 1 nama saja.
