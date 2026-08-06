@@ -65,13 +65,23 @@ class ApifyFinancialReport extends Component
         $isCommentRun = filter_var($keyword, FILTER_VALIDATE_URL) !== false;
 
         if ($isCommentRun) {
+            // Get all URLs from the dispatch state for this run if possible (to support batch comment scraping)
+            $urls = [$keyword];
+            if ($runId && $runId !== '-') {
+                $dispatch = DB::table('apify_dispatch_states')->where('run_id', $runId)->first();
+                if ($dispatch && !empty($dispatch->normalized_keyword)) {
+                    $urls = array_filter(array_map('trim', explode('|', $dispatch->normalized_keyword)));
+                }
+            }
+
             // Ambil postingan utama terlebih dahulu (Tanpa batasan project_id karena audit log / data mentah)
-            $queryKeyword = trim($keyword);
             $mainPosts = DB::table('social_media_items')
                 ->where('platform', $platform)
-                ->where(function($q) use ($queryKeyword) {
-                    $q->where('post_url', $queryKeyword)
-                      ->orWhere('post_url', 'ilike', '%' . $queryKeyword . '%');
+                ->where(function($q) use ($urls) {
+                    foreach ($urls as $url) {
+                        $q->orWhere('post_url', $url)
+                          ->orWhere('post_url', 'ilike', '%' . $url . '%');
+                    }
                 })
                 ->get();
 
