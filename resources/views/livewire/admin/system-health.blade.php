@@ -316,8 +316,9 @@
 
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
-        <div wire:key="ai-queue-details-modal" x-teleport="body" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-2 py-4 font-sans">
-            <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-24px)]" style="height: calc(100vh - 24px);">
+        <template x-teleport="body">
+            <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-2 py-4 font-sans">
+                <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-24px)]" style="height: calc(100vh - 24px);">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-3 shrink-0 bg-slate-50/50">
                     <div class="min-w-0 flex-1 pr-4 flex items-center gap-3">
@@ -599,139 +600,136 @@
 
     <!-- Modal Konfirmasi Error Handling -->
     @if($showConfirmModal)
-        <div x-teleport="body" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 font-sans">
-            <div class="w-full max-w-sm bg-white shadow-2xl rounded-2xl overflow-hidden text-center p-6 border border-slate-200">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full {{ $confirmActionType === 'purge_queue' ? 'bg-rose-100 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]' }} mb-4">
-                    <span class="material-symbols-outlined text-[24px]">
-                        {{ $confirmActionType === 'purge_queue' ? 'warning' : ($confirmActionType === 'clean_ghosts' ? 'cleaning_services' : 'refresh') }}
-                    </span>
-                </div>
-                <h3 class="text-lg font-black text-slate-900 mb-2">Konfirmasi Tindakan</h3>
-                <p class="text-xs text-slate-500 mb-6 leading-relaxed">
-                    @if($confirmActionType === 'clean_ghosts')
-                        Apakah Anda yakin ingin membersihkan data antrean hantu (Legacy MD5)? Data ini akan ditandai sebagai batal secara permanen.
-                    @elseif($confirmActionType === 'purge_queue')
-                        Apakah Anda yakin ingin <strong>menghapus secara paksa</strong> seluruh antrean Redis AI? Tindakan ini akan membatalkan semua job yang belum diproses.
-                    @elseif($confirmActionType === 'force_requeue')
-                        Apakah Anda yakin ingin mengirim ulang data antrean ini ke AI secara paksa sekarang juga?
-                    @endif
-                </p>
-                <div class="flex flex-col gap-2">
-                    <button type="button" wire:click="executeConfirmAction" class="w-full inline-flex justify-center items-center gap-2 px-4 py-2 text-sm font-bold text-white {{ $confirmActionType === 'purge_queue' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-[#1fa387] hover:bg-[#15876f]' }} rounded-xl transition shadow-sm" wire:loading.attr="disabled">
-                        <span wire:loading.remove wire:target="executeConfirmAction">Ya, Lanjutkan</span>
-                        <span wire:loading wire:target="executeConfirmAction" class="flex items-center gap-2">
-                            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Memproses...
+        <template x-teleport="body">
+            <div class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 font-sans">
+                <div class="w-full max-w-sm bg-white shadow-2xl rounded-2xl overflow-hidden text-center p-6 border border-slate-200">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full {{ $confirmActionType === 'purge_queue' ? 'bg-rose-100 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]' }} mb-4">
+                        <span class="material-symbols-outlined text-[24px]">
+                            {{ $confirmActionType === 'purge_queue' ? 'warning' : ($confirmActionType === 'clean_ghosts' ? 'cleaning_services' : 'refresh') }}
                         </span>
-                    </button>
-                    <button type="button" wire:click="closeConfirmModal" class="w-full px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition">
-                        Batal
-                    </button>
+                    </div>
+                    <h3 class="text-lg font-black text-slate-900 mb-2">Konfirmasi Tindakan</h3>
+                    <p class="text-xs text-slate-500 mb-6 leading-relaxed">
+                        @if($confirmActionType === 'clean_ghosts')
+                            Apakah Anda yakin ingin membersihkan data antrean hantu (Legacy MD5)? Data ini akan ditandai sebagai batal secara permanen.
+                        @elseif($confirmActionType === 'purge_queue')
+                            Apakah Anda yakin ingin <strong>menghapus secara paksa</strong> seluruh antrean Redis AI? Tindakan ini akan membatalkan semua job yang belum diproses.
+                        @elseif($confirmActionType === 'force_requeue')
+                            Apakah Anda yakin ingin mengirim ulang data antrean ini ke AI secara paksa sekarang juga?
+                        @endif
+                    </p>
+                    <div class="flex flex-col gap-2">
+                        <button type="button" wire:click="executeConfirmAction" class="w-full inline-flex justify-center items-center gap-2 px-4 py-2 text-sm font-bold text-white {{ $confirmActionType === 'purge_queue' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-[#1fa387] hover:bg-[#15876f]' }} rounded-xl transition shadow-sm" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="executeConfirmAction">Ya, Lanjutkan</span>
+                            <span wire:loading wire:target="executeConfirmAction" class="flex items-center gap-2">
+                                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Memproses...
+                            </span>
+                        </button>
+                        <button type="button" wire:click="closeConfirmModal" class="w-full px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition">
+                            Batal
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </template>
     @endif
 
     <!-- Modal Antrean Redis (Large Modal, Body Scrollable) -->
     @if($showRedisQueueModal)
-        <div x-teleport="body" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }">
-            <div class="bg-white w-full max-w-[840px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200 flex flex-col my-8 max-h-[calc(100vh-32px)]">
-                
-                <!-- Modal Header -->
-                <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-                    <div class="text-left">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">REDIS SERVICE MANAGER</span>
-                        <h3 class="text-base font-black text-slate-900 leading-none">Rincian Antrean Redis (Queued & Active Jobs)</h3>
+        <template x-teleport="body">
+            <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }">
+                <div class="bg-white w-full max-w-[840px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200 flex flex-col my-8 max-h-[calc(100vh-32px)]">
+                    
+                    <!-- Modal Header -->
+                    <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+                        <div class="text-left">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">REDIS SERVICE MANAGER</span>
+                            <h3 class="text-base font-black text-slate-900 leading-none">Rincian Antrean Redis (Queued & Active Jobs)</h3>
+                        </div>
+                        <button type="button" wire:click="closeRedisQueueModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0">
+                            <span class="material-symbols-outlined text-[20px] block">close</span>
+                        </button>
                     </div>
-                    <button type="button" wire:click="closeRedisQueueModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0">
-                        <span class="material-symbols-outlined text-[20px] block">close</span>
-                    </button>
-                </div>
 
-                <!-- Modal Body (Halaman Body yang di-scroll, Tinggi Tetap) -->
-                <div class="flex-1 overflow-y-auto p-6 relative" style="min-height: 0;">
-                    @if(empty($redisQueueDetails))
-                        <div class="flex flex-col items-center justify-center py-20 text-center">
-                            <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                                <span class="material-symbols-outlined text-[32px]">check_circle</span>
+                    <!-- Modal Body (Halaman Body yang di-scroll, Tinggi Tetap) -->
+                    <div class="flex-1 overflow-y-auto p-6 relative" style="min-height: 0;">
+                        @if(empty($redisQueueDetails))
+                            <div class="flex flex-col items-center justify-center py-20 text-center">
+                                <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+                                    <span class="material-symbols-outlined text-[32px]">check_circle</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-800 mb-1">Antrean Redis Kosong</h4>
+                                <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Seluruh pekerjaan background worker (scraping & analysis) saat ini kosong.</p>
                             </div>
-                            <h4 class="text-sm font-bold text-slate-800 mb-1">Antrean Redis Kosong</h4>
-                            <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Seluruh pekerjaan background worker (scraping & analysis) saat ini kosong.</p>
-                        </div>
-                    @else
-                        <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
-                            <table class="w-full text-left border-collapse text-xs table-fixed">
-                                <thead>
-                                    <tr class="bg-slate-50 border-b border-slate-200">
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-12 text-center">No</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-24">Saluran</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-44">Nama Pekerjaan (Job)</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700">Target Payload</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Proyek</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-32">Status</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-16 text-center">Coba</th>
-                                        <th class="px-4 py-3 font-bold text-slate-700 w-36">Waktu Masuk</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100">
-                                    @foreach($redisQueueDetails as $idx => $item)
-                                        @php
-                                            $statusColor = match($item['status']) {
-                                                'Mengantre' => 'bg-slate-50 text-slate-600 border-slate-200/80',
-                                                'Diproses Worker' => 'bg-emerald-50 text-emerald-700 border-emerald-100 animate-pulse',
-                                                default => 'bg-amber-50 text-amber-700 border-amber-100'
-                                            };
-                                        @endphp
-                                        <tr class="hover:bg-slate-50/50 transition">
-                                            <td class="px-4 py-3 text-center text-slate-450 font-bold align-top">{{ $idx + 1 }}</td>
-                                            <td class="px-4 py-3 font-bold text-slate-600 align-top uppercase tracking-wider text-[10px]">{{ $item['queue'] }}</td>
-                                            <td class="px-4 py-3 text-slate-800 align-top font-bold truncate" title="{{ $item['name'] }}">{{ $item['name'] }}</td>
-                                            <td class="px-4 py-3 text-slate-500 align-top break-words font-medium">{{ $item['target'] }}</td>
-                                            <td class="px-4 py-3 font-bold text-[#1fa387] align-top truncate" title="{{ $item['project'] ?? 'N/A' }}">
-                                                {{ $item['project'] ?? 'N/A' }}
-                                            </td>
-                                            <td class="px-4 py-3 align-top whitespace-nowrap">
-                                                <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold border {{ $statusColor }}">
-                                                    {{ $item['status'] }}
-                                                </span>
-                                            </td>
-                                            <td class="px-4 py-3 text-center font-bold text-slate-650 align-top">{{ $item['attempts'] }}x</td>
-                                            <td class="px-4 py-3 text-slate-450 font-medium align-top whitespace-nowrap">{{ $item['created_at'] }}</td>
+                        @else
+                            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
+                                <table class="w-full text-left border-collapse text-xs table-fixed">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-200">
+                                            <th class="px-4 py-3 font-bold text-slate-700 w-12 text-center">No</th>
+                                            <th class="px-4 py-3 font-bold text-slate-700 w-24">Saluran</th>
+                                            <th class="px-4 py-3 font-bold text-slate-700 w-44">Nama Pekerjaan (Job)</th>
+                                            <th class="px-4 py-3 font-bold text-slate-700">Target Payload</th>
+                                            <th class="px-4 py-3 font-bold text-slate-700 w-36">Proyek</th>
+                                            <th class="px-4 py-3 font-bold text-slate-700 w-32">Status</th>
+                                            <th class="px-4 py-3 font-bold text-slate-700 w-16 text-center">Coba</th>
+                                            <th class="px-4 py-3 font-bold text-slate-700 w-36">Waktu Masuk</th>
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
-                </div>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        @foreach($redisQueueDetails as $idx => $item)
+                                            @php
+                                                $statusColor = match($item['status']) {
+                                                    'Mengantre' => 'bg-slate-50 text-slate-600 border-slate-200/80',
+                                                    'Diproses Worker' => 'bg-emerald-50 text-emerald-700 border-emerald-100 animate-pulse',
+                                                    default => 'bg-amber-50 text-amber-700 border-amber-100'
+                                                };
+                                            @endphp
+                                            <tr class="hover:bg-slate-50/50 transition">
+                                                <td class="px-4 py-3 text-center text-slate-450 font-bold align-top">{{ $idx + 1 }}</td>
+                                                <td class="px-4 py-3 font-bold text-slate-600 align-top uppercase tracking-wider text-[10px]">{{ $item['queue'] }}</td>
+                                                <td class="px-4 py-3 text-slate-800 align-top font-bold truncate" title="{{ $item['name'] }}">{{ $item['name'] }}</td>
+                                                <td class="px-4 py-3 text-slate-500 align-top break-words font-medium">{{ $item['target'] }}</td>
+                                                <td class="px-4 py-3 font-bold text-[#1fa387] align-top truncate" title="{{ $item['project'] ?? 'N/A' }}">
+                                                    {{ $item['project'] ?? 'N/A' }}
+                                                </td>
+                                                <td class="px-4 py-3 align-top whitespace-nowrap">
+                                                    <span class="inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold border {{ $statusColor }}">
+                                                        {{ $item['status'] }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-center font-bold text-slate-650 align-top">{{ $item['attempts'] }}x</td>
+                                                <td class="px-4 py-3 text-slate-450 font-medium align-top whitespace-nowrap">{{ $item['created_at'] }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
 
-                <!-- Modal Footer -->
-                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
-                    <button
-                        type="button"
-                        wire:click="closeRedisQueueModal"
-                        class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
-                    >
-                        Tutup
-                    </button>
-                </div>
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+                        <button
+                            type="button"
+                            wire:click="closeRedisQueueModal"
+                            class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
+                        >
+                            Tutup
+                        </button>
+                    </div>
 
+                </div>
             </div>
-        </div>
+        </template>
     @endif
 
     <!-- Modal Antrean Apify (Large Modal, Body Scrollable, Tinggi Fix) -->
     @if($showApifyQueueModal)
-        <div wire:key="apify-queue-details-modal" x-teleport="body" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
-            <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left overscroll-contain flex flex-col rounded-[24px] overflow-hidden" style="height: 640px !important; max-height: 640px !important;">
-                
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
-                    <div class="min-w-0 flex-1 pr-4">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">APIFY DISPATCH STATE</span>
                         <h2 class="text-base font-black text-slate-900 mt-0.5">Daftar Antrean Berjalan (Apify Pipeline)</h2>
                         <p class="text-[10px] text-slate-400 mt-0.5">Menampilkan status antrean perayapan media sosial yang sedang mengantre, diproses, atau ditunda.</p>
                     </div>

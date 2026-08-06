@@ -848,60 +848,53 @@
     {{-- MODAL: LIHAT ARTIKEL / KONTEN                  --}}
     {{-- ══════════════════════════════════════════════ --}}
     @if($showArticleModal)
-    <div x-teleport="body" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-        <div class="flex h-full max-h-[82vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl border border-slate-100/80 overflow-hidden" style="animation: fadeInScale 0.2s ease-out;">
-            {{-- Header --}}
-            <div class="flex items-start justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/60">
-                <div class="flex items-start gap-3 flex-1 min-w-0">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1fa387]/10">
-                        <svg class="text-[#1fa387]" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <template x-teleport="body">
+        <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div class="flex h-full max-h-[82vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl border border-slate-100/80 overflow-hidden" style="animation: fadeInScale 0.2s ease-out;">
+                {{-- Header --}}
+                <div class="flex items-start justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/60">
+                    <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1fa387]/10">
+                            <svg class="text-[#1fa387]" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Isi Konten</div>
+                            <h2 class="text-sm font-bold text-slate-800 leading-snug line-clamp-2">{{ $viewingArticleTitle }}</h2>
+                        </div>
                     </div>
-                    <div class="min-w-0">
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Isi Konten</div>
-                        <h2 class="text-sm font-bold text-slate-800 leading-snug line-clamp-2">{{ $viewingArticleTitle }}</h2>
+                    <button wire:click="closeArticleModal" class="ml-4 shrink-0 flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                {{-- Content --}}
+                <div class="flex-1 overflow-y-auto px-6 py-5">
+                    @if(empty($viewingArticleContent))
+                    <div class="flex flex-col items-center justify-center py-16 text-center">
+                        <svg class="w-10 h-10 text-slate-300 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <p class="text-sm text-slate-400 font-medium">Konten tidak tersedia</p>
+                        <p class="text-xs text-slate-300 mt-1">Konten kosong atau tidak ditemukan pada database.</p>
                     </div>
+                    @else
+                    <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-normal">{!! nl2br(e($viewingArticleContent)) !!}</div>
+                    @endif
                 </div>
-                <button wire:click="closeArticleModal" class="ml-4 shrink-0 flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>
-            {{-- Content --}}
-            <div class="flex-1 overflow-y-auto px-6 py-5">
-                @if(empty($viewingArticleContent))
-                <div class="flex flex-col items-center justify-center py-16 text-center">
-                    <svg class="w-10 h-10 text-slate-300 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    <p class="text-sm text-slate-400 font-medium">Konten tidak tersedia</p>
-                    <p class="text-xs text-slate-300 mt-1">Konten kosong atau tidak ditemukan pada database.</p>
+                {{-- Footer --}}
+                <div class="border-t border-slate-100 bg-slate-50/60 px-6 py-3.5 flex justify-end">
+                    <button wire:click="closeArticleModal" class="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        Tutup
+                    </button>
                 </div>
-                @else
-                <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-normal">{!! nl2br(e($viewingArticleContent)) !!}</div>
-                @endif
-            </div>
-            {{-- Footer --}}
-            <div class="border-t border-slate-100 bg-slate-50/60 px-6 py-3.5 flex justify-end">
-                <button wire:click="closeArticleModal" class="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    Tutup
-                </button>
             </div>
         </div>
-    </div>
+    </template>
     @endif
 
     {{-- ══════════════════════════════════════════════ --}}
     {{-- MODAL: KONFIRMASI AKSI (AlpineJS)              --}}
     {{-- ══════════════════════════════════════════════ --}}
-    <div x-teleport="body" x-show="confirmOpen"
-         x-transition:enter="transition ease-out duration-250"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/55 backdrop-blur-sm"
-         style="display: none;"
-    >
-        <div class="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden"
+    <template x-teleport="body">
+        <div x-show="confirmOpen"
              x-transition:enter="transition ease-out duration-250"
              x-transition:enter-start="opacity-0 scale-95 translate-y-4"
              x-transition:enter-end="opacity-100 scale-100 translate-y-0"
