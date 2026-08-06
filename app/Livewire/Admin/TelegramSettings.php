@@ -50,7 +50,14 @@ class TelegramSettings extends Component
 
     protected function setting(): TelegramSetting
     {
-        return TelegramSetting::firstOrCreate(['id' => 1]);
+        $setting = TelegramSetting::find(1);
+        if (!$setting) {
+            $setting = TelegramSetting::create([
+                'id' => 1,
+                'is_active' => false,
+            ]);
+        }
+        return $setting;
     }
 
     protected function normalizeTelegramTokenInput(?string $value): string

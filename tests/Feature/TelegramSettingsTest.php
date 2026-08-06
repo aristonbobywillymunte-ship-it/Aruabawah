@@ -76,6 +76,7 @@ class TelegramSettingsTest extends TestCase
         ]);
 
         \App\Models\TelegramSetting::create([
+            'id' => 1,
             'bot_token' => '9876543210:ZYXwvuTsrQPOnMlKjIHgFeDCba9876',
             'default_chat_id' => '840203231',
             'is_active' => true,
