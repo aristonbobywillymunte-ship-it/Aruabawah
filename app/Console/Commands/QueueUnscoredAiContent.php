@@ -66,7 +66,7 @@ class QueueUnscoredAiContent extends Command
                         return false;
                     }
 
-                    if (AiAnalysisDispatchState::withTrashed()
+                    if (AiAnalysisDispatchState::query()
                         ->where('analyzable_type', 'article')
                         ->where('analyzable_id', $article->id)
                         ->exists()) {
