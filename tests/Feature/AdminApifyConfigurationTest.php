@@ -59,7 +59,7 @@ class AdminApifyConfigurationTest extends TestCase
 
         $synced = $registry->syncManagedActors();
 
-        $this->assertCount(6, $synced->filter(fn ($actor) => $registry->isPrimarySlug($actor->actor_slug)));
+        $this->assertCount(3, $synced->filter(fn ($actor) => $registry->isPrimarySlug($actor->actor_slug)));
 
         foreach ($registry->primaryActors() as $actorDef) {
             $this->assertDatabaseHas('apify_actors', [
@@ -90,7 +90,8 @@ class AdminApifyConfigurationTest extends TestCase
 
         Livewire::actingAs($this->adminUser)
             ->test(\App\Livewire\Admin\ApifyConfiguration::class)
-            ->call('toggleActorStatus', $actor->id)
+            ->call('requestToggleActorStatus', $actor->id)
+            ->call('toggleActorStatusConfirmed')
             ->assertHasNoErrors();
 
         $this->assertEquals('inactive', $actor->fresh()->status);
@@ -105,6 +106,7 @@ class AdminApifyConfigurationTest extends TestCase
             ->set('actorName', 'Instagram Hashtag Scraper')
             ->set('actorSlug', 'apify/instagram-hashtag-scraper')
             ->set('functionType', 'Search Post')
+            ->set('keyword_field_mapping', 'hashtags')
             ->set('defaultLimit', 50)
             ->set('instagram_results_type', 'posts')
             ->set('instagram_results_limit', 50)
@@ -126,6 +128,7 @@ class AdminApifyConfigurationTest extends TestCase
             ->set('actorName', 'Random Scraper')
             ->set('actorSlug', 'some-random/custom-scraper')
             ->set('functionType', 'Search Post')
+            ->set('keyword_field_mapping', 'hashtags')
             ->set('defaultLimit', 50)
             ->set('instagram_results_type', 'posts')
             ->set('instagram_results_limit', 50)

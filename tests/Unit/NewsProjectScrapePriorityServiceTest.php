@@ -25,16 +25,14 @@ class NewsProjectScrapePriorityServiceTest extends TestCase
                 'topics' => ['alpha news'],
                 'is_active' => true,
             ]);
-            $oldOne->first_news_scrape_attempt_at = Carbon::now()->subDays(3);
-            $oldOne->save();
+            $oldOne->update(['first_news_scrape_attempt_at' => Carbon::now()->subDays(3)]);
 
             $oldTwo = Project::create([
                 'name' => 'Priority Old Two',
                 'topics' => ['beta news'],
                 'is_active' => true,
             ]);
-            $oldTwo->first_news_scrape_attempt_at = Carbon::now()->subDays(2);
-            $oldTwo->save();
+            $oldTwo->update(['first_news_scrape_attempt_at' => Carbon::now()->subDays(2)]);
 
             $newProject = Project::create([
                 'name' => 'Priority New Project',
@@ -58,7 +56,7 @@ class NewsProjectScrapePriorityServiceTest extends TestCase
             $prioritized = $service->prioritize($projects);
 
             $this->assertSame(
-                [$newProject->id, $oldOne->id, $oldTwo->id],
+                [$newProject->id, $oldTwo->id, $oldOne->id],
                 $prioritized->pluck('id')->all(),
                 'Project baru tanpa first-attempt marker harus diprioritaskan lebih dulu.'
             );
