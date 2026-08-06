@@ -25,14 +25,16 @@ class NewsProjectScrapePriorityServiceTest extends TestCase
                 'topics' => ['alpha news'],
                 'is_active' => true,
             ]);
-            $oldOne->update(['first_news_scrape_attempt_at' => Carbon::now()->subDays(3)]);
+            $oldOne->first_news_scrape_attempt_at = Carbon::now()->subDays(3);
+            $oldOne->save();
 
             $oldTwo = Project::create([
                 'name' => 'Priority Old Two',
                 'topics' => ['beta news'],
                 'is_active' => true,
             ]);
-            $oldTwo->update(['first_news_scrape_attempt_at' => Carbon::now()->subDays(2)]);
+            $oldTwo->first_news_scrape_attempt_at = Carbon::now()->subDays(2);
+            $oldTwo->save();
 
             $newProject = Project::create([
                 'name' => 'Priority New Project',
