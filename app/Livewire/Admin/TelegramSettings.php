@@ -181,6 +181,8 @@ class TelegramSettings extends Component
             'chat_id' => ['required', 'string', 'max:255', 'regex:/^\d+$/'],
             'recipient_is_active' => ['boolean'],
         ], [
+            'project_id.required' => 'Pilih Proyek wajib diisi.',
+            'project_id.exists' => 'Proyek yang dipilih tidak terdaftar di sistem.',
             'chat_id.required' => 'Custom Chat/Group ID wajib diisi.',
             'chat_id.regex' => 'Custom Chat/Group ID harus berupa angka tanpa tanda minus atau karakter lain.',
         ]);

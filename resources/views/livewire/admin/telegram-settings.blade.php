@@ -215,7 +215,7 @@
                 
                 <form wire:submit.prevent="saveRecipient" class="p-6 space-y-4">
                     <div>
-                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Pilih Proyek</label>
+                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Pilih Proyek <span class="text-rose-500">*</span></label>
                         <select wire:model="project_id" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
                             <option value="">-- Pilih Proyek --</option>
                             @foreach($projects as $proj)
@@ -226,7 +226,7 @@
                     </div>
 
                     <div>
-                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Group / Chat ID Telegram Khusus</label>
+                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Group / Chat ID Telegram Khusus <span class="text-rose-500">*</span></label>
                         <input wire:model="chat_id" placeholder="Contoh: 100987654321" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="numeric" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition font-mono">
                         <p class="mt-1.5 text-[10px] text-slate-400 leading-relaxed">
                             Hanya angka, tanpa tanda <span class="font-mono font-semibold text-slate-600">-</span>.
