@@ -22,39 +22,25 @@
      x-on:scroll-top.window="window.scrollTo({ top: 0, behavior: 'smooth' })"
 >
     {{-- ══════════════════════════════════════════════ --}}
-    {{-- PAGE HEADER                                    --}}
+    {{-- SUMMARY PILLS                                  --}}
     {{-- ══════════════════════════════════════════════ --}}
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-            <div class="flex items-center gap-2.5">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#1fa387] to-[#16806a] shadow-md shadow-[#1fa387]/20">
-                    <svg class="text-white" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                </div>
-                <div>
-                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight leading-none">Pipeline Monitor</h1>
-                    <p class="text-[11px] text-slate-500 mt-0.5">Pantau scraping, analisis AI, dan notifikasi secara real-time</p>
-                </div>
-            </div>
+    <div class="flex justify-end gap-2">
+        <div class="flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200/60 px-3 py-1.5 text-[11px] font-bold text-emerald-700">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+            {{ number_format($aiSuccess) }} AI Sukses
         </div>
-        {{-- Summary Pills --}}
-        <div class="flex flex-wrap gap-2">
-            <div class="flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200/60 px-3 py-1.5 text-[11px] font-bold text-emerald-700">
-                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                {{ number_format($aiSuccess) }} AI Sukses
-            </div>
-            @if ($failedJobs > 0)
-            <div class="flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200/60 px-3 py-1.5 text-[11px] font-bold text-red-700">
-                <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                {{ number_format($failedJobs) }} Queue Gagal
-            </div>
-            @endif
-            @if ($aiPending > 0)
-            <div class="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200/60 px-3 py-1.5 text-[11px] font-bold text-amber-700">
-                <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                {{ number_format($aiPending) }} Menunggu
-            </div>
-            @endif
+        @if ($failedJobs > 0)
+        <div class="flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200/60 px-3 py-1.5 text-[11px] font-bold text-red-700">
+            <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+            {{ number_format($failedJobs) }} Queue Gagal
         </div>
+        @endif
+        @if ($aiPending > 0)
+        <div class="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200/60 px-3 py-1.5 text-[11px] font-bold text-amber-700">
+            <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+            {{ number_format($aiPending) }} Menunggu
+        </div>
+        @endif
     </div>
 
     {{-- ══════════════════════════════════════════════ --}}
