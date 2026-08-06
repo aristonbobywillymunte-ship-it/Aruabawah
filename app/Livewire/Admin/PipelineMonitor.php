@@ -929,7 +929,7 @@ class PipelineMonitor extends Component
             ->value('updated_at');
         $lastBackfillSuccess = $lastBackfillSuccessVal ? \Carbon\Carbon::parse($lastBackfillSuccessVal)->diffForHumans() : 'Belum Ada';
 
-        $latestNotifications = RiskNotification::latest()->limit(5)->get()->map(function($n) {
+        $latestNotifications = RiskNotification::with(['aiAnalysisResult.article'])->latest()->limit(5)->get()->map(function($n) {
             return [
                 'title' => $n->aiAnalysisResult->article->title ?? 'N/A',
                 'status' => $n->status,

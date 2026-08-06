@@ -47,12 +47,13 @@ class PipelineMonitorTest extends TestCase
 
     public function test_filter_project_finds_article_without_duplicate()
     {
-        $projectA = Project::create(['name' => 'Project A', 'topics' => ['A'], 'is_active' => true]);
-        $projectB = Project::create(['name' => 'Project B', 'topics' => ['B'], 'is_active' => true]);
+        // keywords harus cocok dengan konten artikel agar filter keyword-based berjalan
+        $projectA = Project::create(['name' => 'Project A', 'topics' => ['Test Article'], 'is_active' => true]);
+        $projectB = Project::create(['name' => 'Project B', 'topics' => ['Test Article'], 'is_active' => true]);
 
         $article = Article::create([
             'title' => 'Test Article',
-            'content' => 'Content',
+            'content' => 'Test Article Content',
             'url' => 'http://example.com',
             'sentiment' => 'neutral',
             'source_name' => 'test'
