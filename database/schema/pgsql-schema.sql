@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 675Pt2JQE9HPyraXXR3HOg27QqTda7dl41hPV8OkCDrdvuKxFg9f52Dyusg4fjB
+\restrict DLFH2j3RU1gfXyStUo73gDSFiduDBznxbwi9XbJx2ckG74EI1QrRexY2Sle8r77
 
 -- Dumped from database version 16.14
 -- Dumped by pg_dump version 18.4
@@ -199,7 +199,7 @@ CREATE TABLE public.ai_providers (
     name character varying(255) NOT NULL,
     provider_type character varying(255) NOT NULL,
     base_url character varying(255),
-    api_key character varying(255),
+    api_key text,
     model_name character varying(255) NOT NULL,
     temperature numeric(3,2) DEFAULT 0.7 NOT NULL,
     max_tokens integer DEFAULT 2048 NOT NULL,
@@ -316,8 +316,32 @@ CREATE TABLE public.apify_dispatch_states (
     last_error_message text,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
+    actual_cost_usd numeric(10,6),
+    items_collected integer,
+    run_duration_secs integer,
     CONSTRAINT apify_dispatch_states_status_check CHECK (((status)::text = ANY (ARRAY[('queued'::character varying)::text, ('processing'::character varying)::text, ('success'::character varying)::text, ('failed'::character varying)::text, ('retry_wait'::character varying)::text, ('cancelled'::character varying)::text])))
 );
+
+
+--
+-- Name: COLUMN apify_dispatch_states.actual_cost_usd; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.apify_dispatch_states.actual_cost_usd IS 'Biaya aktual run dari Apify API (usageTotalCostUsd)';
+
+
+--
+-- Name: COLUMN apify_dispatch_states.items_collected; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.apify_dispatch_states.items_collected IS 'Jumlah item yang berhasil dikumpulkan dari dataset';
+
+
+--
+-- Name: COLUMN apify_dispatch_states.run_duration_secs; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.apify_dispatch_states.run_duration_secs IS 'Durasi run dalam detik dari Apify API stats';
 
 
 --
@@ -352,7 +376,14 @@ CREATE TABLE public.apify_settings (
     last_test_message text,
     last_test_at timestamp(0) without time zone,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    api_token_backup_1 text,
+    api_token_backup_2 text,
+    api_token_backup_3 text,
+    active_token_index integer DEFAULT 0 NOT NULL,
+    connection_status_backup_1 character varying(255) DEFAULT 'belum_dicek'::character varying NOT NULL,
+    connection_status_backup_2 character varying(255) DEFAULT 'belum_dicek'::character varying NOT NULL,
+    connection_status_backup_3 character varying(255) DEFAULT 'belum_dicek'::character varying NOT NULL
 );
 
 
@@ -838,7 +869,10 @@ CREATE TABLE public.packages (
     price numeric(15,2) DEFAULT '0'::numeric NOT NULL,
     social_media_features text,
     news_portal_features text,
-    advantages text
+    advantages text,
+    is_popular boolean DEFAULT false NOT NULL,
+    news_interval_minutes integer DEFAULT 5 NOT NULL,
+    social_interval_minutes integer DEFAULT 10 NOT NULL
 );
 
 
@@ -1027,7 +1061,8 @@ CREATE TABLE public.projects (
     exclude_keywords json,
     sources json,
     ai_insight_viral_summary text,
-    package_id bigint
+    package_id bigint,
+    news_last_scraped_at timestamp(0) without time zone
 );
 
 
@@ -2397,13 +2432,13 @@ ALTER TABLE ONLY public.social_media_comments
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 675Pt2JQE9HPyraXXR3HOg27QqTda7dl41hPV8OkCDrdvuKxFg9f52Dyusg4fjB
+\unrestrict DLFH2j3RU1gfXyStUo73gDSFiduDBznxbwi9XbJx2ckG74EI1QrRexY2Sle8r77
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict iIMCpnNzGKV7RDhi1GQI05myiIdbdXjE4sRK4xEw5ccmw0TgEcOVdTOQTrQHSB6
+\restrict YUe7ukg0sXyJ68G7PAyxwMU3taRe26fxIuGIlsdVp4n4j4SgiyoDuR2Ts6NCc2k
 
 -- Dumped from database version 16.14
 -- Dumped by pg_dump version 18.4
@@ -2514,6 +2549,13 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 87	2026_07_30_215237_add_premium_pricing_fields_to_packages_table	19
 88	2026_07_31_035441_add_limit_and_memory_to_package_actors_table	20
 89	2026_07_30_000001_sync_ai_prompt_templates_to_database_driven_prompts	21
+90	2026_07_31_052329_add_is_popular_to_packages_table	22
+91	2026_08_01_235642_add_cost_tracking_to_apify_dispatch_states	23
+92	2026_08_02_212155_add_backup_tokens_to_apify_settings_table	24
+93	2026_08_02_212632_add_backup_connections_to_apify_settings_table	25
+94	2026_08_03_031226_add_interval_minutes_to_packages_table	26
+95	2026_08_03_220932_move_social_media_mirror_data_to_own_table	27
+96	2026_08_05_150600_add_news_last_scraped_at_to_projects_table	28
 \.
 
 
@@ -2521,12 +2563,12 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 89, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 96, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict iIMCpnNzGKV7RDhi1GQI05myiIdbdXjE4sRK4xEw5ccmw0TgEcOVdTOQTrQHSB6
+\unrestrict YUe7ukg0sXyJ68G7PAyxwMU3taRe26fxIuGIlsdVp4n4j4SgiyoDuR2Ts6NCc2k
 
