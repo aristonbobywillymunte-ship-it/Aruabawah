@@ -238,4 +238,65 @@
         </div>
     @endif
 
+    <style>
+        /* ── Mobile Layout Optimization for Kelola Pengguna ── */
+        @media (max-width: 1023px) {
+            /* Header bar: letakkan sejajar secara vertikal */
+            .flex.flex-col.md\:flex-row.md\:items-center.md\:justify-between.gap-4.border-b {
+                padding-bottom: 1rem !important;
+                gap: 0.75rem !important;
+            }
+            .flex.flex-col.sm\:flex-row.items-center.gap-3.w-full {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 0.5rem !important;
+            }
+            .flex.flex-col.sm\:flex-row.items-center.gap-3.w-full > div {
+                width: 100% !important;
+            }
+            .flex.flex-col.sm\:flex-row.items-center.gap-3.w-full input {
+                height: 38px !important;
+                border-radius: 12px !important;
+                font-size: 11px !important;
+            }
+            .flex.flex-col.sm\:flex-row.items-center.gap-3.w-full button {
+                height: 38px !important;
+                border-radius: 12px !important;
+                font-size: 11px !important;
+                width: 100% !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+            
+            /* Table Card container adjustments */
+            .rounded-3xl.border.border-slate-200.bg-white {
+                border-radius: 16px !important;
+            }
+            .border-b.border-slate-100.px-6.py-4 {
+                padding: 1rem !important;
+            }
+            .border-b.border-slate-100.px-6.py-4 h2 {
+                font-size: 12.5px !important;
+            }
+            .border-b.border-slate-100.px-6.py-4 p {
+                font-size: 9px !important;
+            }
+            
+            /* Table cell sizes on mobile */
+            table.w-full.border-collapse th {
+                font-size: 8.5px !important;
+                padding: 8px 10px !important;
+            }
+            table.w-full.border-collapse td {
+                font-size: 11px !important;
+                padding: 10px 10px !important;
+            }
+            /* Adjust badges */
+            table.w-full.border-collapse td span.inline-flex {
+                font-size: 8px !important;
+                padding: 1px 4px !important;
+            }
+        }
+    </style>
+
 </div>
