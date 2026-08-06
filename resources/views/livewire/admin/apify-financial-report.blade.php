@@ -3,8 +3,8 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 text-left">
         <div>
             <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Laporan Keuangan</p>
-            <h1 class="text-2xl font-hanken font-extrabold text-slate-800 mt-1">Ringkasan Biaya Aktual Apify</h1>
-            <p class="text-xs text-slate-400 mt-1 font-medium">Biaya nyata yang dikenakan Apify setelah setiap proses scraping selesai (30 hari terakhir).</p>
+            <h1 class="text-2xl font-hanken font-extrabold text-slate-800 mt-1">Apify Billing & Usage</h1>
+            <p class="text-xs text-slate-400 mt-1 font-medium">Pantau tagihan riil dan penggunaan saldo Apify dari setiap proses penarikan data selama 30 hari terakhir.</p>
         </div>
         <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs font-black text-emerald-700 shadow-sm self-start md:self-auto">
             <span class="material-symbols-outlined text-[16px]">payments</span>
@@ -13,17 +13,19 @@
     </div>
 
     <!-- Filter Section per Proyek & Tanggal -->
-    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm text-left mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+    <div class="rounded-[20px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm text-left mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-5">
         <div class="flex items-center gap-2 shrink-0">
-            <span class="material-symbols-outlined text-[18px] text-slate-400">filter_alt</span>
+            <div class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[18px] text-slate-500">tune</span>
+            </div>
             <span class="text-xs font-black text-slate-700 uppercase tracking-wider">Filter Laporan</span>
         </div>
         
-        <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:justify-end">
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full xl:justify-end">
             <!-- Proyek Dropdown -->
-            <div class="w-full sm:w-60">
-                <select wire:model.live="projectId" class="w-full bg-[#F8F9FA] border border-slate-300 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387] rounded-xl px-4 py-2 text-xs font-bold text-slate-750 transition cursor-pointer">
-                    <option value="">Semua Proyek (Tanpa Filter)</option>
+            <div class="w-full sm:w-64">
+                <select wire:model.live="projectId" class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 focus:bg-white focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/20 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 transition outline-none cursor-pointer shadow-sm appearance-none" style="background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 1rem top 50%; background-size: 0.65rem auto;">
+                    <option value="">Semua Proyek (Semua Data)</option>
                     @foreach($projects as $p)
                         <option value="{{ $p->id }}">{{ $p->name }}</option>
                     @endforeach
@@ -31,10 +33,14 @@
             </div>
 
             <!-- Date Range Inputs -->
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-                <input type="date" wire:model.live="startDate" class="bg-[#F8F9FA] border border-slate-300 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387] rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition cursor-pointer" placeholder="Mulai Tanggal">
-                <span class="text-xs text-slate-400 font-bold">s/d</span>
-                <input type="date" wire:model.live="endDate" class="bg-[#F8F9FA] border border-slate-300 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387] rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition cursor-pointer" placeholder="Sampai Tanggal">
+            <div class="flex flex-row items-center gap-2 w-full sm:w-auto">
+                <div class="relative w-full sm:w-auto">
+                    <input type="date" wire:model.live="startDate" class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 focus:bg-white focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/20 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 transition outline-none cursor-pointer shadow-sm" title="Tanggal Mulai">
+                </div>
+                <span class="text-[10px] text-slate-400 font-extrabold uppercase shrink-0 px-1">s/d</span>
+                <div class="relative w-full sm:w-auto">
+                    <input type="date" wire:model.live="endDate" class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 focus:bg-white focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/20 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-700 transition outline-none cursor-pointer shadow-sm" title="Tanggal Selesai">
+                </div>
             </div>
         </div>
     </div>
@@ -84,10 +90,10 @@
 
         <!-- Tabel Run Detail -->
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-left">
-            <h3 class="text-sm font-black text-slate-800 mb-4">Detail Biaya Aktual per Run</h3>
+            <h3 class="text-sm font-black text-slate-800 mb-4">Rincian Penagihan per Proses (Run)</h3>
             
-            <div class="border border-slate-200 rounded-2xl overflow-hidden">
-                <table class="w-full text-left text-xs">
+            <div class="border border-slate-200 rounded-2xl overflow-x-auto shadow-inner bg-slate-50/30">
+                <table class="w-full min-w-[700px] text-left text-xs">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200">
                             <th class="px-4 py-3 font-bold text-slate-600">Platform</th>
@@ -136,22 +142,23 @@
 
             {{-- Modal Display Hasil Scraping --}}
             @if($showItemsModal)
-                <div wire:key="apify-financial-items-modal" x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
-                    <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left overscroll-contain flex flex-col rounded-[24px] overflow-hidden" style="height: 640px !important; max-height: 640px !important;">
+            <template x-teleport="body">
+                <div wire:key="apify-financial-items-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 py-6 font-sans" @touchmove.prevent @wheel.prevent>
+                    <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100dvh-40px)]">
                         
                         {{-- Modal Header --}}
-                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
-                            <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Platform: {{ $selectedPlatform }} &nbsp;&bull;&nbsp; Run ID: {{ $selectedRunId }}</p>
-                                <h2 class="text-base font-black text-slate-900 mt-0.5">Hasil Perayapan (Scraped Items)</h2>
+                        <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[9px] font-bold uppercase tracking-wider text-[#1fa387] truncate">Platform: {{ $selectedPlatform }} <span class="hidden sm:inline">&nbsp;&bull;&nbsp; Run ID: {{ $selectedRunId }}</span></p>
+                                <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Hasil Perayapan <span class="text-slate-400 font-semibold block sm:inline">(Scraped Items)</span></h2>
                             </div>
-                            <button type="button" wire:click="closeItemsModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer">
-                                <span class="material-symbols-outlined text-[20px] block">close</span>
+                            <button type="button" wire:click="closeItemsModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
+                                <span class="material-symbols-outlined text-[18px] block">close</span>
                             </button>
                         </div>
 
                         {{-- Modal Body (Scrollable & loading state, fixed height) --}}
-                        <div class="flex-1 overflow-y-auto p-6 relative" style="height: 500px !important; max-height: 500px !important;">
+                        <div class="flex-1 overflow-y-auto p-4 sm:p-6 relative" style="min-height: 200px; overscroll-behavior: contain;" @touchmove.stop @wheel.stop>
                             
                             {{-- Loading State --}}
                             @if($modalLoading)
@@ -216,7 +223,8 @@
                         </div>
                     </div>
                 </div>
-            @endif
+                </template>
+@endif
 
             {{-- Pagination Links --}}
             @if($recentRuns->hasPages())
