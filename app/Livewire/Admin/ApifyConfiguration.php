@@ -546,8 +546,12 @@ class ApifyConfiguration extends Component
             $resolvedOutputMapping = $this->buildFacebookOutputMapping($data);
             $this->output_mapping = $resolvedOutputMapping;
         } elseif ($data['platform'] === 'Instagram') {
-            $resolvedOutputMapping = $this->buildInstagramOutputMapping($data);
-            $this->output_mapping = $resolvedOutputMapping;
+            if ($data['actorSlug'] === 'apify/instagram-comment-scraper' && filled($this->output_mapping)) {
+                $resolvedOutputMapping = $this->output_mapping;
+            } else {
+                $resolvedOutputMapping = $this->buildInstagramOutputMapping($data);
+                $this->output_mapping = $resolvedOutputMapping;
+            }
         } elseif ($data['platform'] === 'TikTok') {
             $definition = $this->resolveTikTokActorDefinition($data['actorSlug']);
             if ($definition) {

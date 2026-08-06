@@ -614,6 +614,14 @@
                                             <p><span class="font-mono">resultsLimit</span> mengikuti batas komentar yang disimpan di modal ini.</p>
                                             <p><span class="font-mono">includeNestedComments</span> aktif jika komentar turunan juga ingin diambil.</p>
                                         </div>
+                                        <div>
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700 flex justify-between items-center">
+                                                Payload Input JSON Aktif Instagram Comments (Mencegah Overwrite Otomatis)
+                                                <span class="font-normal text-slate-400 text-[10px]">Mendukung variabel: {keyword}, {limit}</span>
+                                            </label>
+                                            <textarea wire:model="output_mapping" placeholder='{"directUrls":["{keyword}"],"resultsLimit":{limit},"includeNestedComments":false}' rows="4" class="w-full rounded-xl border border-slate-200 p-3.5 text-[11px] font-medium text-slate-700 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-[#f8fafc] shadow-inner font-mono leading-relaxed"></textarea>
+                                            @error('output_mapping') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                        </div>
                                     @else
                                         <div class="grid gap-4 sm:grid-cols-2">
                                             <div>
