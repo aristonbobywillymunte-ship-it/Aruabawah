@@ -319,7 +319,7 @@
     @if($showQueueModal)
     <template x-teleport="body">
         <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-2 py-4 font-sans" @touchmove.prevent @wheel.prevent>
-                <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-24px)]" style="height: calc(100vh - 24px);">
+                <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100dvh-40px)]">
                 <!-- Modal Header -->
                 <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 flex-1 min-w-0">
@@ -328,13 +328,21 @@
                             <h2 class="text-sm font-black text-slate-900 leading-tight mt-0.5">Daftar Antrean Berjalan <span class="text-slate-400 font-semibold block sm:inline">(AI Pipeline)</span></h2>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <button type="button" wire:click="openConfirmModal('clean_ghosts')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition text-[11px] font-bold shadow-sm">
-                                <span class="material-symbols-outlined text-[14px]">cleaning_services</span>
+                            <button type="button" wire:click="openConfirmModal('clean_ghosts')" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition text-[11px] font-bold shadow-sm" wire:loading.attr="disabled">
+                                <span wire:loading.remove wire:target="openConfirmModal('clean_ghosts')" class="material-symbols-outlined text-[14px]">cleaning_services</span>
+                                <svg wire:loading wire:target="openConfirmModal('clean_ghosts')" class="animate-spin h-[14px] w-[14px] text-slate-600" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
                                 <span class="hidden sm:inline">Bersihkan Data</span>
                                 <span class="sm:hidden">Bersihkan</span>
                             </button>
-                            <button type="button" wire:click="openConfirmModal('purge_queue')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition text-[11px] font-bold shadow-sm">
-                                <span class="material-symbols-outlined text-[14px]">delete_sweep</span>
+                            <button type="button" wire:click="openConfirmModal('purge_queue')" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition text-[11px] font-bold shadow-sm" wire:loading.attr="disabled">
+                                <span wire:loading.remove wire:target="openConfirmModal('purge_queue')" class="material-symbols-outlined text-[14px]">delete_sweep</span>
+                                <svg wire:loading wire:target="openConfirmModal('purge_queue')" class="animate-spin h-[14px] w-[14px] text-rose-600" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
                                 <span class="hidden sm:inline">Kosongkan Redis</span>
                                 <span class="sm:hidden">Kosongkan</span>
                             </button>
@@ -737,7 +745,7 @@
     @if($showApifyQueueModal)
     <template x-teleport="body">
         <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 py-6 font-sans" @touchmove.prevent @wheel.prevent>
-                    <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-48px)]" style="height: calc(100vh - 48px);">
+                    <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100dvh-40px)]">
                         <!-- Modal Header -->
                         <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
                             <div class="min-w-0 flex-1">
@@ -754,14 +762,22 @@
                 <div class="px-6 py-3 border-b border-slate-100 bg-white flex items-center justify-end gap-2">
                     <button type="button" 
                             wire:click="openConfirmModal('clean_apify_ghosts')"
-                            class="px-3 py-1.5 text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 rounded border border-amber-200 transition inline-flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px]">cleaning_services</span>
+                            class="px-3 py-1.5 text-xs font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 rounded border border-amber-200 transition inline-flex items-center justify-center gap-1.5" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="openConfirmModal('clean_apify_ghosts')" class="material-symbols-outlined text-[14px]">cleaning_services</span>
+                        <svg wire:loading wire:target="openConfirmModal('clean_apify_ghosts')" class="animate-spin h-[14px] w-[14px] text-amber-600" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
                         Bersihkan Data
                     </button>
                     <button type="button" 
                             wire:click="openConfirmModal('purge_apify_queue')"
-                            class="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded border border-rose-200 transition inline-flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px]">delete_sweep</span>
+                            class="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded border border-rose-200 transition inline-flex items-center justify-center gap-1.5" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="openConfirmModal('purge_apify_queue')" class="material-symbols-outlined text-[14px]">delete_sweep</span>
+                        <svg wire:loading wire:target="openConfirmModal('purge_apify_queue')" class="animate-spin h-[14px] w-[14px] text-rose-600" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
                         Kosongkan Redis
                     </button>
                 </div>
