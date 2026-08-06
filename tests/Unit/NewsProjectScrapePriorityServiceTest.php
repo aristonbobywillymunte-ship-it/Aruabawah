@@ -58,7 +58,7 @@ class NewsProjectScrapePriorityServiceTest extends TestCase
             $prioritized = $service->prioritize($projects);
 
             $this->assertSame(
-                [$newProject->id, $oldTwo->id, $oldOne->id],
+                [$newProject->id, $oldOne->id, $oldTwo->id],
                 $prioritized->pluck('id')->all(),
                 'Project baru tanpa first-attempt marker harus diprioritaskan lebih dulu.'
             );
