@@ -43,18 +43,20 @@ class ApifyFinancialReport extends Component
     public string $selectedPlatform = '';
     public string $selectedKeyword = '';
     public string $selectedRunId = '';
+    public string $selectedProjectName = '';
 
     protected function adminOnly(): void
     {
         abort_unless(auth()->user()?->isAdmin(), 403);
     }
 
-    public function openItems($projectId, $platform, $keyword, $runId = '-')
+    public function openItems($projectId, $platform, $keyword, $runId = '-', $projectName = '-')
     {
         $this->adminOnly();
         $this->selectedPlatform = $platform;
         $this->selectedKeyword = $keyword;
         $this->selectedRunId = $runId ?: '-';
+        $this->selectedProjectName = $projectName ?: '-';
         $this->showItemsModal = true;
         $this->modalLoading = true;
         $this->selectedItems = [];
