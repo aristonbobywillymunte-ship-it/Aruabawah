@@ -40,7 +40,7 @@ class PipelineMonitor extends Component
     public string $filterAiState = '';
     public string $filterRisk   = '';
     public string $filterProject = '';
-    public int    $perPage      = 20;
+    public int    $perPage      = 10;
 
     protected $queryString = [
         'activeTab'      => ['except' => 'scraping'],
@@ -461,7 +461,9 @@ class PipelineMonitor extends Component
                                 $inner->where('articles.title', 'ilike', '%' . $keyword . '%')
                                     ->orWhere('articles.content', 'ilike', '%' . $keyword . '%')
                                     ->orWhere('articles.excerpt', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('ai.summary', 'ilike', '%' . $keyword . '%');
+                                    ->orWhereHas('aiAnalysisResult', function ($sq) use ($keyword) {
+                                        $sq->where('summary', 'ilike', '%' . $keyword . '%');
+                                    });
                             });
                         }
                     });
@@ -592,7 +594,7 @@ class PipelineMonitor extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('ai.summary', 'ilike', "%{$this->search}%")
+                $q->where('ai_analysis_results.summary', 'ilike', "%{$this->search}%")
                   ->orWhere('ai_analysis_results.main_issue', 'ilike', "%{$this->search}%")
                   ->orWhere('ai_analysis_results.risk_reason', 'ilike', "%{$this->search}%")
                   ->orWhereHas('article', function($sq) {
@@ -628,8 +630,7 @@ class PipelineMonitor extends Component
                                 $contentQuery->{$method}(function ($inner) use ($keyword) {
                                 $inner->where('title', 'ilike', '%' . $keyword . '%')
                                     ->orWhere('content', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('ai.summary', 'ilike', '%' . $keyword . '%');
+                                    ->orWhere('excerpt', 'ilike', '%' . $keyword . '%');
                             });
                         }
                     });
