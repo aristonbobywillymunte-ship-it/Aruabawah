@@ -315,9 +315,10 @@
 
 
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
-    @if($showQueueModal)
-        <template x-teleport="body">
-            <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-2 py-4 font-sans">
+    <template x-teleport="body">
+        <div wire:key="ai-queue-teleport-wrapper">
+            @if($showQueueModal)
+                <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-2 py-4 font-sans">
                 <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-24px)]" style="height: calc(100vh - 24px);">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-3 shrink-0 bg-slate-50/50">
@@ -599,9 +600,10 @@
     @endif
 
     <!-- Modal Konfirmasi Error Handling -->
-    @if($showConfirmModal)
-        <template x-teleport="body">
-            <div class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 font-sans">
+    <template x-teleport="body">
+        <div wire:key="confirm-teleport-wrapper">
+            @if($showConfirmModal)
+                <div class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 font-sans">
                 <div class="w-full max-w-sm bg-white shadow-2xl rounded-2xl overflow-hidden text-center p-6 border border-slate-200">
                     <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full {{ $confirmActionType === 'purge_queue' ? 'bg-rose-100 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]' }} mb-4">
                         <span class="material-symbols-outlined text-[24px]">
@@ -634,14 +636,15 @@
                         </button>
                     </div>
                 </div>
-            </div>
-        </template>
-    @endif
+            @endif
+        </div>
+    </template>
 
     <!-- Modal Antrean Redis (Large Modal, Body Scrollable) -->
-    @if($showRedisQueueModal)
-        <template x-teleport="body">
-            <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }">
+    <template x-teleport="body">
+        <div wire:key="redis-queue-teleport-wrapper">
+            @if($showRedisQueueModal)
+                <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }">
                 <div class="bg-white w-full max-w-[840px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200 flex flex-col my-8 max-h-[calc(100vh-32px)]">
                     
                     <!-- Modal Header -->
@@ -724,13 +727,21 @@
                     </div>
 
                 </div>
-            </div>
-        </template>
-    @endif
+            @endif
+        </div>
+    </template>
 
     <!-- Modal Antrean Apify (Large Modal, Body Scrollable, Tinggi Fix) -->
-    @if($showApifyQueueModal)
-                        <h2 class="text-base font-black text-slate-900 mt-0.5">Daftar Antrean Berjalan (Apify Pipeline)</h2>
+    <template x-teleport="body">
+        <div wire:key="apify-queue-teleport-wrapper">
+            @if($showApifyQueueModal)
+                <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+                    <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-48px)]" style="height: calc(100vh - 48px);">
+                        <!-- Modal Header -->
+                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
+                            <div class="min-w-0 flex-1 pr-4">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">APIFY DISPATCH STATE</span>
+                                <h2 class="text-base font-black text-slate-900 mt-0.5">Daftar Antrean Berjalan (Apify Pipeline)</h2>
                         <p class="text-[10px] text-slate-400 mt-0.5">Menampilkan status antrean perayapan media sosial yang sedang mengantre, diproses, atau ditunda.</p>
                     </div>
                     <button type="button" wire:click="closeApifyQueueModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0">
@@ -844,9 +855,10 @@
                         Tutup
                     </button>
                 </div>
-            </div>
+                </div>
+            @endif
         </div>
-    @endif
+    </template>
 
     <style>
         /* ── Mobile Layout Optimization for System Health Audit Modal ── */
