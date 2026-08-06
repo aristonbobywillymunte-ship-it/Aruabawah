@@ -77,7 +77,8 @@ class TelegramSettingsTest extends TestCase
 
         Livewire::actingAs($this->adminUser)
             ->test(TelegramSettings::class)
-            ->set('bot_token', '1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ')
+            ->set('bot_token', '9876543210:ZYXwvuTsrQPOnMlKjIHgFeDCba9876')
+            ->set('is_active', true)
             ->set('test_chat_id', '840203231')
             ->set('test_message', 'Notif krisis!')
             ->call('runTestSend')
