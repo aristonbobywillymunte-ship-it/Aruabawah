@@ -134,7 +134,7 @@ class AdminApifyConfigurationTest extends TestCase
             ->set('defaultLimit', 50)
             ->set('facebook_use_apify_proxy', true)
             ->set('facebook_post_time_range', '24h')
-            ->set('facebook_max_posts', null)
+            ->set('facebook_max_posts', 50)
             ->set('interval_minutes', 240)
             ->set('memory_limit', 1024)
             ->set('range_mode', '7d')
