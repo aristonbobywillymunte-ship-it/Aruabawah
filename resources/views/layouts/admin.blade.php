@@ -25,6 +25,39 @@
                 overflow-y: auto;
             }
         }
+        /* Penyesuaian ukuran font, tipografi, dan padding hanya untuk mobile viewports */
+        @media (max-width: 1023px) {
+            h1.text-2xl, h1.text-xl {
+                font-size: 1.35rem !important; /* perkecil ukuran judul utama */
+                font-weight: 800 !important;
+                letter-spacing: -0.02em !important;
+                line-height: 1.25 !important;
+            }
+            .text-[10px].uppercase.tracking-\[0\.2em\] {
+                font-size: 9px !important;
+                letter-spacing: 0.15em !important;
+                margin-bottom: -1px !important;
+            }
+            header p.text-xs {
+                font-size: 11px !important;
+                line-height: 1.4 !important;
+                margin-top: 4px !important;
+            }
+            /* Menyesuaikan padding di container utama mobile */
+            main.mx-auto {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+                padding-top: 1rem !important;
+                padding-bottom: 2rem !important;
+            }
+            /* Menyesuaikan lower header padding di mobile */
+            header .bg-white.px-6.py-4 {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+                padding-top: 0.75rem !important;
+                padding-bottom: 0.75rem !important;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-[#f7f9ff] text-slate-800 font-sans" :class="mobileMenuOpen ? 'overflow-hidden' : ''" x-data="{ mobileMenuOpen: false }">
