@@ -275,7 +275,7 @@
     <div class="relative bg-white border border-slate-200/60 rounded-2xl shadow-sm overflow-hidden min-h-[300px]">
 
         {{-- Loading State --}}
-        <div wire:loading.delay wire:target="setTab, retryAiState, retryAllFailedAiStates, deleteAiState, retryNotification, deleteNotification, clearAllPendingAiStates, filterProject, filterPlatform, filterAiState, filterStatus, filterRisk, search"
+        <div wire:loading wire:target="setTab, retryAiState, retryAllFailedAiStates, deleteAiState, retryNotification, deleteNotification, clearAllPendingAiStates, filterProject, filterPlatform, filterAiState, filterStatus, filterRisk, search"
              class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white py-20 text-center">
             <div class="flex flex-col items-center gap-3">
                 <svg class="animate-spin h-9 w-9 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
