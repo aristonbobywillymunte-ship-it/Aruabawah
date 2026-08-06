@@ -27,10 +27,10 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-[#f7f9ff] text-slate-800 font-sans">
-    <div class="flex min-h-screen flex-col lg:flex-row" x-data="{ mobileMenuOpen: false }">
+<body class="min-h-screen bg-[#f7f9ff] text-slate-800 font-sans" :class="mobileMenuOpen ? 'overflow-hidden' : ''" x-data="{ mobileMenuOpen: false }">
+    <div class="flex min-h-screen flex-col lg:flex-row">
         <!-- Sidebar / Navigation -->
-        <aside class="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto z-40">
+        <aside class="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto z-40" :class="mobileMenuOpen ? 'fixed inset-0 h-screen overflow-y-auto' : ''">
             <div class="flex flex-col h-full">
                 <!-- Brand logo + Mobile Menu Toggle Button -->
                 <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 lg:border-none lg:py-6 shrink-0">
