@@ -1367,10 +1367,8 @@ class ApifyScrapingJob implements ShouldQueue
         if ($state) {
             $finalItemsCollected = $state->items_collected;
             if (strtolower((string) $actor->function_type) === 'comment scraper') {
-                $finalItemsCollected = \App\Models\SocialMediaItem::where(function($q) {
-                    $q->where('post_url', $this->keyword)
-                      ->orWhere('post_url', 'ilike', '%' . $this->keyword . '%');
-                })->sum('comment_count');
+                $finalItemsCollected = \App\Models\SocialMediaItem::whereIn('post_url', $keywords)
+                    ->sum('comment_count');
             }
 
             $state->update([
