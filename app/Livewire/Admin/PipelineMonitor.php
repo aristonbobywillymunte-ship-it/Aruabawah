@@ -663,7 +663,7 @@ class PipelineMonitor extends Component
     public function getNotificationItems()
     {
         $query = RiskNotification::query()
-            ->with(['aiAnalysisResult.article']);
+            ->with(['aiAnalysisResult.article', 'aiAnalysisResult.socialMediaItem']);
 
         if ($this->filterStatus) {
             $query->where('status', $this->filterStatus);

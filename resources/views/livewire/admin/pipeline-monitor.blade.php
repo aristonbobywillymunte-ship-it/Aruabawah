@@ -618,6 +618,9 @@
                             @if ($item->aiAnalysisResult?->article)
                             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ $item->aiAnalysisResult->article->source_name }}</div>
                             <p class="mt-0.5 text-xs font-semibold text-slate-800 line-clamp-2">{{ $item->aiAnalysisResult->article->title }}</p>
+                            @elseif ($item->aiAnalysisResult?->socialMediaItem)
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ $item->aiAnalysisResult->socialMediaItem->platform }}</div>
+                            <p class="mt-0.5 text-xs font-semibold text-slate-800 line-clamp-2">Post oleh {{ $item->aiAnalysisResult->socialMediaItem->author_name }}</p>
                             @else
                             <span class="text-xs font-semibold text-slate-400">Analisis #{{ $item->ai_analysis_result_id }}</span>
                             @endif
