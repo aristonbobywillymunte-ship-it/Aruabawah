@@ -4,7 +4,7 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-$token = env('APIFY_TOKEN') ?: Illuminate\Support\Facades\DB::table('configs')->where('key', 'apify_token')->value('value');
+$token = env('APIFY_TOKEN');
 if (!$token) {
     $token = Illuminate\Support\Facades\DB::table('apify_tokens')->value('token');
 }
