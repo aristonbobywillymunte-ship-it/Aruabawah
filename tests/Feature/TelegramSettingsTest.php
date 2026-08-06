@@ -75,6 +75,7 @@ class TelegramSettingsTest extends TestCase
             'https://api.telegram.org/bot*' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200)
         ]);
 
+        \App\Models\TelegramSetting::truncate();
         \App\Models\TelegramSetting::create([
             'id' => 1,
             'bot_token' => '9876543210:ZYXwvuTsrQPOnMlKjIHgFeDCba9876',
