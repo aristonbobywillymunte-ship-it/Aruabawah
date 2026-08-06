@@ -63,10 +63,6 @@
             overflow: hidden !important;
             height: 100vh !important;
             max-height: 100vh !important;
-            position: fixed !important;
-            width: 100vw !important;
-            top: 0 !important;
-            left: 0 !important;
         }
     </style>
 </head>
