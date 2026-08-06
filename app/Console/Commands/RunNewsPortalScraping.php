@@ -98,6 +98,7 @@ class RunNewsPortalScraping extends Command
                     'id', 'name', 'is_active', 'package_id',
                     'created_at', 'updated_at', 'deleted_at',
                     'first_news_scrape_attempt_at', 'news_last_scraped_at',
+                    'topics', 'context_keywords', 'exclude_keywords', 'sources',
                 ])
                 ->orderBy('created_at')
                 ->orderBy('id')
