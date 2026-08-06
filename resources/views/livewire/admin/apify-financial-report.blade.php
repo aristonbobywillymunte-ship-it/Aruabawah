@@ -170,7 +170,7 @@
                         <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
                             <div class="min-w-0 flex-1">
                                 <p class="text-[9px] font-bold uppercase tracking-wider text-[#1fa387] truncate">Platform: {{ $selectedPlatform }} <span class="hidden sm:inline">&nbsp;&bull;&nbsp; Run ID: {{ $selectedRunId }}</span></p>
-                                <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Hasil Perayapan <span class="text-slate-400 font-semibold block sm:inline">(Scraped Items)</span></h2>
+                                <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Hasil Pengambilan <span class="text-slate-400 font-semibold block sm:inline">(Scraped Items)</span></h2>
                             </div>
                             <button type="button" wire:click="closeItemsModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
                                 <span class="material-symbols-outlined text-[18px] block">close</span>

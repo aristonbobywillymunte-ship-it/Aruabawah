@@ -751,7 +751,7 @@
                             <div class="min-w-0 flex-1">
                                 <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">APIFY DISPATCH STATE</span>
                                 <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Daftar Antrean Berjalan <span class="text-slate-400 font-semibold block sm:inline">(Apify Pipeline)</span></h2>
-                        <p class="text-[9px] text-slate-400 mt-1 sm:mt-0.5 leading-relaxed">Menampilkan status antrean perayapan media sosial yang sedang mengantre, diproses, atau ditunda.</p>
+                        <p class="text-[9px] text-slate-400 mt-1 sm:mt-0.5 leading-relaxed">Menampilkan status antrean pengambilan media sosial yang sedang mengantre, diproses, atau ditunda.</p>
                     </div>
                     <button type="button" wire:click="closeApifyQueueModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
                         <span class="material-symbols-outlined text-[18px] block">close</span>
