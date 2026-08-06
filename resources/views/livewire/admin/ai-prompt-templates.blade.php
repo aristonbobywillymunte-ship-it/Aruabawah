@@ -119,7 +119,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center text-slate-400 italic">Belum ada prompt template terdaftar.</td>
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-400 italic">Belum ada prompt template terdaftar.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -153,12 +153,12 @@
                 <form wire:submit.prevent="save" class="px-8 py-6 space-y-5 overflow-y-auto flex-1 bg-white overscroll-contain">
                     <div class="grid gap-5 sm:grid-cols-2">
                         <div>
-                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Nama Template *</label>
+                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Nama Template <span class="text-rose-500">*</span></label>
                             <input wire:model="name" placeholder="Contoh: Analisis Berita Utama" type="text" class="h-11 w-full rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition placeholder:text-slate-400">
                             @error('name') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Tipe Sumber Data *</label>
+                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Tipe Sumber Data <span class="text-rose-500">*</span></label>
                             <select wire:model="source_type" class="h-11 w-full rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition">
                                 <option value="article">Portal / Berita (article)</option>
                                 <option value="social">Sosial Media (social)</option>
@@ -172,7 +172,7 @@
                     <!-- Prompt Utama -->
                     <div class="space-y-1.5">
                         <div class="flex items-center justify-between">
-                            <label class="text-xs font-bold text-slate-700">Prompt Utama (System Prompt) *</label>
+                            <label class="text-xs font-bold text-slate-700">Prompt Utama (System Prompt) <span class="text-rose-500">*</span></label>
                             <span class="text-[9px] font-semibold text-slate-400">System Instruction</span>
                         </div>
                         <textarea wire:model="system_prompt" placeholder="Contoh: Kamu adalah analis media yang fokus pada sentimen, risiko, dan konteks isi." rows="5" class="w-full rounded-xl border border-slate-200 p-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition font-mono leading-relaxed placeholder:text-slate-400"></textarea>
@@ -183,7 +183,7 @@
                     <!-- User Prompt Template -->
                     <div class="space-y-1.5">
                         <div class="flex items-center justify-between">
-                            <label class="text-xs font-bold text-slate-700">User Prompt Template *</label>
+                            <label class="text-xs font-bold text-slate-700">User Prompt Template <span class="text-rose-500">*</span></label>
                             <span class="text-[9px] font-semibold text-slate-400">User Input Template</span>
                         </div>
                         <textarea wire:model="user_prompt_template" placeholder="Contoh: Analisis artikel berikut:\nJudul: {title}\nKonten: {content}" rows="7" class="w-full rounded-xl border border-slate-200 p-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition font-mono leading-relaxed placeholder:text-slate-400"></textarea>
@@ -194,10 +194,10 @@
                     <!-- Output Schema -->
                     <div class="space-y-1.5">
                         <div class="flex items-center justify-between">
-                            <label class="text-xs font-bold text-slate-700">Output Schema (JSON Schema) *</label>
+                            <label class="text-xs font-bold text-slate-700">Output Schema (JSON Schema) <span class="text-rose-500">*</span></label>
                             <span class="text-[9px] font-semibold text-slate-400">Response Validation</span>
                         </div>
-                        <textarea wire:model="output_schema" placeholder='Contoh: {"type":"object","properties":{"summary":{"type":"string"}}}' rows="7" class="w-full rounded-xl border border-slate-200 p-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition font-mono leading-relaxed placeholder:text-slate-400"></textarea>
+                        <textarea wire:model="output_schema" placeholder='{"type":"object","properties":{"summary":{"type":"string"}}}' rows="7" class="w-full rounded-xl border border-slate-200 p-4 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20 transition font-mono leading-relaxed placeholder:text-slate-400"></textarea>
                         @error('output_schema') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                         <p class="text-[9px] text-slate-400 font-medium leading-normal">Wajib diisi dengan JSON Schema valid agar struktur kembalian AI konsisten terstruktur.</p>
                     </div>
@@ -309,8 +309,8 @@
                                             <td class="px-4 py-3 font-bold text-slate-400">{{ $loop->iteration }}</td>
                                             <td class="px-4 py-3 font-bold text-slate-900">{{ $trashTemplate->name }}</td>
                                             <td class="px-4 py-3">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold border {{ $trashTemplate->source_type === 'article' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-purple-50 text-purple-700 border-purple-100' }}">
-                                                    {{ $trashTemplate->source_type === 'article' ? 'Portal Berita' : 'Media Sosial' }}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-bold border {{ $trashTemplate->source_type === 'article' ? 'bg-blue-50 text-blue-700 border-blue-100' : ($trashTemplate->source_type === 'social' ? 'bg-purple-50 text-purple-700 border-purple-100' : ($trashTemplate->source_type === 'report' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100')) }}">
+                                                    {{ $trashTemplate->source_type === 'article' ? 'Portal Berita' : ($trashTemplate->source_type === 'social' ? 'Media Sosial' : ($trashTemplate->source_type === 'report' ? 'Laporan AI' : 'Saran Portal')) }}
                                                 </span>
                                             </td>
                                             <td class="px-4 py-3 font-semibold text-slate-400">

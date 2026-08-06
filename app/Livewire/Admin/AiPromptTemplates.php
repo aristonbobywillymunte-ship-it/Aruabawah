@@ -72,6 +72,19 @@ class AiPromptTemplates extends Component
         ];
     }
 
+    protected function messages(): array
+    {
+        return [
+            'name.required'               => 'Nama Template wajib diisi.',
+            'name.max'                    => 'Nama Template tidak boleh lebih dari 255 karakter.',
+            'source_type.required'        => 'Tipe Sumber Data wajib dipilih.',
+            'source_type.in'              => 'Tipe Sumber Data yang dipilih tidak valid.',
+            'system_prompt.required'      => 'Prompt Utama (System Prompt) wajib diisi.',
+            'user_prompt_template.required' => 'User Prompt Template wajib diisi.',
+            'output_schema.required'      => 'Output Schema (JSON Schema) wajib diisi.',
+        ];
+    }
+
     public function updatedSearch(): void
     {
         $this->resetPage();
