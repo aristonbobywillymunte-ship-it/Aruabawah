@@ -59,12 +59,12 @@ class ApifyFinancialReport extends Component
         $this->selectedRunId = $runId ?: '-';
         $this->selectedProjectName = $projectName ?: '-';
         $this->showItemsModal = true;
+        // Deteksi apakah keyword ini adalah URL (biasanya indikasi perayapan komentar / Comment Scraper)
+        $isCommentRun = filter_var($keyword, FILTER_VALIDATE_URL) !== false;
+
         $this->isCommentModal = $isCommentRun;
         $this->modalLoading = true;
         $this->selectedItems = [];
-
-        // Deteksi apakah keyword ini adalah URL (biasanya indikasi perayapan komentar / Comment Scraper)
-        $isCommentRun = filter_var($keyword, FILTER_VALIDATE_URL) !== false;
 
         if ($isCommentRun) {
             // Get all URLs from the dispatch state for this run if possible (to support batch comment scraping)
