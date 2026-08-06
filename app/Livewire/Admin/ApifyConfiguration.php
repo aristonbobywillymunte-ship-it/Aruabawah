@@ -538,7 +538,9 @@ class ApifyConfiguration extends Component
         $whitelist = $this->registry()->allManagedSlugs();
         if (!in_array($data['actorSlug'], $whitelist, true)) {
             $this->addError('actorSlug', 'Aktor Slug tidak terdaftar dalam whitelist resmi.');
-            return;
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'actorSlug' => 'Aktor Slug tidak terdaftar dalam whitelist resmi.'
+            ]);
         }
 
         $resolvedOutputMapping = $data['output_mapping'] ?? null;
