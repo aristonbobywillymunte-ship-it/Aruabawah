@@ -183,7 +183,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center text-slate-400 italic">Belum ada penerima khusus proyek terdaftar.</td>
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-400 italic">Belum ada penerima khusus proyek terdaftar.</td>
                         </tr>
                     @endforelse
                 </tbody>

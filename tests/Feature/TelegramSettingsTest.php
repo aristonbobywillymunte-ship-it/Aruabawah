@@ -46,4 +46,42 @@ class TelegramSettingsTest extends TestCase
             ->assertSet('bot_token', '1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ')
             ->assertSet('default_chat_id', '-100123456789');
     }
+
+    public function test_it_saves_custom_project_recipients_successfully(): void
+    {
+        $project = \App\Models\Project::create([
+            'name' => 'Kaltim Berdaulat',
+        ]);
+
+        Livewire::actingAs($this->adminUser)
+            ->test(TelegramSettings::class)
+            ->call('createRecipient')
+            ->set('project_id', $project->id)
+            ->set('chat_id', '1001882739')
+            ->set('recipient_is_active', true)
+            ->call('saveRecipient')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('project_telegram_recipients', [
+            'project_id' => $project->id,
+            'chat_id' => '1001882739',
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_it_runs_message_transmission_test_correctly(): void
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            'https://api.telegram.org/bot*' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200)
+        ]);
+
+        Livewire::actingAs($this->adminUser)
+            ->test(TelegramSettings::class)
+            ->set('bot_token', '1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ')
+            ->set('test_chat_id', '840203231')
+            ->set('test_message', 'Notif krisis!')
+            ->call('runTestSend')
+            ->assertHasNoErrors()
+            ->assertSet('testResultStatus', 'success');
+    }
 }
