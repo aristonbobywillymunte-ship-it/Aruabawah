@@ -518,6 +518,14 @@ class ApifyConfiguration extends Component
 
         $data['defaultLimit'] = (int) $data['defaultLimit'];
 
+        // Actor whitelist validation — runs after field validation so actorSlug error
+        // surfaces in Livewire's error bag and is visible to ->assertHasErrors(['actorSlug'])
+        $whitelist = $this->registry()->allManagedSlugs();
+        $this->validate(
+            ['actorSlug' => ['required', 'string', 'in:' . implode(',', $whitelist)]],
+            ['actorSlug.in' => 'Aktor Slug tidak terdaftar dalam whitelist resmi.']
+        );
+
         if ($data['platform'] === 'Facebook') {
             $data['range_mode'] = $this->facebook_post_time_range ?: $data['range_mode'];
             $this->range_mode = $data['range_mode'];
@@ -533,15 +541,6 @@ class ApifyConfiguration extends Component
         $data['build'] = $this->build;
         $data['timeout_seconds'] = $this->no_timeout ? 0 : (int) $this->timeout_seconds;
         $data['no_timeout'] = (bool) $this->no_timeout;
-
-        // Actor whitelist validation
-        $whitelist = $this->registry()->allManagedSlugs();
-        if (!in_array($data['actorSlug'], $whitelist, true)) {
-            $this->addError('actorSlug', 'Aktor Slug tidak terdaftar dalam whitelist resmi.');
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'actorSlug' => 'Aktor Slug tidak terdaftar dalam whitelist resmi.'
-            ]);
-        }
 
         $resolvedOutputMapping = $data['output_mapping'] ?? null;
         if ($data['platform'] === 'Facebook') {
