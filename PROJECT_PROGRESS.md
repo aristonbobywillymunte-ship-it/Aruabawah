@@ -1,5 +1,13 @@
 # Project Progress Log
 
+## Log Aktivitas Terbaru (7 Agustus 2026)
+
+### 1. Fix Kolom Proyek Hilang pada Query Scheduler Portal
+* **Root cause**: Command `RunNewsPortalScraping` menggunakan `select()` ketat yang tidak menyertakan kolom `topics`, `context_keywords`, `exclude_keywords`, dan `sources`. Akibatnya Eloquent mengembalikan `null` untuk kolom-kolom tersebut, sehingga seluruh proyek dianggap tidak punya keyword dan dilewati.
+* **Perbaikan**: Kolom `topics`, `context_keywords`, `exclude_keywords`, dan `sources` ditambahkan kembali ke dalam query `select()` di `app/Console/Commands/RunNewsPortalScraping.php`.
+* **Aturan baru dicatat**: Aturan eksplisit ditambahkan ke `.agents/AGENTS.md` agar AI lain tidak menghapus kolom-kolom ini dari query `select()`.
+* **QA**: Unit test `NewsProjectScrapePriorityServiceTest` diperbaiki dari sisi mass-assignment dan urutan assertion, lalu semua 21 unit test diverifikasi lulus `OK (21 tests, 83 assertions)`.
+
 ## Log Aktivitas Terbaru (31 Juli 2026 - Lanjutan)
 
 ### 1. Pemisahan Mode Discovery Portal dan Fallback Google News
