@@ -547,35 +547,36 @@ class SystemHealth extends Component
         $this->adminOnly();
         
         $rawItems = DB::table('apify_dispatch_states')
-            ->whereIn('status', ['queued', 'processing', 'retry_wait'])
-            ->orderBy('id', 'desc')
+            ->leftJoin('projects', 'apify_dispatch_states.project_id', '=', 'projects.id')
+            ->leftJoin('apify_actors', 'apify_dispatch_states.actor_id', '=', 'apify_actors.id')
+            ->whereIn('apify_dispatch_states.status', ['queued', 'processing', 'retry_wait'])
+            ->orderBy('apify_dispatch_states.id', 'desc')
+            ->select(
+                'apify_dispatch_states.id',
+                'apify_dispatch_states.run_id',
+                'apify_dispatch_states.platform',
+                'apify_dispatch_states.keyword',
+                'apify_dispatch_states.status',
+                'apify_dispatch_states.attempts',
+                'apify_dispatch_states.last_error_message',
+                'apify_dispatch_states.last_error_code',
+                'apify_dispatch_states.queued_at',
+                'apify_dispatch_states.started_at',
+                'apify_dispatch_states.completed_at',
+                'projects.name as project_name',
+                'apify_actors.actor_name'
+            )
             ->limit(50)
             ->get();
 
         $this->apifyQueueDetails = $rawItems->map(function ($item) {
-            $projectName = 'N/A';
-            if ($item->project_id) {
-                $project = DB::table('projects')->where('id', $item->project_id)->first();
-                if ($project) {
-                    $projectName = $project->name;
-                }
-            }
-
-            $actorName = 'N/A';
-            if ($item->actor_id) {
-                $actor = DB::table('apify_actors')->where('id', $item->actor_id)->first();
-                if ($actor) {
-                    $actorName = $actor->actor_name;
-                }
-            }
-
             return [
                 'id' => $item->id,
                 'run_id' => $item->run_id ?: '-',
                 'platform' => $item->platform,
-                'actor' => $actorName,
+                'actor' => $item->actor_name ?? 'N/A',
                 'keyword' => $item->keyword ?: '-',
-                'project' => $projectName,
+                'project' => $item->project_name ?? 'N/A',
                 'status' => $item->status,
                 'attempts' => $item->attempts,
                 'error_message' => ($item->last_error_message ?? $item->last_error_code) ?: '-',
