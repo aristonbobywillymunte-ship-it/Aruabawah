@@ -515,6 +515,40 @@
             background: rgba(31,163,135,0.05);
             bottom: -80px; left: -80px;
         }
+
+        /* ── Landscape Mobile Optimizations ── */
+        @media (max-height: 480px) and (orientation: landscape) {
+            body {
+                align-items: flex-start;
+                overflow-y: auto;
+                min-height: auto;
+            }
+            .panel-right {
+                padding: 1rem;
+                align-items: flex-start;
+            }
+            .login-card {
+                padding: 1.5rem;
+                border-radius: 14px;
+                margin-top: 1rem;
+                margin-bottom: 1rem;
+            }
+            .card-brand {
+                margin-bottom: 1rem;
+            }
+            .login-subtitle {
+                margin-bottom: 1rem;
+            }
+            .form-group {
+                margin-bottom: 0.8rem;
+            }
+            .dot-divider {
+                margin: 1rem 0;
+            }
+            .login-footer {
+                margin-top: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
