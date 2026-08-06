@@ -44,6 +44,7 @@ class ApifyFinancialReport extends Component
     public string $selectedKeyword = '';
     public string $selectedRunId = '';
     public string $selectedProjectName = '';
+    public bool $isCommentModal = false;
 
     protected function adminOnly(): void
     {
@@ -58,6 +59,7 @@ class ApifyFinancialReport extends Component
         $this->selectedRunId = $runId ?: '-';
         $this->selectedProjectName = $projectName ?: '-';
         $this->showItemsModal = true;
+        $this->isCommentModal = $isCommentRun;
         $this->modalLoading = true;
         $this->selectedItems = [];
 
@@ -99,13 +101,15 @@ class ApifyFinancialReport extends Component
                     // Cari main post yang bersangkutan untuk mendapatkan post_url aslinya
                     $relatedPost = $mainPosts->firstWhere('id', $c->social_media_item_id);
                     return [
-                        'post_url' => $relatedPost ? $relatedPost->post_url : $queryKeyword,
+                        'post_url' => $relatedPost ? $relatedPost->post_url : '',
                         'author_name' => $c->author_name ?? 'Pengguna',
                         'content' => $c->content ?? '[tanpa teks]',
                         'likes' => (int) $c->like_count,
                         'comments' => 0,
                         'shares' => 0,
                         'posted_at' => $c->posted_at ? \Carbon\Carbon::parse($c->posted_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+                        'parent_author' => $relatedPost ? $relatedPost->author_name : null,
+                        'parent_content' => $relatedPost ? Str::limit($relatedPost->content, 60) : null,
                     ];
                 })->toArray();
             }

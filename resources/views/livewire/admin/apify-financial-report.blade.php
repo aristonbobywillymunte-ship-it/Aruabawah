@@ -170,7 +170,7 @@
                         <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
                             <div class="min-w-0 flex-1">
                                 <p class="text-[9px] font-bold uppercase tracking-wider text-[#1fa387] truncate">Platform: {{ $selectedPlatform }} <span class="hidden sm:inline">&nbsp;&bull;&nbsp; Proyek: {{ $selectedProjectName }} &nbsp;&bull;&nbsp; Run ID: {{ $selectedRunId }}</span></p>
-                                <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Hasil Pengambilan <span class="text-slate-400 font-semibold block sm:inline">(Scraped Items)</span></h2>
+                                <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Hasil Pengambilan {{ $isCommentModal ? 'Komentar' : 'Postingan' }} <span class="text-slate-400 font-semibold block sm:inline">({{ $isCommentModal ? 'Scraped Comments' : 'Scraped Posts' }})</span></h2>
                             </div>
                             <button type="button" wire:click="closeItemsModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
                                 <span class="material-symbols-outlined text-[18px] block">close</span>
@@ -202,10 +202,10 @@
                                     <table class="w-full text-left text-xs border-collapse">
                                         <thead>
                                             <tr class="bg-slate-50 border-b border-slate-200">
-                                                <th class="px-4 py-3 font-bold text-slate-600">Pembuat (Author)</th>
-                                                <th class="px-4 py-3 font-bold text-slate-600">Konten/Isi Postingan</th>
+                                                <th class="px-4 py-3 font-bold text-slate-600">Pembuat ({{ $isCommentModal ? 'Komentator' : 'Author' }})</th>
+                                                <th class="px-4 py-3 font-bold text-slate-600">{{ $isCommentModal ? 'Isi Komentar' : 'Konten/Isi Postingan' }}</th>
                                                 <th class="px-4 py-3 font-bold text-slate-600 text-center">Statistik</th>
-                                                <th class="px-4 py-3 font-bold text-slate-600 text-center">Tanggal Post</th>
+                                                <th class="px-4 py-3 font-bold text-slate-600 text-center">{{ $isCommentModal ? 'Waktu Komen' : 'Tanggal Post' }}</th>
                                                 <th class="px-4 py-3 font-bold text-slate-600 text-center">Tautan</th>
                                             </tr>
                                         </thead>
@@ -213,10 +213,19 @@
                                             @foreach($selectedItems as $item)
                                                 <tr class="hover:bg-slate-50/40 transition-colors">
                                                     <td class="px-4 py-3 font-bold text-slate-800 whitespace-nowrap">{{ $item['author_name'] }}</td>
-                                                    <td class="px-4 py-3 text-slate-600 leading-relaxed font-medium min-w-[280px]">{{ $item['content'] }}</td>
+                                                                                                        <td class="px-4 py-3 text-slate-600 leading-relaxed font-medium min-w-[280px]">
+                                                        @if($isCommentModal && !empty($item['parent_author']))
+                                                            <div class="mb-1 text-[10px] text-slate-400 font-semibold truncate bg-slate-50 border border-slate-100/80 rounded-md px-2 py-0.5 inline-block max-w-full">
+                                                                Komentar di video &#64;{{ $item['parent_author'] }}: "{{ $item['parent_content'] }}"
+                                                            </div>
+                                                        @endif
+                                                        <div>{{ $item['content'] }}</div>
+                                                    </td>
                                                     <td class="px-4 py-3 text-slate-500 whitespace-nowrap text-center leading-normal">
                                                         <div class="font-bold text-[#1fa387]">{{ $item['likes'] }} Likes</div>
-                                                        <div class="text-[10px] text-slate-400 font-semibold">{{ $item['comments'] }} Komentar</div>
+                                                        @if(!$isCommentModal)
+                                                            <div class="text-[10px] text-slate-400 font-semibold">{{ $item['comments'] }} Komentar</div>
+                                                        @endif
                                                     </td>
                                                     <td class="px-4 py-3 text-slate-400 whitespace-nowrap text-center font-semibold">{{ $item['posted_at'] }}</td>
                                                     <td class="px-4 py-3 text-center whitespace-nowrap">
@@ -238,7 +247,7 @@
 
                         {{-- Modal Footer --}}
                         <div class="bg-slate-50 border-t border-slate-100 px-6 py-4 flex items-center justify-between shrink-0">
-                            <span class="text-[10px] text-slate-400 font-semibold">Total: {{ count($selectedItems) }} postingan berhasil ditarik.</span>
+                            <span class="text-[10px] text-slate-400 font-semibold">Total: {{ count($selectedItems) }} {{ $isCommentModal ? 'komentar' : 'postingan' }} berhasil ditarik.</span>
                             <button type="button" wire:click="closeItemsModal" class="h-9 px-5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-sm">Tutup</button>
                         </div>
                     </div>
