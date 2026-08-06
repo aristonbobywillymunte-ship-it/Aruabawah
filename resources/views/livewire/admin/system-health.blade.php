@@ -315,9 +315,7 @@
 
 
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
-    <template x-teleport="body">
-        <div wire:key="ai-queue-teleport-wrapper">
-            @if($showQueueModal)
+    @if($showQueueModal)
                 <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6);" class="backdrop-blur-sm px-2 py-4 font-sans">
                 <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-24px)]" style="height: calc(100vh - 24px);">
                 <!-- Modal Header -->
@@ -600,9 +598,7 @@
     @endif
 
     <!-- Modal Konfirmasi Error Handling -->
-    <template x-teleport="body">
-        <div wire:key="confirm-teleport-wrapper">
-            @if($showConfirmModal)
+    @if($showConfirmModal)
                 <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6);" class="backdrop-blur-sm px-4 font-sans">
                 <div class="w-full max-w-sm bg-white shadow-2xl rounded-2xl overflow-hidden text-center p-6 border border-slate-200">
                     <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full {{ $confirmActionType === 'purge_queue' ? 'bg-rose-100 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]' }} mb-4">
@@ -637,13 +633,9 @@
                     </div>
                 </div>
             @endif
-        </div>
-    </template>
 
     <!-- Modal Antrean Redis (Large Modal, Body Scrollable) -->
-    <template x-teleport="body">
-        <div wire:key="redis-queue-teleport-wrapper">
-            @if($showRedisQueueModal)
+    @if($showRedisQueueModal)
                 <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.6);" class="backdrop-blur-sm" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }">
                 <div class="bg-white w-full max-w-[840px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200 flex flex-col my-8 max-h-[calc(100vh-32px)]">
                     
@@ -728,13 +720,9 @@
 
                 </div>
             @endif
-        </div>
-    </template>
 
     <!-- Modal Antrean Apify (Large Modal, Body Scrollable, Tinggi Fix) -->
-    <template x-teleport="body">
-        <div wire:key="apify-queue-teleport-wrapper">
-            @if($showApifyQueueModal)
+    @if($showApifyQueueModal)
                 <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6);" class="backdrop-blur-sm px-4 py-6 font-sans">
                     <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-48px)]" style="height: calc(100vh - 48px);">
                         <!-- Modal Header -->
@@ -857,8 +845,6 @@
                 </div>
                 </div>
             @endif
-        </div>
-    </template>
 
     <style>
         /* ── Mobile Layout Optimization for System Health Audit Modal ── */

@@ -847,9 +847,7 @@
     {{-- ══════════════════════════════════════════════ --}}
     {{-- MODAL: LIHAT ARTIKEL / KONTEN                  --}}
     {{-- ══════════════════════════════════════════════ --}}
-    <template x-teleport="body">
-        <div wire:key="article-modal-teleport-wrapper">
-            @if($showArticleModal)
+    @if($showArticleModal)
                 <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.6);" class="backdrop-blur-sm">
             <div class="flex h-full max-h-[82vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl border border-slate-100/80 overflow-hidden" style="animation: fadeInScale 0.2s ease-out;">
                 {{-- Header --}}
@@ -889,8 +887,6 @@
             </div>
                 </div>
             @endif
-        </div>
-    </template>
 
     {{-- ══════════════════════════════════════════════ --}}
     {{-- MODAL: KONFIRMASI AKSI (AlpineJS)              --}}

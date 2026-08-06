@@ -1,0 +1,6 @@
+#!/usr/bin/expect -f
+set timeout 30
+spawn ssh -o StrictHostKeyChecking=no root@3.27.115.35 "cd /var/www/arusbawah && git pull origin main && php artisan view:clear && php artisan cache:clear"
+expect "password:"
+send "Ariston2026@\r"
+expect eof
