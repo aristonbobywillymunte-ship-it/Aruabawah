@@ -34,13 +34,15 @@
             <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
             {{ number_format($failedJobs) }} Queue Gagal
         </div>
-        @endif
+            </template>
+@endif
         @if ($aiPending > 0)
         <div class="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200/60 px-3 py-1.5 text-[11px] font-bold text-amber-700">
             <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
             {{ number_format($aiPending) }} Menunggu
         </div>
-        @endif
+            </template>
+@endif
     </div>
 
     {{-- ══════════════════════════════════════════════ --}}
@@ -149,7 +151,8 @@
                     <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </span>
             </div>
-            @endif
+                </template>
+@endif
 
             {{-- Tab: Scraping Filters --}}
             @if ($activeTab === 'scraping')
@@ -175,7 +178,8 @@
                     <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </span>
             </div>
-            @endif
+                </template>
+@endif
 
             {{-- Tab: Social Filters --}}
             @if ($activeTab === 'social')
@@ -190,7 +194,8 @@
                     <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </span>
             </div>
-            @endif
+                </template>
+@endif
 
             {{-- Tab: AI Filters --}}
             @if ($activeTab === 'ai')
@@ -215,7 +220,8 @@
                     <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </span>
             </div>
-            @endif
+                </template>
+@endif
 
             {{-- Tab: Notifications Filters --}}
             @if ($activeTab === 'notifications')
@@ -230,7 +236,8 @@
                     <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </span>
             </div>
-            @endif
+                </template>
+@endif
         </div>
 
         {{-- Bulk Action Buttons --}}
@@ -708,7 +715,8 @@
                             </span>
                             @if($item->project)
                             <div class="mt-1 text-[11px] font-semibold text-slate-700">{{ $item->project->name }}</div>
-                            @endif
+                                </template>
+@endif
                             <div class="mt-0.5 text-[10px] text-slate-400">{{ $item->created_at ? \Carbon\Carbon::parse($item->created_at)->setTimezone(config('app.timezone', 'Asia/Makassar'))->format('d M Y H:i') : '—' }}</div>
                         </td>
                         <td class="px-4 py-3.5 text-center">
@@ -780,13 +788,15 @@
                             </span>
                             @if($item->project)
                             <div class="mt-1 text-[11px] font-semibold text-slate-700">{{ $item->project->name }}</div>
-                            @endif
+                                </template>
+@endif
                         </td>
                         <td class="px-4 py-3.5">
                             <div class="text-[10px] font-bold text-red-600 uppercase tracking-wider">{{ $item->last_error_code ?? '—' }}</div>
                             @if($item->last_error_code)
                             <div class="mt-1 text-[10px] text-slate-500 leading-normal">{{ $this->failureCodeDescription($item->last_error_code) }}</div>
-                            @endif
+                                </template>
+@endif
                         </td>
                         <td class="px-4 py-3.5 max-w-xs">
                             <p class="text-xs text-red-500/90 font-medium leading-relaxed line-clamp-3 bg-red-50/60 px-2.5 py-1.5 rounded-xl border border-red-100/60">{{ $item->error_message ?? '—' }}</p>
@@ -842,7 +852,8 @@
             {{ $items->onEachSide(1)->links('vendor.livewire.tailwind', data: ['scrollTo' => false]) }}
         </div>
     </div>
-    @endif
+        </template>
+@endif
 
     {{-- ══════════════════════════════════════════════ --}}
     {{-- MODAL: LIHAT ARTIKEL / KONTEN                  --}}
@@ -875,7 +886,8 @@
                     </div>
                     @else
                     <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-normal">{!! nl2br(e($viewingArticleContent)) !!}</div>
-                    @endif
+                        </template>
+@endif
                 </div>
                 {{-- Footer --}}
                 <div class="border-t border-slate-100 bg-slate-50/60 px-6 py-3.5 flex justify-end">
@@ -886,7 +898,8 @@
                 </div>
             </div>
                 </div>
-            @endif
+                </template>
+@endif
 
     {{-- ══════════════════════════════════════════════ --}}
     {{-- MODAL: KONFIRMASI AKSI (AlpineJS)              --}}

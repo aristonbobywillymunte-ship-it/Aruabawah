@@ -20,7 +20,8 @@
             @endforeach
         </div>
     </div>
-    @endif
+        </template>
+@endif
 
     <!-- Grid Card Status Health -->
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -316,7 +317,8 @@
 
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
-                <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-2 py-4 font-sans">
+    <template x-teleport="body">
+        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-2 py-4 font-sans">
                 <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-24px)]" style="height: calc(100vh - 24px);">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-3 shrink-0 bg-slate-50/50">
@@ -494,12 +496,14 @@
                                                     </a>
                                                 @else
                                                     <div class="line-clamp-1 text-slate-700" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
-                                                @endif
+                                                    </template>
+@endif
                                                 @if($item['status'] === 'retry_wait' && $item['error_message'])
                                                     <div class="text-[9px] text-rose-500 font-medium mt-0.5 truncate" title="{{ $item['error_message'] }}">
                                                         ⚠ {{ Str::limit($item['error_message'], 60) }}
                                                     </div>
-                                                @endif
+                                                    </template>
+@endif
                                             </td>
                                             <td class="px-3 py-2 font-semibold text-[#1fa387] align-middle truncate" title="{{ $item['project'] }}">
                                                 {{ $item['project'] }}
@@ -521,7 +525,8 @@
                                 </tbody>
                             </table>
                         </div>
-                    @endif
+                        </template>
+@endif
                 </div>
 
                 </div> <!-- Tutup Modal Body -->
@@ -578,7 +583,8 @@
                             </div>
                         @else
                             <div></div>
-                        @endif
+                            </template>
+@endif
                     </div>
                 </div>
 
@@ -595,7 +601,8 @@
 
             </div>
         </div>
-    @endif
+        </template>
+@endif
 
     <!-- Modal Konfirmasi Error Handling -->
     @if($showConfirmModal)
@@ -632,7 +639,8 @@
                         </button>
                     </div>
                 </div>
-            @endif
+                </template>
+@endif
 
     <!-- Modal Antrean Redis (Large Modal, Body Scrollable) -->
     @if($showRedisQueueModal)
@@ -704,7 +712,8 @@
                                     </tbody>
                                 </table>
                             </div>
-                        @endif
+                            </template>
+@endif
                     </div>
 
                     <!-- Modal Footer -->
@@ -719,11 +728,13 @@
                     </div>
 
                 </div>
-            @endif
+                </template>
+@endif
 
     <!-- Modal Antrean Apify (Large Modal, Body Scrollable, Tinggi Fix) -->
     @if($showApifyQueueModal)
-                <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 py-6 font-sans">
+    <template x-teleport="body">
+        <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 py-6 font-sans">
                     <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-48px)]" style="height: calc(100vh - 48px);">
                         <!-- Modal Header -->
                         <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
@@ -830,7 +841,8 @@
                                 </tbody>
                             </table>
                         </div>
-                    @endif
+                        </template>
+@endif
                 </div>
 
                 <!-- Modal Footer -->
@@ -844,7 +856,8 @@
                     </button>
                 </div>
                 </div>
-            @endif
+                </template>
+@endif
 
     <style>
         /* ── Mobile Layout Optimization for System Health Audit Modal ── */
