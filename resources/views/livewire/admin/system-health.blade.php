@@ -316,7 +316,7 @@
 
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
-        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-2 py-4 font-sans">
+        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-2 py-4 font-sans">
             <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-24px)]" style="height: calc(100vh - 24px);">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-3 shrink-0 bg-slate-50/50">
@@ -725,7 +725,7 @@
 
     <!-- Modal Antrean Apify (Large Modal, Body Scrollable, Tinggi Fix) -->
     @if($showApifyQueueModal)
-        <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+        <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
             <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left overscroll-contain flex flex-col rounded-[24px] overflow-hidden" style="height: 640px !important; max-height: 640px !important;">
                 
                 <!-- Modal Header -->
