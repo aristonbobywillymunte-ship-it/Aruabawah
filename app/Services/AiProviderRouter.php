@@ -190,9 +190,11 @@ class AiProviderRouter
                     $skippedProviderFingerprints[] = $providerFingerprint;
                     $sharedProviders = AiProvider::query()
                         ->where('id', '!=', $provider->id)
-                        ->where('api_key', $provider->api_key)
                         ->where('model_name', $provider->model_name)
-                        ->get();
+                        ->get()
+                        ->filter(function ($other) use ($provider) {
+                            return $other->api_key === $provider->api_key;
+                        });
                     foreach ($sharedProviders as $shared) {
                         Log::info("[AiRouter] Putting shared provider {$shared->name} on cooldown because of daily quota exhaustion on {$providerName}.");
                         $this->handleProviderError($shared, $category, $classification['cooldown_seconds']);
@@ -217,8 +219,8 @@ class AiProviderRouter
         }
 
         if (!empty($minuteRateLimitDelays)) {
-            $delay = 300; // Sesuai permintaan pengguna: jika semua AI aktif sudah ter-limit, tunggu 5 menit
-            Log::warning("[AiRouter] All eligible providers hit minute rate limit{$articleContext}. Backing off for 5 minutes ({$delay}s).");
+            $delay = min($minuteRateLimitDelays);
+            Log::warning("[AiRouter] All eligible providers hit minute rate limit{$articleContext}. Backing off for {$delay}s.");
             throw new RateLimitRetryException($delay);
         }
 
