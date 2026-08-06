@@ -661,7 +661,7 @@ class PackageManager extends Component
         if (! Schema::hasTable('packages')) {
             return view('livewire.admin.package-manager', [
                 'packages' => new LengthAwarePaginator([], 0, 10),
-                'allActors' => ApifyActor::orderBy('platform')->orderBy('actor_name')->get(),
+                'allActors' => ApifyActor::where('status', 'active')->orderBy('platform')->orderBy('actor_name')->get(),
                 'managingPackage' => null,
                 'schemaMissing' => true,
             ]);
@@ -674,7 +674,7 @@ class PackageManager extends Component
             ->orderBy('name')
             ->paginate(10);
 
-        $allActors = ApifyActor::orderBy('platform')->orderBy('actor_name')->get();
+        $allActors = ApifyActor::where('status', 'active')->orderBy('platform')->orderBy('actor_name')->get();
 
         $managingPackage = $this->managingActorsPackageId
             ? Package::find($this->managingActorsPackageId)
