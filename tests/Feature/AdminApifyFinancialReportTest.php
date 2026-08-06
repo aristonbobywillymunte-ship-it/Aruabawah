@@ -74,6 +74,7 @@ class AdminApifyFinancialReportTest extends TestCase
             'platform' => 'Facebook',
             'actor_id' => $actorId,
             'keyword' => 'test keyword',
+            'normalized_keyword' => 'test keyword',
             'run_id' => 'test-run-123',
             'actual_cost_usd' => 1.5,
             'items_collected' => 100,
