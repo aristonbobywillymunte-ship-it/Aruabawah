@@ -59,7 +59,7 @@ class AdminApifyConfigurationTest extends TestCase
 
         $synced = $registry->syncManagedActors();
 
-        $this->assertCount(3, $synced->filter(fn ($actor) => $registry->isPrimarySlug($actor->actor_slug)));
+        $this->assertCount(6, $synced->filter(fn ($actor) => $registry->isPrimarySlug($actor->actor_slug)));
 
         foreach ($registry->primaryActors() as $actorDef) {
             $this->assertDatabaseHas('apify_actors', [
