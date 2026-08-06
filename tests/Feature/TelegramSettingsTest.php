@@ -75,10 +75,14 @@ class TelegramSettingsTest extends TestCase
             'https://api.telegram.org/bot*' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200)
         ]);
 
+        \App\Models\TelegramSetting::create([
+            'bot_token' => '9876543210:ZYXwvuTsrQPOnMlKjIHgFeDCba9876',
+            'default_chat_id' => '840203231',
+            'is_active' => true,
+        ]);
+
         Livewire::actingAs($this->adminUser)
             ->test(TelegramSettings::class)
-            ->set('bot_token', '9876543210:ZYXwvuTsrQPOnMlKjIHgFeDCba9876')
-            ->set('is_active', true)
             ->set('test_chat_id', '840203231')
             ->set('test_message', 'Notif krisis!')
             ->call('runTestSend')
