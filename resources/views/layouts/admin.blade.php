@@ -58,6 +58,16 @@
                 padding-bottom: 0.75rem !important;
             }
         }
+        /* Lock outer screen scroll bounds when modals are active */
+        html.overflow-hidden, body.overflow-hidden {
+            overflow: hidden !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            position: fixed !important;
+            width: 100vw !important;
+            top: 0 !important;
+            left: 0 !important;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-[#f7f9ff] text-slate-800 font-sans" :class="mobileMenuOpen ? 'overflow-hidden' : ''" x-data="{ mobileMenuOpen: false }">
