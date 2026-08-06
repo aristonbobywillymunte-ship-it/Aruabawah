@@ -848,7 +848,7 @@
     {{-- MODAL: LIHAT ARTIKEL / KONTEN                  --}}
     {{-- ══════════════════════════════════════════════ --}}
     @if($showArticleModal)
-                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.6);" class="backdrop-blur-sm">
+                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm">
             <div class="flex h-full max-h-[82vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl border border-slate-100/80 overflow-hidden" style="animation: fadeInScale 0.2s ease-out;">
                 {{-- Header --}}
                 <div class="flex items-start justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/60">
@@ -866,7 +866,7 @@
                     </button>
                 </div>
                 {{-- Content --}}
-                <div class="flex-1 overflow-y-auto px-6 py-5">
+                <div class="flex-1 overflow-y-auto px-6 py-5" style="overscroll-behavior: contain;">
                     @if(empty($viewingArticleContent))
                     <div class="flex flex-col items-center justify-center py-16 text-center">
                         <svg class="w-10 h-10 text-slate-300 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
