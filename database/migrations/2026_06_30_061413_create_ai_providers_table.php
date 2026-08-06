@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('provider_type'); // OpenAI, Gemini, Anthropic, Groq, OpenRouter, Ollama, Custom API
             $table->string('base_url')->nullable();
-            $table->string('api_key')->nullable();
+            $table->text('api_key')->nullable();
             $table->string('model_name');
             $table->decimal('temperature', 3, 2)->default(0.7);
             $table->integer('max_tokens')->default(2048);
