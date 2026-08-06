@@ -316,8 +316,8 @@
 
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
-        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-2 font-sans">
-            <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden" style="height: calc(100vh - 16px);">
+        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-2 py-4 font-sans">
+            <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-24px)]" style="height: calc(100vh - 24px);">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-3 shrink-0 bg-slate-50/50">
                     <div class="min-w-0 flex-1 pr-4 flex items-center gap-3">
@@ -419,7 +419,7 @@
                 </div>
 
                 <!-- Modal Body: overflow-y-auto dengan max-height eksplisit agar footer TIDAK ikut scroll -->
-                <div class="overflow-y-auto p-4 relative" style="flex: 1 1 0; min-height: 0; max-height: calc(100vh - 200px);">
+                <div class="overflow-y-auto p-4 relative" style="flex: 1 1 0; min-height: 0;">
                     <!-- Loading Overlay seluruh body saat filter/search berubah -->
                     <div wire:loading wire:target="searchQuery, filterStatus, filterType, filterActor, filterProject, gotoPage"
                          class="absolute inset-0 z-20 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 rounded-b-[24px]">
@@ -860,10 +860,13 @@
                 padding-top: 0.5rem !important;
                 padding-bottom: 0.5rem !important;
             }
-            .w-11/12.max-w-7xl.bg-white {
+            .w-11/12.max-w-7xl.bg-white,
+            div[wire\:key="ai-queue-details-modal"] > div.bg-white,
+            div[wire\:key="apify-queue-details-modal"] > div.bg-white {
                 width: 100% !important;
                 max-width: 100% !important;
-                height: calc(100vh - 20px) !important;
+                height: calc(100vh - 8px) !important;
+                max-height: calc(100vh - 8px) !important;
                 border-radius: 16px !important;
             }
 
