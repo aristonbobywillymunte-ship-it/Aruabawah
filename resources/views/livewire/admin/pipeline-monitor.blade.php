@@ -859,7 +859,7 @@
     {{-- MODAL: LIHAT ARTIKEL / KONTEN                  --}}
     {{-- ══════════════════════════════════════════════ --}}
     @if($showArticleModal)
-                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm">
+                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm" @touchmove.prevent @wheel.prevent>
             <div class="flex h-full max-h-[82vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl border border-slate-100/80 overflow-hidden" style="animation: fadeInScale 0.2s ease-out;">
                 {{-- Header --}}
                 <div class="flex items-start justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/60">

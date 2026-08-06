@@ -318,27 +318,29 @@
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
     <template x-teleport="body">
-        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-2 py-4 font-sans">
+        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-2 py-4 font-sans" @touchmove.prevent @wheel.prevent>
                 <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-24px)]" style="height: calc(100vh - 24px);">
                 <!-- Modal Header -->
-                <div class="flex items-center justify-between border-b border-slate-100 px-6 py-3 shrink-0 bg-slate-50/50">
-                    <div class="min-w-0 flex-1 pr-4 flex items-center gap-3">
-                        <div>
+                <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 flex-1 min-w-0">
+                        <div class="min-w-0 shrink-0">
                             <p class="text-[9px] font-bold uppercase tracking-wider text-[#1fa387]">Sistem Kesehatan AI</p>
-                            <h2 class="text-sm font-black text-slate-900 leading-tight">Daftar Antrean Berjalan <span class="text-slate-400 font-semibold">(AI Pipeline)</span></h2>
+                            <h2 class="text-sm font-black text-slate-900 leading-tight mt-0.5">Daftar Antrean Berjalan <span class="text-slate-400 font-semibold block sm:inline">(AI Pipeline)</span></h2>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button type="button" wire:click="openConfirmModal('clean_ghosts')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition text-[11px] font-bold shadow-sm">
+                                <span class="material-symbols-outlined text-[14px]">cleaning_services</span>
+                                <span class="hidden sm:inline">Bersihkan Data</span>
+                                <span class="sm:hidden">Bersihkan</span>
+                            </button>
+                            <button type="button" wire:click="openConfirmModal('purge_queue')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition text-[11px] font-bold shadow-sm">
+                                <span class="material-symbols-outlined text-[14px]">delete_sweep</span>
+                                <span class="hidden sm:inline">Kosongkan Redis</span>
+                                <span class="sm:hidden">Kosongkan</span>
+                            </button>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 mr-4">
-                        <button type="button" wire:click="openConfirmModal('clean_ghosts')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition text-[11px] font-bold shadow-sm">
-                            <span class="material-symbols-outlined text-[14px]">cleaning_services</span>
-                            Bersihkan Data
-                        </button>
-                        <button type="button" wire:click="openConfirmModal('purge_queue')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition text-[11px] font-bold shadow-sm">
-                            <span class="material-symbols-outlined text-[14px]">delete_sweep</span>
-                            Kosongkan Redis
-                        </button>
-                    </div>
-                    <button type="button" wire:click="closeQueueModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0">
+                    <button type="button" wire:click="closeQueueModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
                         <span class="material-symbols-outlined text-[18px] block">close</span>
                     </button>
                 </div>
@@ -349,8 +351,8 @@
                 @endphp
 
                 <!-- Panel Filter & Pencarian Standar (Statis, diletakkan di bawah header, tidak ikut ter-scroll) -->
-                <div class="px-5 py-2.5 bg-slate-50/30 border-b border-slate-100 shrink-0">
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                <div class="px-4 sm:px-5 py-2.5 bg-slate-50/30 border-b border-slate-100 shrink-0">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-2">
                         <!-- Pencarian -->
                         <div class="col-span-2 md:col-span-1">
                             <div class="relative">
@@ -421,7 +423,7 @@
                 </div>
 
                 <!-- Modal Body: overflow-y-auto dengan max-height eksplisit agar footer TIDAK ikut scroll -->
-                <div class="overflow-y-auto p-4 relative" style="flex: 1 1 0; min-height: 0; overscroll-behavior: contain;">
+                <div class="overflow-y-auto p-4 relative" style="flex: 1 1 0; min-height: 0; overscroll-behavior: contain;" @touchmove.stop @wheel.stop>
                     <!-- Loading Overlay seluruh body saat filter/search berubah -->
                     <div wire:loading wire:target="searchQuery, filterStatus, filterType, filterActor, filterProject, gotoPage"
                          class="absolute inset-0 z-20 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 rounded-b-[24px]">
@@ -606,7 +608,7 @@
 
     <!-- Modal Konfirmasi Error Handling -->
     @if($showConfirmModal)
-                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 font-sans">
+                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 font-sans" @touchmove.prevent @wheel.prevent>
                 <div class="w-full max-w-sm bg-white shadow-2xl rounded-2xl overflow-hidden text-center p-6 border border-slate-200">
                     <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full {{ $confirmActionType === 'purge_queue' ? 'bg-rose-100 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]' }} mb-4">
                         <span class="material-symbols-outlined text-[24px]">
@@ -644,7 +646,7 @@
 
     <!-- Modal Antrean Redis (Large Modal, Body Scrollable) -->
     @if($showRedisQueueModal)
-                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }">
+                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm" @touchmove.prevent @wheel.prevent x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }">
                 <div class="bg-white w-full max-w-[840px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200 flex flex-col my-8 max-h-[calc(100vh-32px)]">
                     
                     <!-- Modal Header -->
@@ -659,7 +661,7 @@
                     </div>
 
                     <!-- Modal Body (Halaman Body yang di-scroll, Tinggi Tetap) -->
-                    <div class="flex-1 overflow-y-auto p-6 relative" style="min-height: 0;">
+                    <div class="flex-1 overflow-y-auto p-6 relative" style="min-height: 0;" @touchmove.stop @wheel.stop>
                         @if(empty($redisQueueDetails))
                             <div class="flex flex-col items-center justify-center py-20 text-center">
                                 <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
@@ -734,17 +736,17 @@
     <!-- Modal Antrean Apify (Large Modal, Body Scrollable, Tinggi Fix) -->
     @if($showApifyQueueModal)
     <template x-teleport="body">
-        <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 py-6 font-sans">
+        <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 py-6 font-sans" @touchmove.prevent @wheel.prevent>
                     <div class="w-11/12 max-w-7xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[calc(100vh-48px)]" style="height: calc(100vh - 48px);">
                         <!-- Modal Header -->
-                        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0 bg-slate-50/50">
-                            <div class="min-w-0 flex-1 pr-4">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">APIFY DISPATCH STATE</span>
-                                <h2 class="text-base font-black text-slate-900 mt-0.5">Daftar Antrean Berjalan (Apify Pipeline)</h2>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Menampilkan status antrean perayapan media sosial yang sedang mengantre, diproses, atau ditunda.</p>
+                        <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
+                            <div class="min-w-0 flex-1">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">APIFY DISPATCH STATE</span>
+                                <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Daftar Antrean Berjalan <span class="text-slate-400 font-semibold block sm:inline">(Apify Pipeline)</span></h2>
+                        <p class="text-[9px] text-slate-400 mt-1 sm:mt-0.5 leading-relaxed">Menampilkan status antrean perayapan media sosial yang sedang mengantre, diproses, atau ditunda.</p>
                     </div>
-                    <button type="button" wire:click="closeApifyQueueModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0">
-                        <span class="material-symbols-outlined text-[20px] block">close</span>
+                    <button type="button" wire:click="closeApifyQueueModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
+                        <span class="material-symbols-outlined text-[18px] block">close</span>
                     </button>
                 </div>
 
@@ -765,7 +767,7 @@
                 </div>
 
                 <!-- Modal Body (Table dengan Tinggi Fix, Scrollable) -->
-                <div class="flex-1 overflow-y-auto p-6 relative" style="height: 500px !important; max-height: 500px !important; overscroll-behavior: contain;">
+                <div class="flex-1 overflow-y-auto p-6 relative" style="height: 500px !important; max-height: 500px !important; overscroll-behavior: contain;" @touchmove.stop @wheel.stop>
                     @if(empty($apifyQueueDetails))
                         <div class="flex flex-col items-center justify-center py-20 text-center">
                             <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
