@@ -355,7 +355,7 @@
                                 <input
                                     type="text"
                                     wire:model.live.debounce.350ms="searchQuery"
-                                    placeholder="🔍 Cari kata kunci / error..."
+                                    placeholder="Cari kata kunci / error..."
                                     class="w-full pl-3 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/30 transition bg-white"
                                 >
                             </div>
@@ -637,8 +637,8 @@
 
     <!-- Modal Antrean Redis (Large Modal, Body Scrollable) -->
     @if($showRedisQueueModal)
-        <div class="fixed inset-0 z-[60] overflow-y-auto flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }">
-            <div class="bg-white w-full max-w-[840px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200 flex flex-col my-8">
+        <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }">
+            <div class="bg-white w-full max-w-[840px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200 flex flex-col my-8 max-h-[calc(100vh-32px)]">
                 
                 <!-- Modal Header -->
                 <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
@@ -652,7 +652,7 @@
                 </div>
 
                 <!-- Modal Body (Halaman Body yang di-scroll, Tinggi Tetap) -->
-                <div class="flex-1 overflow-y-auto p-6 relative max-h-[500px]" style="height: 500px !important;">
+                <div class="flex-1 overflow-y-auto p-6 relative" style="min-height: 0;">
                     @if(empty($redisQueueDetails))
                         <div class="flex flex-col items-center justify-center py-20 text-center">
                             <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
@@ -941,6 +941,13 @@
                 border-radius: 10px !important;
                 font-size: 11px !important;
             }
+        }
+        /* Mengunci bounce/scroll window belakang saat modal aktif */
+        body.overflow-hidden, html.overflow-hidden {
+            overflow: hidden !important;
+            height: 100vh !important;
+            position: fixed !important;
+            width: 100% !important;
         }
     </style>
 </div>
