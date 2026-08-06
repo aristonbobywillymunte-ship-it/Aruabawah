@@ -257,6 +257,7 @@ class AiProviderQaTest extends TestCase
         $provider = AiProvider::create([
             'name' => 'Direct Test OpenAI',
             'provider_type' => 'OpenAI',
+            'base_url' => 'https://api.openai.com/v1',
             'model_name' => 'gpt-4o-mini',
             'temperature' => 0.7,
             'max_tokens' => 2000,
@@ -283,6 +284,7 @@ class AiProviderQaTest extends TestCase
         $provider = AiProvider::create([
             'name' => 'Direct Test OpenAI Fail',
             'provider_type' => 'OpenAI',
+            'base_url' => 'https://api.openai.com/v1',
             'model_name' => 'gpt-4o-mini',
             'temperature' => 0.7,
             'max_tokens' => 2000,
