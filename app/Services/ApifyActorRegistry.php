@@ -136,6 +136,11 @@ class ApifyActorRegistry
                 'actor_name' => 'Facebook Search Posts',
                 'actor_slug' => 'scrapeflow/facebook-search-posts',
             ],
+            'facebook-posts-search-scraper-deprecated' => [
+                'platform' => 'Facebook',
+                'actor_name' => 'Facebook Posts Search Scraper (Deprecated)',
+                'actor_slug' => 'scrapeflow/facebook-posts-search-scraper',
+            ],
             'legacy-no-longer-used' => [
                 'platform' => 'Threads',
                 'actor_name' => 'Threads Search Scraper',
