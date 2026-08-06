@@ -213,13 +213,15 @@
     {{-- Content Table --}}
     <div class="relative bg-white border border-slate-200/60 rounded-2xl shadow-sm min-h-[250px]">
         {{-- Loading Overlay --}}
-        <div wire:loading.delay class="absolute inset-0 z-30 bg-white/95 backdrop-blur-[3px] rounded-2xl">
+        <div wire:loading.delay class="fixed inset-0 z-[9999] bg-slate-900/40 backdrop-blur-[2px]">
             <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <svg class="animate-spin h-10 w-10 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span class="text-sm font-bold text-slate-600 mt-3 tracking-wider">Memuat Data...</span>
+                <div class="bg-white px-8 py-6 rounded-3xl shadow-2xl border border-slate-150/80 flex flex-col items-center justify-center min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
+                    <svg class="animate-spin h-10 w-10 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-xs font-bold text-slate-700 mt-4 tracking-wider">Memuat Data...</span>
+                </div>
             </div>
         </div>
 
