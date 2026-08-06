@@ -411,7 +411,7 @@
                         </details>
 
                         <!-- Group 4: Status & Default -->
-                        <div class="bg-slate-50 border border-slate-100 p-4 rounded-2xl flex flex-wrap gap-6 items-center">
+                        <div x-data class="bg-slate-50 border border-slate-100 p-4 rounded-2xl flex flex-wrap gap-6 items-center">
                             <label class="flex items-center gap-2.5 cursor-pointer group">
                                 <div class="relative w-9 h-5 rounded-full bg-slate-200 transition-colors duration-200 ease-in-out" :class="{ 'bg-blue-500': $wire.is_active }">
                                     <input type="checkbox" wire:model.live="is_active" class="sr-only">
