@@ -593,7 +593,6 @@
                             </div>
                         @else
                             <div></div>
-                            </template>
 @endif
                     </div>
                 </div>
@@ -649,7 +648,6 @@
                         </button>
                     </div>
                 </div>
-                </template>
 @endif
 
     <!-- Modal Antrean Redis (Large Modal, Body Scrollable) -->
@@ -722,7 +720,6 @@
                                     </tbody>
                                 </table>
                             </div>
-                            </template>
 @endif
                     </div>
 
@@ -738,7 +735,6 @@
                     </div>
 
                 </div>
-                </template>
 @endif
 
     <!-- Modal Antrean Apify (Large Modal, Body Scrollable, Tinggi Fix) -->
@@ -859,7 +855,6 @@
                                 </tbody>
                             </table>
                         </div>
-                        </template>
 @endif
                 </div>
 
