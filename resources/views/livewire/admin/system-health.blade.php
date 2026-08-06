@@ -431,7 +431,7 @@
                 </div>
 
                 <!-- Modal Body: overflow-y-auto dengan max-height eksplisit agar footer TIDAK ikut scroll -->
-                <div class="overflow-y-auto p-4 relative" style="flex: 1 1 0; min-height: 0; overscroll-behavior: contain;" @touchmove.stop @wheel.stop>
+                <div class="overflow-y-auto p-4 relative" style="flex: 1 1 auto; min-height: 300px; overscroll-behavior: contain;" @touchmove.stop @wheel.stop>
                     <!-- Loading Overlay seluruh body saat filter/search berubah -->
                     <div wire:loading wire:target="searchQuery, filterStatus, filterType, filterActor, filterProject, gotoPage"
                          class="absolute inset-0 z-20 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 rounded-b-[24px]">
@@ -669,7 +669,7 @@
                     </div>
 
                     <!-- Modal Body (Halaman Body yang di-scroll, Tinggi Tetap) -->
-                    <div class="flex-1 overflow-y-auto p-6 relative" style="min-height: 0;" @touchmove.stop @wheel.stop>
+                    <div class="flex-1 overflow-y-auto p-6 relative" style="min-height: 300px;" @touchmove.stop @wheel.stop>
                         @if(empty($redisQueueDetails))
                             <div class="flex flex-col items-center justify-center py-20 text-center">
                                 <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">

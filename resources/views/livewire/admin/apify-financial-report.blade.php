@@ -178,7 +178,7 @@
                         </div>
 
                         {{-- Modal Body (Scrollable & loading state, fixed height) --}}
-                        <div class="flex-1 overflow-y-auto p-4 sm:p-6 relative" style="min-height: 0; overscroll-behavior: contain;" @touchmove.stop @wheel.stop>
+                        <div class="flex-1 overflow-y-auto p-4 sm:p-6 relative" style="min-height: 300px; overscroll-behavior: contain;" @touchmove.stop @wheel.stop>
                             
                             {{-- Loading State --}}
                             @if($modalLoading)
