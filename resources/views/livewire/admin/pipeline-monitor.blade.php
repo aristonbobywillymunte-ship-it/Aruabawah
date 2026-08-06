@@ -213,7 +213,7 @@
     {{-- Content Table --}}
     <div class="relative bg-white border border-slate-200/60 rounded-2xl shadow-sm min-h-[250px]">
         {{-- Loading Overlay --}}
-        <div wire:loading.delay class="fixed inset-0 z-[9999] bg-slate-900/40 backdrop-blur-[2px]">
+        <div wire:loading.delay wire:target="setTab, retryAiState, retryAllFailedAiStates, deleteAiState, retryNotification, deleteNotification, clearAllPendingAiStates, filterProject, filterPlatform, filterAiState, filterStatus, filterRisk" class="fixed inset-0 z-[9999] bg-slate-900/40 backdrop-blur-[2px]">
             <div class="absolute inset-0 flex flex-col items-center justify-center">
                 <div class="bg-white px-8 py-6 rounded-3xl shadow-2xl border border-slate-150/80 flex flex-col items-center justify-center min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
                     <svg class="animate-spin h-10 w-10 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
