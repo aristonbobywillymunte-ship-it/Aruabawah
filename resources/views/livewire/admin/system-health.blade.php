@@ -868,23 +868,23 @@
             }
 
             /* Header modal: susun tombol bersihkan/redis secara vertikal */
-            .flex.items-center.justify-between.border-b.px-6.py-3 {
+            div[wire\:key="ai-queue-details-modal"] .flex.items-center.justify-between.border-b.px-6.py-3 {
                 flex-direction: column !important;
                 align-items: stretch !important;
                 padding: 1rem !important;
                 gap: 0.75rem !important;
                 position: relative !important;
             }
-            .flex.items-center.justify-between.border-b.px-6.py-3 .flex-1.pr-4 {
+            div[wire\:key="ai-queue-details-modal"] .flex.items-center.justify-between.border-b.px-6.py-3 .flex-1.pr-4 {
                 padding-right: 2rem !important; /* memberi ruang tombol close */
             }
-            .flex.items-center.justify-between.border-b.px-6.py-3 .flex.items-center.gap-2 {
+            div[wire\:key="ai-queue-details-modal"] .flex.items-center.justify-between.border-b.px-6.py-3 .flex.items-center.gap-2 {
                 flex-direction: row !important;
                 width: 100% !important;
                 margin-right: 0 !important;
                 gap: 0.5rem !important;
             }
-            .flex.items-center.justify-between.border-b.px-6.py-3 .flex.items-center.gap-2 button {
+            div[wire\:key="ai-queue-details-modal"] .flex.items-center.justify-between.border-b.px-6.py-3 .flex.items-center.gap-2 button {
                 flex: 1 !important;
                 justify-content: center !important;
                 height: 34px !important;
@@ -893,7 +893,7 @@
                 border-radius: 8px !important;
             }
             /* Pindahkan tombol close ke kanan atas secara absolute */
-            .flex.items-center.justify-between.border-b.px-6.py-3 button[wire\:click*="close"] {
+            div[wire\:key="ai-queue-details-modal"] .flex.items-center.justify-between.border-b.px-6.py-3 button[wire\:click*="close"] {
                 position: absolute !important;
                 right: 0.75rem !important;
                 top: 0.75rem !important;
