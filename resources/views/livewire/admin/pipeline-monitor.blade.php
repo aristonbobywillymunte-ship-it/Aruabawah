@@ -944,6 +944,76 @@
             from { opacity: 0; transform: scale(0.97) translateY(8px); }
             to   { opacity: 1; transform: scale(1) translateY(0); }
         }
+        
+        /* ── Mobile Layout Optimization for Pipeline Monitor ── */
+        @media (max-width: 1023px) {
+            /* Perkecil dan atur grid filter bar agar tidak terlalu memakan ruang tinggi */
+            .flex-col.sm\:flex-row.sm\:items-center.justify-between.gap-3.bg-white {
+                padding: 0.75rem !important;
+                border-radius: 14px !important;
+                gap: 0.5rem !important;
+            }
+            .flex.flex-wrap.items-center.gap-2.flex-1 {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 0.5rem !important;
+            }
+            .flex.flex-wrap.items-center.gap-2.flex-1 > div,
+            .flex.flex-wrap.items-center.gap-2.flex-1 input,
+            .flex.flex-wrap.items-center.gap-2.flex-1 select {
+                width: 100% !important;
+                height: 34px !important;
+                font-size: 11px !important;
+            }
+            .flex.flex-wrap.items-center.gap-2.flex-1 input {
+                padding-left: 2.25rem !important;
+            }
+            
+            /* Sembunyikan divider garis vertical di mobile */
+            .hidden.sm\:block.h-6.w-px.bg-slate-200 {
+                display: none !important;
+            }
+            
+            /* Menyesuaikan susunan tab button */
+            .overflow-x-auto.-mx-1.px-1.pb-0\.5 {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                padding: 0 !important;
+            }
+            .flex.gap-1\.5.min-w-max.rounded-2xl {
+                padding: 0.25rem !important;
+                border-radius: 12px !important;
+                gap: 4px !important;
+            }
+            .flex.gap-1\.5.min-w-max.rounded-2xl button {
+                padding: 6px 10px !important;
+                border-radius: 8px !important;
+                font-size: 11px !important;
+                height: 30px !important;
+                gap: 4px !important;
+            }
+            .flex.gap-1\.5.min-w-max.rounded-2xl button span.material-symbols-outlined {
+                font-size: 14px !important;
+            }
+            .flex.gap-1\.5.min-w-max.rounded-2xl button span.rounded-full {
+                font-size: 8.5px !important;
+                padding: 1px 4px !important;
+                min-w: 16px !important;
+            }
+
+            /* Atur summary pills di bawah title */
+            .flex.justify-end.gap-2 {
+                justify-content: flex-start !important;
+                flex-wrap: wrap !important;
+                margin-bottom: 0.25rem !important;
+            }
+            .flex.justify-end.gap-2 div {
+                padding: 4px 8px !important;
+                font-size: 10px !important;
+                border-radius: 8px !important;
+            }
+        }
     </style>
 
 </div>
