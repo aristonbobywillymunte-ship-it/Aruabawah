@@ -307,12 +307,12 @@
                             <div class="bg-slate-50/50 border border-slate-100 p-4 rounded-2xl space-y-4">
                                 <div class="grid gap-4 sm:grid-cols-2">
                                     <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Nama Provider</label>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Nama Provider <span class="text-rose-500">*</span></label>
                                         <input wire:model="name" placeholder="Contoh: OpenAI Utama" type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                         @error('name') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Jenis Provider</label>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Jenis Provider <span class="text-rose-500">*</span></label>
                                         <select wire:model="provider_type" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                             <option value="OpenAI">OpenAI</option>
                                             <option value="Gemini">Gemini</option>
@@ -355,7 +355,7 @@
                                         @error('api_key') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Model Name</label>
+                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Model Name <span class="text-rose-500">*</span></label>
                                         <div class="flex flex-col gap-1.5">
                                             <input wire:model="model_name" placeholder="Tulis nama model..." type="text" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm font-mono">
                                             
@@ -381,7 +381,7 @@
                             </h3>
                             <div class="bg-blue-50/30 border border-blue-100/50 p-4 rounded-2xl space-y-4">
                                 <div>
-                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Request per Menit</label>
+                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Request per Menit <span class="text-rose-500">*</span></label>
                                     <input wire:model="requests_per_minute" type="number" min="1" step="1" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                     <p class="mt-1 text-[10px] text-slate-400">Batas aman jumlah request per menit untuk provider ini.</p>
                                     @error('requests_per_minute') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror

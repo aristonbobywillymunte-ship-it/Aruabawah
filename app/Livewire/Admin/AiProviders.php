@@ -102,6 +102,26 @@ class AiProviders extends Component
         ];
     }
 
+    protected function messages(): array
+    {
+        return [
+            'name.required' => 'Nama provider wajib diisi.',
+            'provider_type.required' => 'Jenis provider wajib diisi.',
+            'model_name.required' => 'Nama model wajib diisi.',
+            'temperature.required' => 'Suhu (temperature) wajib diisi.',
+            'temperature.numeric' => 'Suhu harus berupa angka.',
+            'temperature.min' => 'Suhu minimal bernilai 0.',
+            'temperature.max' => 'Suhu maksimal bernilai 2.',
+            'max_tokens.required' => 'Batas token maksimal wajib diisi.',
+            'max_tokens.integer' => 'Token harus berupa angka bulat.',
+            'max_tokens.min' => 'Token minimal bernilai 1.',
+            'requests_per_minute.required' => 'Request per menit wajib diisi.',
+            'requests_per_minute.integer' => 'Request per menit harus berupa angka bulat.',
+            'requests_per_minute.min' => 'Request per menit minimal bernilai 1.',
+            'base_url.url' => 'Format URL base tidak valid.',
+        ];
+    }
+
     public function updatedProviderType(): void
     {
         $this->detectedModels = [];
