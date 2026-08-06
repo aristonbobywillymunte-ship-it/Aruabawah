@@ -129,12 +129,6 @@ class ApifyFinancialReport extends Component
                 ->orderBy('id', 'desc')
                 ->limit(150);
 
-            \Log::info("Apify SQL Debug", [
-                'sql' => $rawItems->toSql(),
-                'bindings' => $rawItems->getBindings(),
-                'platform' => $platform,
-            ]);
-
             $rawItems = $rawItems->get();
 
             $this->selectedItems = $rawItems->map(function($item) {
@@ -149,12 +143,6 @@ class ApifyFinancialReport extends Component
                 ];
             })->toArray();
         }
-
-        \Log::info("ApifyFinancialReport openItems called", [
-            'platform' => $platform, 
-            'keyword' => $keyword, 
-            'raw_items_count' => count($this->selectedItems)
-        ]);
 
         $this->modalLoading = false;
     }
@@ -177,37 +165,45 @@ class ApifyFinancialReport extends Component
 
         // Load costs per run with pagination (20 per page)
         $recentRuns = DB::table('apify_dispatch_states')
-            ->whereNotNull('actual_cost_usd')
+            ->leftJoin('apify_actors', 'apify_dispatch_states.actor_id', '=', 'apify_actors.id')
+            ->leftJoin('projects', 'apify_dispatch_states.project_id', '=', 'projects.id')
+            ->whereNotNull('apify_dispatch_states.actual_cost_usd')
             ->when($this->startDate, function($q) {
-                $q->whereDate('completed_at', '>=', $this->startDate);
+                $q->whereDate('apify_dispatch_states.completed_at', '>=', $this->startDate);
             }, function($q) {
-                $q->where('completed_at', '>=', now()->subDays(30));
+                $q->where('apify_dispatch_states.completed_at', '>=', now()->subDays(30));
             })
             ->when($this->endDate, function($q) {
-                $q->whereDate('completed_at', '<=', $this->endDate);
+                $q->whereDate('apify_dispatch_states.completed_at', '<=', $this->endDate);
             })
             ->when($this->projectId, function($q) {
-                $q->where('project_id', $this->projectId);
+                $q->where('apify_dispatch_states.project_id', $this->projectId);
             })
-            ->orderBy('completed_at', 'desc')
-            ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id', 'keyword', 'run_id')
+            ->orderBy('apify_dispatch_states.completed_at', 'desc')
+            ->select(
+                'apify_dispatch_states.platform', 
+                'apify_dispatch_states.actual_cost_usd', 
+                'apify_dispatch_states.items_collected', 
+                'apify_dispatch_states.run_duration_secs', 
+                'apify_dispatch_states.completed_at', 
+                'apify_dispatch_states.project_id', 
+                'apify_dispatch_states.keyword', 
+                'apify_dispatch_states.run_id',
+                'apify_actors.actor_name',
+                'projects.name as project_name'
+            )
             ->paginate(20);
 
         // Transform collections items
         $recentRuns->getCollection()->transform(function ($r) {
-            $actor = DB::table('apify_actors')->where('id', $r->actor_id)->value('actor_name');
-            $projectName = 'N/A';
-            if ($r->project_id) {
-                $projectName = DB::table('projects')->where('id', $r->project_id)->value('name') ?? 'N/A';
-            }
             return [
                 'platform'     => $r->platform,
-                'actor_name'   => $actor ?? '-',
+                'actor_name'   => $r->actor_name ?? '-',
                 'cost'         => number_format((float) $r->actual_cost_usd, 4),
                 'items'        => $r->items_collected ?? 0,
                 'duration'     => $r->run_duration_secs ? $r->run_duration_secs . 's' : '-',
                 'completed_at' => $r->completed_at ? \Carbon\Carbon::parse($r->completed_at)->isoFormat('D MMM, HH:mm') : '-',
-                'project_name' => $projectName,
+                'project_name' => $r->project_name ?? 'N/A',
                 'project_id'   => $r->project_id,
                 'keyword'      => $r->keyword,
                 'run_id'       => $r->run_id ?? '-',
