@@ -232,7 +232,6 @@
             <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
                 <div>
                     <h2 class="text-sm font-bold text-slate-800">Aktor Bawaan Sistem</h2>
-                    <p class="text-[10px] text-slate-400 mt-0.5">Hanya menampilkan Facebook, Instagram, dan TikTok yang dipakai sistem.</p>
                 </div>
                 <button 
                     wire:click="syncManagedActors" 

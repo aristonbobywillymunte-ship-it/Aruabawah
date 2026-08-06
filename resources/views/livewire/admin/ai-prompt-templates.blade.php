@@ -42,7 +42,6 @@
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left">
         <div class="border-b border-slate-100 px-6 py-4">
             <h2 class="text-sm font-bold text-slate-800">Daftar Prompt Template</h2>
-            <p class="text-[10px] text-slate-400 mt-0.5">Semua template AI disimpan di database dan bisa diedit langsung dari sini.</p>
         </div>
 
         @if(isset($duplicateNames) && $duplicateNames->isNotEmpty())

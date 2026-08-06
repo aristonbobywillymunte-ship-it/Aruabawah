@@ -114,7 +114,6 @@
         <div class="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
             <div>
                 <h2 class="text-sm font-bold text-slate-800">Daftar Penerima Khusus Proyek</h2>
-                <p class="text-[10px] text-slate-400 mt-0.5">Petakan target group chat ID kustom per masing-masing proyek pemantauan.</p>
             </div>
             <div class="relative w-72">
                 <input 

@@ -90,7 +90,6 @@
 
         <div class="border-b border-slate-100 px-6 py-4 shrink-0">
             <h2 class="text-sm font-bold text-slate-800">Daftar Portal Berita</h2>
-            <p class="text-[10px] text-slate-400 mt-0.5">Kelola portal manual dalam satu alur: isi data, minta AI, cek, lalu simpan.</p>
         </div>
 
         <div class="overflow-x-auto overflow-y-auto flex-1 min-h-[300px]">
