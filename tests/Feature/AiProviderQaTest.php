@@ -244,4 +244,59 @@ class AiProviderQaTest extends TestCase
         $this->assertStringNotContainsString('sk-secret-key', Livewire::actingAs($this->adminUser)->test(\App\Livewire\Admin\AiProviders::class)->get('testResultResponse'));
     }
 
+    public function test_it_runs_actual_api_check_on_direct_test_connection_success()
+    {
+        Http::fake([
+            'https://api.openai.com/v1/chat/completions' => Http::response([
+                'choices' => [
+                    ['message' => ['content' => 'Pong']]
+                ]
+            ], 200)
+        ]);
+
+        $provider = AiProvider::create([
+            'name' => 'Direct Test OpenAI',
+            'provider_type' => 'OpenAI',
+            'model_name' => 'gpt-4o-mini',
+            'temperature' => 0.7,
+            'max_tokens' => 2000,
+            'api_key' => 'sk-test',
+            'is_active' => true,
+        ]);
+
+        Livewire::actingAs($this->adminUser)
+            ->test(\App\Livewire\Admin\AiProviders::class)
+            ->call('testConnectionDirect', $provider->id)
+            ->assertHasNoErrors();
+
+        $provider->refresh();
+        $this->assertSame('success', $provider->last_test_status);
+        $this->assertNull($provider->last_failure_code);
+    }
+
+    public function test_it_runs_actual_api_check_on_direct_test_connection_failure()
+    {
+        Http::fake([
+            'https://api.openai.com/v1/chat/completions' => Http::response([], 500)
+        ]);
+
+        $provider = AiProvider::create([
+            'name' => 'Direct Test OpenAI Fail',
+            'provider_type' => 'OpenAI',
+            'model_name' => 'gpt-4o-mini',
+            'temperature' => 0.7,
+            'max_tokens' => 2000,
+            'api_key' => 'sk-test',
+            'is_active' => true,
+        ]);
+
+        Livewire::actingAs($this->adminUser)
+            ->test(\App\Livewire\Admin\AiProviders::class)
+            ->call('testConnectionDirect', $provider->id)
+            ->assertHasNoErrors();
+
+        $provider->refresh();
+        $this->assertSame('failed', $provider->last_test_status);
+        $this->assertNotNull($provider->last_failure_code);
+    }
 }

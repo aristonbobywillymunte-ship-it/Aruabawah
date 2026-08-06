@@ -718,18 +718,43 @@ Berikan jawaban langsung, natural, dan singkat.";
         }
     }
 
-    public function testConnectionDirect(int $id): void
+    public function testConnectionDirect(int $id, \App\Services\AiProviderClient $client, \App\Services\AiProviderErrorClassifier $classifier): void
     {
         $this->adminOnly();
         $provider = AiProvider::findOrFail($id);
 
-        $provider->last_tested_at = now();
-        $provider->last_test_status = 'success';
-        $provider->cooldown_until = null;
-        $provider->last_failure_code = null;
-        $provider->save();
+        try {
+            $response = $client->sendRequest($provider, 'System health check.', 'Hello, AI!', ['temperature' => 0.1]);
 
-        $this->notify('success', "Uji koneksi cepat ke {$provider->name} berhasil.");
+            if ($response->successful()) {
+                $provider->last_tested_at = now();
+                $provider->last_test_status = 'success';
+                $provider->cooldown_until = null;
+                $provider->last_failure_code = null;
+                $provider->last_error = null;
+                $provider->save();
+
+                $this->notify('success', "Uji koneksi cepat ke {$provider->name} berhasil.");
+            } else {
+                $errorData = $classifier->classifyResponse($response);
+                
+                $provider->last_tested_at = now();
+                $provider->last_test_status = 'failed';
+                $provider->last_failure_code = $errorData['category'] ?? \App\Services\AiProviderErrorClassifier::CATEGORY_UNKNOWN;
+                $provider->last_error = $response->body();
+                $provider->save();
+
+                $this->notify('error', "Uji koneksi cepat ke {$provider->name} gagal: HTTP {$response->status()}");
+            }
+        } catch (\Throwable $e) {
+            $provider->last_tested_at = now();
+            $provider->last_test_status = 'failed';
+            $provider->last_failure_code = \App\Services\AiProviderErrorClassifier::CATEGORY_PROVIDER_UNAVAILABLE;
+            $provider->last_error = $e->getMessage();
+            $provider->save();
+
+            $this->notify('error', "Uji koneksi cepat ke {$provider->name} gagal: {$e->getMessage()}");
+        }
     }
 
     public function closeFormModal(): void
