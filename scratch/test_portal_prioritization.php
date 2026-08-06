@@ -4,7 +4,7 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-$projects = \App\Models\Project::where('status', 'active')->get();
+$projects = \App\Models\Project::where('is_active', true)->get();
 echo 'Total Active Projects: ' . $projects->count() . PHP_EOL;
 
 $priorityService = app(\App\Services\ProjectScrapePriorityService::class);
