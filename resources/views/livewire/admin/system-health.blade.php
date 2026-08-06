@@ -949,8 +949,11 @@
         body.overflow-hidden, html.overflow-hidden {
             overflow: hidden !important;
             height: 100vh !important;
+            max-height: 100vh !important;
             position: fixed !important;
             width: 100% !important;
+            top: 0 !important;
+            left: 0 !important;
         }
     </style>
 </div>
