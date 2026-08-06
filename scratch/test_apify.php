@@ -4,9 +4,15 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
+$settings = Illuminate\Support\Facades\DB::table('apify_settings')->first();
 $token = env('APIFY_TOKEN');
-if (!$token) {
-    $token = Illuminate\Support\Facades\DB::table('apify_tokens')->value('token');
+if (!$token && $settings) {
+    $token = match((int) $settings->active_token_index) {
+        1 => decrypt($settings->api_token_backup_1),
+        2 => decrypt($settings->api_token_backup_2),
+        3 => decrypt($settings->api_token_backup_3),
+        default => decrypt($settings->api_token),
+    };
 }
 $url = 'https://api.apify.com/v2/actor-runs/bq2mxB2fGBdu2aLJw/dataset/items?token=' . $token;
 $resp = Illuminate\Support\Facades\Http::get($url);
