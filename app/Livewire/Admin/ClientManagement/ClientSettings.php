@@ -8,7 +8,7 @@ use App\Models\Package;
 use App\Models\ClientSetting;
 use Livewire\Attributes\Layout;
 
-#[Layout('layouts.admin')]
+#[Layout('layouts.admin-livewire')]
 class ClientSettings extends Component
 {
     public $client;
