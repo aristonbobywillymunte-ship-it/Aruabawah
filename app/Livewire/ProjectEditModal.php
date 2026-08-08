@@ -121,7 +121,7 @@ class ProjectEditModal extends Component
         $this->showModal = false;
         
         $this->dispatch('project-updated', projectId: $project->id);
-        session()->flash('message', 'Proyek berhasil diperbarui.');
+        $this->dispatch('project-action-toast', type: 'success', message: 'Proyek berhasil diperbarui.');
     }
 
     public function close()
