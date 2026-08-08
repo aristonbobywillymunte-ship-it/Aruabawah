@@ -454,7 +454,8 @@
                             </div>
                         @else
                             <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white mb-3">
-                                <table class="w-full text-left border-collapse text-[11px] table-fixed">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-[800px] w-full text-left border-collapse text-[11px] table-fixed">
                                 <thead>
                                     <tr class="bg-slate-50 border-b border-slate-200">
                                         <th class="px-3 py-2 font-bold text-slate-500 w-10 text-center">#</th>
@@ -534,6 +535,7 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                                </div>
                         </div>
                         </template>
 @endif
@@ -790,7 +792,8 @@
                         </div>
                     @else
                         <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm bg-white">
-                            <table class="w-full text-left border-collapse text-xs table-fixed">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-[900px] w-full text-left border-collapse text-xs table-fixed">
                                 <thead>
                                     <tr class="bg-slate-50 border-b border-slate-200">
                                         <th class="px-4 py-3 font-bold text-slate-700 w-12 text-center">No</th>
@@ -854,6 +857,7 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                                </div>
                         </div>
 @endif
                 </div>

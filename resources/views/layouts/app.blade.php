@@ -7,6 +7,8 @@
     <title>{{ \App\Helpers\AppBrandingHelper::getAppName() }} Media Intelligence</title>
     <!-- Premium smooth dark theme with subtle gradient -->
     <style>
+        [x-cloak] { display: none !important; }
+
         :root {
             --primary-h: 210;
             --primary-s: 60%;

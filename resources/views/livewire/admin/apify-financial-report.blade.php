@@ -199,7 +199,8 @@
                                 </div>
                             @elseif(!$modalLoading)
                                 <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                                    <table class="w-full text-left text-xs border-collapse">
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-[800px] w-full text-left text-xs border-collapse">
                                         <thead>
                                             <tr class="bg-slate-50 border-b border-slate-200">
                                                 <th class="px-4 py-3 font-bold text-slate-600">Pembuat ({{ $isCommentModal ? 'Komentator' : 'Author' }})</th>
@@ -241,6 +242,7 @@
                                             @endforeach
                                         </tbody>
                                     </table>
+                                    </div>
                                 </div>
                             @endif
                         </div>

@@ -21,9 +21,9 @@
          isMobile: window.innerWidth < 900,
          openMobileMenu: false,
          mobileFilterOpen: false,
-         showTikTokCommentsModal: @entangle('showTikTokCommentsModal').live,
-         showInstagramCommentsModal: @entangle('showInstagramCommentsModal').live,
-         showFacebookCommentsModal: @entangle('showFacebookCommentsModal').live,
+         showTikTokCommentsModal: false,
+         showInstagramCommentsModal: false,
+         showFacebookCommentsModal: false,
          reportFeedbackOpen: false,
          reportFeedbackType: 'success',
          reportFeedbackTitle: '',
@@ -655,7 +655,7 @@
             
             @if($this->isTab('penyebutan'))
                 <!-- TAB 1: Penyebutan (Mentions Feed View) -->
-                <section class="flex-1 min-w-0 mentions-section-wrapper pr-1" wire:key="dashboard-mentions-section">
+                <section class="flex-1 min-w-0 mentions-section-wrapper pr-1" wire:init="loadPenyebutan" wire:key="dashboard-mentions-section">
                     <!-- Section Title & Sort Selector -->
                     <!-- Section Title & Sort Selector -->
                     <div class="flex items-center justify-between gap-3 pb-2.5 border-b border-slate-100">
@@ -704,9 +704,15 @@
 
                     <!-- Mentions Cards Feed -->
                     @php
-                        $mentionsArticlesList = $this->getArticles();
-                        $mentionsArticlesCount = $mentionsArticlesList->count();
-                        $mentionsTotalArticlesCount = $this->getTotalArticlesCount();
+                        if ($penyebutanLoaded) {
+                            $mentionsArticlesList = $this->getArticles();
+                            $mentionsArticlesCount = $mentionsArticlesList->count();
+                            $mentionsTotalArticlesCount = $this->getTotalArticlesCount();
+                        } else {
+                            $mentionsArticlesList = collect();
+                            $mentionsArticlesCount = 0;
+                            $mentionsTotalArticlesCount = 0;
+                        }
                         $mentionsFeedSignature = md5(json_encode([
                             'project' => $projectId,
                             'sources' => $selectedSources,
@@ -765,6 +771,37 @@
                             ]));
                         @endphp
 
+                    @if(!$penyebutanLoaded)
+                        <div class="space-y-4">
+                            @for($i = 0; $i < 4; $i++)
+                                <div class="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] animate-pulse space-y-4">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-10 h-10 rounded-xl bg-slate-100"></div>
+                                        <div class="space-y-2">
+                                            <div class="h-4 w-28 rounded bg-slate-100"></div>
+                                            <div class="h-3 w-40 rounded bg-slate-100"></div>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50/60 rounded-2xl p-3 border border-slate-100">
+                                        <div class="h-14 rounded-2xl bg-slate-100"></div>
+                                        <div class="h-14 rounded-2xl bg-slate-100"></div>
+                                        <div class="h-14 rounded-2xl bg-slate-100"></div>
+                                        <div class="h-14 rounded-2xl bg-slate-100 sm:col-span-1"></div>
+                                        <div class="h-14 rounded-2xl bg-slate-100 sm:col-span-1"></div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="h-5 w-3/4 rounded bg-slate-100"></div>
+                                        <div class="h-4 w-full rounded bg-slate-100"></div>
+                                        <div class="h-4 w-11/12 rounded bg-slate-100"></div>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                                        <div class="h-8 w-28 rounded-xl bg-slate-100"></div>
+                                        <div class="h-8 w-36 rounded-xl bg-slate-100"></div>
+                                    </div>
+                                </div>
+                            @endfor
+                        </div>
+                    @else
                         <div
                             class="space-y-4 hidden"
                             wire:loading.block
@@ -802,6 +839,7 @@
 
                         <div
                             class="space-y-4"
+                            wire:loading.remove
                             wire:target="search,selectedSources,selectedSentiment,startDate,endDate,sortBy,selectedCategory,selectedKeyword,setSort"
                             wire:key="mentions-feed-{{ $mentionsFeedSignature }}"
                         >
@@ -993,24 +1031,24 @@
                                             @if($this->isTikTokArticle($article))
                                                 <button
                                                     type="button"
-                                                    @click.stop="showTikTokCommentsModal = true"
-                                                    wire:click.stop.prevent="openTikTokCommentsModal({{ $article->id }})"
+                                                    wire:click.stop="openTikTokCommentsModal({{ $article->id }})"
                                                     class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#17856e] transition-colors cursor-pointer"
                                                     title="Lihat komentar TikTok"
                                                 >
-                                                    <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">comment</span>
+                                                    <span wire:loading.remove wire:target="openTikTokCommentsModal({{ $article->id }})" class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">comment</span>
+                                                    <svg wire:loading wire:target="openTikTokCommentsModal({{ $article->id }})" class="animate-spin h-3.5 w-3.5 text-[#1fa387]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                                     <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
                                                 </button>
                                             @elseif($this->isInstagramArticle($article))
                                                 @if($instagramCommentsClickable)
                                                     <button
                                                         type="button"
-                                                        @click.stop="showInstagramCommentsModal = true"
-                                                        wire:click.stop.prevent="openInstagramCommentsModal({{ $article->id }})"
+                                                        wire:click.stop="openInstagramCommentsModal({{ $article->id }})"
                                                         class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#e1306c] transition-colors cursor-pointer"
                                                         title="Lihat komentar Instagram"
                                                     >
-                                                        <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">comment</span>
+                                                        <span wire:loading.remove wire:target="openInstagramCommentsModal({{ $article->id }})" class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">comment</span>
+                                                        <svg wire:loading wire:target="openInstagramCommentsModal({{ $article->id }})" class="animate-spin h-3.5 w-3.5 text-[#e1306c]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                                         <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
                                                     </button>
                                                 @else
@@ -1029,12 +1067,12 @@
                                                 @if($facebookCommentsClickable)
                                                     <button
                                                         type="button"
-                                                        @click.stop="showFacebookCommentsModal = true"
-                                                        wire:click.stop.prevent="openFacebookCommentsModal({{ $article->id }})"
+                                                        wire:click.stop="openFacebookCommentsModal({{ $article->id }})"
                                                         class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black hover:text-[#1877f2] transition-colors cursor-pointer"
                                                         title="Lihat komentar Facebook"
                                                     >
-                                                        <span class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">comment</span>
+                                                        <span wire:loading.remove wire:target="openFacebookCommentsModal({{ $article->id }})" class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">comment</span>
+                                                        <svg wire:loading wire:target="openFacebookCommentsModal({{ $article->id }})" class="animate-spin h-3.5 w-3.5 text-[#1877f2]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                                         <span>{{ number_format($commentsCount, 0, ',', '.') }}</span>
                                                     </button>
                                                 @else
@@ -1231,10 +1269,11 @@
                         @endif
 
                     </div>
+                    @endif
                 </section>
             @elseif($this->isTab('analisis'))
                 <!-- TAB 2: Analisis (Redesigned matching screenshots) -->
-                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:key="dashboard-analysis-section">
+                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1" wire:init="loadAnalysis" wire:key="dashboard-analysis-section">
                     <div>
                         <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
                             <span class="material-symbols-outlined text-[#1fa387] text-[20px] sm:text-[22px]">analytics</span>Analisis
@@ -1242,14 +1281,37 @@
                         <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 text-left leading-relaxed">Pantau ringkasan performa dan wawasan data yang relevan untuk proyek aktif.</p>
                     </div>
                     @php
-                        $analysisArticlesList = $this->getArticles();
-                        $analysisArticlesCount = $analysisArticlesList->count();
-                        $analysisTotalArticlesCount = $this->getTotalArticlesCount();
+                        if ($analysisLoaded) {
+                            $analysisArticlesList = $this->getArticles();
+                            $analysisArticlesCount = $analysisArticlesList->count();
+                            $analysisTotalArticlesCount = $this->getTotalArticlesCount();
+                        } else {
+                            $analysisArticlesList = collect();
+                            $analysisArticlesCount = 0;
+                            $analysisTotalArticlesCount = 0;
+                        }
                     @endphp
                     <div
                         style="height: calc(100vh - 250px);"
                         class="overflow-y-auto pr-4 space-y-6"
-                        x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
+                    >
+                    @if(!$analysisLoaded)
+                        <div class="space-y-6 animate-pulse mt-4">
+                            <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-6">
+                                    <div class="h-[100px] bg-slate-100 rounded-2xl"></div>
+                                    <div class="h-[100px] bg-slate-100 rounded-2xl"></div>
+                                    <div class="h-[100px] bg-slate-100 rounded-2xl"></div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                                <div class="h-[300px] bg-slate-100 rounded-2xl"></div>
+                                <div class="h-[300px] bg-slate-100 rounded-2xl"></div>
+                            </div>
+                        </div>
+                    @else
+                        <div
+                            x-data="{ lastLoadMoreAt: 0, loadMoreTimer: null }"
                         x-init="
                             const feedEl = $el;
                             const triggerLoadMore = () => {
@@ -2577,7 +2639,7 @@
                                 @endforeach
                             </div>
                         </div>
-                    </div>
+                        @endif
                     </div>
                 </section>
             @elseif($this->isTab('katakunci'))
@@ -3067,8 +3129,20 @@
                 </section>
             @elseif($this->isTab('wawasan'))
                 @php
-                    $w = $this->getWawasan();
                     $project = $this->resolveProjectOrFail($this->projectId);
+                    if ($wawasanLoaded) {
+                        $w = $this->getWawasan();
+                    } else {
+                        $w = [
+                            'crisis_color' => 'slate',
+                            'reputation_score' => 0,
+                            'ai_summary' => '',
+                            'key_events' => [],
+                            'sentiment_context' => [],
+                            'reputation_metrics' => ['positive' => 0, 'neutral' => 0, 'negative' => 0],
+                            'risk_triggers' => [],
+                        ];
+                    }
                     
                     // Resolve crisis color classes statically to prevent compilation issues
                     $crisisTextClass = 'text-slate-600';
@@ -3088,7 +3162,7 @@
                         $crisisPingClass = 'bg-emerald-400';
                     }
                 @endphp
-                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                <section wire:init="loadWawasan" class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 text-left">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
@@ -3116,7 +3190,30 @@
 
                     <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
-                    <!-- Top Analytics KPI Grid -->
+                    @if(!$wawasanLoaded)
+                        <div class="space-y-6 animate-pulse">
+                            <!-- KPI Skeleton -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                                @for($i=0; $i<4; $i++)
+                                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm h-[110px] flex items-center justify-between">
+                                    <div class="space-y-2">
+                                        <div class="h-4 w-20 bg-slate-200 rounded"></div>
+                                        <div class="h-8 w-16 bg-slate-200 rounded"></div>
+                                        <div class="h-3 w-32 bg-slate-200 rounded"></div>
+                                    </div>
+                                    <div class="w-14 h-14 bg-slate-200 rounded-full"></div>
+                                </div>
+                                @endfor
+                            </div>
+                            <!-- Charts Skeleton -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="bg-white rounded-2xl border border-slate-200 p-5 h-[300px]"></div>
+                                <div class="bg-white rounded-2xl border border-slate-200 p-5 h-[300px]"></div>
+                            </div>
+                        </div>
+                    @else
+                        <div wire:loading.remove wire:target="search, startDate, endDate, selectedSources, selectedSentiment, selectedCategory, sortBy, setTab, projectId">
+                            <!-- Top Analytics KPI Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                         <!-- Card 1: Reputation Index -->
                         <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-between h-[110px]">
@@ -3464,6 +3561,8 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    @endif
                     </div>
                 </section>
             @elseif($this->isTab('laporan'))
@@ -3915,7 +4014,7 @@
                 </section>
 
             @elseif($this->isTab('konten'))
-                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                <section wire:init="loadKonten" class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <div class="flex items-center justify-between shrink-0">
                         <div>
                             <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
@@ -3926,9 +4025,15 @@
                     </div>
                     
                     @php
-                        $contentArticlesList = $this->getArticles();
-                        $contentArticlesCount = $contentArticlesList->count();
-                        $contentTotalArticlesCount = $this->getTotalArticlesCount();
+                        if ($kontenLoaded) {
+                            $contentArticlesList = $this->getArticles();
+                            $contentArticlesCount = $contentArticlesList->count();
+                            $contentTotalArticlesCount = $this->getTotalArticlesCount();
+                        } else {
+                            $contentArticlesList = collect();
+                            $contentArticlesCount = 0;
+                            $contentTotalArticlesCount = 0;
+                        }
                         $contentFeedSignature = md5(json_encode([
                             'project' => $projectId,
                             'sources' => $selectedSources,
@@ -3974,8 +4079,38 @@
                             triggerLoadMore();
                         "
                     >
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                        @forelse($contentArticlesList as $article)
+                    @if(!$kontenLoaded)
+                        <div class="w-full">
+                            <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                                @for($i = 0; $i < 6; $i++)
+                                    <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm animate-pulse flex flex-col h-[230px]">
+                                        <div class="flex items-center justify-between gap-2 mb-4">
+                                            <div class="flex gap-2">
+                                                <div class="h-6 w-16 bg-slate-200 rounded-lg"></div>
+                                                <div class="h-6 w-20 bg-slate-200 rounded-lg"></div>
+                                            </div>
+                                            <div class="h-5 w-24 bg-slate-200 rounded-lg"></div>
+                                        </div>
+                                        <div class="space-y-3 mb-6">
+                                            <div class="h-5 bg-slate-200 rounded w-full"></div>
+                                            <div class="h-5 bg-slate-200 rounded w-5/6"></div>
+                                            <div class="h-5 bg-slate-200 rounded w-3/4"></div>
+                                        </div>
+                                        <div class="mt-auto flex justify-between items-center pt-4 border-t border-slate-100">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-6 h-6 rounded-full bg-slate-200"></div>
+                                                <div class="h-3 w-16 bg-slate-200 rounded"></div>
+                                            </div>
+                                            <div class="h-8 w-24 bg-slate-200 rounded-xl"></div>
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+                        </div>
+                    @else
+                        <div wire:loading.remove wire:target="search, startDate, endDate, selectedSources, selectedSentiment, selectedCategory, sortBy, setTab, projectId">
+                            <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                            @forelse($contentArticlesList as $article)
                             @php
                                 $articleReachDisp = $this->getProjectReachDisplayData($article);
                             @endphp
@@ -4098,6 +4233,36 @@
                                 <p class="text-xs text-slate-500 font-medium">Data konten untuk proyek ini belum tersedia.</p>
                             </div>
                         @endforelse
+                        </div>
+                    </div>
+
+                    {{-- Skeleton Loading saat filter/pencarian --}}
+                    <div wire:loading wire:target="search, startDate, endDate, selectedSources, selectedSentiment, selectedCategory, sortBy, setTab, projectId" class="w-full">
+                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                            @for($i = 0; $i < 6; $i++)
+                                <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm animate-pulse flex flex-col h-[230px]">
+                                    <div class="flex items-center justify-between gap-2 mb-4">
+                                        <div class="flex gap-2">
+                                            <div class="h-6 w-16 bg-slate-200 rounded-lg"></div>
+                                            <div class="h-6 w-20 bg-slate-200 rounded-lg"></div>
+                                        </div>
+                                        <div class="h-5 w-24 bg-slate-200 rounded-lg"></div>
+                                    </div>
+                                    <div class="space-y-3 mb-6">
+                                        <div class="h-5 bg-slate-200 rounded w-full"></div>
+                                        <div class="h-5 bg-slate-200 rounded w-5/6"></div>
+                                        <div class="h-5 bg-slate-200 rounded w-3/4"></div>
+                                    </div>
+                                    <div class="mt-auto flex justify-between items-center pt-4 border-t border-slate-100">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full bg-slate-200"></div>
+                                            <div class="h-3 w-16 bg-slate-200 rounded"></div>
+                                        </div>
+                                        <div class="h-8 w-24 bg-slate-200 rounded-xl"></div>
+                                    </div>
+                                </div>
+                            @endfor
+                        </div>
                     </div>
 
                     <!-- Infinite Scroll / Load More -->
@@ -4117,11 +4282,11 @@
                         @endif
                     @endif
                     </div>
-                    </div>
+                    @endif
                 </section>
 
             @elseif($this->isTab('sumber'))
-                <section class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
+                <section wire:init="loadPenyebutan" class="flex-1 min-w-0 flex flex-col h-full overflow-hidden space-y-4 pr-1">
                     <div class="flex items-center justify-between shrink-0">
                         <div>
                             <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
@@ -5210,9 +5375,18 @@
 
         @if($showTikTokCommentsModal)
         <div
+            x-data="{ open: true }"
+            x-show="open"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @after-leave="$wire.closeTikTokCommentsModal()"
             class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-            @keydown.escape.window="$wire.closeTikTokCommentsModal()"
-            @click.self="$wire.closeTikTokCommentsModal()"
+            @keydown.escape.window="open = false"
+            @click.self="open = false"
         >
             <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
                 <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
@@ -5234,14 +5408,7 @@
                             @endif
                         </div>
                     </div>
-                    <button
-                        type="button"
-                        @click="showTikTokCommentsModal = false; $wire.closeTikTokCommentsModal()"
-                        class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
-                        title="Tutup"
-                    >
-                        ✕
-                    </button>
+                    <button type="button" @click="open = false" class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer" title="Tutup">✕</button>
                 </div>
 
                 <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
@@ -5253,33 +5420,16 @@
                             @endif
                         </div>
                         @if(!empty($tikTokCommentsModalMeta['post_url']))
-                            <a href="{{ $tikTokCommentsModalMeta['post_url'] }}" target="_blank" class="text-[#1fa387] font-bold hover:underline break-all">
-                                {{ $tikTokCommentsModalMeta['post_url'] }}
-                            </a>
+                            <a href="{{ $tikTokCommentsModalMeta['post_url'] }}" target="_blank" class="text-[#1fa387] font-bold hover:underline break-all">{{ $tikTokCommentsModalMeta['post_url'] }}</a>
                         @endif
                     </div>
                 </div>
 
                 <div class="flex-1 overflow-y-auto px-6 py-5">
                     @if($loadingTikTokComments)
-                        <!-- Skeleton Loader matching Comment Card Structure -->
                         <div class="space-y-3 animate-pulse">
                             @for($i = 0; $i < 3; $i++)
-                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                                    <div class="flex items-start gap-3">
-                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 shrink-0"></div>
-                                        <div class="flex-1 space-y-2 py-0.5">
-                                            <div class="flex items-center gap-2">
-                                                <div class="h-3.5 bg-slate-200 rounded-full w-28"></div>
-                                                <div class="h-3 bg-slate-150 rounded-full w-16"></div>
-                                            </div>
-                                            <div class="space-y-1.5 pt-1">
-                                                <div class="h-3 bg-slate-200 rounded-full w-full"></div>
-                                                <div class="h-3 bg-slate-150 rounded-full w-4/5"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div class="flex items-start gap-3"><div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 shrink-0"></div><div class="flex-1 space-y-2 py-0.5"><div class="flex items-center gap-2"><div class="h-3.5 bg-slate-200 rounded-full w-28"></div><div class="h-3 bg-slate-150 rounded-full w-16"></div></div><div class="space-y-1.5 pt-1"><div class="h-3 bg-slate-200 rounded-full w-full"></div><div class="h-3 bg-slate-150 rounded-full w-4/5"></div></div></div></div></div>
                             @endfor
                         </div>
                     @elseif(empty($tikTokCommentsModalItems))
@@ -5291,45 +5441,14 @@
                     @else
                         <div class="space-y-3">
                             @foreach($tikTokCommentsModalItems as $comment)
-                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                                    <div class="flex items-start gap-3">
-                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                            @if(!empty($comment['avatar_url']))
-                                                <img src="{{ $comment['avatar_url'] }}" alt="{{ $comment['author_name'] }}" class="w-full h-full object-cover">
-                                            @else
-                                                <span class="material-symbols-outlined text-[18px] text-slate-400">person</span>
-                                            @endif
-                                        </div>
-                                        <div class="min-w-0 flex-1">
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <p class="font-black text-slate-900 text-sm">{{ $comment['author_name'] ?? 'Pengguna TikTok' }}</p>
-                                                @if(!empty($comment['posted_at']))
-                                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $comment['posted_at'] }}</span>
-                                                @endif
-                                                @if(isset($comment['like_count']))
-                                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 px-2 py-0.5 text-[10px] font-bold">
-                                                        <span class="material-symbols-outlined text-[12px]">favorite</span>
-                                                        {{ number_format((int) $comment['like_count'], 0, ',', '.') }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                            <p class="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ $comment['content'] ?? '' }}</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div class="flex items-start gap-3"><div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">@if(!empty($comment['avatar_url']))<img src="{{ $comment['avatar_url'] }}" alt="{{ $comment['author_name'] }}" class="w-full h-full object-cover">@else<span class="material-symbols-outlined text-[18px] text-slate-400">person</span>@endif</div><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><p class="font-black text-slate-900 text-sm">{{ $comment['author_name'] ?? 'Pengguna TikTok' }}</p>@if(!empty($comment['posted_at']))<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $comment['posted_at'] }}</span>@endif@if(isset($comment['like_count']))<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 px-2 py-0.5 text-[10px] font-bold"><span class="material-symbols-outlined text-[12px]">favorite</span>{{ number_format((int) $comment['like_count'], 0, ',', '.') }}</span>@endif</div><p class="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ $comment['content'] ?? '' }}</p></div></div></div>
                             @endforeach
                         </div>
                     @endif
                 </div>
 
                 <div class="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
-                    <button
-                        type="button"
-                        @click="showTikTokCommentsModal = false; $wire.closeTikTokCommentsModal()"
-                        class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
-                    >
-                        Tutup
-                    </button>
+                    <button type="button" @click="open = false" class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer">Tutup</button>
                 </div>
             </div>
         </div>
@@ -5338,17 +5457,24 @@
 
         @if($showInstagramCommentsModal)
         <div
+            x-data="{ open: true }"
+            x-show="open"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @after-leave="$wire.closeInstagramCommentsModal()"
             class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-            @keydown.escape.window="$wire.closeInstagramCommentsModal()"
-            @click.self="$wire.closeInstagramCommentsModal()"
+            @keydown.escape.window="open = false"
+            @click.self="open = false"
         >
             <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
                 <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
                     <div class="min-w-0">
                         <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#c13584]">Komentar Instagram</p>
-                        <h3 class="mt-1 text-xl font-black text-slate-900 leading-tight">
-                            {{ $instagramCommentsModalMeta['title'] ?? 'Instagram' }}
-                        </h3>
+                        <h3 class="mt-1 text-xl font-black text-slate-900 leading-tight">{{ $instagramCommentsModalMeta['title'] ?? 'Instagram' }}</h3>
                         <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 font-semibold">
                             <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-50 border border-slate-200 px-3 py-1">
                                 <span class="material-symbols-outlined text-[14px] text-[#c13584]">forum</span>
@@ -5362,16 +5488,8 @@
                             @endif
                         </div>
                     </div>
-                    <button
-                        type="button"
-                        @click="showInstagramCommentsModal = false; $wire.closeInstagramCommentsModal()"
-                        class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
-                        title="Tutup"
-                    >
-                        ✕
-                    </button>
+                    <button type="button" @click="open = false" class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer" title="Tutup">✕</button>
                 </div>
-
                 <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
                     <div class="flex flex-col gap-2 text-xs md:text-sm text-slate-600">
                         <div class="flex flex-wrap gap-x-4 gap-y-1">
@@ -5381,33 +5499,15 @@
                             @endif
                         </div>
                         @if(!empty($instagramCommentsModalMeta['post_url']))
-                            <a href="{{ $instagramCommentsModalMeta['post_url'] }}" target="_blank" class="text-[#c13584] font-bold hover:underline break-all">
-                                {{ $instagramCommentsModalMeta['post_url'] }}
-                            </a>
+                            <a href="{{ $instagramCommentsModalMeta['post_url'] }}" target="_blank" class="text-[#c13584] font-bold hover:underline break-all">{{ $instagramCommentsModalMeta['post_url'] }}</a>
                         @endif
                     </div>
                 </div>
-
                 <div class="flex-1 overflow-y-auto px-6 py-5">
                     @if($loadingInstagramComments)
-                        <!-- Skeleton Loader matching Comment Card Structure -->
                         <div class="space-y-3 animate-pulse">
                             @for($i = 0; $i < 3; $i++)
-                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                                    <div class="flex items-start gap-3">
-                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 shrink-0"></div>
-                                        <div class="flex-1 space-y-2 py-0.5">
-                                            <div class="flex items-center gap-2">
-                                                <div class="h-3.5 bg-slate-200 rounded-full w-28"></div>
-                                                <div class="h-3 bg-slate-150 rounded-full w-16"></div>
-                                            </div>
-                                            <div class="space-y-1.5 pt-1">
-                                                <div class="h-3 bg-slate-200 rounded-full w-full"></div>
-                                                <div class="h-3 bg-slate-150 rounded-full w-4/5"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div class="flex items-start gap-3"><div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 shrink-0"></div><div class="flex-1 space-y-2 py-0.5"><div class="flex items-center gap-2"><div class="h-3.5 bg-slate-200 rounded-full w-28"></div><div class="h-3 bg-slate-150 rounded-full w-16"></div></div><div class="space-y-1.5 pt-1"><div class="h-3 bg-slate-200 rounded-full w-full"></div><div class="h-3 bg-slate-150 rounded-full w-4/5"></div></div></div></div></div>
                             @endfor
                         </div>
                     @elseif(empty($instagramCommentsModalItems))
@@ -5419,67 +5519,38 @@
                     @else
                         <div class="space-y-3">
                             @foreach($instagramCommentsModalItems as $comment)
-                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                                    <div class="flex items-start gap-3">
-                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                            @if(!empty($comment['avatar_url']))
-                                                <img src="{{ $comment['avatar_url'] }}" alt="{{ $comment['author_name'] }}" class="w-full h-full object-cover">
-                                            @else
-                                                <span class="material-symbols-outlined text-[18px] text-slate-400">person</span>
-                                            @endif
-                                        </div>
-                                        <div class="min-w-0 flex-1">
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <p class="font-black text-slate-900 text-sm">{{ $comment['author_name'] ?? 'Pengguna Instagram' }}</p>
-                                                @if(!empty($comment['posted_at']))
-                                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $comment['posted_at'] }}</span>
-                                                @endif
-                                                @if(isset($comment['like_count']))
-                                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 px-2 py-0.5 text-[10px] font-bold">
-                                                        <span class="material-symbols-outlined text-[12px]">favorite</span>
-                                                        {{ number_format((int) $comment['like_count'], 0, ',', '.') }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                            <p class="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ $comment['content'] ?? '' }}</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div class="flex items-start gap-3"><div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">@if(!empty($comment['avatar_url']))<img src="{{ $comment['avatar_url'] }}" alt="{{ $comment['author_name'] }}" class="w-full h-full object-cover">@else<span class="material-symbols-outlined text-[18px] text-slate-400">person</span>@endif</div><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><p class="font-black text-slate-900 text-sm">{{ $comment['author_name'] ?? 'Pengguna Instagram' }}</p>@if(!empty($comment['posted_at']))<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $comment['posted_at'] }}</span>@endif@if(isset($comment['like_count']))<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100 px-2 py-0.5 text-[10px] font-bold"><span class="material-symbols-outlined text-[12px]">favorite</span>{{ number_format((int) $comment['like_count'], 0, ',', '.') }}</span>@endif</div><p class="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ $comment['content'] ?? '' }}</p></div></div></div>
                             @endforeach
                         </div>
                     @endif
                 </div>
-
                 <div class="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
-                    <button
-                        type="button"
-                        @click="showInstagramCommentsModal = false; $wire.closeInstagramCommentsModal()"
-                        class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
-                    >
-                        Tutup
-                    </button>
+                    <button type="button" @click="open = false" class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer">Tutup</button>
                 </div>
             </div>
         </div>
         @endif
 
-        @php
-            $facebookCommentsModalMeta = $facebookCommentsModalMeta ?? [];
-            $facebookCommentsModalItems = $facebookCommentsModalItems ?? [];
-        @endphp
         @if($showFacebookCommentsModal)
-         <div
-             class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-             @keydown.escape.window="$wire.closeFacebookCommentsModal()"
-             @click.self="$wire.closeFacebookCommentsModal()"
-         >
+        <div
+            x-data="{ open: true }"
+            x-show="open"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @after-leave="$wire.closeFacebookCommentsModal()"
+            class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            @keydown.escape.window="open = false"
+            @click.self="open = false"
+        >
             <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[88vh] flex flex-col overflow-hidden">
                 <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-100">
                     <div class="min-w-0">
                         <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#1877f2]">Komentar Facebook</p>
-                        <h3 class="mt-1 text-xl font-black text-slate-900 leading-tight">
-                            {{ $facebookCommentsModalMeta['title'] ?? 'Facebook' }}
-                        </h3>
+                        <h3 class="mt-1 text-xl font-black text-slate-900 leading-tight">{{ $facebookCommentsModalMeta['title'] ?? 'Facebook' }}</h3>
                         <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 font-semibold">
                             <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-50 border border-slate-200 px-3 py-1">
                                 <span class="material-symbols-outlined text-[14px] text-[#1877f2]">forum</span>
@@ -5493,16 +5564,8 @@
                             @endif
                         </div>
                     </div>
-                    <button
-                        type="button"
-                        @click="showFacebookCommentsModal = false; $wire.closeFacebookCommentsModal()"
-                        class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
-                        title="Tutup"
-                    >
-                        ✕
-                    </button>
+                    <button type="button" @click="open = false" class="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer" title="Tutup">✕</button>
                 </div>
-
                 <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
                     <div class="flex flex-col gap-2 text-xs md:text-sm text-slate-600">
                         <div class="flex flex-wrap gap-x-4 gap-y-1">
@@ -5512,32 +5575,15 @@
                             @endif
                         </div>
                         @if(!empty($facebookCommentsModalMeta['post_url']))
-                            <a href="{{ $facebookCommentsModalMeta['post_url'] }}" target="_blank" class="text-[#1877f2] font-bold hover:underline break-all">
-                                {{ $facebookCommentsModalMeta['post_url'] }}
-                            </a>
+                            <a href="{{ $facebookCommentsModalMeta['post_url'] }}" target="_blank" class="text-[#1877f2] font-bold hover:underline break-all">{{ $facebookCommentsModalMeta['post_url'] }}</a>
                         @endif
                     </div>
                 </div>
-
                 <div class="flex-1 overflow-y-auto px-6 py-5">
                     @if($loadingFacebookComments)
                         <div class="space-y-3 animate-pulse">
                             @for($i = 0; $i < 3; $i++)
-                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                                    <div class="flex items-start gap-3">
-                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 shrink-0"></div>
-                                        <div class="flex-1 space-y-2 py-0.5">
-                                            <div class="flex items-center gap-2">
-                                                <div class="h-3.5 bg-slate-200 rounded-full w-28"></div>
-                                                <div class="h-3 bg-slate-150 rounded-full w-16"></div>
-                                            </div>
-                                            <div class="space-y-1.5 pt-1">
-                                                <div class="h-3 bg-slate-200 rounded-full w-full"></div>
-                                                <div class="h-3 bg-slate-150 rounded-full w-4/5"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div class="flex items-start gap-3"><div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 shrink-0"></div><div class="flex-1 space-y-2 py-0.5"><div class="flex items-center gap-2"><div class="h-3.5 bg-slate-200 rounded-full w-28"></div><div class="h-3 bg-slate-150 rounded-full w-16"></div></div><div class="space-y-1.5 pt-1"><div class="h-3 bg-slate-200 rounded-full w-full"></div><div class="h-3 bg-slate-150 rounded-full w-4/5"></div></div></div></div></div>
                             @endfor
                         </div>
                     @elseif(empty($facebookCommentsModalItems))
@@ -5549,49 +5595,18 @@
                     @else
                         <div class="space-y-3">
                             @foreach($facebookCommentsModalItems as $comment)
-                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                                    <div class="flex items-start gap-3">
-                                        <div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                            @if(!empty($comment['avatar_url']))
-                                                <img src="{{ $comment['avatar_url'] }}" alt="{{ $comment['author_name'] }}" class="w-full h-full object-cover">
-                                            @else
-                                                <span class="material-symbols-outlined text-[18px] text-slate-400">person</span>
-                                            @endif
-                                        </div>
-                                        <div class="min-w-0 flex-1">
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <p class="font-black text-slate-900 text-sm">{{ $comment['author_name'] ?? 'Pengguna Facebook' }}</p>
-                                                @if(!empty($comment['posted_at']))
-                                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $comment['posted_at'] }}</span>
-                                                @endif
-                                                @if(isset($comment['like_count']))
-                                                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 text-[10px] font-bold">
-                                                        <span class="material-symbols-outlined text-[12px]">favorite</span>
-                                                        {{ number_format((int) $comment['like_count'], 0, ',', '.') }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                            <p class="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ $comment['content'] ?? '' }}</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div class="flex items-start gap-3"><div class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">@if(!empty($comment['avatar_url']))<img src="{{ $comment['avatar_url'] }}" alt="{{ $comment['author_name'] }}" class="w-full h-full object-cover">@else<span class="material-symbols-outlined text-[18px] text-slate-400">person</span>@endif</div><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><p class="font-black text-slate-900 text-sm">{{ $comment['author_name'] ?? 'Pengguna Facebook' }}</p>@if(!empty($comment['posted_at']))<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ $comment['posted_at'] }}</span>@endif@if(isset($comment['like_count']))<span class="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 text-[10px] font-bold"><span class="material-symbols-outlined text-[12px]">favorite</span>{{ number_format((int) $comment['like_count'], 0, ',', '.') }}</span>@endif</div><p class="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ $comment['content'] ?? '' }}</p></div></div></div>
                             @endforeach
                         </div>
                     @endif
                 </div>
-
                 <div class="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
-                    <button
-                        type="button"
-                        @click="showFacebookCommentsModal = false; $wire.closeFacebookCommentsModal()"
-                        class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
-                    >
-                        Tutup
-                    </button>
+                    <button type="button" @click="open = false" class="inline-flex items-center justify-center rounded-full bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-200 transition cursor-pointer">Tutup</button>
                 </div>
             </div>
         </div>
         @endif
+
 
     <!-- Global AI PDF Report Generation Modal Overlay -->
     <div wire:loading.flex wire:target="preparePdfReport" class="fixed inset-0 z-[9999] items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">

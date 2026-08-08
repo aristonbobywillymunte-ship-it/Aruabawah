@@ -51,8 +51,8 @@ class MediaDashboard extends Component
     // Tab state ('penyebutan' or 'analisis')
     #[Url(as: 'tab')]
     public $activeTab = 'cGVueWVidXRhbg==';
-    public bool $analysisLoaded = true;
-    public bool $analysisChartsLoaded = true;
+    public bool $analysisLoaded = false;
+    public bool $analysisChartsLoaded = false;
     public bool $keywordTabRequested = false;
 
     public function getDecodedProjectId()
@@ -101,8 +101,17 @@ class MediaDashboard extends Component
         $this->resetCommentModals();
         $this->activeTab = base64_encode($name);
         if ($name === 'analisis') {
-            $this->analysisLoaded = true;
-            $this->analysisChartsLoaded = true;
+            $this->analysisLoaded = false;
+            $this->analysisChartsLoaded = false;
+        }
+        if ($name === 'konten') {
+            $this->kontenLoaded = false;
+        }
+        if ($name === 'penyebutan') {
+            $this->penyebutanLoaded = false;
+        }
+        if ($name === 'wawasan') {
+            $this->wawasanLoaded = false;
         }
         $this->js('window.scrollTo(0, 0);');
     }
@@ -113,6 +122,21 @@ class MediaDashboard extends Component
     public $selectedCategory = '';
     public $sortBy = 'newest';
     public int $limit = 5;
+
+    public $kontenLoaded = false;
+    public function loadKonten() {
+        $this->kontenLoaded = true;
+    }
+
+    public $penyebutanLoaded = false;
+    public function loadPenyebutan() {
+        $this->penyebutanLoaded = true;
+    }
+
+    public $wawasanLoaded = false;
+    public function loadWawasan() {
+        $this->wawasanLoaded = true;
+    }
 
     public function loadMore()
     {
@@ -383,9 +407,9 @@ class MediaDashboard extends Component
         $this->projectName = $project->name;
         $this->resolvedProjectCache = null;
 
-        // Set default filter tanggal kosong (null) agar langsung menampilkan seluruh data (Semua Waktu)
-        $this->startDate = null;
-        $this->endDate = null;
+        // Set default filter tanggal ke bulan ini (dari tanggal 1 hingga hari ini) agar data tidak terlalu berat dan relevan
+        $this->startDate = now()->startOfMonth()->format('Y-m-d');
+        $this->endDate = now()->format('Y-m-d');
         $this->search = '';
         $this->selectedSentiment = [];
         $this->selectedSources = [];
@@ -1361,31 +1385,7 @@ class MediaDashboard extends Component
 
     public function openFacebookCommentsModal(int $articleId): void
     {
-        $unionQuery = $this->projectArticlesQuery();
-        $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
-            ->setBindings($unionQuery->getBindings())
-            ->where('union_res.id', $articleId)
-            ->first();
-
-        if (! $article) {
-            $article = Article::query()
-                ->with(['aiAnalysisResult'])
-                ->find($articleId);
-        }
-
-        if (! $article || ! $this->isFacebookArticle($article)) {
-            $this->dispatch('project-action-toast', type: 'error', message: 'Komentar Facebook untuk konten ini tidak tersedia.');
-            return;
-        }
-
-        $socialItem = $this->resolveSocialMediaItemForArticle($article);
-        $storedComments = $this->resolveCommentsForSocialItem($socialItem);
-
-        if ($storedComments === []) {
-            $this->dispatch('project-action-toast', type: 'error', message: 'Komentar Facebook belum berhasil diambil dari sumber data.');
-            return;
-        }
-
+        // 1. Tampilkan modal seketika
         $this->showFacebookCommentsModal = true;
         $this->loadingFacebookComments = true;
         $this->facebookCommentsModalMeta = [
@@ -1400,6 +1400,7 @@ class MediaDashboard extends Component
         ];
         $this->facebookCommentsModalItems = [];
 
+        // 2. Dispatch event asinkron agar browser memicu load data di background
         $this->dispatch('load-facebook-comments', articleId: $articleId);
     }
 
@@ -2308,17 +2309,21 @@ class MediaDashboard extends Component
         $query = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
             ->setBindings($unionQuery->getBindings());
 
+        // Select kolom union_res saja agar kolom id asli tidak tertimpa kolom id dari leftJoin tabel AI
+        $query->select('union_res.*');
+
         $query = $this->applyActiveFilters($query);
 
         // Hanya tampilkan data yang SUDAH dinilai AI secara sukses dan lengkap (sesuai scope CompleteOfficialAiResult)
+        // Gunakan nilai literal langsung di raw SQL agar bindings parameter subquery UNION tidak bergeser
         $query->whereExists(function ($sub) {
             $sub->select(\Illuminate\Support\Facades\DB::raw(1))
                 ->from('ai_analysis_results as ai_check')
                 ->whereRaw("((union_res.item_type = 'portal' AND ai_check.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai_check.social_media_item_id = union_res.id))")
-                ->where('ai_check.analysis_status', '=', 'success')
-                ->where('ai_check.reach_method', 'ai_reader_estimate_v1')
+                ->whereRaw("ai_check.analysis_status = 'success'")
+                ->whereRaw("ai_check.reach_method = 'ai_reader_estimate_v1'")
                 ->whereNotNull('ai_check.project_estimated_readers')
-                ->where('ai_check.project_estimated_readers', '>=', 1)
+                ->whereRaw("ai_check.project_estimated_readers >= 1")
                 ->whereNotNull('ai_check.project_reach_score')
                 ->whereNotNull('ai_check.project_reach_level')
                 ->whereNotNull('ai_check.project_reach_band');
@@ -2329,8 +2334,8 @@ class MediaDashboard extends Component
                 $join->on(function ($q) {
                     $q->whereRaw("((union_res.item_type = 'portal' AND ai_pop.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai_pop.social_media_item_id = union_res.id))");
                 })
-                ->where('ai_pop.analysis_status', '=', 'success')
-                ->where('ai_pop.reach_method', '=', 'ai_reader_estimate_v1');
+                ->whereRaw("ai_pop.analysis_status = 'success'")
+                ->whereRaw("ai_pop.reach_method = 'ai_reader_estimate_v1'");
             })
             ->orderByRaw('COALESCE(ai_pop.project_estimated_readers, 0) DESC')
             ->orderBy('union_res.published_at', 'desc');
@@ -2425,14 +2430,15 @@ class MediaDashboard extends Component
         $query = $this->applyActiveFilters($query);
 
         // Hanya hitung data yang SUDAH dinilai AI secara sukses dan lengkap (sesuai scope CompleteOfficialAiResult)
+        // Gunakan nilai literal langsung di raw SQL agar bindings parameter subquery UNION tidak bergeser
         $query->whereExists(function ($sub) {
             $sub->select(\Illuminate\Support\Facades\DB::raw(1))
                 ->from('ai_analysis_results as ai_check')
                 ->whereRaw("((union_res.item_type = 'portal' AND ai_check.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai_check.social_media_item_id = union_res.id))")
-                ->where('ai_check.analysis_status', '=', 'success')
-                ->where('ai_check.reach_method', 'ai_reader_estimate_v1')
+                ->whereRaw("ai_check.analysis_status = 'success'")
+                ->whereRaw("ai_check.reach_method = 'ai_reader_estimate_v1'")
                 ->whereNotNull('ai_check.project_estimated_readers')
-                ->where('ai_check.project_estimated_readers', '>=', 1)
+                ->whereRaw("ai_check.project_estimated_readers >= 1")
                 ->whereNotNull('ai_check.project_reach_score')
                 ->whereNotNull('ai_check.project_reach_level')
                 ->whereNotNull('ai_check.project_reach_band');
@@ -2771,7 +2777,7 @@ class MediaDashboard extends Component
         $baseQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
             ->setBindings($unionQuery->getBindings());
 
-        $baseQuery = $this->applyActiveFilters($baseQuery, ['sentiment']);
+        $baseQuery = $this->applyActiveFilters($baseQuery);
         $rawSourcesClean = clone $baseQuery;
         
         if ($rawSourcesClean instanceof \Illuminate\Database\Query\Builder) {
@@ -2781,7 +2787,7 @@ class MediaDashboard extends Component
         }
 
         $rawSources = $rawSourcesClean
-            ->leftJoin('ai_analysis_results as ai', function ($join) {
+            ->join('ai_analysis_results as ai', function ($join) {
                 $join->on(function ($q) {
                     $q->whereRaw("((union_res.item_type = 'portal' AND ai.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai.social_media_item_id = union_res.id))");
                 })
