@@ -151,13 +151,13 @@
                     type="button"
                     wire:click="$set('createStep', 2)"
                     @disabled(!$packageId)
-                    class="inline-flex items-center gap-2 px-7 py-3 font-bold rounded-xl text-sm transition-all duration-200
+                    class="inline-flex items-center gap-1.5 px-5 py-2.5 font-extrabold rounded-xl text-xs transition-all duration-200
                         {{ $packageId
-                            ? 'bg-[#1fa387] hover:bg-[#178a71] text-white shadow-md shadow-[#1fa387]/20 cursor-pointer active:scale-[0.98]'
+                            ? 'bg-[#1fa387] hover:bg-[#178a71] text-white shadow-sm cursor-pointer active:scale-[0.98]'
                             : 'bg-slate-100 text-slate-400 cursor-not-allowed' }}"
                 >
-                    Lanjut
-                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    Lanjut ke Pengaturan
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </button>
             </div>
 
@@ -290,20 +290,20 @@
                     {{-- Action buttons --}}
                     <div class="flex justify-end gap-3 pt-4">
                         <button type="button" wire:click="$set('createStep', 1)"
-                            class="inline-flex items-center gap-2 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition cursor-pointer active:scale-[0.98]">
+                            class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl text-xs transition cursor-pointer active:scale-[0.98]">
                             <span class="material-symbols-outlined text-[16px]">arrow_back</span>
                             Kembali
                         </button>
                         <button type="submit"
-                            class="inline-flex items-center justify-center gap-2 px-7 py-3 min-w-[150px] bg-[#1fa387] hover:bg-[#178a71] text-white font-bold rounded-xl text-sm transition shadow-md shadow-[#1fa387]/20 cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                            class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 min-w-[140px] bg-[#1fa387] hover:bg-[#178a71] text-white font-extrabold rounded-xl text-xs transition shadow-sm cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
                             wire:loading.attr="disabled"
                             wire:target="createProject">
-                            <span wire:loading.remove wire:target="createProject" class="inline-flex items-center gap-2">
+                            <span wire:loading.remove wire:target="createProject" class="inline-flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-[16px]">add_circle</span>
                                 Buat Proyek
                             </span>
-                            <span wire:loading.flex wire:target="createProject" class="items-center gap-2">
-                                <svg class="animate-spin h-4 w-4 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <span wire:loading.flex wire:target="createProject" class="items-center gap-1.5">
+                                <svg class="animate-spin h-3.5 w-3.5 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
