@@ -77,21 +77,15 @@ class ProjectCreate extends Component
         // Validate package security & existence
         $package = Package::query()->where('is_active', true)->findOrFail($this->packageId);
 
-        // Limit Check: Max Projects
-        $packageMaxProjects = $package->max_projects;
-        $clientMaxProjects = ($user && $user->isClient()) ? optional($user->clientSettings)->max_projects : null;
-        
-        $effectiveMaxProjects = null;
-        $limits = array_filter([$packageMaxProjects, $clientMaxProjects], fn($val) => $val !== null);
-        if (count($limits) > 0) {
-            $effectiveMaxProjects = min($limits);
-        }
-
-        if ($effectiveMaxProjects !== null) {
-            $currentProjectsCount = $user->projects()->count();
-            if ($currentProjectsCount >= $effectiveMaxProjects) {
-                $this->addError('name', 'Anda telah mencapai batas maksimal pembuatan proyek (Batas: ' . $effectiveMaxProjects . ').');
-                return;
+        // Limit Check: Max Projects (Hanya menghitung global limit untuk Klien)
+        if ($user && $user->isClient()) {
+            $effectiveMaxProjects = $user->getEffectiveMaxProjects();
+            if ($effectiveMaxProjects !== null) {
+                $currentProjectsCount = $user->projects()->count();
+                if ($currentProjectsCount >= $effectiveMaxProjects) {
+                    $this->addError('name', 'Anda telah mencapai batas maksimal pembuatan proyek secara keseluruhan (Batas: ' . $effectiveMaxProjects . ' proyek).');
+                    return;
+                }
             }
         }
 
@@ -112,7 +106,7 @@ class ProjectCreate extends Component
             return;
         }
 
-        // Limit Check: Max Keywords per Project
+        // Limit Check: Max Keywords per Project (Tergantung paket yang dipilih dan setting klien)
         $packageMaxKeywords = $package->max_keywords_per_project;
         $clientMaxKeywords = ($user && $user->isClient()) ? optional($user->clientSettings)->max_keywords_per_project : null;
 

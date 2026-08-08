@@ -105,7 +105,7 @@ class ProjectEditModal extends Component
             return;
         }
 
-        // Limit Check: Max Keywords per Project
+        // Limit Check: Max Keywords per Project (Tergantung paket yang dipilih dan setting klien)
         $package = $project->package;
         $packageMaxKeywords = $package ? $package->max_keywords_per_project : null;
         $clientMaxKeywords = ($user && $user->isClient()) ? optional($user->clientSettings)->max_keywords_per_project : null;

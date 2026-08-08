@@ -55,15 +55,27 @@ class ClientSettings extends Component
             'allowedPackages' => 'array',
         ]);
 
+        // Simpan allowed packages terlebih dahulu agar kita bisa cek entitlement-nya
+        $this->client->allowedPackages()->sync($this->allowedPackages);
+
+        // Validasi entitlement untuk max_projects
+        $entitlement = $this->client->getMaxProjectEntitlement();
+        $inputMaxProjects = empty($this->max_projects) ? null : (int) $this->max_projects;
+
+        if ($entitlement !== null && $inputMaxProjects !== null) {
+            if ($inputMaxProjects > $entitlement) {
+                $this->addError('max_projects', 'Batas maksimal proyek tidak boleh melebihi batas dari paket yang diizinkan (' . $entitlement . ').');
+                return;
+            }
+        }
+
         $this->client->clientSettings()->update([
             'can_create_projects' => $this->can_create_projects,
             'can_edit_projects' => $this->can_edit_projects,
             'can_delete_projects' => $this->can_delete_projects,
-            'max_projects' => empty($this->max_projects) ? null : (int) $this->max_projects,
+            'max_projects' => $inputMaxProjects,
             'max_keywords_per_project' => empty($this->max_keywords_per_project) ? null : (int) $this->max_keywords_per_project,
         ]);
-
-        $this->client->allowedPackages()->sync($this->allowedPackages);
 
         session()->flash('message', 'Pengaturan klien berhasil disimpan.');
     }

@@ -20,6 +20,7 @@ class User extends Authenticatable
         'password',
         'role', // 'admin' | 'user'
         'status', // 'active' | 'inactive'
+        'parent_user_id',
     ];
 
     protected $hidden = [
@@ -93,5 +94,43 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(\App\Models\Package::class, 'client_package_permissions')
                     ->withTimestamps();
+    }
+
+    /** 
+     * Dapatkan batas maksimal proyek dari paket yang diizinkan. 
+     * Akan mencari nilai terbesar dari max_projects. Jika ada yang NULL, berarti unlimited (kembalikan null).
+     */
+    public function getMaxProjectEntitlement(): ?int
+    {
+        $packages = $this->allowedPackages;
+        
+        if ($packages->isEmpty()) {
+            return 0; // Tidak punya izin ke paket manapun
+        }
+
+        $limits = [];
+        foreach ($packages as $package) {
+            if (is_null($package->max_projects)) {
+                return null; // Unlimited dari salah satu paket
+            }
+            $limits[] = $package->max_projects;
+        }
+
+        return !empty($limits) ? max($limits) : null;
+    }
+
+    /**
+     * Dapatkan batas efektif untuk proyek (hanya dari client_settings atau package default).
+     */
+    public function getEffectiveMaxProjects(): ?int
+    {
+        // Prioritaskan setting klien (override individu)
+        $clientMax = optional($this->clientSettings)->max_projects;
+        if (!is_null($clientMax)) {
+            return $clientMax;
+        }
+
+        // Jika klien tidak punya override, gunakan batas maksimal dari paket-paketnya
+        return $this->getMaxProjectEntitlement();
     }
 }
