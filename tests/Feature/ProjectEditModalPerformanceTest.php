@@ -115,4 +115,36 @@ class ProjectEditModalPerformanceTest extends TestCase
             ->call('open', $this->project->id)
             ->assertForbidden(); // Assuming accessibleBy uses global scope or gates that throw 403, or findOrFail throws 404
     }
+
+    public function test_projects_list_can_refresh_single_project_without_error()
+    {
+        $this->actingAs($this->user);
+
+        $component = Livewire::test(ProjectsList::class);
+        $component->call('loadProjects');
+        
+        $projects = $component->get('projects');
+        $this->assertIsArray($projects);
+        $this->assertNotEmpty($projects);
+        $this->assertEquals($this->project->id, $projects[0]['id']);
+        
+        $this->assertArrayHasKey('mentions', $projects[0]);
+        $this->assertArrayHasKey('ai_valid', $projects[0]);
+        $this->assertArrayHasKey('reach', $projects[0]);
+
+        // Ganti nama untuk memicu perubahan if any
+        $this->project->update(['name' => 'Refreshed Name Test']);
+
+        // Refresh single
+        $component->call('refreshSingleProject', $this->project->id);
+        
+        $refreshedProjects = $component->get('projects');
+        $this->assertEquals($this->project->id, $refreshedProjects[0]['id']);
+        $this->assertEquals('Refreshed Name Test', $refreshedProjects[0]['name']);
+        
+        // Pastikan shape tetap sama
+        $this->assertArrayHasKey('mentions', $refreshedProjects[0]);
+        $this->assertArrayHasKey('ai_valid', $refreshedProjects[0]);
+        $this->assertArrayHasKey('reach', $refreshedProjects[0]);
+    }
 }

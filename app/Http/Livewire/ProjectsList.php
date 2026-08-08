@@ -320,139 +320,7 @@ class ProjectsList extends Component
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()
-            ->map(function ($project) {
-                $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
-                $primaryKeywords = $project->scrapeKeywordVariants();
-                $contextKeywords = $project->scrapeContextKeywordVariants();
-                $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
-
-                $articleQuery = Article::query()
-                    ->select('articles.*')
-                    ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
-                    ->where('project_articles.project_id', $project->id)
-                    ->withCompleteOfficialAiResult();
-
-                $pendingAi = DB::table('ai_analysis_dispatch_states')
-                    ->where('project_id', $project->id)
-                    ->whereIn('status', ['queued', 'processing', 'retry_wait'])
-                    ->count();
-
-                $rescrapeCount = 0;
-                $totalAiFailed = 0;
-
-                // Portal aggregation (sesuaikan dengan filter di detail dashboard projectArticlesQuery)
-                $aggPortal = (clone $articleQuery)
-                    ->where(function ($q) {
-                        $q->whereNull('articles.category')
-                          ->orWhere('articles.category', '!=', 'social');
-                    })
-                    ->whereNotIn(\Illuminate\Support\Facades\DB::raw('lower(coalesce(articles.source_name, \'\'))'), ['facebook', 'instagram', 'tiktok'])
-                    ->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-                    ->leftJoin(\Illuminate\Support\Facades\DB::raw('(SELECT article_id, MAX(project_estimated_readers) as max_reach FROM ai_analysis_results WHERE analysis_status = \'success\' AND reach_method = \'ai_reader_estimate_v1\' AND project_estimated_readers >= 1 GROUP BY article_id) reach_sub'), 'articles.id', '=', 'reach_sub.article_id')
-                    ->where('ai.analysis_status', 'success')
-                    ->where('ai.reach_method', 'ai_reader_estimate_v1')
-                    ->whereNotNull('ai.project_estimated_readers')
-                    ->where('ai.project_estimated_readers', '>=', 1)
-                    ->whereNotNull('ai.project_reach_score')
-                    ->whereNotNull('ai.project_reach_level')
-                    ->whereNotNull('ai.project_reach_band')
-                    ->whereNotNull('ai.summary')
-                    ->whereNotNull('ai.sentiment')
-                    ->whereNotNull('ai.risk_level')
-                    ->select([
-                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT articles.id) as total_ai_valid"),
-                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'positive' THEN articles.id END) as positive_count"),
-                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'negative' THEN articles.id END) as negative_count"),
-                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.risk_level IN ('high','critical') THEN articles.id END) as high_risk_count"),
-                        \Illuminate\Support\Facades\DB::raw("COALESCE(SUM(reach_sub.max_reach), 0) as total_reach")
-                    ])
-                    ->first();
-
-                // Social aggregation (sesuaikan dengan filter di detail dashboard projectArticlesQuery)
-                $socialQuery = \App\Models\SocialMediaItem::query()
-                    ->join('project_social_media_items', 'social_media_items.id', '=', 'project_social_media_items.social_media_item_id')
-                    ->where('project_social_media_items.project_id', $project->id)
-                    ->where(function ($q) {
-                        $q->whereNull('social_media_items.post_url')
-                          ->orWhere('social_media_items.post_url', 'not like', 'apify-%');
-                    })
-                    ->where('social_media_items.comments_checked', true);
-
-                $aggSocial = (clone $socialQuery)
-                    ->join('ai_analysis_results as ai', 'social_media_items.id', '=', 'ai.social_media_item_id')
-                    ->leftJoin(\Illuminate\Support\Facades\DB::raw('(SELECT social_media_item_id, MAX(project_estimated_readers) as max_reach FROM ai_analysis_results WHERE analysis_status = \'success\' AND reach_method = \'ai_reader_estimate_v1\' AND project_estimated_readers >= 1 GROUP BY social_media_item_id) sreach_sub'), 'social_media_items.id', '=', 'sreach_sub.social_media_item_id')
-                    ->where('ai.analysis_status', 'success')
-                    ->where('ai.reach_method', 'ai_reader_estimate_v1')
-                    ->whereNotNull('ai.project_estimated_readers')
-                    ->where('ai.project_estimated_readers', '>=', 1)
-                    ->whereNotNull('ai.project_reach_score')
-                    ->whereNotNull('ai.project_reach_level')
-                    ->whereNotNull('ai.project_reach_band')
-                    ->whereNotNull('ai.summary')
-                    ->whereNotNull('ai.sentiment')
-                    ->whereNotNull('ai.risk_level')
-                    ->select([
-                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT social_media_items.id) as total_ai_valid"),
-                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'positive' THEN social_media_items.id END) as positive_count"),
-                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'negative' THEN social_media_items.id END) as negative_count"),
-                        \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.risk_level IN ('high','critical') THEN social_media_items.id END) as high_risk_count"),
-                        \Illuminate\Support\Facades\DB::raw("COALESCE(SUM(sreach_sub.max_reach), 0) as total_reach")
-                    ])
-                    ->first();
-
-                $totalAiValid     = (int) (($aggPortal->total_ai_valid ?? 0) + ($aggSocial->total_ai_valid ?? 0));
-                $positive         = (int) (($aggPortal->positive_count ?? 0) + ($aggSocial->positive_count ?? 0));
-                $negative         = (int) (($aggPortal->negative_count ?? 0) + ($aggSocial->negative_count ?? 0));
-                $highCriticalRisk = (int) (($aggPortal->high_risk_count ?? 0) + ($aggSocial->high_risk_count ?? 0));
-                $officialReach    = (int) (($aggPortal->total_reach ?? 0) + ($aggSocial->total_reach ?? 0));
-
-                $posPercent = $totalAiValid > 0 ? round(($positive / $totalAiValid) * 100) : 0;
-                $negPercent = $totalAiValid > 0 ? round(($negative / $totalAiValid) * 100) : 0;
-
-                $mentions = ($matchedCounts['articles'] ?? 0) + ($matchedCounts['social'] ?? 0);
-                        $reach = $officialReach > 0 ? number_format($officialReach, 0, ',', '.') : 'Belum tersedia';
-
-                        $lastPortalTime = (clone $articleQuery)->max('published_at');
-                        $lastMedsosTime = $project->socialMediaItems()->max('posted_at');
-
-                        $lastPortalScanTime = $this->latestPortalScanForProject($project->id);
-                        $lastPortalUpdate = $lastPortalScanTime
-                            ? \Carbon\Carbon::parse($lastPortalScanTime)->locale('id')->diffForHumans()
-                            : ($lastPortalTime
-                                ? \Carbon\Carbon::parse($lastPortalTime)->locale('id')->diffForHumans()
-                                : 'Belum ada data');
-
-                        $lastMedsosRunAt = $this->latestSuccessfulSocialRunForProject($project->id)
-                            ?? $this->latestSocialRunForProject($project->id)
-                            ?? $lastMedsosTime;
-
-                        $lastMedsosUpdate = $lastMedsosRunAt
-                            ? \Carbon\Carbon::parse($lastMedsosRunAt)->locale('id')->diffForHumans()
-                            : 'Belum ada data';
-
-                return [
-                    'id' => $project->id,
-                    'name' => $project->name,
-                    'mentions' => number_format($mentions, 0, ',', '.'),
-                    'reach' => $reach,
-                    'positive' => $posPercent . '%',
-                    'negative' => $negPercent . '%',
-                    'topics' => $project->topics ?? [],
-                    'ai_valid' => $totalAiValid,
-                    'ai_failed' => $totalAiFailed,
-                    'ai_pending' => $pendingAi,
-                    'ai_rescrape' => $rescrapeCount,
-                    'high_risk' => $highCriticalRisk,
-                    'created_at' => $project->created_at ? $project->created_at->format('d M Y H:i') : '—',
-                    'last_portal_update' => $lastPortalUpdate,
-                    'portal_is_running' => $this->isPortalScanRunningForProject($project->id),
-                    'last_medsos_update' => $lastMedsosUpdate,
-                    'medsos_is_running' => $this->isSocialScanRunningForProject($project->id),
-                    'medsos_running_label' => $this->socialRunningLabelForProject($project->id),
-                    'articles_count' => $matchedCounts['articles'] ?? 0,
-                    'social_count' => $matchedCounts['social'] ?? 0,
-                ];
-            })
+            ->map(fn($project) => $this->buildProjectCardData($project))
             ->toArray();
     }
 
@@ -473,87 +341,152 @@ class ProjectsList extends Component
         $this->loadProjects();
     }
 
-    protected function buildSingleProjectData(Project $project): array
+    protected function buildProjectCardData(Project $project): array
     {
-        $projectId = $project->id;
-        
-        $portalCount = Article::where('project_id', $projectId)->where('is_trash', false)->count();
-        
-        $latestArticle = Article::where('project_id', $projectId)
-            ->where('is_trash', false)
-            ->orderBy('created_at', 'desc')
-            ->first();
-        $lastPortalDate = $latestArticle ? $latestArticle->created_at : null;
+        $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
+        $primaryKeywords = $project->scrapeKeywordVariants();
+        $contextKeywords = $project->scrapeContextKeywordVariants();
+        $matchKeywords = array_values(array_unique(array_filter(array_merge($primaryKeywords, $contextKeywords))));
 
-        $socialCount = \App\Models\SocialMediaItem::whereHas('projects', function ($q) use ($projectId) {
-            $q->where('projects.id', $projectId);
-        })->where('is_trash', false)->count();
+        $articleQuery = Article::query()
+            ->select('articles.*')
+            ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
+            ->where('project_articles.project_id', $project->id)
+            ->withCompleteOfficialAiResult();
 
-        $latestSocial = \App\Models\SocialMediaItem::whereHas('projects', function ($q) use ($projectId) {
-            $q->where('projects.id', $projectId);
-        })->where('is_trash', false)->orderBy('social_media_items.created_at', 'desc')->first();
-        $lastSocialDate = $latestSocial ? $latestSocial->created_at : null;
+        $pendingAi = DB::table('ai_analysis_dispatch_states')
+            ->where('project_id', $project->id)
+            ->whereIn('status', ['queued', 'processing', 'retry_wait'])
+            ->count();
 
-        $analyzedPortalCount = AiAnalysisResult::whereIn('article_id', function ($query) use ($projectId) {
-                $query->select('id')
-                    ->from('articles')
-                    ->where('project_id', $projectId)
-                    ->where('is_trash', false);
+        $rescrapeCount = 0;
+        $totalAiFailed = 0;
+
+        // Portal aggregation (sesuaikan dengan filter di detail dashboard projectArticlesQuery)
+        $aggPortal = (clone $articleQuery)
+            ->where(function ($q) {
+                $q->whereNull('articles.category')
+                  ->orWhere('articles.category', '!=', 'social');
             })
-            ->where('analysis_status', 'completed')
-            ->count();
+            ->whereNotIn(\Illuminate\Support\Facades\DB::raw('lower(coalesce(articles.source_name, \'\'))'), ['facebook', 'instagram', 'tiktok'])
+            ->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
+            ->leftJoin(\Illuminate\Support\Facades\DB::raw('(SELECT article_id, MAX(project_estimated_readers) as max_reach FROM ai_analysis_results WHERE analysis_status = \'success\' AND reach_method = \'ai_reader_estimate_v1\' AND project_estimated_readers >= 1 GROUP BY article_id) reach_sub'), 'articles.id', '=', 'reach_sub.article_id')
+            ->where('ai.analysis_status', 'success')
+            ->where('ai.reach_method', 'ai_reader_estimate_v1')
+            ->whereNotNull('ai.project_estimated_readers')
+            ->where('ai.project_estimated_readers', '>=', 1)
+            ->whereNotNull('ai.project_reach_score')
+            ->whereNotNull('ai.project_reach_level')
+            ->whereNotNull('ai.project_reach_band')
+            ->whereNotNull('ai.summary')
+            ->whereNotNull('ai.sentiment')
+            ->whereNotNull('ai.risk_level')
+            ->select([
+                \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT articles.id) as total_ai_valid"),
+                \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'positive' THEN articles.id END) as positive_count"),
+                \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'negative' THEN articles.id END) as negative_count"),
+                \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.risk_level IN ('high','critical') THEN articles.id END) as high_risk_count"),
+                \Illuminate\Support\Facades\DB::raw("COALESCE(SUM(reach_sub.max_reach), 0) as total_reach")
+            ])
+            ->first();
 
-        $analyzedSocialCount = DB::table('ai_analysis_results')
-            ->join('project_social_media_item', 'ai_analysis_results.social_media_item_id', '=', 'project_social_media_item.social_media_item_id')
-            ->where('project_social_media_item.project_id', $projectId)
-            ->where('ai_analysis_results.analysis_status', 'completed')
-            ->count();
+        // Social aggregation (sesuaikan dengan filter di detail dashboard projectArticlesQuery)
+        $socialQuery = \App\Models\SocialMediaItem::query()
+            ->join('project_social_media_items', 'social_media_items.id', '=', 'project_social_media_items.social_media_item_id')
+            ->where('project_social_media_items.project_id', $project->id)
+            ->where(function ($q) {
+                $q->whereNull('social_media_items.post_url')
+                  ->orWhere('social_media_items.post_url', 'not like', 'apify-%');
+            })
+            ->where('social_media_items.comments_checked', true);
 
-        $totalDataCount = $portalCount + $socialCount;
-        $totalAnalyzedCount = $analyzedPortalCount + $analyzedSocialCount;
-        
-        $analysisProgressPercentage = 0;
-        if ($totalDataCount > 0) {
-            $analysisProgressPercentage = min(100, round(($totalAnalyzedCount / $totalDataCount) * 100));
-        }
+        $aggSocial = (clone $socialQuery)
+            ->join('ai_analysis_results as ai', 'social_media_items.id', '=', 'ai.social_media_item_id')
+            ->leftJoin(\Illuminate\Support\Facades\DB::raw('(SELECT social_media_item_id, MAX(project_estimated_readers) as max_reach FROM ai_analysis_results WHERE analysis_status = \'success\' AND reach_method = \'ai_reader_estimate_v1\' AND project_estimated_readers >= 1 GROUP BY social_media_item_id) sreach_sub'), 'social_media_items.id', '=', 'sreach_sub.social_media_item_id')
+            ->where('ai.analysis_status', 'success')
+            ->where('ai.reach_method', 'ai_reader_estimate_v1')
+            ->whereNotNull('ai.project_estimated_readers')
+            ->where('ai.project_estimated_readers', '>=', 1)
+            ->whereNotNull('ai.project_reach_score')
+            ->whereNotNull('ai.project_reach_level')
+            ->whereNotNull('ai.project_reach_band')
+            ->whereNotNull('ai.summary')
+            ->whereNotNull('ai.sentiment')
+            ->whereNotNull('ai.risk_level')
+            ->select([
+                \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT social_media_items.id) as total_ai_valid"),
+                \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'positive' THEN social_media_items.id END) as positive_count"),
+                \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.sentiment = 'negative' THEN social_media_items.id END) as negative_count"),
+                \Illuminate\Support\Facades\DB::raw("COUNT(DISTINCT CASE WHEN ai.risk_level IN ('high','critical') THEN social_media_items.id END) as high_risk_count"),
+                \Illuminate\Support\Facades\DB::raw("COALESCE(SUM(sreach_sub.max_reach), 0) as total_reach")
+            ])
+            ->first();
 
-        $latestPortalScanTime = $this->latestPortalScanForProject($projectId);
-        $lastScanDate = $latestPortalScanTime ? \Carbon\Carbon::parse($latestPortalScanTime) : null;
+        $totalAiValid     = (int) (($aggPortal->total_ai_valid ?? 0) + ($aggSocial->total_ai_valid ?? 0));
+        $positive         = (int) (($aggPortal->positive_count ?? 0) + ($aggSocial->positive_count ?? 0));
+        $negative         = (int) (($aggPortal->negative_count ?? 0) + ($aggSocial->negative_count ?? 0));
+        $highCriticalRisk = (int) (($aggPortal->high_risk_count ?? 0) + ($aggSocial->high_risk_count ?? 0));
+        $officialReach    = (int) (($aggPortal->total_reach ?? 0) + ($aggSocial->total_reach ?? 0));
 
-        $effectivePortalDate = $lastPortalDate;
-        if ($lastScanDate && (! $lastPortalDate || $lastScanDate > $lastPortalDate)) {
-            $effectivePortalDate = $lastScanDate;
-        }
+        $posPercent = $totalAiValid > 0 ? round(($positive / $totalAiValid) * 100) : 0;
+        $negPercent = $totalAiValid > 0 ? round(($negative / $totalAiValid) * 100) : 0;
+
+        $mentions = ($matchedCounts['articles'] ?? 0) + ($matchedCounts['social'] ?? 0);
+        $reach = $officialReach > 0 ? number_format($officialReach, 0, ',', '.') : 'Belum tersedia';
+
+        $lastPortalTime = (clone $articleQuery)->max('published_at');
+        $lastMedsosTime = $project->socialMediaItems()->max('posted_at');
+
+        $lastPortalScanTime = $this->latestPortalScanForProject($project->id);
+        $lastPortalUpdate = $lastPortalScanTime
+            ? \Carbon\Carbon::parse($lastPortalScanTime)->locale('id')->diffForHumans()
+            : ($lastPortalTime
+                ? \Carbon\Carbon::parse($lastPortalTime)->locale('id')->diffForHumans()
+                : 'Belum ada data');
+
+        $lastMedsosRunAt = $this->latestSuccessfulSocialRunForProject($project->id)
+            ?? $this->latestSocialRunForProject($project->id)
+            ?? $lastMedsosTime;
+
+        $lastMedsosUpdate = $lastMedsosRunAt
+            ? \Carbon\Carbon::parse($lastMedsosRunAt)->locale('id')->diffForHumans()
+            : 'Belum ada data';
 
         return [
             'id' => $project->id,
             'name' => $project->name,
+            'mentions' => number_format($mentions, 0, ',', '.'),
+            'reach' => $reach,
+            'positive' => $posPercent . '%',
+            'negative' => $negPercent . '%',
             'topics' => $project->topics ?? [],
-            'context_keywords' => $project->context_keywords ?? [],
-            'exclude_keywords' => $project->exclude_keywords ?? [],
-            'created_at' => $project->created_at->format('d M Y, H:i'),
-            'portal_count' => $portalCount,
-            'social_count' => $socialCount,
-            'total_analyzed' => $totalAnalyzedCount,
-            'analysis_progress_percentage' => $analysisProgressPercentage,
-            'portal_is_running' => $this->isPortalScanRunningForProject($projectId),
-            'last_portal_update' => $effectivePortalDate ? $effectivePortalDate->diffForHumans() : 'Belum ada data',
-            'medsos_is_running' => $this->isSocialScanRunningForProject($projectId),
-            'last_medsos_update' => $lastSocialDate ? $lastSocialDate->diffForHumans() : 'Belum ada data',
-            'medsos_running_label' => $this->isSocialScanRunningForProject($projectId) ? 'Scraping Medsos Berjalan...' : 'Data Medsos Terakhir',
+            'ai_valid' => $totalAiValid,
+            'ai_failed' => $totalAiFailed,
+            'ai_pending' => $pendingAi,
+            'ai_rescrape' => $rescrapeCount,
+            'high_risk' => $highCriticalRisk,
+            'created_at' => $project->created_at ? $project->created_at->format('d M Y H:i') : '—',
+            'last_portal_update' => $lastPortalUpdate,
+            'portal_is_running' => $this->isPortalScanRunningForProject($project->id),
+            'last_medsos_update' => $lastMedsosUpdate,
+            'medsos_is_running' => $this->isSocialScanRunningForProject($project->id),
+            'medsos_running_label' => $this->socialRunningLabelForProject($project->id),
+            'articles_count' => $matchedCounts['articles'] ?? 0,
+            'social_count' => $matchedCounts['social'] ?? 0,
         ];
     }
 
     #[On('project-updated')]
     public function refreshSingleProject($projectId): void
     {
-        $project = Project::find($projectId);
-        if (!$project) return;
+        $project = Project::accessibleBy(auth()->user())
+            ->where('is_active', true)
+            ->findOrFail($projectId);
         
         $index = collect($this->projects)->search(fn($p) => isset($p['id']) && $p['id'] == $projectId);
         if ($index === false) return;
         
-        $this->projects[$index] = $this->buildSingleProjectData($project);
+        $this->projects[$index] = $this->buildProjectCardData($project);
         
         \Illuminate\Support\Facades\Cache::put(
             $this->projectsCacheKey(),
