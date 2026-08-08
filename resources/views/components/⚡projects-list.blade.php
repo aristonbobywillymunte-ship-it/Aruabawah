@@ -29,18 +29,6 @@ new class extends Component
         return $this->projectId;
     }
 
-    // Form fields for new project
-    public $name = '';
-    public $topicsString = ''; // Reset default to empty string
-    public $contextKeywords = '';
-    public $excludeKeywords = '';
-    public $telegramChatId = '';
-    public $selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
-    public $isCreatingProject = false;
-    public $createStep = 1;
-    public $showSuccessModal = false;
-    public $lastCreatedProjectName = '';
-    public $packageId = null;
 
     // Projects lazy-load state
     public bool $projectsLoaded = false;
@@ -502,60 +490,6 @@ new class extends Component
         });
     }
 
-    public function createProject()
-    {
-        $this->validate([
-            'name' => 'required|min:3|unique:projects,name',
-            'topicsString' => 'required',
-        ]);
-
-        // Validate JSON string
-        if (str_starts_with(trim($this->topicsString), '{') || str_starts_with(trim($this->topicsString), '[')) {
-            $this->addError('topicsString', 'Format JSON tidak diperbolehkan. Gunakan kata kunci yang dipisahkan koma.');
-            return;
-        }
-
-        // Parse comma-separated topics
-        $topics = $this->parseTopicsString(false);
-
-        if (empty($topics)) {
-            $this->addError('topicsString', 'Topik wajib diisi minimal satu kata kunci valid.');
-            return;
-        }
-
-        $project = Project::create([
-            'name' => $this->name,
-            'topics' => array_values($topics),
-            'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
-            'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
-        ]);
-
-        // Auto-assign project to the creator if they are a regular user
-        $user = auth()->user();
-        if ($user && !$user->isAdmin()) {
-            $project->users()->attach($user->id);
-        }
-
-        $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
-
-        $this->lastCreatedProjectName = $this->name;
-        $this->showSuccessModal = true;
-        session()->flash(
-            'message',
-            'Proyek berhasil dibuat. Data lama yang sesuai filter: '
-            . (($resyncResult['match']['articles_linked'] ?? 0)) . ' artikel, '
-            . (($resyncResult['match']['social_linked'] ?? 0)) . ' medsos.'
-        );
-        $this->notifyProjectAction(
-            'Proyek berhasil dibuat. Data lama yang sesuai filter: '
-            . (($resyncResult['match']['articles_linked'] ?? 0)) . ' artikel, '
-            . (($resyncResult['match']['social_linked'] ?? 0)) . ' medsos.'
-        );
-        
-        $this->reset(['name', 'topicsString', 'contextKeywords', 'excludeKeywords']);
-        $this->selectedSources = ['Instagram', 'TikTok', 'Facebook', 'News'];
-    }
-
     public function editProject($id)
     {
         $project = Project::accessibleBy(auth()->user())->findOrFail($id);
@@ -628,7 +562,7 @@ new class extends Component
 
     public function closeModals()
     {
-        $this->showSuccessModal = false;
+
         $this->showEditModal = false;
         $this->showTrashedModal = false;
         $this->showConfirmModal = false;
@@ -861,7 +795,7 @@ new class extends Component
 <div
     class="{{ $projectId ? 'w-full' : '' }}"
     x-data="{
-        showSuccess: @entangle('showSuccessModal'),
+
         showTrashed: @entangle('showTrashedModal'),
         showConfirm: @entangle('showConfirmModal'),
         toastVisible: false,
@@ -1363,46 +1297,6 @@ new class extends Component
                 @endif
             </main>
 
-            <!-- Success Modal Overlay -->
-            @if($showSuccessModal)
-                <div 
-                    x-data="{ show: true }" 
-                    x-show="show"
-                    x-transition:enter="transition ease-out duration-300"
-                    x-transition:enter-start="opacity-0"
-                    x-transition:enter-end="opacity-100"
-                    x-transition:leave="transition ease-in duration-200"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-                >
-                    <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden p-8 border border-slate-100 text-center space-y-6">
-                        <!-- Checkmark Icon -->
-                        <div class="mx-auto w-12 h-12 bg-[#1fa387] text-white rounded-full flex items-center justify-center shadow-sm shadow-[#1fa387]/20">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                        </div>
-
-                        <div class="space-y-2">
-                            <h3 class="text-lg font-bold text-slate-800">Berhasil</h3>
-                            <p class="text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">
-                                Proyek "<span class="font-bold text-slate-800">{{ $lastCreatedProjectName }}</span>" telah berhasil dibuat dan siap untuk dipantau.
-                            </p>
-                        </div>
-
-                        <div class="pt-2 border-t border-slate-100">
-                            <button 
-                                type="button" 
-                                wire:click="closeModals"
-                                class="px-6 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white font-bold rounded-custom text-sm transition-all"
-                            >
-                                OK, Terima Kasih
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            @endif
 
             <livewire:project-edit-modal />
 
