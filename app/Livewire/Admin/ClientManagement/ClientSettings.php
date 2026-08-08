@@ -25,6 +25,8 @@ class ClientSettings extends Component
 
     public function mount(User $user)
     {
+        abort_if(!auth()->check() || auth()->user()->isClient(), 403, 'Akses ditolak.');
+
         if (!$user->isClient()) {
             abort(404, 'User ini bukan klien.');
         }

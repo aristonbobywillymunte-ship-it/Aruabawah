@@ -16,6 +16,11 @@ class ClientCreate extends Component
     public $password = '';
     public $password_confirmation = '';
 
+    public function mount()
+    {
+        abort_if(!auth()->check() || auth()->user()->isClient(), 403, 'Akses ditolak.');
+    }
+
     public function createClient()
     {
         $this->validate([

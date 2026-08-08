@@ -14,6 +14,11 @@ class ClientList extends Component
 
     public $search = '';
 
+    public function mount()
+    {
+        abort_if(!auth()->check() || auth()->user()->isClient(), 403, 'Akses ditolak. Klien tidak dapat mengakses halaman ini.');
+    }
+
     public function render()
     {
         $query = User::where('role', 'client');
