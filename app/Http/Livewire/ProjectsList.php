@@ -645,7 +645,15 @@ class ProjectsList extends Component
 
     public function deleteProject($id)
     {
-        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
+        $user = auth()->user();
+        if ($user && $user->isClient()) {
+            if (! optional($user->clientSettings)->can_delete_projects) {
+                $this->notifyProjectAction('Anda tidak memiliki izin untuk menghapus proyek.', 'error');
+                return;
+            }
+        }
+
+        $project = Project::accessibleBy($user)->findOrFail($id);
         // Proyek hanya dinonaktifkan sebagai konteks monitoring.
         // Data sumber (portal/sosmed) tetap disimpan dan tidak ikut dihapus.
         $project->update(['is_active' => false]);

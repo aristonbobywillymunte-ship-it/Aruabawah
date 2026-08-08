@@ -58,8 +58,42 @@ class ProjectCreate extends Component
             'packageId.required' => 'Silakan pilih paket terlebih dahulu.',
         ]);
 
-        // Validate package security
+        $user = auth()->user();
+
+        // Cek izin membuat proyek jika user adalah Klien
+        if ($user && $user->isClient()) {
+            if (! optional($user->clientSettings)->can_create_projects) {
+                $this->addError('name', 'Anda tidak memiliki izin untuk membuat proyek baru.');
+                return;
+            }
+
+            // Validasi apakah paket yang dipilih ada di dalam allowedPackages
+            if (! $user->allowedPackages()->where('packages.id', $this->packageId)->exists()) {
+                $this->addError('packageId', 'Anda tidak memiliki akses ke paket yang dipilih.');
+                return;
+            }
+        }
+
+        // Validate package security & existence
         $package = Package::query()->where('is_active', true)->findOrFail($this->packageId);
+
+        // Limit Check: Max Projects
+        $packageMaxProjects = $package->max_projects;
+        $clientMaxProjects = ($user && $user->isClient()) ? optional($user->clientSettings)->max_projects : null;
+        
+        $effectiveMaxProjects = null;
+        $limits = array_filter([$packageMaxProjects, $clientMaxProjects], fn($val) => $val !== null);
+        if (count($limits) > 0) {
+            $effectiveMaxProjects = min($limits);
+        }
+
+        if ($effectiveMaxProjects !== null) {
+            $currentProjectsCount = $user->projects()->count();
+            if ($currentProjectsCount >= $effectiveMaxProjects) {
+                $this->addError('name', 'Anda telah mencapai batas maksimal pembuatan proyek (Batas: ' . $effectiveMaxProjects . ').');
+                return;
+            }
+        }
 
         // Validate JSON string
         if (str_starts_with(trim($this->topicsString), '{') || str_starts_with(trim($this->topicsString), '[')) {
@@ -76,6 +110,23 @@ class ProjectCreate extends Component
         if (empty($topics)) {
             $this->addError('topicsString', 'Topik wajib diisi minimal satu kata kunci valid.');
             return;
+        }
+
+        // Limit Check: Max Keywords per Project
+        $packageMaxKeywords = $package->max_keywords_per_project;
+        $clientMaxKeywords = ($user && $user->isClient()) ? optional($user->clientSettings)->max_keywords_per_project : null;
+
+        $effectiveMaxKeywords = null;
+        $kwLimits = array_filter([$packageMaxKeywords, $clientMaxKeywords], fn($val) => $val !== null);
+        if (count($kwLimits) > 0) {
+            $effectiveMaxKeywords = min($kwLimits);
+        }
+
+        if ($effectiveMaxKeywords !== null) {
+            if (count($topics) > $effectiveMaxKeywords) {
+                $this->addError('topicsString', 'Jumlah kata kunci melebihi batas maksimal yang diizinkan (Maksimal: ' . $effectiveMaxKeywords . '). Anda memasukkan ' . count($topics) . ' kata kunci.');
+                return;
+            }
         }
 
         $project = Project::create([
@@ -98,8 +149,7 @@ class ProjectCreate extends Component
             ]);
         }
 
-        // Auto-assign project to the creator if they are a regular user
-        $user = auth()->user();
+        // Auto-assign project to the creator if they are a regular user or client
         if ($user && !$user->isAdmin()) {
             $project->users()->attach($user->id);
         }
@@ -114,7 +164,16 @@ class ProjectCreate extends Component
 
     public function render()
     {
-        $packages = Package::where('is_active', true)->orderBy('price', 'asc')->get();
+        $user = auth()->user();
+        $query = Package::where('is_active', true);
+        
+        if ($user && $user->isClient()) {
+            $allowedPackageIds = $user->allowedPackages()->pluck('packages.id');
+            $query->whereIn('id', $allowedPackageIds);
+        }
+
+        $packages = $query->orderBy('price', 'asc')->get();
+
         return view('livewire.project-create', [
             'packages' => $packages,
             'selectedPackage' => $this->packageId ? Package::find($this->packageId) : null,

@@ -156,6 +156,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/database', function () {
         return view('admin.database');
     })->middleware('admin')->name('admin.database');
+
+    // ─── Client Management (Admin & User) ───
+    Route::middleware(function ($request, $next) {
+        if (!auth()->check() || auth()->user()->isClient()) {
+            abort(403, 'Akses ditolak. Klien tidak dapat mengakses halaman ini.');
+        }
+        return $next($request);
+    })->group(function () {
+        Route::get('/admin/clients', \App\Livewire\Admin\ClientManagement\ClientList::class)->name('admin.clients');
+        Route::get('/admin/clients/create', \App\Livewire\Admin\ClientManagement\ClientCreate::class)->name('admin.clients.create');
+        Route::get('/admin/clients/{user}/settings', \App\Livewire\Admin\ClientManagement\ClientSettings::class)->name('admin.clients.settings');
+    });
+
     Route::get('/change-password', [LoginController::class, 'showChangePasswordForm'])->name('password.change');
     Route::post('/change-password', [LoginController::class, 'updatePassword'])->name('password.update');
 

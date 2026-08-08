@@ -98,6 +98,7 @@
                                 ['route' => 'admin.dashboard', 'icon' => 'dashboard', 'label' => 'Dashboard'],
                                 ['route' => 'admin.pipeline-monitor', 'icon' => 'queue', 'label' => 'Pipeline Antrian'],
                                 ['route' => 'admin.users', 'icon' => 'groups', 'label' => 'Kelola User'],
+                                ['route' => 'admin.clients', 'icon' => 'assignment_ind', 'label' => 'Manajemen Klien'],
                                 ['route' => 'admin.apify', 'icon' => 'smart_toy', 'label' => 'Apify'],
                                 ['route' => 'admin.apify-financials', 'icon' => 'payments', 'label' => 'Laporan Keuangan'],
                                 ['route' => 'admin.packages', 'icon' => 'inventory_2', 'label' => 'Paket'],
@@ -114,6 +115,9 @@
                         @endphp
                         @foreach($menuItems as $item)
                             @php
+                                if (!auth()->user()->isAdmin() && $item['route'] !== 'admin.clients') {
+                                    continue;
+                                }
                                 $isActive = request()->routeIs($item['route']);
                             @endphp
                             <a href="{{ route($item['route']) }}" wire:navigate 

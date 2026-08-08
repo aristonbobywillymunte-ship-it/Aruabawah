@@ -97,7 +97,7 @@ class Project extends Model
      */
     public function scopeAccessibleBy(Builder $query, User $user): Builder
     {
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->isUser()) {
             return $query;
         }
 

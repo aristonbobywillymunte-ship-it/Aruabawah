@@ -83,7 +83,15 @@ class ProjectEditModal extends Component
             'telegramChatId.required'   => 'Telegram Chat ID wajib diisi.',
         ]);
 
-        $project = Project::accessibleBy(auth()->user())->findOrFail($this->editProjectId);
+        $user = auth()->user();
+        if ($user && $user->isClient()) {
+            if (! optional($user->clientSettings)->can_edit_projects) {
+                $this->addError('editName', 'Anda tidak memiliki izin untuk mengedit proyek.');
+                return;
+            }
+        }
+
+        $project = Project::accessibleBy($user)->findOrFail($this->editProjectId);
 
         if (str_starts_with(trim($this->editTopicsString), '{') || str_starts_with(trim($this->editTopicsString), '[')) {
             $this->addError('editTopicsString', 'Format JSON tidak diperbolehkan. Gunakan kata kunci yang dipisahkan koma.');
@@ -95,6 +103,24 @@ class ProjectEditModal extends Component
         if (empty($topics)) {
             $this->addError('editTopicsString', 'Topik wajib diisi minimal satu kata kunci valid.');
             return;
+        }
+
+        // Limit Check: Max Keywords per Project
+        $package = $project->package;
+        $packageMaxKeywords = $package ? $package->max_keywords_per_project : null;
+        $clientMaxKeywords = ($user && $user->isClient()) ? optional($user->clientSettings)->max_keywords_per_project : null;
+
+        $effectiveMaxKeywords = null;
+        $kwLimits = array_filter([$packageMaxKeywords, $clientMaxKeywords], fn($val) => $val !== null);
+        if (count($kwLimits) > 0) {
+            $effectiveMaxKeywords = min($kwLimits);
+        }
+
+        if ($effectiveMaxKeywords !== null) {
+            if (count($topics) > $effectiveMaxKeywords) {
+                $this->addError('editTopicsString', 'Jumlah kata kunci melebihi batas maksimal yang diizinkan (Maksimal: ' . $effectiveMaxKeywords . '). Anda memasukkan ' . count($topics) . ' kata kunci.');
+                return;
+            }
         }
 
         $project->update([

@@ -20,6 +20,8 @@ class Package extends Model
         'news_interval_minutes',
         'social_interval_minutes',
         'is_popular',
+        'max_projects',
+        'max_keywords_per_project',
     ];
 
     protected $casts = [
@@ -32,6 +34,8 @@ class Package extends Model
         'news_interval_minutes' => 'integer',
         'social_interval_minutes' => 'integer',
         'is_popular' => 'boolean',
+        'max_projects' => 'integer',
+        'max_keywords_per_project' => 'integer',
     ];
 
     public function actors(): BelongsToMany
