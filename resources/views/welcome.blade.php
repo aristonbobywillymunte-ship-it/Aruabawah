@@ -19,7 +19,11 @@
     </head>
     <body class="antialiased bg-surface-studio text-on-surface font-sans selection:bg-primary/20 selection:text-primary {{ request()->query('project') ? 'h-screen overflow-hidden' : 'min-h-screen' }} flex flex-col">
 
-        <livewire:projects-list />
+        @if(isset($slot))
+            {{ $slot }}
+        @else
+            <livewire:projects-list />
+        @endif
 
         @livewireScripts
     </body>

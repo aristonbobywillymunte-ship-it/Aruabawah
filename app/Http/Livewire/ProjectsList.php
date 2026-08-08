@@ -31,18 +31,6 @@ class ProjectsList extends Component
         return $this->projectId;
     }
 
-    // Form fields for new project
-    public $name = '';
-    public $topicsString = ''; // Reset default to empty string
-    public $contextKeywords = '';
-    public $excludeKeywords = '';
-    public $telegramChatId = '';
-    public $isCreatingProject = false;
-    public $createStep = 1; // Langkah pembuatan proyek baru (1: pilih paket, 2: isi data)
-    public $showSuccessModal = false;
-    public $lastCreatedProjectName = '';
-    public $packageId = null; // Tambahkan properti paket (package_id)
- 
     // Confirm project state
     public $showConfirmModal = false;
     public $confirmAction = null;
@@ -517,72 +505,7 @@ class ProjectsList extends Component
         return null;
     }
 
-    public function createProject()
-    {
-        $this->validate([
-            'name' => 'required|min:3|unique:projects,name',
-            'topicsString' => 'required',
-            'telegramChatId' => 'required',
-        ], [
-            'name.required' => 'Nama proyek wajib diisi.',
-            'name.min' => 'Nama proyek minimal harus 3 karakter.',
-            'name.unique' => 'Nama proyek ini sudah digunakan, silakan pilih nama lain.',
-            'topicsString.required' => 'Kata kunci pencarian (scraping) wajib diisi.',
-            'telegramChatId.required' => 'Telegram Chat ID wajib diisi.',
-        ]);
 
-        // Validate JSON string
-        if (str_starts_with(trim($this->topicsString), '{') || str_starts_with(trim($this->topicsString), '[')) {
-            $this->addError('topicsString', 'Format JSON tidak diperbolehkan. Gunakan kata kunci yang dipisahkan koma.');
-            return;
-        }
-
-        // Parse comma-separated topics
-        $topics = array_map('trim', explode(',', $this->topicsString));
-        $topics = array_filter($topics); // remove empty elements
-        $topics = array_unique($topics); // remove duplicates
-        $topics = array_values($topics);
-
-        if (empty($topics)) {
-            $this->addError('topicsString', 'Topik wajib diisi minimal satu kata kunci valid.');
-            return;
-        }
-
-        $project = Project::create([
-            'name' => $this->name,
-            'topics' => array_values($topics),
-            'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
-            'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
-            'package_id' => $this->packageId ?: null,
-        ]);
-
-        // Save telegram recipients without minus (-) sign (supporting multi chat ids)
-        $chatIds = $this->parseMultiChatIds((string) $this->telegramChatId);
-        foreach ($chatIds as $cId) {
-            DB::table('project_telegram_recipients')->insert([
-                'project_id' => $project->id,
-                'chat_id' => $cId,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        // Auto-assign project to the creator if they are a regular user
-        $user = auth()->user();
-        if ($user && !$user->isAdmin()) {
-            $project->users()->attach($user->id);
-        }
-
-        $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
-        BootstrapNewProjectScrapingJob::dispatch($project->id)->onQueue('news');
-        $this->forgetProjectsCache();
-
-        session()->flash('message', 'Proyek berhasil dibuat.');
-        $this->notifyProjectAction('Proyek berhasil dibuat.');
-        
-        $this->redirect(request()->header('Referer') ?: '/');
-    }
 
 
 

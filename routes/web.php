@@ -39,6 +39,8 @@ Route::middleware('auth')->group(function () {
             : view('welcome');
     })->name('home');
 
+    Route::get('/projects/create', App\Livewire\ProjectCreate::class)->name('projects.create');
+
     Route::get('/admin', function () {
         $user = auth()->user();
 
