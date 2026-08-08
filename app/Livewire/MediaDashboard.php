@@ -360,12 +360,20 @@ class MediaDashboard extends Component
                 'articles.category as category',
             ])
             ->join('project_articles', 'articles.id', '=', 'project_articles.article_id')
+            ->leftJoin('ai_analysis_results', function ($join) {
+                $join->on('articles.id', '=', 'ai_analysis_results.article_id')
+                     ->whereNull('ai_analysis_results.social_media_item_id');
+            })
             ->where('project_articles.project_id', $project->id)
             ->where(function ($q) {
                 $q->whereNull('articles.category')
                   ->orWhere('articles.category', '!=', 'social');
             })
-            ->whereNotIn(\Illuminate\Support\Facades\DB::raw('lower(coalesce(articles.source_name, \'\'))'), ['facebook', 'instagram', 'tiktok']);
+            ->whereNotIn(\Illuminate\Support\Facades\DB::raw('lower(coalesce(articles.source_name, \'\'))'), ['facebook', 'instagram', 'tiktok'])
+            ->where(function ($q) {
+                $q->whereNull('ai_analysis_results.is_noise')
+                  ->orWhere('ai_analysis_results.is_noise', false);
+            });
 
         // Kueri 2: Media Sosial asli dari tabel social_media_items
         $socialQuery = \Illuminate\Support\Facades\DB::table('social_media_items')
@@ -392,12 +400,17 @@ class MediaDashboard extends Component
                 \Illuminate\Support\Facades\DB::raw("'social' as category"),
             ])
             ->join('project_social_media_items', 'social_media_items.id', '=', 'project_social_media_items.social_media_item_id')
+            ->leftJoin('ai_analysis_results', 'social_media_items.id', '=', 'ai_analysis_results.social_media_item_id')
             ->where('project_social_media_items.project_id', $project->id)
             ->where(function ($q) {
                 $q->whereNull('social_media_items.post_url')
                   ->orWhere('social_media_items.post_url', 'not like', 'apify-%');
             })
-            ->where('social_media_items.comments_checked', true); // Hanya tampilkan yang komentar pemeriksaannya sudah selesai
+            ->where('social_media_items.comments_checked', true) // Hanya tampilkan yang komentar pemeriksaannya sudah selesai
+            ->where(function ($q) {
+                $q->whereNull('ai_analysis_results.is_noise')
+                  ->orWhere('ai_analysis_results.is_noise', false);
+            });
 
         // Gabungkan kedua kueri menggunakan union (dan jalankan query sebagai eloquent-compatible wrapper)
         return $portalQuery->union($socialQuery);

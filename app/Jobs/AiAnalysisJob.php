@@ -412,6 +412,7 @@ class AiAnalysisJob implements ShouldQueue
         // BUKAN reach_level legacy yang selalu bernilai 'Unknown' pada hasil AI v2.
         $canonicalReachLevel = strtolower((string) ($normalized['potential_reach_level'] ?? $normalized['reach_level'] ?? ''));
         $shouldNotify = ($normalized['analysis_status'] ?? 'success') === 'success'
+            && (($normalized['is_noise'] ?? false) !== true)
             && (
                 ($normalized['risk_level'] === 'high' || $normalized['risk_level'] === 'critical')
                 || ($normalized['risk_level'] === 'medium' && in_array($canonicalReachLevel, ['tinggi', 'sangat tinggi', 'high'], true))
@@ -453,6 +454,22 @@ class AiAnalysisJob implements ShouldQueue
             ]);
         }
 
+        if ($normalized['article_id']) {
+            $article = \App\Models\Article::find($normalized['article_id']);
+            if ($article) {
+                foreach ($article->projects as $p) {
+                    $p->touch();
+                }
+            }
+        } elseif ($normalized['social_media_item_id']) {
+            $social = \App\Models\SocialMediaItem::find($normalized['social_media_item_id']);
+            if ($social) {
+                foreach ($social->projects as $p) {
+                    $p->touch();
+                }
+            }
+        }
+
         // Broadcast event real-time bahwa analisis artikel baru telah selesai
         event(new \App\Events\RealtimeNotificationEvent('article_analyzed', 'Analisis Selesai', 'Analisis berita/sosmed terbaru selesai diproses oleh AI.', [
             'analysis_id' => $analysisId,
@@ -491,8 +508,21 @@ class AiAnalysisJob implements ShouldQueue
         }
 
         if ($schema !== '') {
-            $instruction .= "Gunakan schema berikut sebagai format output:\n" . $schema;
+            $instruction .= "Gunakan schema berikut sebagai format output:\n" . $schema . "\n\n";
         }
+
+        $instruction .= "QUALITY GATE GLOBAL (WAJIB):\n";
+        $instruction .= "Nilai kualitas konten secara global, bukan relevansi terhadap satu proyek.\n";
+        $instruction .= "Kembalikan juga field:\n";
+        $instruction .= "- is_noise: boolean\n";
+        $instruction .= "- noise_reason: string|null\n";
+        $instruction .= "- subjects: array<string>\n";
+        $instruction .= "- quality_confidence: integer 0-100\n\n";
+        $instruction .= "Definisi noise=true hanya jika konten jelas spam/noise/tidak substantif, misalnya caption repetitif tak bermakna, promosi/hashtag stuffing yang tidak membawa isi substantif, placeholder, atau penyebutan target yang hanya incidental dan tidak memiliki substansi berita/post.\n";
+        $instruction .= "Jangan menandai noise hanya karena teks pendek, banyak emoji, satir, bahasa informal, atau sentimen negatif.\n";
+        $instruction .= "Jika ragu, pilih is_noise=false dan confidence lebih rendah.\n";
+        $instruction .= "subjects harus berisi subjek/orang/lembaga/topik utama yang benar-benar dibahas dalam konten.\n";
+        $instruction .= "noise_reason wajib singkat dan tidak mengandung secret.";
 
         return $instruction;
     }
@@ -598,6 +628,17 @@ class AiAnalysisJob implements ShouldQueue
             $reachMethod = 'ai_reader_estimate_v1';
         }
 
+        $isNoise = isset($result['is_noise']) ? (bool) $result['is_noise'] : null;
+        $noiseReason = isset($result['noise_reason']) ? substr(trim((string) $result['noise_reason']), 0, 500) : null;
+        
+        $subjects = $result['subjects'] ?? [];
+        if (!is_array($subjects)) {
+            $subjects = [];
+        }
+        $subjects = array_slice(array_values(array_unique(array_filter(array_map('trim', array_map('strval', $subjects))))), 0, 20);
+
+        $qualityConfidence = isset($result['quality_confidence']) ? max(0, min(100, (int) $result['quality_confidence'])) : null;
+
         $isSocial = $type === 'social';
         $analyzableId = $this->payload['id'] ?? $this->payload['item_id'] ?? null;
 
@@ -641,6 +682,10 @@ class AiAnalysisJob implements ShouldQueue
             'reach_source' => 'unknown',
             'reach_confidence' => 'low',
             'reach_reason' => 'Legacy field – not used in business logic',
+            'is_noise' => $isNoise,
+            'noise_reason' => $noiseReason,
+            'subjects' => json_encode($subjects),
+            'quality_confidence' => $qualityConfidence,
         ];
     }
 
@@ -1034,6 +1079,10 @@ class AiAnalysisJob implements ShouldQueue
             'is_exact_reach' => $normalized['is_exact_reach'],
             'reach_method' => $normalized['reach_method'],
             'recommendation' => $normalized['recommendation'],
+            'is_noise' => $normalized['is_noise'] ?? null,
+            'noise_reason' => $normalized['noise_reason'] ?? null,
+            'subjects' => isset($normalized['subjects']) ? json_decode($normalized['subjects'], true) : null,
+            'quality_confidence' => $normalized['quality_confidence'] ?? null,
         ];
 
             SocialMediaItem::where('id', $normalized['social_media_item_id'])->update([

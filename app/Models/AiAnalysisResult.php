@@ -47,6 +47,10 @@ class AiAnalysisResult extends Model
         'validation_errors',
         'recommendation',
         'raw_response',
+        'is_noise',
+        'noise_reason',
+        'subjects',
+        'quality_confidence',
     ];
 
     protected $casts = [
@@ -72,6 +76,9 @@ class AiAnalysisResult extends Model
         'potential_reach_level' => 'string',
         'analysis_status' => 'string',
         'validation_errors' => 'string',
+        'is_noise' => 'boolean',
+        'subjects' => 'array',
+        'quality_confidence' => 'integer',
     ];
 
     public function article(): BelongsTo
@@ -168,6 +175,13 @@ class AiAnalysisResult extends Model
             ->whereNotNull('project_reach_score')
             ->whereNotNull('project_reach_level')
             ->whereNotNull('project_reach_band');
+    }
+
+    public function scopeVisibleToDashboard(Builder $query): Builder
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('is_noise')->orWhere('is_noise', false);
+        });
     }
 
     /**
