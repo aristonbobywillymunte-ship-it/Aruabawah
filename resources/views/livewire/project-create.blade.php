@@ -52,21 +52,21 @@
 
                     <div
                         wire:click="$set('packageId', {{ $p->id }})"
-                        class="group relative cursor-pointer rounded-2xl border-2 transition-all duration-200 flex flex-col overflow-hidden
+                        class="group relative cursor-pointer rounded-2xl transition-all duration-200 flex flex-col overflow-hidden
                             {{ $isSelected
-                                ? 'border-[#1fa387] shadow-lg shadow-[#1fa387]/10'
-                                : 'border-slate-150 bg-white hover:border-slate-300 hover:shadow-md' }}"
+                                ? 'shadow-[0_0_0_2px_#1fa387] shadow-[#1fa387]/10'
+                                : 'shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.10)]' }}"
                     >
-                        {{-- Popular strip (fully in-flow, tidak absolute) --}}
+                        {{-- Popular strip (fully in-flow) --}}
                         @if($p->is_popular)
                             <div class="bg-[#1fa387] px-5 py-2.5 flex items-center gap-2">
                                 <span class="material-symbols-outlined text-white text-[14px]">star</span>
                                 <span class="text-white text-[11px] font-black uppercase tracking-[0.12em]">Paling Populer</span>
                             </div>
                         @else
-                            <div class="bg-slate-50 border-b border-slate-100 px-5 py-2.5 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-slate-300 text-[14px]">circle</span>
-                                <span class="text-slate-300 text-[11px] font-black uppercase tracking-[0.12em]">Paket Standar</span>
+                            {{-- Spacer transparan agar semua card align dari atas --}}
+                            <div class="px-5 py-2.5 invisible select-none" aria-hidden="true">
+                                <span class="text-[11px]">_</span>
                             </div>
                         @endif
 
@@ -105,10 +105,10 @@
                             </div>
 
                             {{-- CTA button --}}
-                            <div class="w-full py-2.5 rounded-xl font-bold text-sm text-center border transition-all duration-200
+                            <div class="w-full py-2.5 rounded-xl font-bold text-sm text-center transition-all duration-200
                                 {{ $isSelected
-                                    ? 'bg-[#1fa387] text-white border-[#1fa387]'
-                                    : 'bg-white text-slate-500 border-slate-200 group-hover:border-[#1fa387]/40 group-hover:text-[#1fa387]' }}">
+                                    ? 'bg-[#1fa387] text-white'
+                                    : 'bg-slate-50 text-slate-500 group-hover:bg-[#1fa387]/8 group-hover:text-[#1fa387]' }}">
                                 @if($isSelected)
                                     <span class="inline-flex items-center gap-1.5">
                                         <span class="material-symbols-outlined text-[16px]">check_circle</span>
@@ -127,7 +127,7 @@
                                 );
                             @endphp
                             @if(!empty($features))
-                                <div class="border-t border-slate-100 pt-4">
+                                <div class="pt-4">
                                     <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Fitur Termasuk</p>
                                     <div class="space-y-2">
                                         @foreach($features as $feat)
@@ -144,7 +144,7 @@
                 @endforeach
             </div>
 
-            <div class="mt-8 flex items-center justify-between border-t border-slate-100 pt-6">
+            <div class="mt-8 flex items-center justify-between pt-6">
                 <p class="text-xs text-slate-400">
                     <span class="material-symbols-outlined text-[14px] align-middle mr-1">lock</span>
                     Paket dapat diubah kapan saja setelah proyek dibuat.
@@ -165,11 +165,11 @@
 
         {{-- ── STEP 2: Form Proyek ── --}}
         @else
-            <div class="max-w-2xl bg-white rounded-2xl border border-slate-100 shadow-sm">
+            <div class="max-w-2xl bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.06)]">
 
                 {{-- Selected package pill --}}
                 @if($selectedPackage)
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                    <div class="flex items-center justify-between px-6 py-4 bg-slate-50/60 rounded-t-2xl">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-lg bg-[#1fa387]/10 flex items-center justify-center text-[#1fa387]">
                                 <span class="material-symbols-outlined text-[16px]">inventory_2</span>
@@ -199,7 +199,7 @@
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">folder</span>
                             <input wire:model="name" type="text"
                                 placeholder="Contoh: Monitoring Prabowo Subianto"
-                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/15 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
                         </div>
                         @error('name') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
@@ -215,7 +215,7 @@
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">send</span>
                             <input wire:model="telegramChatId" type="text"
                                 placeholder="Contoh: 10022334455"
-                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/15 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
                         </div>
                         @error('telegramChatId') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
@@ -231,12 +231,12 @@
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
                             <input wire:model="topicsString" type="text"
                                 placeholder="Contoh: Prabowo, Presiden, Menhan"
-                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/15 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
                         </div>
                         @error('topicsString') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
 
                         {{-- Preview Hashtag --}}
-                        <div class="mt-2 p-3.5 rounded-xl bg-slate-50 border border-slate-100"
+                        <div class="mt-2 p-3.5 rounded-xl bg-slate-50"
                              x-data="{
                                 topics() {
                                     return $wire.topicsString
@@ -250,7 +250,7 @@
                             <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">Preview</p>
                             <div class="flex flex-wrap gap-1.5">
                                 <template x-for="topic in topics()" :key="topic">
-                                    <span class="px-3 py-1 rounded-full bg-[#1fa387]/8 border border-[#1fa387]/20 text-[#1fa387] text-xs font-bold" x-text="toHashtag(topic)"></span>
+                                    <span class="px-3 py-1 rounded-full bg-[#1fa387]/8 text-[#1fa387] text-xs font-bold" x-text="toHashtag(topic)"></span>
                                 </template>
                                 <span x-show="!$wire.topicsString" class="text-xs text-slate-400 italic">Ketik kata kunci di atas...</span>
                             </div>
@@ -268,7 +268,7 @@
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">filter_alt</span>
                             <input wire:model="contextKeywords" type="text"
                                 placeholder="Contoh: Soekarno, Hatta, Sudirman"
-                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/15 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
                         </div>
                         @error('contextKeywords') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
@@ -284,13 +284,13 @@
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">block</span>
                             <input wire:model="excludeKeywords" type="text"
                                 placeholder="Contoh: promosi, jual, beli, diskon"
-                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/15 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
                         </div>
                         @error('excludeKeywords') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Action buttons --}}
-                    <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
+                    <div class="flex justify-end gap-3 pt-4">
                         <button type="button" wire:click="$set('createStep', 1)"
                             class="inline-flex items-center gap-2 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition cursor-pointer active:scale-[0.98]">
                             <span class="material-symbols-outlined text-[16px]">arrow_back</span>
