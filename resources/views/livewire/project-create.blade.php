@@ -46,7 +46,7 @@
 
         {{-- ── STEP 1: Pilih Paket ── --}}
         @if($createStep === 1)
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl items-stretch">
                 @foreach($packages as $p)
                     @php $isSelected = (int) $packageId === (int) $p->id; @endphp
 
@@ -57,16 +57,15 @@
                                 ? 'shadow-[0_0_0_2px_#1fa387] shadow-[#1fa387]/10'
                                 : 'shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.10)]' }}"
                     >
-                        {{-- Popular strip (fully in-flow) --}}
+                        {{-- Header strip: popular = hijau, standar = transparan tapi sama tinggi --}}
                         @if($p->is_popular)
                             <div class="bg-[#1fa387] px-5 py-2.5 flex items-center gap-2">
                                 <span class="material-symbols-outlined text-white text-[14px]">star</span>
                                 <span class="text-white text-[11px] font-black uppercase tracking-[0.12em]">Paling Populer</span>
                             </div>
                         @else
-                            {{-- Spacer transparan agar semua card align dari atas --}}
-                            <div class="px-5 py-2.5 invisible select-none" aria-hidden="true">
-                                <span class="text-[11px]">_</span>
+                            <div class="px-5 py-2.5" aria-hidden="true" style="visibility:hidden">
+                                <span class="text-[11px] font-black uppercase tracking-[0.12em]">_</span>
                             </div>
                         @endif
 
@@ -97,27 +96,26 @@
                                     </span>
                                     <span class="text-xs font-semibold text-slate-400 mt-1.5">per bulan</span>
                                 @else
-                                    <span class="font-hanken text-xl font-black text-[#1fa387] leading-none uppercase tracking-wide">
+                                    <span class="font-hanken text-lg font-bold text-slate-800 leading-none">
                                         Hubungi Kami
                                     </span>
-                                    <span class="text-xs font-semibold text-slate-400 mt-1.5">Harga disesuaikan kebutuhan</span>
+                                    <span class="text-xs text-slate-400 mt-1.5">Harga disesuaikan kebutuhan</span>
                                 @endif
                             </div>
 
                             {{-- CTA button --}}
-                            <div class="w-full py-2.5 rounded-xl font-bold text-sm text-center transition-all duration-200
+                            <button type="button" class="w-full py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-1.5
                                 {{ $isSelected
-                                    ? 'bg-[#1fa387] text-white'
-                                    : 'bg-slate-50 text-slate-500 group-hover:bg-[#1fa387]/8 group-hover:text-[#1fa387]' }}">
+                                    ? 'bg-[#1fa387] text-white shadow-sm shadow-[#1fa387]/20'
+                                    : 'bg-[#1fa387]/10 text-[#1fa387] group-hover:bg-[#1fa387]/15' }}">
                                 @if($isSelected)
-                                    <span class="inline-flex items-center gap-1.5">
-                                        <span class="material-symbols-outlined text-[16px]">check_circle</span>
-                                        Dipilih
-                                    </span>
+                                    <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                    Dipilih
                                 @else
+                                    <span class="material-symbols-outlined text-[16px]">radio_button_unchecked</span>
                                     Pilih Paket
                                 @endif
-                            </div>
+                            </button>
 
                             {{-- Features list --}}
                             @php
