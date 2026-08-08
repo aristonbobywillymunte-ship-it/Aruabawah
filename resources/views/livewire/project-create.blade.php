@@ -163,7 +163,7 @@
 
         {{-- ── STEP 2: Form Proyek ── --}}
         @else
-            <div class="bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.06)]">
+            <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50">
 
                 {{-- Selected package pill --}}
                 @if($selectedPackage)
@@ -197,7 +197,7 @@
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">folder</span>
                             <input wire:model="name" type="text"
                                 placeholder="Contoh: Monitoring Prabowo Subianto"
-                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:bg-white focus:shadow-none focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition-all font-medium">
                         </div>
                         @error('name') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
@@ -213,7 +213,7 @@
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">send</span>
                             <input wire:model="telegramChatId" type="text"
                                 placeholder="Contoh: 10022334455"
-                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:bg-white focus:shadow-none focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition-all font-medium">
                         </div>
                         @error('telegramChatId') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
@@ -229,7 +229,7 @@
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
                             <input wire:model="topicsString" type="text"
                                 placeholder="Contoh: Prabowo, Presiden, Menhan"
-                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:bg-white focus:shadow-none focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition-all font-medium">
                         </div>
                         @error('topicsString') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
 
@@ -266,7 +266,7 @@
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">filter_alt</span>
                             <input wire:model="contextKeywords" type="text"
                                 placeholder="Contoh: Soekarno, Hatta, Sudirman"
-                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:bg-white focus:shadow-none focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition-all font-medium">
                         </div>
                         @error('contextKeywords') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
@@ -282,7 +282,7 @@
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">block</span>
                             <input wire:model="excludeKeywords" type="text"
                                 placeholder="Contoh: promosi, jual, beli, diskon"
-                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:bg-white focus:shadow-none focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition-all font-medium">
                         </div>
                         @error('excludeKeywords') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
