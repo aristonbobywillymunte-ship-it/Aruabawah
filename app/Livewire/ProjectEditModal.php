@@ -5,7 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Project;
 use App\Models\Package;
-use App\Services\ContentMatchingService;
+use App\Jobs\ProjectContentResyncJob;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 
@@ -116,11 +116,11 @@ class ProjectEditModal extends Component
             ]);
         }
 
-        app(ContentMatchingService::class)->resyncProjectContent($project);
+        ProjectContentResyncJob::dispatch($project);
 
         $this->showModal = false;
         
-        $this->dispatch('project-updated');
+        $this->dispatch('project-updated', projectId: $project->id);
         session()->flash('message', 'Proyek berhasil diperbarui.');
     }
 

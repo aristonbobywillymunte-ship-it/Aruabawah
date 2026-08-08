@@ -12,6 +12,8 @@ use Livewire\Livewire;
 use App\Livewire\ProjectEditModal;
 use App\Http\Livewire\ProjectsList;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
+use App\Jobs\ProjectContentResyncJob;
 
 class ProjectEditModalPerformanceTest extends TestCase
 {
@@ -72,14 +74,19 @@ class ProjectEditModalPerformanceTest extends TestCase
     public function test_project_edit_modal_updates_project_and_dispatches_event()
     {
         $this->actingAs($this->user);
+        Queue::fake();
         
         Livewire::test(ProjectEditModal::class)
             ->call('open', $this->project->id)
             ->set('editName', 'Updated Project Name')
             ->set('editTopicsString', 'updated, topics')
             ->call('updateProject')
-            ->assertDispatched('project-updated')
+            ->assertDispatched('project-updated', projectId: $this->project->id)
             ->assertSet('showModal', false);
+            
+        Queue::assertPushed(ProjectContentResyncJob::class, function ($job) {
+            return $job->project->id === $this->project->id;
+        });
             
         $this->assertDatabaseHas('projects', [
             'id' => $this->project->id,

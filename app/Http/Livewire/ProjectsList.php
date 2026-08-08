@@ -456,7 +456,6 @@ class ProjectsList extends Component
             ->toArray();
     }
 
-    #[On('project-updated')]
     public function loadProjects(): void
     {
         $this->projectsLoaded = true;
@@ -470,7 +469,97 @@ class ProjectsList extends Component
 
     public function updatedProjectId($value): void
     {
-        $this->projectId = $this->resolveProjectOrDefault($this->getDecodedProjectId());
+        $this->forgetProjectsCache();
+        $this->loadProjects();
+    }
+
+    protected function buildSingleProjectData(Project $project): array
+    {
+        $projectId = $project->id;
+        
+        $portalCount = Article::where('project_id', $projectId)->where('is_trash', false)->count();
+        
+        $latestArticle = Article::where('project_id', $projectId)
+            ->where('is_trash', false)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        $lastPortalDate = $latestArticle ? $latestArticle->created_at : null;
+
+        $socialCount = \App\Models\SocialMediaItem::whereHas('projects', function ($q) use ($projectId) {
+            $q->where('projects.id', $projectId);
+        })->where('is_trash', false)->count();
+
+        $latestSocial = \App\Models\SocialMediaItem::whereHas('projects', function ($q) use ($projectId) {
+            $q->where('projects.id', $projectId);
+        })->where('is_trash', false)->orderBy('social_media_items.created_at', 'desc')->first();
+        $lastSocialDate = $latestSocial ? $latestSocial->created_at : null;
+
+        $analyzedPortalCount = AiAnalysisResult::whereIn('article_id', function ($query) use ($projectId) {
+                $query->select('id')
+                    ->from('articles')
+                    ->where('project_id', $projectId)
+                    ->where('is_trash', false);
+            })
+            ->where('analysis_status', 'completed')
+            ->count();
+
+        $analyzedSocialCount = DB::table('ai_analysis_results')
+            ->join('project_social_media_item', 'ai_analysis_results.social_media_item_id', '=', 'project_social_media_item.social_media_item_id')
+            ->where('project_social_media_item.project_id', $projectId)
+            ->where('ai_analysis_results.analysis_status', 'completed')
+            ->count();
+
+        $totalDataCount = $portalCount + $socialCount;
+        $totalAnalyzedCount = $analyzedPortalCount + $analyzedSocialCount;
+        
+        $analysisProgressPercentage = 0;
+        if ($totalDataCount > 0) {
+            $analysisProgressPercentage = min(100, round(($totalAnalyzedCount / $totalDataCount) * 100));
+        }
+
+        $latestPortalScanTime = $this->latestPortalScanForProject($projectId);
+        $lastScanDate = $latestPortalScanTime ? \Carbon\Carbon::parse($latestPortalScanTime) : null;
+
+        $effectivePortalDate = $lastPortalDate;
+        if ($lastScanDate && (! $lastPortalDate || $lastScanDate > $lastPortalDate)) {
+            $effectivePortalDate = $lastScanDate;
+        }
+
+        return [
+            'id' => $project->id,
+            'name' => $project->name,
+            'topics' => $project->topics ?? [],
+            'context_keywords' => $project->context_keywords ?? [],
+            'exclude_keywords' => $project->exclude_keywords ?? [],
+            'created_at' => $project->created_at->format('d M Y, H:i'),
+            'portal_count' => $portalCount,
+            'social_count' => $socialCount,
+            'total_analyzed' => $totalAnalyzedCount,
+            'analysis_progress_percentage' => $analysisProgressPercentage,
+            'portal_is_running' => $this->isPortalScanRunningForProject($projectId),
+            'last_portal_update' => $effectivePortalDate ? $effectivePortalDate->diffForHumans() : 'Belum ada data',
+            'medsos_is_running' => $this->isSocialScanRunningForProject($projectId),
+            'last_medsos_update' => $lastSocialDate ? $lastSocialDate->diffForHumans() : 'Belum ada data',
+            'medsos_running_label' => $this->isSocialScanRunningForProject($projectId) ? 'Scraping Medsos Berjalan...' : 'Data Medsos Terakhir',
+        ];
+    }
+
+    #[On('project-updated')]
+    public function refreshSingleProject($projectId): void
+    {
+        $project = Project::find($projectId);
+        if (!$project) return;
+        
+        $index = collect($this->projects)->search(fn($p) => isset($p['id']) && $p['id'] == $projectId);
+        if ($index === false) return;
+        
+        $this->projects[$index] = $this->buildSingleProjectData($project);
+        
+        \Illuminate\Support\Facades\Cache::put(
+            $this->projectsCacheKey(),
+            $this->projects,
+            now()->addMinutes(5)
+        );
     }
 
     protected function resolveProjectOrDefault($projectId = null): ?int
