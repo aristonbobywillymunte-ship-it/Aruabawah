@@ -12,6 +12,7 @@ use App\Services\ContentMatchingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Url;
+use Livewire\Attributes\On;
 
 class ProjectsList extends Component
 {
@@ -42,11 +43,7 @@ class ProjectsList extends Component
     public $lastCreatedProjectName = '';
     public $packageId = null; // Tambahkan properti paket (package_id)
  
-    // Edit project state
-    public $showEditModal = false;
-    public $editProjectId = null;
-    public $editName = '';
-    public $editTopicsString = '';
+    // Confirm project state
     public $showConfirmModal = false;
     public $confirmAction = null;
     public $confirmProjectId = null;
@@ -459,6 +456,7 @@ class ProjectsList extends Component
             ->toArray();
     }
 
+    #[On('project-updated')]
     public function loadProjects(): void
     {
         $this->projectsLoaded = true;
@@ -564,81 +562,7 @@ class ProjectsList extends Component
         $this->redirect(request()->header('Referer') ?: '/');
     }
 
-    public function editProject($id)
-    {
-        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
-        $this->editProjectId = $project->id;
-        $this->editName = $project->name;
-        $this->editTopicsString = implode(', ', $project->topics ?? []);
-        $this->contextKeywords = implode(', ', $project->context_keywords ?? []);
-        $this->excludeKeywords = implode(', ', $project->exclude_keywords ?? []);
-        $this->packageId = $project->package_id;
-        
-        $recipients = DB::table('project_telegram_recipients')->where('project_id', $project->id)->pluck('chat_id')->toArray();
-        $this->telegramChatId = implode(', ', $recipients);
-        
-        $this->showEditModal = true;
-    }
 
-    public function updateProject()
-    {
-        $this->validate([
-            'editName'         => 'required|min:3|unique:projects,name,' . $this->editProjectId,
-            'editTopicsString' => 'required',
-            'telegramChatId'   => 'required',
-        ], [
-            'editName.required'         => 'Nama proyek wajib diisi.',
-            'editName.min'              => 'Nama proyek minimal 3 karakter.',
-            'editName.unique'           => 'Nama proyek sudah digunakan.',
-            'editTopicsString.required' => 'Kata kunci pencarian (scraping) wajib diisi.',
-            'telegramChatId.required'   => 'Telegram Chat ID wajib diisi.',
-        ]);
-
-        $project = Project::accessibleBy(auth()->user())->findOrFail($this->editProjectId);
-
-        // Validate JSON string
-        if (str_starts_with(trim($this->editTopicsString), '{') || str_starts_with(trim($this->editTopicsString), '[')) {
-            $this->addError('editTopicsString', 'Format JSON tidak diperbolehkan. Gunakan kata kunci yang dipisahkan koma.');
-            return;
-        }
-
-        $topics = array_values(array_unique(array_filter(array_map('trim', explode(',', $this->editTopicsString)))));
-
-        if (empty($topics)) {
-            $this->addError('editTopicsString', 'Topik wajib diisi minimal satu kata kunci valid.');
-            return;
-        }
-
-        $project->update([
-            'name' => $this->editName,
-            'topics' => $topics,
-            'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
-            'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
-            // package_id di-guard sesuai permintaan user agar tidak bisa di-edit
-        ]);
-
-        // Save or update telegram recipients without minus (-) sign (supporting multi chat ids)
-        DB::table('project_telegram_recipients')->where('project_id', $project->id)->delete();
-        $chatIds = $this->parseMultiChatIds((string) $this->telegramChatId);
-        foreach ($chatIds as $cId) {
-            DB::table('project_telegram_recipients')->insert([
-                'project_id' => $project->id,
-                'chat_id' => $cId,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        $resyncResult = app(ContentMatchingService::class)->resyncProjectContent($project);
-        $this->forgetProjectsCache();
-
-        $this->showEditModal = false;
-        $this->editProjectId = null;
-        $this->telegramChatId = '';
-        session()->flash('message', 'Proyek berhasil diperbarui.');
-        $this->redirect(request()->header('Referer') ?: '/');
-    }
 
     // Trashed projects modal state
     public $showTrashedModal = false;
@@ -646,7 +570,6 @@ class ProjectsList extends Component
     public function closeModals()
     {
         $this->showSuccessModal = false;
-        $this->showEditModal = false;
         $this->showTrashedModal = false;
         $this->showConfirmModal = false;
         $this->isCreatingProject = false;
