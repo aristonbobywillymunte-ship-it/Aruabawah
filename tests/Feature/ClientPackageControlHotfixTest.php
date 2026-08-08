@@ -109,12 +109,13 @@ class ClientPackageControlHotfixTest extends TestCase
         $client->clientSettings()->create(['max_projects' => 8, 'max_keywords_per_project' => 15]);
         $client->allowedPackages()->sync([$this->proPackage->id, $this->enterprisePackage->id]); // Entitlement = 20, tapi client max 8
         
-        // Buat 7 proyek
+        // Buat 7 proyek aktif
         for ($i = 0; $i < 7; $i++) {
             Project::create([
                 'name' => "Project $i",
                 'topics' => ['A'],
                 'package_id' => $this->proPackage->id,
+                'is_active' => true,
             ])->users()->attach($client->id);
         }
         
@@ -124,7 +125,7 @@ class ClientPackageControlHotfixTest extends TestCase
             ->set('name', 'Project 8')
             ->set('topicsString', 'A, B, C')
             ->set('packageId', $this->proPackage->id)
-            ->call('submit')
+            ->call('createProject')
             ->assertHasNoErrors(['name']);
             
         // Proyek ke-9 akan ditolak karena max_projects = 8
@@ -133,7 +134,7 @@ class ClientPackageControlHotfixTest extends TestCase
             ->set('name', 'Project 9')
             ->set('topicsString', 'A, B, C')
             ->set('packageId', $this->proPackage->id)
-            ->call('submit')
+            ->call('createProject')
             ->assertHasErrors(['name']);
             
         // Test limit keyword: Enterprise max=50, Client max=15. Input 16 -> Ditolak.
@@ -142,7 +143,7 @@ class ClientPackageControlHotfixTest extends TestCase
             ->set('name', 'Keyword Project')
             ->set('topicsString', implode(', ', range(1, 16))) // 16 keywords
             ->set('packageId', $this->enterprisePackage->id)
-            ->call('submit')
+            ->call('createProject')
             ->assertHasErrors(['topicsString']);
             
         // Test limit keyword: Enterprise max=50, Client max=15. Input 15 -> Diterima.
@@ -151,7 +152,7 @@ class ClientPackageControlHotfixTest extends TestCase
             ->set('name', 'Keyword Project 15')
             ->set('topicsString', implode(', ', range(1, 15))) // 15 keywords
             ->set('packageId', $this->enterprisePackage->id)
-            ->call('submit')
+            ->call('createProject')
             ->assertHasNoErrors(['topicsString']);
     }
 
@@ -176,5 +177,69 @@ class ClientPackageControlHotfixTest extends TestCase
         $this->assertTrue($settings->can_create_projects);
         $this->assertFalse($settings->can_edit_projects);
         $this->assertFalse($settings->can_delete_projects);
+    }
+
+    public function test_client_settings_security_validation()
+    {
+        $client = User::create(['name' => 'C', 'email' => 'csec@test.com', 'password' => 'password', 'role' => 'client']);
+        $client->clientSettings()->create([]);
+        $client->allowedPackages()->sync([$this->proPackage->id]);
+        
+        $inactivePackage = Package::create([
+            'name' => 'Inactive', 'price' => 0, 'is_active' => false, 'max_projects' => 10, 'max_keywords_per_project' => 10,
+        ]);
+
+        // Tes: package inactive
+        Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\Admin\ClientManagement\ClientSettings::class, ['user' => $client->id])
+            ->set('allowedPackages', [$inactivePackage->id])
+            ->call('saveSettings')
+            ->assertHasErrors(['allowedPackages.0']);
+            
+        $this->assertFalse($client->fresh()->allowedPackages->contains($inactivePackage->id));
+
+        // Tes: fake package ID
+        Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\Admin\ClientManagement\ClientSettings::class, ['user' => $client->id])
+            ->set('allowedPackages', [999999])
+            ->call('saveSettings')
+            ->assertHasErrors(['allowedPackages.0']);
+    }
+
+    public function test_active_project_quota_only()
+    {
+        $client = User::create(['name' => 'C2', 'email' => 'cact@test.com', 'password' => 'password', 'role' => 'client']);
+        $client->clientSettings()->create(['max_projects' => 5]);
+        $client->allowedPackages()->sync([$this->proPackage->id]);
+        
+        // Buat 3 aktif, 2 inaktif
+        for ($i = 0; $i < 3; $i++) {
+            Project::create(['name' => "Act $i", 'topics' => ['A'], 'package_id' => $this->proPackage->id, 'is_active' => true])->users()->attach($client->id);
+        }
+        for ($i = 0; $i < 2; $i++) {
+            Project::create(['name' => "Inact $i", 'topics' => ['A'], 'package_id' => $this->proPackage->id, 'is_active' => false])->users()->attach($client->id);
+        }
+        
+        // Total project = 5. Aktif = 3. Limit = 5.
+        // Project baru (ke-4 aktif) harus bisa
+        Livewire::actingAs($client)
+            ->test(\App\Livewire\ProjectCreate::class)
+            ->set('name', 'Act 4')
+            ->set('topicsString', 'A')
+            ->set('packageId', $this->proPackage->id)
+            ->call('createProject')
+            ->assertHasNoErrors(['name']);
+            
+        // Buat lagi manual 1 project aktif agar total aktif = 5
+        Project::create(['name' => "Act 5", 'topics' => ['A'], 'package_id' => $this->proPackage->id, 'is_active' => true])->users()->attach($client->id);
+        
+        // Coba buat project aktif ke-6, ditolak
+        Livewire::actingAs($client)
+            ->test(\App\Livewire\ProjectCreate::class)
+            ->set('name', 'Act 6')
+            ->set('topicsString', 'A')
+            ->set('packageId', $this->proPackage->id)
+            ->call('createProject')
+            ->assertHasErrors(['name']);
     }
 }

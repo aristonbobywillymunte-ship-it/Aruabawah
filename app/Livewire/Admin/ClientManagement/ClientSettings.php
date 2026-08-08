@@ -53,6 +53,13 @@ class ClientSettings extends Component
             'max_projects' => 'nullable|integer|min:1',
             'max_keywords_per_project' => 'nullable|integer|min:1',
             'allowedPackages' => 'array',
+            'allowedPackages.*' => [
+                'required',
+                'integer',
+                \Illuminate\Validation\Rule::exists('packages', 'id')->where(function ($query) {
+                    $query->where('is_active', true);
+                }),
+            ],
         ]);
 
         // 1. Ambil candidate packages TANPA mengubah database

@@ -77,13 +77,13 @@ class ProjectCreate extends Component
         // Validate package security & existence
         $package = Package::query()->where('is_active', true)->findOrFail($this->packageId);
 
-        // Limit Check: Max Projects (Hanya menghitung global limit untuk Klien)
+        // Limit Check: Max Projects (Hanya menghitung global limit untuk Klien, HANYA proyek aktif)
         if ($user && $user->isClient()) {
             $effectiveMaxProjects = $user->getEffectiveMaxProjects();
             if ($effectiveMaxProjects !== null) {
-                $currentProjectsCount = $user->projects()->count();
+                $currentProjectsCount = $user->projects()->where('is_active', true)->count();
                 if ($currentProjectsCount >= $effectiveMaxProjects) {
-                    $this->addError('name', 'Anda telah mencapai batas maksimal pembuatan proyek secara keseluruhan (Batas: ' . $effectiveMaxProjects . ' proyek).');
+                    $this->addError('name', 'Anda telah mencapai batas maksimal pembuatan proyek aktif (Batas: ' . $effectiveMaxProjects . ' proyek).');
                     return;
                 }
             }
