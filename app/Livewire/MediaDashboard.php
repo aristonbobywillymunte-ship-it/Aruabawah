@@ -104,6 +104,10 @@ class MediaDashboard extends Component
             $this->analysisLoaded = false;
             $this->analysisChartsLoaded = false;
         }
+        if ($name === 'katakunci') {
+            $this->keywordTabRequested = true;
+            $this->kataKunciLoaded = false;
+        }
         if ($name === 'konten') {
             $this->kontenLoaded = false;
         }
@@ -200,6 +204,7 @@ class MediaDashboard extends Component
     public $selectedKeyword = null;
     public bool $dashboardLoaded = true;
     public bool $mentionsLoaded = false;
+    public bool $kataKunciLoaded = false;
     protected array $trendPointsMemo = [];
     protected array $articlesMemo = [];
     protected array $totalArticlesCountMemo = [];
@@ -239,7 +244,7 @@ class MediaDashboard extends Component
     protected function keywordsTableCacheKey(): string
     {
         return 'project_keywords_' . $this->getDecodedProjectId() . '_' .
-            md5($this->startDate . '_' . $this->endDate . '_' . implode(',', $this->primaryKeywords));
+            md5($this->startDate . '_' . $this->endDate . '_' . implode(',', $this->primaryKeywords) . '_' . implode(',', $this->selectedSources) . '_' . implode(',', $this->selectedSentiment) . '_' . $this->selectedCategory);
     }
 
     public function toggleKeyword($keyword)
@@ -513,6 +518,18 @@ class MediaDashboard extends Component
         $this->analysisChartsLoaded = true;
     }
 
+    public function loadKataKunci(): void
+    {
+        if ($this->kataKunciLoaded) {
+            return;
+        }
+
+        $this->kataKunciLoaded = true;
+        if (empty($this->keywordsTable)) {
+            $this->rebuildKeywordsTable();
+        }
+    }
+
     /**
      * Rebuild the keywords table with count respecting current date filter.
      * Called on mount AND whenever startDate/endDate changes.
@@ -526,16 +543,73 @@ class MediaDashboard extends Component
             $now = now();
             foreach ($this->primaryKeywords as $kw) {
                 // Base: project articles mentioning the keyword, with date filter applied
-                $baseKwQuery = clone $this->projectArticlesQuery();
+                $unionQuery = $this->projectArticlesQuery();
+                $baseKwQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+                    ->setBindings($unionQuery->getBindings());
+
                 $this->applyActiveFilters($baseKwQuery);
                 $this->applyKeywordSearch($baseKwQuery, $kw);
+                
+                // Eksklusi keyword yang ada di urutan SEBELUMNYA agar mutlak/tidak ganda (urutan pertama prioritas)
+                foreach ($this->primaryKeywords as $prevKw) {
+                    if ($prevKw === $kw) {
+                        break; // Berhenti di keyword saat ini
+                    }
+                    $matchSql = $this->buildSourceAwareSearchSql($prevKw);
+                    if ($matchSql['sql'] !== '1 = 0') {
+                        $baseKwQuery->whereRaw("NOT (" . $matchSql['sql'] . ")", $matchSql['bindings']);
+                    }
+                }
+                
+                // Pastikan hanya menghitung artikel yang memiliki valid AI result lengkap
+                $baseKwQuery->whereExists(function ($sub) {
+                    $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('ai_analysis_results as ai_check')
+                        ->whereRaw("((union_res.item_type = 'portal' AND ai_check.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai_check.social_media_item_id = union_res.id))")
+                        ->whereRaw("ai_check.analysis_status = 'success'")
+                        ->whereRaw("ai_check.reach_method = 'ai_reader_estimate_v1'")
+                        ->whereNotNull('ai_check.project_estimated_readers')
+                        ->whereRaw("ai_check.project_estimated_readers >= 1")
+                        ->whereNotNull('ai_check.project_reach_score')
+                        ->whereNotNull('ai_check.project_reach_level')
+                        ->whereNotNull('ai_check.project_reach_band');
+                });
+
                 $totalCount = (clone $baseKwQuery)->count();
 
                 // Trend: compare last 30 days vs prior 30 days (always relative to now, not the date filter)
-                $allKwQuery = clone $this->projectArticlesQuery();
+                $allKwQuery = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
+                    ->setBindings($unionQuery->getBindings());
+
                 $this->applyKeywordSearch($allKwQuery, $kw);
-                $recent = (clone $allKwQuery)->whereBetween('published_at', [$now->copy()->subDays(30), $now])->count();
-                $prior  = (clone $allKwQuery)->whereBetween('published_at', [$now->copy()->subDays(60), $now->copy()->subDays(30)])->count();
+                
+                // Terapkan eksklusi yang sama untuk tren
+                foreach ($this->primaryKeywords as $prevKw) {
+                    if ($prevKw === $kw) {
+                        break;
+                    }
+                    $matchSql = $this->buildSourceAwareSearchSql($prevKw);
+                    if ($matchSql['sql'] !== '1 = 0') {
+                        $allKwQuery->whereRaw("NOT (" . $matchSql['sql'] . ")", $matchSql['bindings']);
+                    }
+                }
+                
+                // Filter AI result valid juga pada query trend
+                $allKwQuery->whereExists(function ($sub) {
+                    $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('ai_analysis_results as ai_check')
+                        ->whereRaw("((union_res.item_type = 'portal' AND ai_check.article_id = union_res.id) OR (union_res.item_type = 'social' AND ai_check.social_media_item_id = union_res.id))")
+                        ->whereRaw("ai_check.analysis_status = 'success'")
+                        ->whereRaw("ai_check.reach_method = 'ai_reader_estimate_v1'")
+                        ->whereNotNull('ai_check.project_estimated_readers')
+                        ->whereRaw("ai_check.project_estimated_readers >= 1")
+                        ->whereNotNull('ai_check.project_reach_score')
+                        ->whereNotNull('ai_check.project_reach_level')
+                        ->whereNotNull('ai_check.project_reach_band');
+                });
+
+                $recent = (clone $allKwQuery)->whereBetween('union_res.published_at', [$now->copy()->subDays(30), $now])->count();
+                $prior  = (clone $allKwQuery)->whereBetween('union_res.published_at', [$now->copy()->subDays(60), $now->copy()->subDays(30)])->count();
                 if ($prior === 0) {
                     $trend = $recent > 0 ? 'Naik' : 'Stabil';
                 } elseif ($recent > $prior * 1.1) {
@@ -547,9 +621,9 @@ class MediaDashboard extends Component
                 }
 
                 $keywordsTable[] = [
-                    'keyword' => '# ' . strtoupper($kw),
-                    'total'   => $totalCount,
-                    'trend'   => $trend,
+                    'keyword'   => '# ' . strtoupper($kw),
+                    'total'     => $totalCount,
+                    'trend'     => $trend,
                 ];
             }
             return $keywordsTable;
@@ -649,18 +723,21 @@ class MediaDashboard extends Component
     {
         $this->limit = 5;
         $this->resetPage();
+        $this->rebuildKeywordsTable();
     }
 
     public function updatedSelectedSources()
     {
         $this->limit = 5;
         $this->resetPage();
+        $this->rebuildKeywordsTable();
     }
 
     public function updatedSelectedCategory()
     {
         $this->limit = 5;
         $this->resetPage();
+        $this->rebuildKeywordsTable();
     }
 
     public function setPresetPeriod(string $mode): void

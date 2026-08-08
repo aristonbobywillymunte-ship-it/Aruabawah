@@ -38,11 +38,11 @@ class ApifySetting extends Model
     }
 
     /**
-     * Dapatkan connection_status sesuai dengan token yang sedang aktif.
+     * Dapatkan connection_status sesuai dengan index yang diberikan.
      */
-    public function getActiveConnectionStatus(): ?string
+    public function getConnectionStatusByIndex(int $index): ?string
     {
-        return match ((int) $this->active_token_index) {
+        return match ($index) {
             1 => $this->connection_status_backup_1,
             2 => $this->connection_status_backup_2,
             3 => $this->connection_status_backup_3,
@@ -50,13 +50,20 @@ class ApifySetting extends Model
         };
     }
 
+    /**
+     * Dapatkan connection_status sesuai dengan token yang sedang aktif.
+     */
+    public function getActiveConnectionStatus(): ?string
+    {
+        return $this->getConnectionStatusByIndex((int) $this->active_token_index);
+    }
 
     /**
-     * Dapatkan token yang sedang aktif berdasarkan active_token_index.
+     * Dapatkan token sesuai dengan index yang diberikan.
      */
-    public function getActiveToken(): ?string
+    public function getTokenByIndex(int $index): ?string
     {
-        return match ((int) $this->active_token_index) {
+        return match ($index) {
             1 => $this->api_token_backup_1,
             2 => $this->api_token_backup_2,
             3 => $this->api_token_backup_3,
@@ -65,11 +72,19 @@ class ApifySetting extends Model
     }
 
     /**
-     * Dapatkan label nama token saat ini.
+     * Dapatkan token yang sedang aktif berdasarkan active_token_index.
      */
-    public function getActiveTokenLabel(): string
+    public function getActiveToken(): ?string
     {
-        return match ((int) $this->active_token_index) {
+        return $this->getTokenByIndex((int) $this->active_token_index);
+    }
+
+    /**
+     * Dapatkan label nama token berdasarkan index.
+     */
+    public function getTokenLabelByIndex(int $index): string
+    {
+        return match ($index) {
             1 => 'Token Backup 1 (Index 1)',
             2 => 'Token Backup 2 (Index 2)',
             3 => 'Token Backup 3 (Index 3)',
@@ -78,31 +93,32 @@ class ApifySetting extends Model
     }
 
     /**
-     * Rotasi otomatis ke token berikutnya jika limit tercapai (0 -> 1 -> 2 -> 3 -> 0).
+     * Dapatkan label nama token saat ini.
      */
-    public function rotateToNextToken(): string
+    public function getActiveTokenLabel(): string
     {
-        $currentIndex = (int) $this->active_token_index;
-        
-        // Loop token yang tersedia
-        $tokens = [
-            0 => $this->api_token,
-            1 => $this->api_token_backup_1,
-            2 => $this->api_token_backup_2,
-            3 => $this->api_token_backup_3,
-        ];
+        return $this->getTokenLabelByIndex((int) $this->active_token_index);
+    }
 
-        // Cari token berikutnya yang terisi
-        for ($i = 1; $i <= 4; $i++) {
-            $nextIndex = ($currentIndex + $i) % 4;
-            if (filled($tokens[$nextIndex])) {
-                $this->active_token_index = $nextIndex;
-                $this->save();
-                
-                return $this->getActiveTokenLabel();
+    /**
+     * Cari token berikutnya yang terisi dan berstatus ready/connected, 
+     * mengabaikan index yang ada di dalam $excludedIndexes.
+     */
+    public function getNextEligibleTokenIndex(array $excludedIndexes = []): ?int
+    {
+        for ($i = 0; $i < 4; $i++) {
+            if (in_array($i, $excludedIndexes, true)) {
+                continue;
+            }
+
+            $token = $this->getTokenByIndex($i);
+            $status = $this->getConnectionStatusByIndex($i);
+
+            if (filled($token) && in_array($status, ['connected', 'ready'], true)) {
+                return $i;
             }
         }
 
-        return $this->getActiveTokenLabel();
+        return null;
     }
 }

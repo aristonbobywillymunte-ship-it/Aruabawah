@@ -464,16 +464,15 @@ class ApifyScrapingJob implements ShouldQueue
 
         // Load API token
         $setting = ApifySetting::first();
-        if (!$setting || ! $setting->isReadyForScraping()) {
-            Log::warning('[Apify] Scraping skipped because Apify settings are not ready.', [
-                'connection_status' => $setting?->connection_status,
-            ]);
+        if (!$setting || $setting->getNextEligibleTokenIndex() === null) {
+            $errorMsg = 'Semua token Apify tidak tersedia atau mencapai limit. APIFY_ALL_TOKENS_EXHAUSTED';
+            Log::error("[Apify] {$errorMsg}");
             if ($state) {
-                $state->update(['status' => 'failed', 'last_error_message' => 'Scraping skipped because Apify settings are not ready.']);
+                $state->update(['status' => 'failed', 'last_error_message' => $errorMsg]);
             }
             return;
         }
-        $token = $setting->getActiveToken();
+        // Token will be selected dynamically inside the failover loop below
 
         // Load matching actor
         $actorId = $this->params['actor_id'] ?? null;
@@ -625,69 +624,90 @@ class ApifyScrapingJob implements ShouldQueue
             $runQuery['maxTotalChargeUsd'] = round($maximumCostPerRun, 4);
         }
 
-        $runResponse = Http::withToken($token)
-            ->timeout(60)
-            ->post($runUrl . '?' . http_build_query($runQuery), $input);
+        $triedTokenIndexes = [];
+        $runSuccess = false;
+        $runResponse = null;
 
-        if (!$runResponse->successful()) {
-            $msg = "Apify run failed: HTTP {$runResponse->status()}: {$runResponse->body()}";
-            Log::error("[Apify] {$msg} | {$contextStr}");
-
-            $msgLower = strtolower($msg);
-            $isCredentialOrLimitError = str_contains($msgLower, 'monthly usage hard limit exceeded')
-                || str_contains($msgLower, 'platform-feature-disabled')
-                || str_contains($msgLower, 'user-or-token-not-found')
-                || str_contains($msgLower, 'insufficient-permissions')
-                || str_contains($msgLower, 'invalid');
-
-            if ($isCredentialOrLimitError) {
-                // ROTASI TOKEN OTOMATIS:
-                // Token limit atau bermasalah terdeteksi, kita rotasi ke backup berikutnya.
-                $oldTokenLabel = $setting->getActiveTokenLabel();
-                $newTokenLabel = $setting->rotateToNextToken();
+        while (count($triedTokenIndexes) < 4) {
+            $eligibleTokenIndex = $setting->getNextEligibleTokenIndex($triedTokenIndexes);
+            
+            if ($eligibleTokenIndex === null) {
+                $errorMsg = 'Semua token Apify tidak tersedia atau mencapai limit. APIFY_ALL_TOKENS_EXHAUSTED';
+                Log::error("[Apify] {$errorMsg} | {$contextStr}");
                 
-                Log::warning("[Apify] Token limit terdeteksi ({$oldTokenLabel}). Berhasil merotasi otomatis ke {$newTokenLabel}.");
-
-                // Re-dispatch job scraping yang gagal ini agar langsung dicoba ulang menggunakan token baru secara instan
-                $retryParams = $this->params;
-                $retryParams['force_dispatch'] = true; // bypass cooldown cache
-                
-                // Kurangi sisa try job secara manual agar tidak infinite loop jika semua backup limit
-                if ($this->attempts() < $this->tries) {
-                    Log::info("[Apify] Mengirim ulang job scraping dengan token cadangan baru ({$newTokenLabel}).");
-                    self::dispatch($retryParams);
-                }
-
-                $actor->update([
-                    'last_run_at' => now(), 
-                    'last_run_status' => 'retry_wait', 
-                    'last_run_message' => substr("Limit/Token error pada {$oldTokenLabel}. Sistem memindahkan token otomatis ke {$newTokenLabel}.", 0, 500)
-                ]);
-                
-                if ($state) {
-                    $state->update([
-                        'status' => 'failed', 
-                        'last_error_message' => substr("Limit/Token error pada {$oldTokenLabel}. Sistem memindahkan token otomatis ke {$newTokenLabel}. Msg: " . $msg, 0, 500)
-                    ]);
-                }
-            } else {
-                $cooldownMinutes = $this->apifyCooldownMinutes($msg, (int) ($actor->interval_minutes ?? 20));
+                $cooldownMinutes = 60; // 1 jam cooldown jika semua token mati
                 $retryAt = now()->addMinutes($cooldownMinutes);
                 
                 $actor->update([
                     'last_run_at' => now(), 
                     'last_run_status' => 'failed', 
-                    'last_run_message' => substr($msg, 0, 500)
+                    'last_run_message' => $errorMsg
                 ]);
-                
                 Cache::put("apify_actor_retry_at:{$actor->id}", $retryAt->toDateTimeString(), $retryAt);
+                
                 if ($state) {
                     $state->update([
                         'status' => 'failed', 
-                        'last_error_message' => substr($msg, 0, 500)
+                        'last_error_message' => $errorMsg
                     ]);
                 }
+                return;
             }
+
+            if ($setting->active_token_index !== $eligibleTokenIndex) {
+                $setting->update(['active_token_index' => $eligibleTokenIndex]);
+            }
+
+            $triedTokenIndexes[] = $eligibleTokenIndex;
+            $token = $setting->getTokenByIndex($eligibleTokenIndex);
+            $tokenLabel = $setting->getTokenLabelByIndex($eligibleTokenIndex);
+
+            $runResponse = Http::withToken($token)
+                ->timeout(60)
+                ->post($runUrl . '?' . http_build_query($runQuery), $input);
+
+            if (!$runResponse->successful()) {
+                $bodyStr = $runResponse->body();
+                $msg = "Apify run failed: HTTP {$runResponse->status()}: {$bodyStr}";
+                Log::error("[Apify] {$msg} | {$contextStr}");
+
+                $msgLower = strtolower($msg);
+                $isCredentialOrLimitError = str_contains($msgLower, 'monthly usage hard limit exceeded')
+                    || str_contains($msgLower, 'platform-feature-disabled')
+                    || str_contains($msgLower, 'user-or-token-not-found')
+                    || str_contains($msgLower, 'insufficient-permissions')
+                    || str_contains($msgLower, 'invalid');
+
+                if ($isCredentialOrLimitError) {
+                    Log::warning("[Apify] Token limit/error terdeteksi pada {$tokenLabel}. Mencoba failover ke token berikutnya.");
+                    continue; // Coba token eligible berikutnya tanpa redispatch
+                } else {
+                    $cooldownMinutes = $this->apifyCooldownMinutes($msg, (int) ($actor->interval_minutes ?? 20));
+                    $retryAt = now()->addMinutes($cooldownMinutes);
+                    
+                    $actor->update([
+                        'last_run_at' => now(), 
+                        'last_run_status' => 'failed', 
+                        'last_run_message' => substr($msg, 0, 500)
+                    ]);
+                    
+                    Cache::put("apify_actor_retry_at:{$actor->id}", $retryAt->toDateTimeString(), $retryAt);
+                    if ($state) {
+                        $state->update([
+                            'status' => 'failed', 
+                            'last_error_message' => substr($msg, 0, 500)
+                        ]);
+                    }
+                    return;
+                }
+            }
+            
+            // HTTP berhasil, keluar dari loop
+            $runSuccess = true;
+            break;
+        }
+
+        if (!$runSuccess) {
             return;
         }
 

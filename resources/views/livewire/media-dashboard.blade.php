@@ -2644,7 +2644,7 @@
                 </section>
             @elseif($this->isTab('katakunci'))
                 <!-- TAB 3: Kata Kunci Configuration Page -->
-                <section class="flex-1 min-w-0 pr-1 relative z-10" wire:key="dashboard-keyword-section">
+                <section class="flex-1 min-w-0 pr-1 relative z-10" wire:init="loadKataKunci" wire:key="dashboard-keyword-section">
                     <div class="flex items-center justify-between text-left shrink-0 pb-2.5 border-b border-slate-100">
                         <div>
                             <h2 class="text-lg sm:text-xl font-bold text-slate-900 leading-none flex items-center gap-1.5 text-left">
@@ -2663,7 +2663,24 @@
 
                     <div style="height: calc(100vh - 270px) !important; overflow-y: auto !important;" class="flex-1 min-h-0 pr-4 pb-24 space-y-6 mt-5">
 
-                    <!-- Manajemen Kata Kunci Card -->
+                    @if(!$kataKunciLoaded)
+                        <!-- Skeleton Loading for Kata Kunci -->
+                        <div class="space-y-6 animate-pulse">
+                            <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                                <div class="h-6 w-48 bg-slate-100 rounded-lg mb-6"></div>
+                                <div class="h-10 w-64 bg-slate-100 rounded-xl mb-6"></div>
+                                <div class="space-y-4">
+                                    <div class="h-12 bg-slate-100 rounded-xl w-full"></div>
+                                    <div class="h-12 bg-slate-100 rounded-xl w-full"></div>
+                                    <div class="h-12 bg-slate-100 rounded-xl w-full"></div>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                                <div class="h-6 w-48 bg-slate-100 rounded-lg mb-6"></div>
+                                <div class="h-[250px] bg-slate-100 rounded-xl w-full"></div>
+                            </div>
+                        </div>
+                    @else
                     <!-- Manajemen Kata Kunci Card -->
                     <div class="bg-white rounded-3xl border border-slate-200 p-4 sm:p-8 shadow-sm text-left">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -3123,8 +3140,8 @@
                                     </button>
                                 </div>
                             </div>
-                            </div>
                         @endif
+                    @endif
                     </div>
                 </section>
             @elseif($this->isTab('wawasan'))
