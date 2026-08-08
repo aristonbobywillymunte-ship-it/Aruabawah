@@ -1895,16 +1895,17 @@ new class extends Component
                 x-transition:leave="transition ease-in duration-200"
                 x-transition:leave-start="opacity-100 translate-x-0"
                 x-transition:leave-end="opacity-0 translate-x-6"
-                class="fixed right-6 top-6 z-[70] w-[360px] max-w-[calc(100vw-3rem)] rounded-2xl bg-white border border-slate-100 shadow-2xl shadow-slate-900/10 overflow-hidden"
+                class="fixed right-6 top-6 z-[70] w-[360px] max-w-[calc(100vw-3rem)] rounded-2xl border shadow-2xl overflow-hidden text-white"
+                :class="toastType === 'error' ? 'bg-rose-500 border-rose-600 shadow-rose-900/20' : 'bg-[#1fa387] border-[#188c73] shadow-[#1fa387]/20'"
                 style="display: none;"
             >
                 <div class="flex items-start gap-3 p-4">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" :class="toastType === 'error' ? 'bg-rose-50 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]'">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-white/20">
                         <span class="font-black text-lg" x-text="toastType === 'error' ? '!' : '✓'"></span>
                     </div>
                     <div class="min-w-0 pt-0.5">
-                        <p class="text-sm font-extrabold text-slate-900" x-text="toastType === 'error' ? 'Aksi gagal' : 'Berhasil'"></p>
-                        <p class="mt-0.5 text-xs font-medium text-slate-500 leading-relaxed" x-text="toastMessage"></p>
+                        <p class="text-sm font-extrabold" x-text="toastType === 'error' ? 'Aksi gagal' : 'Berhasil'"></p>
+                        <p class="mt-0.5 text-xs font-medium opacity-90 leading-relaxed" x-text="toastMessage"></p>
                     </div>
                 </div>
             </div>
