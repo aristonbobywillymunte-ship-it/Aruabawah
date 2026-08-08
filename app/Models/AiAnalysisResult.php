@@ -51,6 +51,11 @@ class AiAnalysisResult extends Model
         'noise_reason',
         'subjects',
         'quality_confidence',
+        'reader_basis',
+        'actual_metric_used',
+        'actual_metric_value',
+        'effective_readers',
+        'reader_basis_reason',
     ];
 
     protected $casts = [
@@ -79,6 +84,8 @@ class AiAnalysisResult extends Model
         'is_noise' => 'boolean',
         'subjects' => 'array',
         'quality_confidence' => 'integer',
+        'actual_metric_value' => 'integer',
+        'effective_readers' => 'integer',
     ];
 
     public function article(): BelongsTo

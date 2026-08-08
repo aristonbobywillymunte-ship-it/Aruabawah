@@ -522,7 +522,22 @@ class AiAnalysisJob implements ShouldQueue
         $instruction .= "Jangan menandai noise hanya karena teks pendek, banyak emoji, satir, bahasa informal, atau sentimen negatif.\n";
         $instruction .= "Jika ragu, pilih is_noise=false dan confidence lebih rendah.\n";
         $instruction .= "subjects harus berisi subjek/orang/lembaga/topik utama yang benar-benar dibahas dalam konten.\n";
-        $instruction .= "noise_reason wajib singkat dan tidak mengandung secret.";
+        $instruction .= "noise_reason wajib singkat dan tidak mengandung secret.\n\n";
+
+        $instruction .= "READER BASIS (WAJIB):\n";
+        $instruction .= "Tentukan basis perhitungan estimasi pembaca (effective_readers).\n";
+        $instruction .= "Kembalikan juga field:\n";
+        $instruction .= "- reader_basis: 'actual' | 'estimated'\n";
+        $instruction .= "- actual_metric_used: string|null\n";
+        $instruction .= "- actual_metric_value: integer|null\n";
+        $instruction .= "- effective_readers: integer\n";
+        $instruction .= "- reader_basis_reason: string\n\n";
+        $instruction .= "Aturan:\n";
+        $instruction .= "1. Gunakan 'actual' HANYA JIKA ada metric konsumsi valid (contoh: view_count, views, pageviews aktual).\n";
+        $instruction .= "2. JANGAN anggap follower_count, like_count, comment_count, atau share_count sebagai actual readers.\n";
+        $instruction .= "3. Jika ragu atau tak ada metric valid, gunakan 'estimated'.\n";
+        $instruction .= "4. Jika 'estimated', hasilkan angka effective_readers berupa estimasi natural granular berbasis bukti (contoh: 127, 437). Jangan pakai angka default/pola/placeholder (seperti 10, 50, 100, 150).\n";
+        $instruction .= "5. effective_readers WAJIB sama dengan actual_metric_value bila basisnya 'actual'.";
 
         return $instruction;
     }
@@ -605,13 +620,35 @@ class AiAnalysisJob implements ShouldQueue
         }
         $potentialEstimatedReaders = (int) $rawReaders;
 
+        $readerBasis = in_array(strtolower(trim((string) ($result['reader_basis'] ?? ''))), ['actual', 'estimated']) 
+            ? strtolower(trim((string) $result['reader_basis'])) 
+            : 'estimated';
+        $actualMetricUsed = $result['actual_metric_used'] ?? null;
+        $actualMetricValue = is_numeric($result['actual_metric_value'] ?? null) ? (int) $result['actual_metric_value'] : null;
+        
+        $rawEffectiveReaders = $result['effective_readers'] ?? $potentialEstimatedReaders;
+        if (is_string($rawEffectiveReaders)) {
+            $rawEffectiveReaders = str_replace(['.', ','], '', $rawEffectiveReaders);
+        }
+        $effectiveReaders = (int) $rawEffectiveReaders;
+        $readerBasisReason = (string) ($result['reader_basis_reason'] ?? '');
+
+        if ($readerBasis === 'actual' && $actualMetricValue !== null) {
+            $effectiveReaders = $actualMetricValue;
+        }
+
+        // Backward compatibility: override potential_estimated_readers to effective_readers
+        $potentialEstimatedReaders = $effectiveReaders;
+
         $projectReaders = isset($result['project_estimated_readers']) 
             && is_numeric($result['project_estimated_readers'])
             ? (int) $result['project_estimated_readers']
             : null;
-        $potentialReachScore = (int) ($result['potential_reach_score'] ?? 0);
-        $potentialReachLevel = (string) ($result['potential_reach_level'] ?? '');
-        $potentialReachBand = (string) ($result['potential_reach_band'] ?? '');
+        
+        // Laravel deterministically overrides AI score & level based on canonical effective_readers
+        $potentialReachScore = \App\Models\AiAnalysisResult::officialProjectReachScoreForReaders($effectiveReaders);
+        $potentialReachLevel = \App\Models\AiAnalysisResult::officialProjectReachLevelForScore($potentialReachScore);
+        $potentialReachBand = \App\Models\AiAnalysisResult::officialProjectReachBandForReaders($effectiveReaders);
         $localRelevanceScore = (int) ($result['local_relevance_score'] ?? 0);
         $confidenceScore = (int) ($result['confidence_score'] ?? 0);
         $confidenceLevel = (string) ($result['confidence_level'] ?? '');
@@ -686,6 +723,11 @@ class AiAnalysisJob implements ShouldQueue
             'noise_reason' => $noiseReason,
             'subjects' => json_encode($subjects),
             'quality_confidence' => $qualityConfidence,
+            'reader_basis' => $readerBasis,
+            'actual_metric_used' => $actualMetricUsed,
+            'actual_metric_value' => $actualMetricValue,
+            'effective_readers' => $effectiveReaders,
+            'reader_basis_reason' => $readerBasisReason,
         ];
     }
 
@@ -1083,6 +1125,11 @@ class AiAnalysisJob implements ShouldQueue
             'noise_reason' => $normalized['noise_reason'] ?? null,
             'subjects' => isset($normalized['subjects']) ? json_decode($normalized['subjects'], true) : null,
             'quality_confidence' => $normalized['quality_confidence'] ?? null,
+            'reader_basis' => $normalized['reader_basis'] ?? null,
+            'actual_metric_used' => $normalized['actual_metric_used'] ?? null,
+            'actual_metric_value' => $normalized['actual_metric_value'] ?? null,
+            'effective_readers' => $normalized['effective_readers'] ?? null,
+            'reader_basis_reason' => $normalized['reader_basis_reason'] ?? null,
         ];
 
             SocialMediaItem::where('id', $normalized['social_media_item_id'])->update([
