@@ -8,7 +8,7 @@ use App\Models\ClientSetting;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 
-#[Layout('admin.layouts.app')]
+#[Layout('layouts.admin')]
 class ClientCreate extends Component
 {
     public $name = '';
