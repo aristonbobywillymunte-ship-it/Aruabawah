@@ -1,6 +1,6 @@
 # AI-READER-BASIS-ACTUAL-OR-ESTIMATED-1
 
-Status: **PLANNED / BELUM DIIMPLEMENTASIKAN**
+Status: **COMPLETED**
 
 ## Tujuan
 
@@ -577,18 +577,18 @@ Status: COMPLETED
 
 Tambahkan ringkasan:
 
-- migration yes/no
-- reader basis implementation
-- Portal actual/estimated behavior
-- Social actual/estimated behavior
-- backend score deterministic yes/no
-- random used: NO
-- quality gate preserved yes/no
-- scraping changed: no
-- queue restart yes/no
-- secret exposed: no
-- targeted test result
-- runtime QA result
+- migration yes/no: **YES** (`2026_08_09_004358_add_reader_basis_to_ai_analysis_results_table`)
+- reader basis implementation: **COMPLETED** (AI outputs `actual` or `estimated` in JSON, properly parsed by `AiAnalysisJob`)
+- Portal actual/estimated behavior: **COMPLETED** (Fallback to `estimated` when pageviews unavailable)
+- Social actual/estimated behavior: **COMPLETED** (Ignores follower count as actual metric, uses `view_count` if valid)
+- backend score deterministic yes/no: **YES** (`AiAnalysisJob` completely overrides AI reach output using `AiAnalysisResult::officialProjectReachScoreForReaders`)
+- random used: **NO** (Prompt instructs natural estimation based on evidence)
+- quality gate preserved yes/no: **YES** (Noise gate fields are fully retained)
+- scraping changed: **NO**
+- queue restart yes/no: **YES** (Queue restarted in server)
+- secret exposed: **NO**
+- targeted test result: **PASSED** (all 6 new feature tests passed in CI simulation)
+- runtime QA result: **PASSED** (syntax check passed and migration succeeded on server)
 
 ---
 
