@@ -1,5 +1,5 @@
 <div>
-    <div class="max-w-[1400px] mx-auto px-6 py-10">
+    <div class="max-w-3xl mx-auto px-6 py-10">
 
         {{-- ── Header ── --}}
         <div class="mb-10">
@@ -46,7 +46,7 @@
 
         {{-- ── STEP 1: Pilih Paket ── --}}
         @if($createStep === 1)
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl items-stretch">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
                 @foreach($packages as $p)
                     @php $isSelected = (int) $packageId === (int) $p->id; @endphp
 
@@ -163,7 +163,7 @@
 
         {{-- ── STEP 2: Form Proyek ── --}}
         @else
-            <div class="max-w-2xl bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.06)]">
+            <div class="bg-white rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.06)]">
 
                 {{-- Selected package pill --}}
                 @if($selectedPackage)
@@ -188,48 +188,48 @@
                 <form wire:submit.prevent="createProject" class="p-6 space-y-6">
 
                     {{-- Nama Proyek --}}
-                    <div class="space-y-2">
-                        <div class="flex items-center gap-3">
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
                             <label class="text-sm font-bold text-slate-800">Nama Proyek</label>
-                            <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2.5 py-0.5 rounded-md">Wajib</span>
+                            <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">Wajib</span>
                         </div>
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">folder</span>
                             <input wire:model="name" type="text"
                                 placeholder="Contoh: Monitoring Prabowo Subianto"
-                                class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
                         </div>
                         @error('name') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Telegram Chat ID --}}
-                    <div class="space-y-2">
-                        <div class="flex items-center gap-3">
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
                             <label class="text-sm font-bold text-slate-800">Telegram Chat ID</label>
-                            <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2.5 py-0.5 rounded-md">Wajib</span>
+                            <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">Wajib</span>
                         </div>
-                        <p class="text-xs text-slate-500 leading-relaxed -mt-1">ID chat/group Telegram tanpa tanda minus ( <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-700 font-mono text-[10px]">-</code> ) di depan.</p>
+                        <p class="text-xs text-slate-500 leading-relaxed">ID chat/group Telegram tanpa tanda minus ( <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-700 font-mono text-[10px]">-</code> ) di depan.</p>
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">send</span>
                             <input wire:model="telegramChatId" type="text"
                                 placeholder="Contoh: 10022334455"
-                                class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
                         </div>
                         @error('telegramChatId') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Kata Kunci Scraping --}}
-                    <div class="space-y-2">
-                        <div class="flex items-center gap-3">
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
                             <label class="text-sm font-bold text-slate-800">Kata Kunci Scraping</label>
-                            <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2.5 py-0.5 rounded-md">Wajib</span>
+                            <span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">Wajib</span>
                         </div>
-                        <p class="text-xs text-slate-500 leading-relaxed -mt-1">Kata kunci utama yang digunakan sistem untuk mengambil data dari berita dan media sosial. Pisahkan dengan koma.</p>
+                        <p class="text-xs text-slate-500 leading-relaxed">Kata kunci utama yang digunakan sistem untuk mengambil data dari berita dan media sosial. Pisahkan dengan koma.</p>
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
                             <input wire:model="topicsString" type="text"
                                 placeholder="Contoh: Prabowo, Presiden, Menhan"
-                                class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
                         </div>
                         @error('topicsString') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
 
@@ -256,33 +256,33 @@
                     </div>
 
                     {{-- Kata Kunci Penyaring --}}
-                    <div class="space-y-2">
-                        <div class="flex items-center gap-3">
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
                             <label class="text-sm font-bold text-slate-800">Kata Kunci Penyaring</label>
-                            <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">Opsional</span>
+                            <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Opsional</span>
                         </div>
-                        <p class="text-xs text-slate-500 leading-relaxed -mt-1">Persempit hasil dashboard hanya ke konten yang memuat kata kunci ini. Kosongkan untuk menampilkan semua hasil scraping.</p>
+                        <p class="text-xs text-slate-500 leading-relaxed">Persempit hasil dashboard hanya ke konten yang memuat kata kunci ini. Kosongkan untuk menampilkan semua hasil scraping.</p>
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">filter_alt</span>
                             <input wire:model="contextKeywords" type="text"
                                 placeholder="Contoh: Soekarno, Hatta, Sudirman"
-                                class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
                         </div>
                         @error('contextKeywords') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
 
                     {{-- Kata Kunci Pengecualian --}}
-                    <div class="space-y-2">
-                        <div class="flex items-center gap-3">
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
                             <label class="text-sm font-bold text-slate-800">Kata Kunci Pengecualian</label>
-                            <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">Opsional</span>
+                            <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Opsional</span>
                         </div>
-                        <p class="text-xs text-slate-500 leading-relaxed -mt-1">Artikel yang mengandung kata kunci ini tidak akan masuk ke database proyek.</p>
+                        <p class="text-xs text-slate-500 leading-relaxed">Artikel yang mengandung kata kunci ini tidak akan masuk ke database proyek.</p>
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">block</span>
                             <input wire:model="excludeKeywords" type="text"
                                 placeholder="Contoh: promosi, jual, beli, diskon"
-                                class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
+                                class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 rounded-xl focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition font-medium">
                         </div>
                         @error('excludeKeywords') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
