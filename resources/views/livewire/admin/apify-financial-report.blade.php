@@ -119,8 +119,10 @@
                             <th class="px-4 py-3 font-bold text-slate-600">Platform</th>
                             <th class="px-4 py-3 font-bold text-slate-600">Aktor</th>
                             <th class="px-4 py-3 font-bold text-slate-600">Proyek</th>
-                            <th class="px-4 py-3 font-bold text-slate-600 text-right">Biaya (USD)</th>
+                            <th class="px-4 py-3 font-bold text-slate-600 text-right">Batas/Run</th>
+                            <th class="px-4 py-3 font-bold text-slate-600 text-right">Biaya Aktual</th>
                             <th class="px-4 py-3 font-bold text-slate-600 text-center">Item</th>
+                            <th class="px-4 py-3 font-bold text-slate-600 text-center">Status</th>
                             <th class="px-4 py-3 font-bold text-slate-600 text-center">Durasi</th>
                             <th class="px-4 py-3 font-bold text-slate-600">Selesai</th>
                         </tr>
@@ -131,6 +133,7 @@
                             <td class="px-4 py-3 font-bold text-slate-700">{{ $run['platform'] }}</td>
                             <td class="px-4 py-3 text-slate-500 truncate max-w-[180px]">{{ $run['actor_name'] }}</td>
                             <td class="px-4 py-3 font-bold text-[#1fa387] truncate max-w-[140px]" title="{{ $run['project_name'] }}">{{ $run['project_name'] }}</td>
+                            <td class="px-4 py-3 font-bold text-slate-500 text-right">{{ $run['cost_limit'] !== '-' ? '$'.$run['cost_limit'] : '-' }}</td>
                             <td class="px-4 py-3 font-bold text-emerald-600 text-right">${{ $run['cost'] }}</td>
                             <td class="px-4 py-3 text-slate-500 text-center">
                                 @if($run['items'] > 0)
@@ -151,6 +154,20 @@
                                 @else
                                     <span class="text-slate-400 font-semibold text-[10px] bg-slate-50 border border-slate-100 rounded-lg px-2 py-1 select-none">0 Item</span>
                                 @endif
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                @php
+                                    $toneClasses = match($run['run_status']['tone']) {
+                                        'success' => 'bg-emerald-50 text-emerald-600 border-emerald-200',
+                                        'warning' => 'bg-amber-50 text-amber-600 border-amber-200',
+                                        'danger' => 'bg-rose-50 text-rose-600 border-rose-200',
+                                        default => 'bg-slate-50 text-slate-500 border-slate-200',
+                                    };
+                                @endphp
+                                <div class="inline-flex flex-col items-center">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold border {{ $toneClasses }} whitespace-nowrap">{{ $run['run_status']['label'] }}</span>
+                                    <span class="text-[9px] text-slate-400 mt-1 max-w-[160px] leading-tight block">{{ $run['run_status']['message'] }}</span>
+                                </div>
                             </td>
                             <td class="px-4 py-3 text-slate-400 text-center">{{ $run['duration'] }}</td>
                             <td class="px-4 py-3 text-slate-400 whitespace-nowrap">{{ $run['completed_at'] }}</td>

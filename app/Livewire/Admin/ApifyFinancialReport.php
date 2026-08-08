@@ -167,6 +167,10 @@ class ApifyFinancialReport extends Component
         $recentRuns = DB::table('apify_dispatch_states')
             ->leftJoin('apify_actors', 'apify_dispatch_states.actor_id', '=', 'apify_actors.id')
             ->leftJoin('projects', 'apify_dispatch_states.project_id', '=', 'projects.id')
+            ->leftJoin('package_actors', function ($join) {
+                $join->on('projects.package_id', '=', 'package_actors.package_id')
+                     ->on('apify_dispatch_states.actor_id', '=', 'package_actors.apify_actor_id');
+            })
             ->whereNotNull('apify_dispatch_states.actual_cost_usd')
             ->when($this->startDate, function($q) {
                 $q->whereDate('apify_dispatch_states.completed_at', '>=', $this->startDate);
@@ -189,18 +193,33 @@ class ApifyFinancialReport extends Component
                 'apify_dispatch_states.project_id', 
                 'apify_dispatch_states.keyword', 
                 'apify_dispatch_states.run_id',
+                'apify_dispatch_states.status',
+                'apify_dispatch_states.last_error_code',
+                'apify_dispatch_states.last_error_message',
+                'apify_dispatch_states.actor_id',
                 'apify_actors.actor_name',
-                'projects.name as project_name'
+                'projects.name as project_name',
+                'package_actors.cost_per_run_usd as package_cost_limit'
             )
             ->paginate(20);
 
         // Transform collections items
         $recentRuns->getCollection()->transform(function ($r) {
+            $statusObj = $this->financialRunStatus(
+                $r->status,
+                $r->last_error_code,
+                $r->last_error_message,
+                (float) $r->actual_cost_usd,
+                (int) $r->items_collected
+            );
+
             return [
                 'platform'     => $r->platform,
                 'actor_name'   => $r->actor_name ?? '-',
+                'cost_limit'   => $r->package_cost_limit !== null ? number_format((float) $r->package_cost_limit, 4) : '-',
                 'cost'         => number_format((float) $r->actual_cost_usd, 4),
                 'items'        => $r->items_collected ?? 0,
+                'run_status'   => $statusObj,
                 'duration'     => $r->run_duration_secs ? $r->run_duration_secs . 's' : '-',
                 'completed_at' => $r->completed_at ? \Carbon\Carbon::parse($r->completed_at)->isoFormat('D MMM, HH:mm') : '-',
                 'project_name' => $r->project_name ?? 'N/A',
@@ -281,6 +300,91 @@ class ApifyFinancialReport extends Component
             'by_platform' => $byPlatform,
             'total_all'   => round($rows->sum('actual_cost_usd'), 4),
             'has_data'    => $rows->isNotEmpty(),
+        ];
+    }
+
+    private function financialRunStatus(?string $status, ?string $errorCode, ?string $errorMsg, float $actualCost, int $items): array
+    {
+        $msgLower = strtolower($errorMsg ?? '');
+        $code = $errorCode ?? '';
+
+        // A. Semua token habis
+        if (str_contains($msgLower, 'apify_all_tokens_exhausted') || str_contains($code, 'APIFY_ALL_TOKENS_EXHAUSTED')) {
+            return [
+                'label' => 'Token/kuota tidak tersedia',
+                'tone' => 'danger',
+                'message' => 'Semua token Apify yang siap digunakan tidak tersedia atau mencapai limit.',
+            ];
+        }
+
+        // B. Monthly quota / feature disabled
+        if (str_contains($msgLower, 'monthly usage hard limit exceeded') || str_contains($msgLower, 'platform-feature-disabled')) {
+            return [
+                'label' => 'Kuota Apify habis',
+                'tone' => 'danger',
+                'message' => 'Run tidak dapat dijalankan karena batas penggunaan Apify tercapai.',
+            ];
+        }
+
+        // C. Cost limit (Jika items > 0 maka partial, kalau 0 anggap juga cost limit tercapai)
+        if (str_contains($msgLower, 'maximum cost') || str_contains($msgLower, 'max total charge') || str_contains($msgLower, 'maxtotalchargeusd') || str_contains($msgLower, 'partial: cost limit reached') || str_contains($msgLower, 'batas biaya apify')) {
+            if ($items > 0) {
+                return [
+                    'label' => 'Selesai sebagian',
+                    'tone' => 'warning',
+                    'message' => 'Run berhenti pada batas biaya Paket; data parsial tetap diproses.',
+                ];
+            }
+            return [
+                'label' => 'Batas biaya tercapai',
+                'tone' => 'warning',
+                'message' => 'Run berhenti pada batas biaya Paket.',
+            ];
+        }
+
+        // D. Timeout
+        if (str_contains($msgLower, 'timeout') || str_contains($msgLower, 'poll timeout')) {
+            return [
+                'label' => 'Timeout',
+                'tone' => 'danger', // Bisa danger/warning
+                'message' => 'Apify tidak menyelesaikan run dalam waktu yang ditentukan.',
+            ];
+        }
+
+        // E. Dataset gagal
+        if (str_contains($msgLower, 'dataset fetch failed') || str_contains($msgLower, 'failed to fetch dataset')) {
+            return [
+                'label' => 'Gagal mengambil hasil',
+                'tone' => 'danger',
+                'message' => 'Run ada, tetapi dataset Apify gagal diambil.',
+            ];
+        }
+
+        // F. Failed umum
+        if ($status === 'failed') {
+            return [
+                'label' => 'Gagal',
+                'tone' => 'danger',
+                'message' => Str::limit($errorMsg ?: 'Terjadi kesalahan sistem yang tidak spesifik.', 120),
+            ];
+        }
+
+        // I. Partial jika ada limit lain (opsional, sudah masuk C)
+
+        // G. Nol tanpa error
+        if ($actualCost == 0 && $items == 0) {
+            return [
+                'label' => 'Tidak ada hasil',
+                'tone' => 'warning',
+                'message' => 'Actor selesai tetapi tidak menghasilkan item atau biaya yang tercatat.',
+            ];
+        }
+
+        // H. Berhasil
+        return [
+            'label' => 'Berhasil',
+            'tone' => 'success',
+            'message' => 'Run berhasil diselesaikan secara penuh.',
         ];
     }
 }
