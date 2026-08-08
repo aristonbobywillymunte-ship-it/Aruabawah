@@ -83,19 +83,23 @@ class ClientPackageControlHotfixTest extends TestCase
         $this->enterprisePackage->update(['max_projects' => null]); // Ubah enterprise jadi null
         
         $client->allowedPackages()->sync([$this->proPackage->id, $this->enterprisePackage->id]);
+        $client->load('allowedPackages'); // Wajib reload relation
         $this->assertEquals(5, $client->getMaxProjectEntitlement());
         
         // 2. PRO (NULL) + Enterprise (20) -> 20
         $this->proPackage->update(['max_projects' => null]);
         $this->enterprisePackage->update(['max_projects' => 20]);
+        $client->load('allowedPackages');
         $this->assertEquals(20, $client->getMaxProjectEntitlement());
         
         // 3. PRO (NULL) + Enterprise (NULL) -> NULL
         $this->enterprisePackage->update(['max_projects' => null]);
+        $client->load('allowedPackages');
         $this->assertNull($client->getMaxProjectEntitlement());
         
         // 4. No packages -> 0
         $client->allowedPackages()->sync([]);
+        $client->load('allowedPackages');
         $this->assertEquals(0, $client->getMaxProjectEntitlement());
         
         // Restore enterprise package default for other tests
@@ -105,6 +109,11 @@ class ClientPackageControlHotfixTest extends TestCase
 
     public function test_real_project_create_boundary_and_keyword_limit()
     {
+        \Illuminate\Support\Facades\Queue::fake();
+        $this->mock(\App\Services\ContentMatchingService::class, function ($mock) {
+            $mock->shouldReceive('resyncProjectContent')->andReturn([]);
+        });
+
         $client = User::create(['name' => 'Client', 'email' => 'boundary@test.com', 'password' => Hash::make('password'), 'role' => 'client']);
         $client->clientSettings()->create(['max_projects' => 8, 'max_keywords_per_project' => 15]);
         $client->allowedPackages()->sync([$this->proPackage->id, $this->enterprisePackage->id]); // Entitlement = 20, tapi client max 8
@@ -122,38 +131,63 @@ class ClientPackageControlHotfixTest extends TestCase
         // Proyek ke-8 menggunakan PRO (PRO limit 5, tapi Klien limit 8, ini HARUS SUCCESS)
         Livewire::actingAs($client)
             ->test(\App\Livewire\ProjectCreate::class)
-            ->set('name', 'Project 8')
+            ->set('name', 'Project 8 Unik')
             ->set('topicsString', 'A, B, C')
+            ->set('telegramChatId', '123456789')
             ->set('packageId', $this->proPackage->id)
             ->call('createProject')
-            ->assertHasNoErrors(['name']);
+            ->assertHasNoErrors();
+            
+        $this->assertDatabaseHas('projects', [
+            'name' => 'Project 8 Unik',
+        ]);
             
         // Proyek ke-9 akan ditolak karena max_projects = 8
         Livewire::actingAs($client)
             ->test(\App\Livewire\ProjectCreate::class)
-            ->set('name', 'Project 9')
+            ->set('name', 'Project 9 Unik')
             ->set('topicsString', 'A, B, C')
+            ->set('telegramChatId', '123456789')
             ->set('packageId', $this->proPackage->id)
             ->call('createProject')
             ->assertHasErrors(['name']);
             
+        $this->assertDatabaseMissing('projects', [
+            'name' => 'Project 9 Unik',
+        ]);
+            
+        // Untuk test limit keyword, buat klien baru agar tidak terkena validasi limit jumlah project
+        $keywordClient = User::create(['name' => 'Client K', 'email' => 'kw@test.com', 'password' => Hash::make('password'), 'role' => 'client']);
+        $keywordClient->clientSettings()->create(['max_projects' => 8, 'max_keywords_per_project' => 15]);
+        $keywordClient->allowedPackages()->sync([$this->proPackage->id, $this->enterprisePackage->id]);
+        
         // Test limit keyword: Enterprise max=50, Client max=15. Input 16 -> Ditolak.
-        Livewire::actingAs($client)
+        Livewire::actingAs($keywordClient)
             ->test(\App\Livewire\ProjectCreate::class)
-            ->set('name', 'Keyword Project')
+            ->set('name', 'Keyword Project Unik')
             ->set('topicsString', implode(', ', range(1, 16))) // 16 keywords
+            ->set('telegramChatId', '123456789')
             ->set('packageId', $this->enterprisePackage->id)
             ->call('createProject')
             ->assertHasErrors(['topicsString']);
             
+        $this->assertDatabaseMissing('projects', [
+            'name' => 'Keyword Project Unik',
+        ]);
+            
         // Test limit keyword: Enterprise max=50, Client max=15. Input 15 -> Diterima.
-        Livewire::actingAs($client)
+        Livewire::actingAs($keywordClient)
             ->test(\App\Livewire\ProjectCreate::class)
-            ->set('name', 'Keyword Project 15')
+            ->set('name', 'Keyword Project 15 Unik')
             ->set('topicsString', implode(', ', range(1, 15))) // 15 keywords
+            ->set('telegramChatId', '123456789')
             ->set('packageId', $this->enterprisePackage->id)
             ->call('createProject')
-            ->assertHasNoErrors(['topicsString']);
+            ->assertHasNoErrors();
+            
+        $this->assertDatabaseHas('projects', [
+            'name' => 'Keyword Project 15 Unik',
+        ]);
     }
 
     public function test_real_client_create_logic()
@@ -208,6 +242,11 @@ class ClientPackageControlHotfixTest extends TestCase
 
     public function test_active_project_quota_only()
     {
+        \Illuminate\Support\Facades\Queue::fake();
+        $this->mock(\App\Services\ContentMatchingService::class, function ($mock) {
+            $mock->shouldReceive('resyncProjectContent')->andReturn([]);
+        });
+
         $client = User::create(['name' => 'C2', 'email' => 'cact@test.com', 'password' => 'password', 'role' => 'client']);
         $client->clientSettings()->create(['max_projects' => 5]);
         $client->allowedPackages()->sync([$this->proPackage->id]);
@@ -224,11 +263,16 @@ class ClientPackageControlHotfixTest extends TestCase
         // Project baru (ke-4 aktif) harus bisa
         Livewire::actingAs($client)
             ->test(\App\Livewire\ProjectCreate::class)
-            ->set('name', 'Act 4')
+            ->set('name', 'Act 4 Unik')
             ->set('topicsString', 'A')
+            ->set('telegramChatId', '123456789')
             ->set('packageId', $this->proPackage->id)
             ->call('createProject')
-            ->assertHasNoErrors(['name']);
+            ->assertHasNoErrors();
+            
+        $this->assertDatabaseHas('projects', [
+            'name' => 'Act 4 Unik',
+        ]);
             
         // Buat lagi manual 1 project aktif agar total aktif = 5
         Project::create(['name' => "Act 5", 'topics' => ['A'], 'package_id' => $this->proPackage->id, 'is_active' => true])->users()->attach($client->id);
@@ -236,10 +280,15 @@ class ClientPackageControlHotfixTest extends TestCase
         // Coba buat project aktif ke-6, ditolak
         Livewire::actingAs($client)
             ->test(\App\Livewire\ProjectCreate::class)
-            ->set('name', 'Act 6')
+            ->set('name', 'Act 6 Unik')
             ->set('topicsString', 'A')
+            ->set('telegramChatId', '123456789')
             ->set('packageId', $this->proPackage->id)
             ->call('createProject')
             ->assertHasErrors(['name']);
+            
+        $this->assertDatabaseMissing('projects', [
+            'name' => 'Act 6 Unik',
+        ]);
     }
 }

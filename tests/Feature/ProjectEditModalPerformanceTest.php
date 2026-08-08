@@ -37,10 +37,10 @@ class ProjectEditModalPerformanceTest extends TestCase
         
         $this->project = Project::create([
             'name' => 'Test Project Performance',
-            'user_id' => $this->user->id,
             'package_id' => $this->package->id,
             'topics' => ['test', 'performance'],
         ]);
+        $this->project->users()->attach($this->user->id);
         
         DB::table('project_telegram_recipients')->insert([
             'project_id' => $this->project->id,
@@ -110,10 +110,11 @@ class ProjectEditModalPerformanceTest extends TestCase
         $otherUser = User::factory()->create();
         $this->actingAs($otherUser);
         
+        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        
         // This should fail because the project belongs to $this->user
         Livewire::test(ProjectEditModal::class)
-            ->call('open', $this->project->id)
-            ->assertForbidden(); // Assuming accessibleBy uses global scope or gates that throw 403, or findOrFail throws 404
+            ->call('open', $this->project->id);
     }
 
     public function test_projects_list_can_refresh_single_project_without_error()
