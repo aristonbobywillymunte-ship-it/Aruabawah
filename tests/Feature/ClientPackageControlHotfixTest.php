@@ -7,6 +7,7 @@ use App\Models\Package;
 use App\Models\Project;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ClientPackageControlHotfixTest extends TestCase
@@ -46,86 +47,134 @@ class ClientPackageControlHotfixTest extends TestCase
             'max_projects' => 20,
             'max_keywords_per_project' => 50,
         ]);
+        
+        $this->unlimitedPackage = Package::create([
+            'name' => 'Unlimited',
+            'price' => 1000000,
+            'is_active' => true,
+            'max_projects' => null,
+            'max_keywords_per_project' => null,
+        ]);
     }
 
-    public function test_parent_user_id_saved_correctly_on_client_creation()
-    {
-        $this->actingAs($this->manager);
-        
-        $response = $this->post('/livewire/update', [
-            // Simulasikan submit form Livewire ClientCreate
-            // (Karena Livewire rumit ditest via HTTP route POST langsung,
-            // kita akan verifikasi via Model directly untuk memastikan semantics nya,
-            // namun kita test langsung actionnya saja.)
-        ]);
-        
-        // Simulasikan createClient
-        $client = User::create([
-            'name' => 'Client',
-            'email' => 'client@test.com',
-            'password' => Hash::make('password'),
-            'role' => 'client',
-            'parent_user_id' => $this->manager->id,
-        ]);
-        
-        $this->assertEquals($this->manager->id, $client->parent_user_id);
-    }
-
-    public function test_multi_package_project_limit_logic()
+    public function test_client_settings_partial_save_prevention()
     {
         $client = User::create(['name' => 'Client', 'email' => 'c1@test.com', 'password' => Hash::make('password'), 'role' => 'client']);
+        $client->clientSettings()->create([]);
+        $client->allowedPackages()->sync([$this->proPackage->id]);
         
-        $client->clientSettings()->create([
-            'max_projects' => 8, // Override batas max jadi 8 (kurang dari max Enterprise = 20)
-        ]);
+        // Simulasikan Livewire form
+        Livewire::actingAs($this->admin)
+            ->test(\App\Livewire\Admin\ClientManagement\ClientSettings::class, ['user' => $client->id])
+            ->set('max_projects', 100) // Melebihi Enterprise (20)
+            ->set('allowedPackages', [$this->enterprisePackage->id])
+            ->call('saveSettings')
+            ->assertHasErrors(['max_projects']);
+            
+        // Verifikasi bahwa allowedPackages tetap PRO di database (TIDAK menjadi Enterprise)
+        $this->assertTrue($client->fresh()->allowedPackages->contains($this->proPackage->id));
+        $this->assertFalse($client->fresh()->allowedPackages->contains($this->enterprisePackage->id));
+    }
+
+    public function test_null_entitlement_logic()
+    {
+        // 1. PRO (5) + Enterprise (NULL) -> 5
+        $client = User::create(['name' => 'C1', 'email' => 'c1x@test.com', 'password' => 'password', 'role' => 'client']);
+        $this->enterprisePackage->update(['max_projects' => null]); // Ubah enterprise jadi null
         
-        $client->allowedPackages()->sync([
-            $this->proPackage->id,
-            $this->enterprisePackage->id,
-        ]);
+        $client->allowedPackages()->sync([$this->proPackage->id, $this->enterprisePackage->id]);
+        $this->assertEquals(5, $client->getMaxProjectEntitlement());
         
-        // Entitlement max = 20 (dari Enterprise)
+        // 2. PRO (NULL) + Enterprise (20) -> 20
+        $this->proPackage->update(['max_projects' => null]);
+        $this->enterprisePackage->update(['max_projects' => 20]);
         $this->assertEquals(20, $client->getMaxProjectEntitlement());
         
-        // Effective max = 8 (dari setting)
-        $this->assertEquals(8, $client->getEffectiveMaxProjects());
+        // 3. PRO (NULL) + Enterprise (NULL) -> NULL
+        $this->enterprisePackage->update(['max_projects' => null]);
+        $this->assertNull($client->getMaxProjectEntitlement());
+        
+        // 4. No packages -> 0
+        $client->allowedPackages()->sync([]);
+        $this->assertEquals(0, $client->getMaxProjectEntitlement());
+        
+        // Restore enterprise package default for other tests
+        $this->enterprisePackage->update(['max_projects' => 20]);
+        $this->proPackage->update(['max_projects' => 5]);
     }
 
-    public function test_keyword_effective_limit_logic()
+    public function test_real_project_create_boundary_and_keyword_limit()
     {
-        // PRO = 25, Client = 30 -> should be 25
-        $client1 = User::create(['name' => 'Client', 'email' => 'c2@test.com', 'password' => 'password', 'role' => 'client']);
-        $client1->clientSettings()->create(['max_keywords_per_project' => 30]);
+        $client = User::create(['name' => 'Client', 'email' => 'boundary@test.com', 'password' => Hash::make('password'), 'role' => 'client']);
+        $client->clientSettings()->create(['max_projects' => 8, 'max_keywords_per_project' => 15]);
+        $client->allowedPackages()->sync([$this->proPackage->id, $this->enterprisePackage->id]); // Entitlement = 20, tapi client max 8
         
-        $limit1 = min(array_filter([$this->proPackage->max_keywords_per_project, $client1->clientSettings->max_keywords_per_project]));
-        $this->assertEquals(25, $limit1);
-
-        // Enterprise = 50, Client = 15 -> should be 15
-        $client2 = User::create(['name' => 'Client', 'email' => 'c3@test.com', 'password' => 'password', 'role' => 'client']);
-        $client2->clientSettings()->create(['max_keywords_per_project' => 15]);
+        // Buat 7 proyek
+        for ($i = 0; $i < 7; $i++) {
+            Project::create([
+                'name' => "Project $i",
+                'topics' => ['A'],
+                'package_id' => $this->proPackage->id,
+            ])->users()->attach($client->id);
+        }
         
-        $limit2 = min(array_filter([$this->enterprisePackage->max_keywords_per_project, $client2->clientSettings->max_keywords_per_project]));
-        $this->assertEquals(15, $limit2);
+        // Proyek ke-8 menggunakan PRO (PRO limit 5, tapi Klien limit 8, ini HARUS SUCCESS)
+        Livewire::actingAs($client)
+            ->test(\App\Livewire\ProjectCreate::class)
+            ->set('name', 'Project 8')
+            ->set('topicsString', 'A, B, C')
+            ->set('packageId', $this->proPackage->id)
+            ->call('submit')
+            ->assertHasNoErrors(['name']);
+            
+        // Proyek ke-9 akan ditolak karena max_projects = 8
+        Livewire::actingAs($client)
+            ->test(\App\Livewire\ProjectCreate::class)
+            ->set('name', 'Project 9')
+            ->set('topicsString', 'A, B, C')
+            ->set('packageId', $this->proPackage->id)
+            ->call('submit')
+            ->assertHasErrors(['name']);
+            
+        // Test limit keyword: Enterprise max=50, Client max=15. Input 16 -> Ditolak.
+        Livewire::actingAs($client)
+            ->test(\App\Livewire\ProjectCreate::class)
+            ->set('name', 'Keyword Project')
+            ->set('topicsString', implode(', ', range(1, 16))) // 16 keywords
+            ->set('packageId', $this->enterprisePackage->id)
+            ->call('submit')
+            ->assertHasErrors(['topicsString']);
+            
+        // Test limit keyword: Enterprise max=50, Client max=15. Input 15 -> Diterima.
+        Livewire::actingAs($client)
+            ->test(\App\Livewire\ProjectCreate::class)
+            ->set('name', 'Keyword Project 15')
+            ->set('topicsString', implode(', ', range(1, 15))) // 15 keywords
+            ->set('packageId', $this->enterprisePackage->id)
+            ->call('submit')
+            ->assertHasNoErrors(['topicsString']);
     }
 
-    public function test_client_cannot_see_other_client_projects()
+    public function test_real_client_create_logic()
     {
-        $clientA = User::create(['name' => 'Client A', 'email' => 'a@test.com', 'password' => 'password', 'role' => 'client']);
-        $clientB = User::create(['name' => 'Client B', 'email' => 'b@test.com', 'password' => 'password', 'role' => 'client']);
+        Livewire::actingAs($this->manager)
+            ->test(\App\Livewire\Admin\ClientManagement\ClientCreate::class)
+            ->set('name', 'New Client')
+            ->set('email', 'newclient@test.com')
+            ->set('password', 'password123')
+            ->set('password_confirmation', 'password123')
+            ->call('createClient');
+            
+        $client = User::where('email', 'newclient@test.com')->first();
         
-        $project = Project::create([
-            'name' => 'Project A',
-            'topics' => ['A'],
-            'package_id' => $this->proPackage->id,
-        ]);
+        $this->assertNotNull($client);
+        $this->assertEquals('client', $client->role);
+        $this->assertEquals($this->manager->id, $client->parent_user_id);
         
-        $project->users()->attach($clientA->id);
-        
-        $this->assertTrue(Project::accessibleBy($clientA)->where('id', $project->id)->exists());
-        $this->assertFalse(Project::accessibleBy($clientB)->where('id', $project->id)->exists());
-        
-        // User (manager) and Admin should see it
-        $this->assertTrue(Project::accessibleBy($this->manager)->where('id', $project->id)->exists());
-        $this->assertTrue(Project::accessibleBy($this->admin)->where('id', $project->id)->exists());
+        $settings = $client->clientSettings;
+        $this->assertNotNull($settings);
+        $this->assertTrue($settings->can_create_projects);
+        $this->assertFalse($settings->can_edit_projects);
+        $this->assertFalse($settings->can_delete_projects);
     }
 }

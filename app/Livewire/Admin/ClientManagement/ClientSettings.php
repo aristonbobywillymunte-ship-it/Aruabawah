@@ -55,13 +55,15 @@ class ClientSettings extends Component
             'allowedPackages' => 'array',
         ]);
 
-        // Simpan allowed packages terlebih dahulu agar kita bisa cek entitlement-nya
-        $this->client->allowedPackages()->sync($this->allowedPackages);
-
-        // Validasi entitlement untuk max_projects
-        $entitlement = $this->client->getMaxProjectEntitlement();
+        // 1. Ambil candidate packages TANPA mengubah database
+        $candidatePackages = \App\Models\Package::whereIn('id', $this->allowedPackages)->get();
+        
+        // 2. Hitung entitlement
+        $entitlement = User::calculateMaxProjectEntitlement($candidatePackages);
+        
         $inputMaxProjects = empty($this->max_projects) ? null : (int) $this->max_projects;
 
+        // 3. Validasi
         if ($entitlement !== null && $inputMaxProjects !== null) {
             if ($inputMaxProjects > $entitlement) {
                 $this->addError('max_projects', 'Batas maksimal proyek tidak boleh melebihi batas dari paket yang diizinkan (' . $entitlement . ').');
@@ -69,15 +71,24 @@ class ClientSettings extends Component
             }
         }
 
-        $this->client->clientSettings()->update([
-            'can_create_projects' => $this->can_create_projects,
-            'can_edit_projects' => $this->can_edit_projects,
-            'can_delete_projects' => $this->can_delete_projects,
-            'max_projects' => $inputMaxProjects,
-            'max_keywords_per_project' => empty($this->max_keywords_per_project) ? null : (int) $this->max_keywords_per_project,
-        ]);
+        // 4. Update di dalam transaksi DB
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($inputMaxProjects) {
+                $this->client->clientSettings()->update([
+                    'can_create_projects' => $this->can_create_projects,
+                    'can_edit_projects' => $this->can_edit_projects,
+                    'can_delete_projects' => $this->can_delete_projects,
+                    'max_projects' => $inputMaxProjects,
+                    'max_keywords_per_project' => empty($this->max_keywords_per_project) ? null : (int) $this->max_keywords_per_project,
+                ]);
 
-        session()->flash('message', 'Pengaturan klien berhasil disimpan.');
+                $this->client->allowedPackages()->sync($this->allowedPackages);
+            });
+            
+            session()->flash('message', 'Pengaturan klien berhasil disimpan.');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Terjadi kesalahan saat menyimpan pengaturan.');
+        }
     }
 
     public function render()

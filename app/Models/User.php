@@ -97,26 +97,44 @@ class User extends Authenticatable
     }
 
     /** 
-     * Dapatkan batas maksimal proyek dari paket yang diizinkan. 
-     * Akan mencari nilai terbesar dari max_projects. Jika ada yang NULL, berarti unlimited (kembalikan null).
+     * Menghitung batas maksimal proyek dari sebuah Collection package.
+     * Aturan:
+     * - Kosong -> 0
+     * - Semua NULL -> NULL (unlimited)
+     * - Mix NULL dan Numeric -> MAX(numerics)
      */
-    public function getMaxProjectEntitlement(): ?int
+    public static function calculateMaxProjectEntitlement($packages): ?int
     {
-        $packages = $this->allowedPackages;
-        
         if ($packages->isEmpty()) {
             return 0; // Tidak punya izin ke paket manapun
         }
 
-        $limits = [];
+        $hasNull = false;
+        $numerics = [];
+
         foreach ($packages as $package) {
             if (is_null($package->max_projects)) {
-                return null; // Unlimited dari salah satu paket
+                $hasNull = true;
+            } else {
+                $numerics[] = $package->max_projects;
             }
-            $limits[] = $package->max_projects;
         }
 
-        return !empty($limits) ? max($limits) : null;
+        // Jika ada nilai numerik, ambil yang terbesar
+        if (!empty($numerics)) {
+            return max($numerics);
+        }
+
+        // Jika tidak ada nilai numerik sama sekali tapi loop jalan, berarti semuanya NULL
+        return null;
+    }
+
+    /** 
+     * Dapatkan batas maksimal proyek dari paket yang diizinkan saat ini.
+     */
+    public function getMaxProjectEntitlement(): ?int
+    {
+        return self::calculateMaxProjectEntitlement($this->allowedPackages);
     }
 
     /**
