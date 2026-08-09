@@ -164,6 +164,9 @@
             @assets
                 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
                 <style>
+                    .select2-container {
+                        font-family: inherit !important;
+                    }
                     /* Custom style to match the modern look */
                     .select2-container .select2-selection--multiple {
                         min-height: 44px !important;
@@ -180,25 +183,36 @@
                         color: #0f172a !important;
                         font-size: 0.8125rem !important;
                         font-weight: 500 !important;
-                        padding: 4px 12px !important;
+                        padding: 2px 10px 2px 8px !important;
                         margin-top: 4px !important;
-                        display: flex !important;
+                        display: inline-flex !important;
                         flex-direction: row-reverse !important;
                         align-items: center !important;
-                        gap: 6px !important;
+                        gap: 4px !important;
                     }
                     .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
                         color: #64748b !important;
                         margin: 0 !important;
                         border: none !important;
                         position: static !important;
-                        font-weight: normal !important;
-                        font-size: 1rem !important;
+                        font-weight: 400 !important;
+                        font-size: 1.125rem !important;
                         line-height: 1 !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        padding-bottom: 2px !important;
                     }
                     .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
                         background-color: transparent !important;
                         color: #ef4444 !important;
+                    }
+                    .select2-container--default .select2-selection--multiple .select2-selection__clear {
+                        margin-top: 0 !important;
+                        margin-right: 8px !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        font-size: 1.25rem !important;
                     }
                     .select2-dropdown {
                         border-color: #e2e8f0 !important;
