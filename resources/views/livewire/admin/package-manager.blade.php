@@ -130,13 +130,13 @@
                         
                         {{-- Scraping Intervals & Limits Information --}}
                         <div class="mt-3 grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-[10px] text-slate-500 font-semibold">
-                            <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-1.5" title="Batas maksimal proyek">
                                 <span class="material-symbols-outlined text-[14px] text-[#1fa387]">folder</span>
-                                <span>Proyek: {{ $pkg->max_projects ? $pkg->max_projects : 'Unlimited' }}</span>
+                                <span>Maks. Proyek: {{ $pkg->max_projects ? $pkg->max_projects : 'Unlimited' }}</span>
                             </div>
-                            <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-1.5" title="Batas maksimal keyword per proyek">
                                 <span class="material-symbols-outlined text-[14px] text-[#1fa387]">key</span>
-                                <span>Keyword: {{ $pkg->max_keywords_per_project ? $pkg->max_keywords_per_project : 'Unlimited' }}</span>
+                                <span>Keyword: {{ $pkg->max_keywords_per_project ? $pkg->max_keywords_per_project . ' / Proyek' : 'Unlimited' }}</span>
                             </div>
                             <div class="flex items-center gap-1.5 mt-1 pt-1 border-t border-slate-200">
                                 <span class="material-symbols-outlined text-[14px] text-violet-500">newspaper</span>
@@ -272,13 +272,13 @@
                         
                         {{-- Scraping Intervals & Limits Information --}}
                         <div class="mt-3 grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-[10px] text-slate-500 font-semibold">
-                            <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-1.5" title="Batas maksimal proyek">
                                 <span class="material-symbols-outlined text-[14px] text-[#1fa387]">folder</span>
-                                <span>Proyek: {{ $pkg->max_projects ? $pkg->max_projects : 'Unlimited' }}</span>
+                                <span>Maks. Proyek: {{ $pkg->max_projects ? $pkg->max_projects : 'Unlimited' }}</span>
                             </div>
-                            <div class="flex items-center gap-1.5">
+                            <div class="flex items-center gap-1.5" title="Batas maksimal keyword per proyek">
                                 <span class="material-symbols-outlined text-[14px] text-[#1fa387]">key</span>
-                                <span>Keyword: {{ $pkg->max_keywords_per_project ? $pkg->max_keywords_per_project : 'Unlimited' }}</span>
+                                <span>Keyword: {{ $pkg->max_keywords_per_project ? $pkg->max_keywords_per_project . ' / Proyek' : 'Unlimited' }}</span>
                             </div>
                             <div class="flex items-center gap-1.5 mt-1 pt-1 border-t border-slate-200">
                                 <span class="material-symbols-outlined text-[14px] text-violet-500">newspaper</span>
