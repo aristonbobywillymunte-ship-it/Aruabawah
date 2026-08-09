@@ -30,7 +30,7 @@ Menyelesaikan konsistensi visual header untuk 6 halaman Admin yang masih memakai
 - **Scraping / AI berubah**: NO
 
 ## Commit SHA Terkait
-- Pending
+- `6b39ef8443f2b7fce5dd8d047e723b647a389838`
 
 ## Tambahan Milestone: ADMIN-HEADER-STRUCTURE-HOTFIX-2
 
@@ -55,7 +55,7 @@ Memperbaiki struktur Blade pada `system-logs` dan `client-settings` setelah hotf
 - **Scraping / AI berubah**: NO
 
 ## Commit SHA Terkait
-- Pending
+- `f56f6f5c774ea781d191c661aeb8b48e32fc19ca`
 
 ## Tambahan Milestone: ADMIN-HEADER-VISUAL-CONSISTENCY-1
 
