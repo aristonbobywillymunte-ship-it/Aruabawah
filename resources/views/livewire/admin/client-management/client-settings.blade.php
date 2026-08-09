@@ -261,11 +261,11 @@
                             @if($confirmDetachProjectId === $ap->id)
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs text-slate-500 mr-2">Lepas proyek dari klien?</span>
-                                    <button type="button" wire:click="detachProject({{ $ap->id }})" class="px-3 py-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">Ya, Lepas</button>
-                                    <button type="button" wire:click="$set('confirmDetachProjectId', null)" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Batal</button>
+                                    <button type="button" wire:click="detachProject({{ $ap->id }})" class="cursor-pointer px-3 py-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">Ya, Lepas</button>
+                                    <button type="button" wire:click="$set('confirmDetachProjectId', null)" class="cursor-pointer px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Batal</button>
                                 </div>
                             @else
-                                <button type="button" wire:click="$set('confirmDetachProjectId', {{ $ap->id }})" class="px-4 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100">
+                                <button type="button" wire:click="$set('confirmDetachProjectId', {{ $ap->id }})" class="cursor-pointer px-4 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100">
                                     Lepas
                                 </button>
                             @endif
