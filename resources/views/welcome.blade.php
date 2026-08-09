@@ -26,5 +26,30 @@
         @endif
 
         @livewireScripts
+
+        @if(session()->has('toast'))
+            <script>
+                (function() {
+                    const triggerToast = () => {
+                        setTimeout(() => {
+                            window.dispatchEvent(new CustomEvent('project-action-toast', {
+                                detail: {
+                                    type: '{{ session('toast')['type'] ?? 'success' }}',
+                                    message: '{{ session('toast')['message'] ?? 'Berhasil' }}'
+                                }
+                            }));
+                        }, 500);
+                    };
+
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', triggerToast);
+                    } else {
+                        triggerToast();
+                    }
+                    
+                    document.addEventListener('livewire:navigated', triggerToast, { once: true });
+                })();
+            </script>
+        @endif
     </body>
 </html>

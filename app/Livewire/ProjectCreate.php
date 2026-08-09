@@ -151,7 +151,10 @@ class ProjectCreate extends Component
         app(ContentMatchingService::class)->resyncProjectContent($project);
         BootstrapNewProjectScrapingJob::dispatch($project->id)->onQueue('news');
 
-        $this->dispatch('project-action-toast', type: 'success', message: 'Proyek berhasil dibuat.');
+        session()->flash('toast', [
+            'type' => 'success',
+            'message' => 'Proyek berhasil dibuat.'
+        ]);
         
         return $this->redirect('/', navigate: true);
     }
