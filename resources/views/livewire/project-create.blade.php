@@ -103,6 +103,26 @@
                                 @endif
                             </div>
 
+                            {{-- Scraping Intervals & Limits Information --}}
+                            <div class="mt-2 mb-2 grid grid-cols-2 gap-2 bg-slate-50/70 rounded-xl p-3 border border-slate-100/80 text-[10px] text-slate-500 font-semibold">
+                                <div class="flex items-center gap-1.5" title="Batas maksimal proyek">
+                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387]">folder</span>
+                                    <span>Maks. Proyek: {{ $p->max_projects ? $p->max_projects : 'Unlimited' }}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5" title="Batas maksimal keyword per proyek">
+                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387]">key</span>
+                                    <span>Keyword: {{ $p->max_keywords_per_project ? $p->max_keywords_per_project . ' / Proyek' : 'Unlimited' }}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 mt-1 pt-1.5 border-t border-slate-200/60">
+                                    <span class="material-symbols-outlined text-[14px] text-violet-500">newspaper</span>
+                                    <span>Berita: {{ $p->news_interval_minutes ?? 5 }}m</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 mt-1 pt-1.5 border-t border-slate-200/60">
+                                    <span class="material-symbols-outlined text-[14px] text-sky-500">share</span>
+                                    <span>Sosmed: {{ $p->social_interval_minutes ?? 10 }}m</span>
+                                </div>
+                            </div>
+
                             {{-- CTA button --}}
                             <button type="button" class="w-full py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-1.5
                                 {{ $isSelected
