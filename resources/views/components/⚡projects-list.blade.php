@@ -1068,22 +1068,23 @@ new class extends Component
                                     >
                                 <!-- Card Header -->
                                 <div class="flex items-start justify-between mb-8">
-                                    <div class="flex items-center gap-3">
+                                    <div class="flex items-start gap-3 mt-1">
                                         <div class="px-2 py-1 rounded bg-primary/10 text-primary font-bold text-[10px] tracking-widest border border-primary/20">
                                             {{ sprintf('%02d', $idx + 1) }}
                                         </div>
                                         <div>
-                                            <div class="flex items-center flex-wrap gap-1.5 mb-0.5">
-                                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">PROYEK</span>
-                                                <span class="text-[9px] text-slate-300 whitespace-nowrap">•</span>
-                                                <span class="text-[9px] text-slate-400 font-bold whitespace-nowrap">Dibuat: {{ $projectCreatedAt }}</span>
-                                                @if(!empty($project['package_name']))
-                                                    <span class="text-[9px] text-slate-300 whitespace-nowrap">•</span>
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1fa387] text-white font-extrabold text-[9px] uppercase tracking-widest shadow-sm whitespace-nowrap">
+                                            @if(!empty($project['package_name']))
+                                                <div class="mb-1.5">
+                                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#1fa387] text-white font-extrabold text-[9px] uppercase tracking-widest shadow-sm whitespace-nowrap">
                                                         <svg class="w-3 h-3 animate-pulse" style="color: #FFEA00; filter: drop-shadow(0px 0px 6px rgba(255, 234, 0, 0.9)); animation-duration: 4s;" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                                                         {{ $project['package_name'] }}
                                                     </span>
-                                                @endif
+                                                </div>
+                                            @endif
+                                            <div class="flex items-center flex-wrap gap-1.5 mb-1">
+                                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">PROYEK</span>
+                                                <span class="text-[9px] text-slate-300 whitespace-nowrap">•</span>
+                                                <span class="text-[9px] text-slate-400 font-bold whitespace-nowrap">Dibuat: {{ $projectCreatedAt }}</span>
                                             </div>
                                             <h2 class="text-xl font-hanken font-extrabold text-[#1fa387] uppercase leading-tight">{{ $project['name'] }}</h2>
                                         </div>
