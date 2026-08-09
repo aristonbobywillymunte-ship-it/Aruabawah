@@ -177,8 +177,13 @@
             @script
                 <script>
                     const initSelect2 = () => {
-                        let el = $('#project-select');
+                        const el = $($wire.$el).find('#project-select');
+
                         if (el.length > 0) {
+                            // Destroy existing Select2 instance if it exists
+                            if (el.hasClass('select2-hidden-accessible')) {
+                                el.select2('destroy');
+                            }
                             el.select2({
                                 placeholder: 'Pilih satu atau lebih proyek...',
                                 width: '100%',
@@ -187,24 +192,28 @@
                             });
                             
                             el.off('change').on('change', function(e) {
-                                $wire.set('selectedProjectIds', $(this).val() || []);
+                                $wire.$set('selectedProjectIds', $(this).val() || []);
                             });
                             
                             // sync value on init
-                            el.val($wire.get('selectedProjectIds')).trigger('change.select2');
+                            el.val($wire.$get('selectedProjectIds')).trigger('change.select2');
                         }
                     };
                     
                     initSelect2();
                     
                     Livewire.hook('morph.updated', ({ el, component }) => {
-                        if (!$('#project-select').hasClass('select2-hidden-accessible')) {
+                        // Re-initialize Select2 when Livewire DOM morphs to ensure dropdown options are synced
+                        if (component.el === $wire.$el) {
                             initSelect2();
                         }
                     });
                     
-                    $wire.on('admin-toast', () => {
-                        $('#project-select').val(null).trigger('change.select2');
+                    $wire.$on('admin-toast', () => {
+                        const el = $($wire.$el).find('#project-select');
+                        if (el.hasClass('select2-hidden-accessible')) {
+                            el.val(null).trigger('change.select2');
+                        }
                     });
                 </script>
             @endscript
