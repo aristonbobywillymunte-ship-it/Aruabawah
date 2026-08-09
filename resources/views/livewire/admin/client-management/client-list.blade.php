@@ -1,4 +1,12 @@
-<div class="p-6">
+<div class="p-6 max-w-7xl mx-auto py-10">
+    <div class="mb-10">
+        <a href="{{ route('home') }}" wire:navigate
+           class="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1fa387] hover:text-[#178a71] transition-colors mb-6 group">
+            <span class="material-symbols-outlined text-[18px] group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+            Kembali ke Proyek
+        </a>
+    </div>
+
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold text-slate-900">Manajemen Klien</h1>

@@ -7,7 +7,7 @@ use Livewire\WithPagination;
 use App\Models\User;
 use Livewire\Attributes\Layout;
 
-#[Layout('layouts.admin-livewire')]
+#[Layout('welcome')]
 class ClientList extends Component
 {
     use WithPagination;
