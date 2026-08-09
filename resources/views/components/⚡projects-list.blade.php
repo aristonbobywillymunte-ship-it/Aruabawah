@@ -982,7 +982,19 @@ new class extends Component
                             <h1 class="text-2xl font-hanken font-bold text-slate-900 mb-1">Daftar Proyek Anda</h1>
                             <p class="text-slate-500 text-sm">Kelola dan pantau seluruh kampanye media monitoring Anda secara real-time.</p>
                         </div>
-                        <div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            @if(auth()->check() && auth()->user()->isUser())
+                                <a 
+                                    href="{{ route('admin.clients.create') }}" 
+                                    wire:navigate
+                                    class="px-4 py-2 bg-white border border-slate-300 hover:border-[#1fa387] text-slate-700 hover:text-[#1fa387] rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                    </svg>
+                                    <span>Buat Client</span>
+                                </a>
+                            @endif
                             <button 
                                 wire:click="$set('showTrashedModal', true)"
                                 wire:loading.attr="disabled"
@@ -1026,25 +1038,6 @@ new class extends Component
                                         <h3 class="text-xl font-hanken font-bold text-slate-800 mb-2">Buat Proyek Baru</h3>
                                         <p class="text-slate-400 text-sm max-w-[220px] leading-relaxed">
                                             Tambahkan monitoring media online, cetak, dan media sosial baru
-                                        </p>
-                                    </a>
-                                @endif
-
-                                @if(auth()->check() && auth()->user()->isUser())
-                                    <a 
-                                        href="{{ route('admin.clients.create') }}" 
-                                        wire:navigate
-                                        class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col items-center justify-center text-center hover:bg-white/50 transition-all duration-300 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
-                                        style="min-height: 620px; height: 100%; display: flex; text-decoration: none;"
-                                    >
-                                        <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-5 shadow-sm">
-                                            <svg class="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                                            </svg>
-                                        </div>
-                                        <h3 class="text-xl font-hanken font-bold text-slate-800 mb-2">Buat Client</h3>
-                                        <p class="text-slate-400 text-sm max-w-[220px] leading-relaxed">
-                                            Buat akses klien baru untuk dashboard terpisah
                                         </p>
                                     </a>
                                 @endif
