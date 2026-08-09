@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur PACKAGE-DAILY-SCHEDULE-TIME-PICKER-HOTFIX-1
+- **Alasan**: Paket scraping perlu jadwal harian yang lebih jelas daripada interval menit, dengan slot jam native yang mudah diatur per portal dan sosmed.
+- **Solusi**: Menyimpan `runs_per_day` dan `run_times` sebagai array JSON terpisah untuk portal dan sosial media, lalu memetakan slot itu ke input `type="time"` dinamis di form paket.
+- **Batasan**: Migration lama dikembalikan ke fungsi awalnya; migration baru dipakai untuk kolom schedule harian agar deployment production yang sudah pernah migrasi tetap aman.
+- **Fallback**: Jika jadwal harian tidak diisi, scheduler tetap memakai `news_interval_minutes` dan `social_interval_minutes` agar paket existing tidak rusak.
+
 ## Konteks Fitur ADMIN-HEADER-CONSISTENCY-2
 - **Alasan**: Enam halaman Admin masih memiliki header lokal yang tidak sepenuhnya konsisten dengan pola visual Dashboard.
 - **Solusi**: Menambahkan `page-header` yang ringan di wrapper untuk Apify Financial Report, Packages, Branding, dan AI Prompt Templates; mempertahankan teleport pada News Sources; serta memindahkan warning/kontrol berat ke toolbar konten atau block informasi di bawah header.

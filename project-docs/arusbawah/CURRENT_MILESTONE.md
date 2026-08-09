@@ -1,3 +1,35 @@
+# Milestone: Package Daily Schedule Time Picker Hotfix
+
+## Tambahan Milestone: PACKAGE-DAILY-SCHEDULE-TIME-PICKER-HOTFIX-1
+
+## Apa yang Diubah
+Mengeraskan fitur jadwal scraping harian untuk paket dengan migrasi yang aman, input jam native, validasi per-field, dan fallback interval lama yang tetap utuh.
+
+## Behavior Final
+- Kolom jadwal harian dipindah ke migration baru yang aman, sementara migration lama dikembalikan ke tanggung jawab aslinya untuk `news_interval_minutes` dan `social_interval_minutes`.
+- Form paket sekarang memakai input `type="time"` native untuk slot jam portal dan sosmed.
+- Jumlah slot jam mengikuti `runs_per_day`, dengan nilai lama dipertahankan saat slot bertambah dan sisanya dipangkas saat slot berkurang.
+- Validasi mencegah jam kosong, jam ganda, format tidak valid, dan mismatch jumlah slot terhadap jumlah run per hari.
+- Scheduler memakai jadwal harian jika tersedia, lalu fallback ke interval lama jika belum dikonfigurasi.
+
+## Komponen Kunci
+- `database/migrations/2026_08_03_031226_add_interval_minutes_to_packages_table.php`
+- `database/migrations/2026_08_09_220000_add_daily_run_schedule_to_packages_table.php`
+- `app/Models/Package.php`
+- `app/Livewire/Admin/PackageManager.php`
+- `resources/views/livewire/admin/package-manager.blade.php`
+- `app/Console/Commands/RunApifyScraping.php`
+- `app/Console/Commands/RunNewsPortalScraping.php`
+- `tests/Feature/PackageDailyScheduleSupportTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: YES
+- **Route berubah**: NO
+- **Scraping / AI berubah**: YES, hanya pada semantik jadwal paket dan fallback interval
+
+## Commit SHA Terkait
+- Pending
+
 # Milestone: Client Project Assignment Hotfix
 
 ## Tambahan Milestone: ADMIN-HEADER-CONSISTENCY-2

@@ -1,5 +1,24 @@
 # QA History
 
+# Package Daily Schedule Time Picker Hotfix
+**Tanggal**: 2026-08-09
+**Area**: Admin Package Manager, Package model, daily scraping schedulers, package schedule migration
+
+### Skenario yang Diuji & Hasil:
+1. **Migration Safety**: Migration lama dikembalikan ke kolom interval legacy saja; kolom jadwal harian dipindahkan ke migration baru yang idempotent dan aman untuk environment yang sudah pernah migrasi.
+2. **Native Time Picker UI**: Form paket kini memakai slot `type="time"` yang bertambah/berkurang mengikuti `runs_per_day`.
+3. **Validation Per Field**: Error validasi portal dan sosial tampil pada field jadwal masing-masing, tanpa saling menimpa.
+4. **Normalization**: Time slot dinormalisasi, diurutkan, dan duplikasi ditolak sebelum disimpan.
+5. **Legacy Fallback**: Paket tanpa jadwal harian tetap memakai interval lama.
+6. **Support Tests**: Test helper tanpa database berhasil dijalankan; test feature berbasis database masih terblokir oleh environment PostgreSQL lokal yang tidak tersedia.
+7. **CLI Validation**: `php artisan view:clear`, `php artisan route:list`, dan `git diff --check` berhasil; `php artisan migrate:status` terblokir oleh resolusi host database lokal.
+
+### Catatan QA:
+- Browser QA belum dijalankan.
+- Test yang membutuhkan database produksi/lokal tidak dijalankan pada environment ini.
+
+**Status Akhir**: PASS untuk helper dan validasi sintaks; BLOCKED untuk test berbasis DB dan `migrate:status` karena environment database lokal tidak tersedia.
+
 ## Admin Header Consistency 2
 **Tanggal**: 2026-08-09
 **Area**: Apify, Apify Financial Report, Packages, News Sources, Branding, AI Prompt Templates

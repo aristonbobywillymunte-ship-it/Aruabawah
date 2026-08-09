@@ -34,9 +34,9 @@ class PackageManager extends Component
     public int $news_interval_minutes = 5;
     public int $social_interval_minutes = 10;
     public ?int $news_runs_per_day = null;
-    public string $news_run_times = '';
+    public array $news_run_times = [];
     public ?int $social_runs_per_day = null;
-    public string $social_run_times = '';
+    public array $social_run_times = [];
     public bool $is_popular = false;
     public ?int $max_projects = null;
     public ?int $max_keywords_per_project = null;
@@ -114,9 +114,11 @@ class PackageManager extends Component
             'news_interval_minutes'   => 'required|integer|min:1',
             'social_interval_minutes' => 'required|integer|min:1',
             'news_runs_per_day'       => 'nullable|integer|min:1|max:24',
-            'news_run_times'          => 'nullable|string|max:255',
+            'news_run_times'          => 'nullable|array',
+            'news_run_times.*'        => 'nullable|date_format:H:i',
             'social_runs_per_day'     => 'nullable|integer|min:1|max:24',
-            'social_run_times'        => 'nullable|string|max:255',
+            'social_run_times'        => 'nullable|array',
+            'social_run_times.*'      => 'nullable|date_format:H:i',
             'is_popular'              => 'boolean',
             'max_projects'            => 'nullable|integer|min:1',
             'max_keywords_per_project'=> 'nullable|integer|min:1',
@@ -248,9 +250,9 @@ class PackageManager extends Component
         $this->news_interval_minutes = (int) ($pkg->news_interval_minutes ?? 5);
         $this->social_interval_minutes = (int) ($pkg->social_interval_minutes ?? 10);
         $this->news_runs_per_day     = $pkg->news_runs_per_day;
-        $this->news_run_times        = $this->serializeTimesForInput($pkg->news_run_times ?? []);
+        $this->news_run_times        = $this->normalizeScheduleTimes($pkg->news_run_times ?? []);
         $this->social_runs_per_day   = $pkg->social_runs_per_day;
-        $this->social_run_times      = $this->serializeTimesForInput($pkg->social_run_times ?? []);
+        $this->social_run_times      = $this->normalizeScheduleTimes($pkg->social_run_times ?? []);
         $this->is_popular            = (bool) ($pkg->is_popular ?? false);
         $this->max_projects          = $pkg->max_projects;
         $this->max_keywords_per_project = $pkg->max_keywords_per_project;
@@ -318,9 +320,9 @@ class PackageManager extends Component
             'news_interval_minutes'   => $this->news_interval_minutes,
             'social_interval_minutes' => $this->social_interval_minutes,
             'news_runs_per_day'       => blank($this->news_runs_per_day) ? null : (int) $this->news_runs_per_day,
-            'news_run_times'          => $this->parseTimesInput($this->news_run_times),
+            'news_run_times'          => blank($this->news_runs_per_day) ? null : $this->normalizeScheduleTimes($this->news_run_times, true, 'news_run_times'),
             'social_runs_per_day'     => blank($this->social_runs_per_day) ? null : (int) $this->social_runs_per_day,
-            'social_run_times'        => $this->parseTimesInput($this->social_run_times),
+            'social_run_times'        => blank($this->social_runs_per_day) ? null : $this->normalizeScheduleTimes($this->social_run_times, true, 'social_run_times'),
             'is_popular'              => $this->is_popular,
             'max_projects'            => blank($this->max_projects) ? null : (int) $this->max_projects,
             'max_keywords_per_project'=> blank($this->max_keywords_per_project) ? null : (int) $this->max_keywords_per_project,
@@ -654,9 +656,9 @@ class PackageManager extends Component
         $this->news_interval_minutes = 5;
         $this->social_interval_minutes = 10;
         $this->news_runs_per_day     = null;
-        $this->news_run_times        = '';
+        $this->news_run_times        = [];
         $this->social_runs_per_day   = null;
-        $this->social_run_times      = '';
+        $this->social_run_times      = [];
         $this->is_popular            = false;
         $this->max_projects          = null;
         $this->max_keywords_per_project = null;
@@ -690,73 +692,133 @@ class PackageManager extends Component
 
     protected function validatePackageRunSchedules(): void
     {
-        $newsTimes = $this->parseTimesInput($this->news_run_times);
-        $socialTimes = $this->parseTimesInput($this->social_run_times);
+        $this->news_run_times = $this->normalizeScheduleTimes($this->news_run_times, false, 'news_run_times');
+        $this->social_run_times = $this->normalizeScheduleTimes($this->social_run_times, false, 'social_run_times');
 
-        if ($this->news_runs_per_day !== null) {
-            if ($newsTimes === []) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'news_run_times' => 'Jam run portal wajib diisi jika jumlah run per hari diatur.',
-                ]);
-            }
-
-            if (count($newsTimes) !== (int) $this->news_runs_per_day) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'news_run_times' => 'Jumlah jam portal harus sama dengan jumlah run per hari.',
-                ]);
-            }
+        if ($this->news_runs_per_day !== null && count($this->news_run_times) !== (int) $this->news_runs_per_day) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'news_run_times' => 'Jumlah jam portal harus sama dengan jumlah run per hari.',
+            ]);
         }
 
-        if ($this->social_runs_per_day !== null) {
-            if ($socialTimes === []) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'social_run_times' => 'Jam run sosmed wajib diisi jika jumlah run per hari diatur.',
-                ]);
-            }
-
-            if (count($socialTimes) !== (int) $this->social_runs_per_day) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'social_run_times' => 'Jumlah jam sosmed harus sama dengan jumlah run per hari.',
-                ]);
-            }
+        if ($this->social_runs_per_day !== null && count($this->social_run_times) !== (int) $this->social_runs_per_day) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'social_run_times' => 'Jumlah jam sosmed harus sama dengan jumlah run per hari.',
+            ]);
         }
     }
 
-    protected function parseTimesInput(string $value): array
+    public function updatedNewsRunsPerDay($value): void
     {
-        $parts = preg_split('/[\s,]+/', trim($value)) ?: [];
-        $times = [];
+        $this->news_run_times = $this->resizeTimeSlots($this->news_run_times, $value);
+    }
 
-        foreach ($parts as $part) {
-            $part = trim($part);
-            if ($part === '') {
+    public function updatedSocialRunsPerDay($value): void
+    {
+        $this->social_run_times = $this->resizeTimeSlots($this->social_run_times, $value);
+    }
+
+    public function updatedNewsRunTimes($value, $key): void
+    {
+        $this->news_run_times = array_values(array_map(
+            static fn ($time) => is_string($time) ? trim($time) : '',
+            $this->news_run_times
+        ));
+    }
+
+    public function updatedSocialRunTimes($value, $key): void
+    {
+        $this->social_run_times = array_values(array_map(
+            static fn ($time) => is_string($time) ? trim($time) : '',
+            $this->social_run_times
+        ));
+    }
+
+    protected function resizeTimeSlots(array $values, $runsPerDay): array
+    {
+        $count = blank($runsPerDay) ? 0 : max(0, (int) $runsPerDay);
+        $values = array_values($values);
+
+        if ($count <= 0) {
+            return [];
+        }
+
+        if (count($values) > $count) {
+            return array_slice($values, 0, $count);
+        }
+
+        while (count($values) < $count) {
+            $values[] = '';
+        }
+
+        return $values;
+    }
+
+    protected function normalizeScheduleTimes(array $times, bool $allowEmpty = true, ?string $field = null): array
+    {
+        $field ??= 'news_run_times';
+        $normalized = [];
+        $seen = [];
+
+        foreach (array_values($times) as $time) {
+            $time = is_string($time) ? trim($time) : '';
+
+            if ($time === '') {
+                if (! $allowEmpty) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        $field => 'Setiap jam harus diisi.',
+                    ]);
+                }
                 continue;
             }
 
-            if (! preg_match('/^(?:[01]?\d|2[0-3]):[0-5]\d$/', $part)) {
+            if (! preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $time)) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    'news_run_times' => 'Gunakan format jam HH:MM, misalnya 08:00, 13:30, 20:15.',
-                    'social_run_times' => 'Gunakan format jam HH:MM, misalnya 08:00, 13:30, 20:15.',
+                    $field => 'Gunakan format jam 24 jam HH:MM.',
                 ]);
             }
 
-            $times[] = $part;
+            if (isset($seen[$time])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $field => 'Jam yang sama tidak boleh dipakai dua kali.',
+                ]);
+            }
+
+            $seen[$time] = true;
+            $normalized[] = $time;
         }
 
-        $times = array_values(array_unique($times));
-        sort($times);
+        sort($normalized);
 
-        return $times;
+        return $normalized;
     }
 
-    protected function serializeTimesForInput(array $times): string
+    public function scheduleSummary(?int $runsPerDay, array $times, string $legacyLabel): string
     {
-        $normalized = array_values(array_filter(array_map(
-            static fn ($time) => is_string($time) ? trim($time) : '',
-            $times
-        )));
+        $times = $this->normalizeScheduleTimes($times);
 
-        return implode(', ', $normalized);
+        if (blank($runsPerDay) || $times === []) {
+            return $legacyLabel;
+        }
+
+        return $runsPerDay . 'x / hari';
+    }
+
+    public function scheduleTimesText(array $times): string
+    {
+        $times = $this->normalizeScheduleTimes($times);
+
+        return $times === [] ? '-' : implode(' · ', $times);
+    }
+
+    public function scheduleRunsPerDayLabel(?int $runsPerDay): string
+    {
+        return blank($runsPerDay) ? 'Interval lama' : $runsPerDay . 'x / hari';
+    }
+
+    public function scheduleLegacySummary(string $label, int $minutes): string
+    {
+        return sprintf('%s: %sm', $label, $minutes);
     }
 
     public function dismissFlash(): void
