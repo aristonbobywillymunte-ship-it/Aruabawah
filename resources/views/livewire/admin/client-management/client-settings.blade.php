@@ -133,7 +133,7 @@
                 </button>
             </div>
             
-            @push('styles')
+            @assets
                 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
                 <style>
                     /* Custom style to match the modern look */
@@ -170,59 +170,44 @@
                         font-size: 0.875rem !important;
                     }
                 </style>
-            @endpush
-
-            @push('scripts')
                 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
                 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-                <script>
-                    (function() {
-                        const initSelect2 = () => {
-                            if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
-                                jQuery('#project-select').select2({
-                                    placeholder: 'Pilih satu atau lebih proyek...',
-                                    width: '100%',
-                                    multiple: true,
-                                    allowClear: true
-                                }).off('change').on('change', function(e) {
-                                    let values = jQuery(this).val() || [];
-                                    @this.set('selectedProjectIds', values);
-                                });
-                                // sync value
-                                jQuery('#project-select').val(@this.selectedProjectIds).trigger('change.select2');
-                            }
-                        };
-                        
-                        const setupLivewireHooks = () => {
-                            initSelect2();
-                            
-                            if (window.Livewire) {
-                                Livewire.hook('morph.updated', ({ el, component }) => {
-                                    // Only re-init if the select2 container is missing or destroyed
-                                    if (!jQuery('#project-select').hasClass('select2-hidden-accessible')) {
-                                        initSelect2();
-                                    }
-                                });
-                                
-                                // Clear selection when successfully assigned
-                                Livewire.on('admin-toast', () => {
-                                    if (jQuery('#project-select').hasClass('select2-hidden-accessible')) {
-                                        jQuery('#project-select').val(null).trigger('change.select2');
-                                    }
-                                });
-                            }
-                        };
+            @endassets
 
-                        if (document.readyState === 'loading') {
-                            document.addEventListener('DOMContentLoaded', setupLivewireHooks);
-                        } else {
-                            setupLivewireHooks();
+            @script
+                <script>
+                    const initSelect2 = () => {
+                        let el = $('#project-select');
+                        if (el.length > 0) {
+                            el.select2({
+                                placeholder: 'Pilih satu atau lebih proyek...',
+                                width: '100%',
+                                multiple: true,
+                                allowClear: true
+                            });
+                            
+                            el.off('change').on('change', function(e) {
+                                $wire.set('selectedProjectIds', $(this).val() || []);
+                            });
+                            
+                            // sync value on init
+                            el.val($wire.get('selectedProjectIds')).trigger('change.select2');
                         }
-                        
-                        document.addEventListener('livewire:navigated', setupLivewireHooks);
-                    })();
+                    };
+                    
+                    initSelect2();
+                    
+                    Livewire.hook('morph.updated', ({ el, component }) => {
+                        if (!$('#project-select').hasClass('select2-hidden-accessible')) {
+                            initSelect2();
+                        }
+                    });
+                    
+                    $wire.on('admin-toast', () => {
+                        $('#project-select').val(null).trigger('change.select2');
+                    });
                 </script>
-            @endpush
+            @endscript
 
             <!-- Assigned Projects List -->
             <div class="divide-y divide-slate-100">
