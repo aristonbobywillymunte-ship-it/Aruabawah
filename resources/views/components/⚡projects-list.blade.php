@@ -979,7 +979,22 @@ new class extends Component
                     <!-- Title Section -->
                     <section class="mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <h1 class="text-2xl font-hanken font-bold text-slate-900 mb-1">Daftar Proyek Anda</h1>
+                            <div class="flex items-center gap-3 mb-1">
+                                <h1 class="text-2xl font-hanken font-bold text-slate-900">Daftar Proyek Anda</h1>
+                                @php
+                                    $user = auth()->user();
+                                    $packages = $user->isClient() ? $user->allowedPackages : collect();
+                                @endphp
+                                @if($packages->isNotEmpty())
+                                    <div class="flex gap-1.5">
+                                        @foreach($packages as $pkg)
+                                            <span class="px-2.5 py-0.5 rounded-md bg-[#1fa387]/10 text-[#1fa387] text-xs font-bold border border-[#1fa387]/20 uppercase tracking-wider">
+                                                Paket {{ $pkg->name }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
                             <p class="text-slate-500 text-sm">Kelola dan pantau seluruh kampanye media monitoring Anda secara real-time.</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-3">
