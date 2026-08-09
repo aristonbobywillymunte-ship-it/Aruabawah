@@ -1,12 +1,4 @@
 <div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
-    <!-- Header Section -->
-    <div class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between text-left">
-        <div class="max-w-3xl space-y-1">
-            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
-            <h1 class="text-2xl font-black leading-tight text-slate-900">System Maintenance</h1>
-            <p class="text-xs text-slate-500">Aksi pembersihan antrean, pengelolaan worker queue, dan optimasi cache aplikasi.</p>
-        </div>
-    </div>
 
     <!-- Maintenance Card -->
     <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm text-left">

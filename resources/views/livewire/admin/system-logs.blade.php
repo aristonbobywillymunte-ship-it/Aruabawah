@@ -1,21 +1,14 @@
-@section('page-header')
-    <div class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
-        <div class="max-w-3xl text-left space-y-1">
-            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
-            <h1 class="text-2xl font-black leading-tight text-slate-900">Log & Aktivitas Sistem</h1>
-            <p class="text-xs text-slate-500">Pantau catatan eksekusi perayapan portal berita, scraping Apify, dan error scheduler.</p>
-        </div>
-
-        <div class="flex items-center gap-3">
-            <button 
-                onclick="confirm('Apakah Anda yakin ingin mengosongkan seluruh log pada file ini? Tindakan ini tidak dapat dibatalkan.') || event.stopImmediatePropagation()"
-                wire:click="clearLog" 
-                class="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white px-5 text-xs font-bold transition shadow-sm cursor-pointer"
-            >
-                <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
-                <span>Bersihkan Log</span>
-            </button>
-        </div>
+<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
+    <!-- Log Actions and Filters -->
+    <div class="flex flex-wrap items-center gap-3">
+        <button
+            onclick="confirm('Apakah Anda yakin ingin mengosongkan seluruh log pada file ini? Tindakan ini tidak dapat dibatalkan.') || event.stopImmediatePropagation()"
+            wire:click="clearLog"
+            class="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white px-5 text-xs font-bold transition shadow-sm cursor-pointer"
+        >
+            <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
+            <span>Bersihkan Log</span>
+        </button>
     </div>
 
     <!-- Log Filters Panel -->
@@ -198,4 +191,4 @@
             </table>
         </div>
     </div>
-</div>
+    </div>

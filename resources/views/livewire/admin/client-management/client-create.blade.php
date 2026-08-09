@@ -1,11 +1,6 @@
 <div>
     {{-- Page Header --}}
-    <div class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
-        <div class="max-w-3xl text-left space-y-1">
-            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
-            <h1 class="text-2xl font-black leading-tight text-slate-900">Tambah Klien Baru</h1>
-            <p class="text-xs text-slate-500">Buat akun untuk klien Anda agar bisa mengelola proyek.</p>
-        </div>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <a href="{{ route('admin.clients') }}" wire:navigate
            class="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors self-start lg:self-auto">
             <span class="material-symbols-outlined text-[20px]">arrow_back</span>

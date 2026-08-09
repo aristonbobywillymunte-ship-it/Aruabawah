@@ -1,12 +1,6 @@
 <div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
     <!-- Header Section -->
-    <div class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
-        <div class="max-w-3xl text-left space-y-1">
-            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
-            <h1 class="text-2xl font-black leading-tight text-slate-900">AI Provider</h1>
-            <p class="text-xs text-slate-500">Kelola model AI untuk analisis portal dan sosial media.</p>
-        </div>
-
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
             <div class="relative w-full sm:w-80">
                 <input 
