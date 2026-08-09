@@ -11,6 +11,7 @@ Menambahkan fitur relasi *Assign* & *Detach* antara Client dan Project di halama
 - Perataan vertikal untuk teks pencarian, input sebaris, ikon hapus (`x`), dan teks tombol telah disempurnakan menggunakan `display: flex`, menjamin tata letak piksel sempurna di berbagai perangkat.
 - Select2 initialization dibuat *idempotent* (destroy-before-init) dan ter-*scope* ke instance `$wire.$el` agar tidak bentrok saat Livewire 4 melakukan morphing DOM.
 - Relasi Assign/Detach otomatis mereset dan memuat ulang dropdown options Select2 tanpa merusak integrasi JavaScript.
+- Alur penyimpanan Client Settings disempurnakan dengan *loading spinner* interaktif (`wire:loading`), navigasi SPA instan menggunakan `wire:navigate` ke halaman Client Management, dan notifikasi konfirmasi *sweetalert* global (`admin-toast`).
 
 ## Komponen Kunci
 - `app/Livewire/Admin/ClientManagement/ClientSettings.php` (pengaturan logic `syncWithoutDetaching` dan array validation)

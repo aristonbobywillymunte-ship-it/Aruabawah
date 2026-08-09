@@ -11,12 +11,7 @@
         </div>
     </div>
 
-    @if (session()->has('message'))
-        <div class="mb-6 p-4 rounded-xl bg-green-50 text-green-700 border border-green-200 flex items-center gap-3">
-            <span class="material-symbols-outlined text-[20px]">check_circle</span>
-            <span class="text-sm font-medium">{{ session('message') }}</span>
-        </div>
-    @endif
+
 
     <!-- PROYEK KLIEN SECTION -->
     <div class="mb-6">
@@ -362,10 +357,11 @@
         </div>
 
         <div class="flex justify-end gap-3">
-            <button type="submit" class="px-6 py-2.5 text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors flex items-center gap-2">
+            <button type="submit" wire:loading.attr="disabled" class="px-6 py-2.5 text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 <span wire:loading.remove wire:target="saveSettings" class="material-symbols-outlined text-[18px]">save</span>
                 <span wire:loading wire:target="saveSettings" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-                <span>Simpan Pengaturan</span>
+                <span wire:loading.remove wire:target="saveSettings">Simpan Pengaturan</span>
+                <span wire:loading wire:target="saveSettings">Menyimpan...</span>
             </button>
         </div>
 

@@ -92,9 +92,10 @@ class ClientSettings extends Component
                 $this->client->allowedPackages()->sync($this->allowedPackages);
             });
             
-            session()->flash('message', 'Pengaturan klien berhasil disimpan.');
+            session()->flash('success', 'Pengaturan klien berhasil disimpan.');
+            return $this->redirect(route('admin.clients'), navigate: true);
         } catch (\Exception $e) {
-            session()->flash('error', 'Terjadi kesalahan saat menyimpan pengaturan.');
+            $this->dispatch('admin-toast', type: 'error', title: 'Gagal', message: 'Terjadi kesalahan saat menyimpan pengaturan.');
         }
     }
 

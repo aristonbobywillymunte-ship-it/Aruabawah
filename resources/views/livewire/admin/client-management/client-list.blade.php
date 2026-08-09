@@ -146,4 +146,5 @@
             </div>
         @endif
     </div>
+    @include('components.admin-toast')
 </div>
