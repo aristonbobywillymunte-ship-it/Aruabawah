@@ -176,7 +176,7 @@
                 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
                 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
                 <script>
-                    document.addEventListener('livewire:initialized', () => {
+                    (function() {
                         const initSelect2 = () => {
                             if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
                                 jQuery('#project-select').select2({
@@ -193,22 +193,34 @@
                             }
                         };
                         
-                        initSelect2();
-                        
-                        Livewire.hook('morph.updated', ({ el, component }) => {
-                            // Only re-init if the select2 container is missing or destroyed
-                            if (!jQuery('#project-select').hasClass('select2-hidden-accessible')) {
-                                initSelect2();
+                        const setupLivewireHooks = () => {
+                            initSelect2();
+                            
+                            if (window.Livewire) {
+                                Livewire.hook('morph.updated', ({ el, component }) => {
+                                    // Only re-init if the select2 container is missing or destroyed
+                                    if (!jQuery('#project-select').hasClass('select2-hidden-accessible')) {
+                                        initSelect2();
+                                    }
+                                });
+                                
+                                // Clear selection when successfully assigned
+                                Livewire.on('admin-toast', () => {
+                                    if (jQuery('#project-select').hasClass('select2-hidden-accessible')) {
+                                        jQuery('#project-select').val(null).trigger('change.select2');
+                                    }
+                                });
                             }
-                        });
+                        };
+
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', setupLivewireHooks);
+                        } else {
+                            setupLivewireHooks();
+                        }
                         
-                        // Clear selection when successfully assigned
-                        Livewire.on('admin-toast', () => {
-                            if (jQuery('#project-select').hasClass('select2-hidden-accessible')) {
-                                jQuery('#project-select').val(null).trigger('change.select2');
-                            }
-                        });
-                    });
+                        document.addEventListener('livewire:navigated', setupLivewireHooks);
+                    })();
                 </script>
             @endpush
 
