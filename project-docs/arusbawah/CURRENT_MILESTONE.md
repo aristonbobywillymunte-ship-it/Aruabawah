@@ -1,0 +1,28 @@
+# Milestone: Client Project Assignment Hotfix
+
+## Apa yang Diubah
+Menambahkan fitur relasi *Assign* & *Detach* antara Client dan Project di halaman `Client Settings` melalui antarmuka *multi-select* (Select2 pillbox).
+
+## Behavior Final
+- User internal dapat melihat, menambah (multi-select), dan melepas proyek yang diakses oleh klien.
+- "Lepas" hanya menghapus relasi pivot (`project_user`), tidak menghapus proyek atau memicu *scraping*.
+- Quota (limit `max_projects` aktif) klien ditegakkan secara absolut selama pemilihan proyek, menjumlahkan total proyek aktif existing dengan pilihan baru.
+- UI menggunakan Select2 pillbox (multi-select) yang dapat memuat ulang opsinya dengan handal saat SPA navigation menggunakan `@assets` dan `@script` Livewire 3.
+
+## Komponen Kunci
+- `app/Livewire/Admin/ClientManagement/ClientSettings.php` (pengaturan logic `syncWithoutDetaching` dan array validation)
+- `resources/views/livewire/admin/client-management/client-settings.blade.php` (integrasi Select2 CDN dan SPA event hooking)
+- `tests/Feature/ClientProjectAssignmentTest.php` (unit test limitasi aktif/non-aktif)
+- `resources/views/welcome.blade.php` (struktur root element / stack scripts)
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO (memanfaatkan relasi `project_user` existing)
+- **Scraping / AI / Route berubah**: NO
+
+## Commit SHA Terkait
+- `3e59302` (fix: use native Livewire v3 @assets and @script for robust select2 SPA init)
+- `7c12653` (fix: select2 init hooks on SPA navigation)
+- `96ce116` (fix: add @stack('scripts') to welcome layout for select2)
+- `fdab246` (feat: select2 multi-select pillbox for projects)
+- `cefc5f2` (fix: use toast and select2 for client project assignment)
+- `876a9b8` (feat: allow internal users to manage client project assignments)
