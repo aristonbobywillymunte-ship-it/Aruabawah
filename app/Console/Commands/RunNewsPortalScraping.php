@@ -163,11 +163,27 @@ class RunNewsPortalScraping extends Command
                 }
 
                 // Check news interval defined in package
-                $newsInterval = (int) ($project->package->news_interval_minutes ?? 5);
-                if ($newsInterval > 0 && !$filterProjectId) {
-                    $lastNewsScrapedAt = Cache::get('news_last_scrape_at:' . $project->id);
-                    if ($lastNewsScrapedAt) {
-                        $lastScrapedTime = \Carbon\Carbon::parse($lastNewsScrapedAt);
+                $newsSchedule = $this->normalizeDailyRunTimes(
+                    $project->package->news_runs_per_day ?? null,
+                    $project->package->news_run_times ?? []
+                );
+                $lastNewsScrapedAt = Cache::get('news_last_scrape_at:' . $project->id);
+                $lastScrapedTime = $lastNewsScrapedAt ? \Carbon\Carbon::parse($lastNewsScrapedAt) : null;
+
+                if ($newsSchedule !== [] && !$filterProjectId) {
+                    if (! $this->isWithinDailyRunWindow($lastScrapedTime, $newsSchedule)) {
+                        $this->line("Skipping project [{$project->name}] — news schedule not due.");
+                        $portalLog->info('[Portal] Project skipped: news daily schedule not due.', [
+                            'project_id' => $project->id,
+                            'project_name' => $project->name,
+                            'last_run_at' => optional($lastScrapedTime)?->toDateTimeString(),
+                            'schedule' => $newsSchedule,
+                        ]);
+                        continue;
+                    }
+                } elseif ( (int) ($project->package->news_interval_minutes ?? 5) > 0 && !$filterProjectId ) {
+                    $newsInterval = (int) ($project->package->news_interval_minutes ?? 5);
+                    if ($lastScrapedTime) {
                         $nextNewsRunAt = $lastScrapedTime->copy()->addMinutes($newsInterval);
                         if (now()->lessThan($nextNewsRunAt)) {
                             $this->line("Skipping project [{$project->name}] — news interval not met. Next run at {$nextNewsRunAt->format('H:i')}");
@@ -2604,5 +2620,68 @@ class RunNewsPortalScraping extends Command
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    protected function normalizeDailyRunTimes($runsPerDay, $times): array
+    {
+        $count = (int) ($runsPerDay ?? 0);
+        if ($count <= 0) {
+            return [];
+        }
+
+        if (is_string($times)) {
+            $times = preg_split('/[\s,]+/', trim($times)) ?: [];
+        }
+
+        if (! is_array($times)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($times as $time) {
+            $time = trim((string) $time);
+            if ($time === '' || ! preg_match('/^(?:[01]?\d|2[0-3]):[0-5]\d$/', $time)) {
+                continue;
+            }
+            $normalized[] = $time;
+        }
+
+        $normalized = array_values(array_unique($normalized));
+        sort($normalized);
+
+        return count($normalized) === $count ? $normalized : [];
+    }
+
+    protected function isWithinDailyRunWindow(?Carbon $lastRunAt, array $runTimes, ?Carbon $now = null): bool
+    {
+        $now ??= now();
+
+        $dueSlots = [];
+        foreach ($runTimes as $time) {
+            try {
+                $dueSlots[] = Carbon::createFromFormat('Y-m-d H:i', $now->format('Y-m-d') . ' ' . $time, $now->timezone);
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        if ($dueSlots === []) {
+            return false;
+        }
+
+        usort($dueSlots, fn (Carbon $a, Carbon $b) => $a->timestamp <=> $b->timestamp);
+
+        $latestDueSlot = null;
+        foreach ($dueSlots as $slot) {
+            if ($slot->lessThanOrEqualTo($now)) {
+                $latestDueSlot = $slot;
+            }
+        }
+
+        if (! $latestDueSlot) {
+            return false;
+        }
+
+        return ! $lastRunAt || $lastRunAt->lessThan($latestDueSlot);
     }
 }

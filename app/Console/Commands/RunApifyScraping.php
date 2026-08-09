@@ -233,28 +233,51 @@ class RunApifyScraping extends Command
                     $hasQueue = ($candidateCount > 0);
                 }
 
-                 // Comment scraper must keep checking the queue every scheduler tick.
+                // Comment scraper must keep checking the queue every scheduler tick.
                 // Do not block it behind the long actor interval when the queue is empty.
-                $socialInterval = $actor->interval_minutes;
-                if ($project->package && isset($project->package->social_interval_minutes)) {
-                    $socialInterval = (int) $project->package->social_interval_minutes;
-                }
-                
-                if (! $isCommentScraper && $lastProjectActorRunAt && $socialInterval && !$hasQueue && !$forceDispatch) {
-                    $nextRunAt = $lastProjectActorRunAt->copy()->addMinutes($socialInterval);
-                    if (now()->lessThan($nextRunAt) && !$filterPlatform) {
-                        $this->line("Skipping {$actor->platform} — next run at {$nextRunAt->format('H:i')}");
-                        $socialLog->info('[Social] Actor skipped: interval not due.', [
-                            'project_id' => $project->id,
-                            'project_name' => $project->name,
-                            'platform' => $actor->platform,
-                            'actor_id' => $actor->id,
-                            'last_project_run_at' => $lastProjectActorRunAt->toDateTimeString(),
-                            'next_run_at' => $nextRunAt->toDateTimeString(),
-                            'effective_interval' => $socialInterval,
-                        ]);
-                        $skipStats['interval_not_due']++;
-                        continue;
+                $package = $project->package;
+                $socialSchedule = $package
+                    ? $this->normalizeDailyRunTimes($package->social_runs_per_day ?? null, $package->social_run_times ?? [])
+                    : [];
+
+                if (! $isCommentScraper && ! $forceDispatch) {
+                    if ($socialSchedule !== []) {
+                        if (! $this->isWithinDailyRunWindow($lastProjectActorRunAt, $socialSchedule)) {
+                            $this->line("Skipping {$actor->platform} — social schedule not due.");
+                            $socialLog->info('[Social] Actor skipped: daily schedule not due.', [
+                                'project_id' => $project->id,
+                                'project_name' => $project->name,
+                                'platform' => $actor->platform,
+                                'actor_id' => $actor->id,
+                                'last_project_run_at' => optional($lastProjectActorRunAt)?->toDateTimeString(),
+                                'schedule' => $socialSchedule,
+                            ]);
+                            $skipStats['interval_not_due']++;
+                            continue;
+                        }
+                    } elseif ($lastProjectActorRunAt && !$hasQueue) {
+                        $socialInterval = $actor->interval_minutes;
+                        if ($project->package && isset($project->package->social_interval_minutes)) {
+                            $socialInterval = (int) $project->package->social_interval_minutes;
+                        }
+
+                        if ($socialInterval) {
+                            $nextRunAt = $lastProjectActorRunAt->copy()->addMinutes($socialInterval);
+                            if (now()->lessThan($nextRunAt) && !$filterPlatform) {
+                                $this->line("Skipping {$actor->platform} — next run at {$nextRunAt->format('H:i')}");
+                                $socialLog->info('[Social] Actor skipped: interval not due.', [
+                                    'project_id' => $project->id,
+                                    'project_name' => $project->name,
+                                    'platform' => $actor->platform,
+                                    'actor_id' => $actor->id,
+                                    'last_project_run_at' => $lastProjectActorRunAt->toDateTimeString(),
+                                    'next_run_at' => $nextRunAt->toDateTimeString(),
+                                    'effective_interval' => $socialInterval,
+                                ]);
+                                $skipStats['interval_not_due']++;
+                                continue;
+                            }
+                        }
                     }
                 }
 
@@ -614,5 +637,68 @@ class RunApifyScraping extends Command
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    protected function normalizeDailyRunTimes($runsPerDay, $times): array
+    {
+        $count = (int) ($runsPerDay ?? 0);
+        if ($count <= 0) {
+            return [];
+        }
+
+        if (is_string($times)) {
+            $times = preg_split('/[\s,]+/', trim($times)) ?: [];
+        }
+
+        if (! is_array($times)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($times as $time) {
+            $time = trim((string) $time);
+            if ($time === '' || ! preg_match('/^(?:[01]?\d|2[0-3]):[0-5]\d$/', $time)) {
+                continue;
+            }
+            $normalized[] = $time;
+        }
+
+        $normalized = array_values(array_unique($normalized));
+        sort($normalized);
+
+        return count($normalized) === $count ? $normalized : [];
+    }
+
+    protected function isWithinDailyRunWindow(?Carbon $lastRunAt, array $runTimes, ?Carbon $now = null): bool
+    {
+        $now ??= now();
+
+        $dueSlots = [];
+        foreach ($runTimes as $time) {
+            try {
+                $dueSlots[] = Carbon::createFromFormat('Y-m-d H:i', $now->format('Y-m-d') . ' ' . $time, $now->timezone);
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        if ($dueSlots === []) {
+            return false;
+        }
+
+        usort($dueSlots, fn (Carbon $a, Carbon $b) => $a->timestamp <=> $b->timestamp);
+
+        $latestDueSlot = null;
+        foreach ($dueSlots as $slot) {
+            if ($slot->lessThanOrEqualTo($now)) {
+                $latestDueSlot = $slot;
+            }
+        }
+
+        if (! $latestDueSlot) {
+            return false;
+        }
+
+        return ! $lastRunAt || $lastRunAt->lessThan($latestDueSlot);
     }
 }

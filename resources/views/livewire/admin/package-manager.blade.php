@@ -522,25 +522,47 @@
                             </div>
                         </div>
 
-                        <!-- Interval Pengambilan Khusus Paket -->
+                        <!-- Jadwal Pengambilan Khusus Paket -->
                         <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                             <div>
                                 <div class="flex items-center justify-between mb-2">
-                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Interval Pengambilan Berita (Menit)</label>
+                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Portal Berita per Hari</label>
                                     <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">Wajib</span>
                                 </div>
-                                <input wire:model="news_interval_minutes" type="number" min="1" placeholder="Contoh: 5"
-                                    class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('news_interval_minutes') border-rose-300 bg-rose-50/50 @enderror" />
-                                @error('news_interval_minutes') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
+                                <input wire:model="news_runs_per_day" type="number" min="1" max="24" placeholder="Contoh: 3"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('news_runs_per_day') border-rose-300 bg-rose-50/50 @enderror" />
+                                @error('news_runs_per_day') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
+                                <p class="text-[10px] text-slate-400 mt-2">Isi berapa kali portal berita boleh berjalan dalam 24 jam.</p>
                             </div>
                             <div>
                                 <div class="flex items-center justify-between mb-2">
-                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Interval Pengambilan Media Sosial (Menit)</label>
+                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Jam Portal Berita</label>
                                     <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">Wajib</span>
                                 </div>
-                                <input wire:model="social_interval_minutes" type="number" min="1" placeholder="Contoh: 10"
-                                    class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('social_interval_minutes') border-rose-300 bg-rose-50/50 @enderror" />
-                                @error('social_interval_minutes') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
+                                <input wire:model="news_run_times" type="text" placeholder="08:00, 13:00, 20:00"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('news_run_times') border-rose-300 bg-rose-50/50 @enderror" />
+                                @error('news_run_times') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
+                                <p class="text-[10px] text-slate-400 mt-2">Format jam 24 jam, dipisah koma. Waktu server dipakai sebagai acuan.</p>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Sosial Media per Hari</label>
+                                    <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">Wajib</span>
+                                </div>
+                                <input wire:model="social_runs_per_day" type="number" min="1" max="24" placeholder="Contoh: 6"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('social_runs_per_day') border-rose-300 bg-rose-50/50 @enderror" />
+                                @error('social_runs_per_day') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
+                                <p class="text-[10px] text-slate-400 mt-2">Isi berapa kali sosial media boleh berjalan dalam 24 jam.</p>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Jam Sosial Media</label>
+                                    <span class="text-[9px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md">Wajib</span>
+                                </div>
+                                <input wire:model="social_run_times" type="text" placeholder="06:00, 10:00, 14:00, 18:00, 22:00"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('social_run_times') border-rose-300 bg-rose-50/50 @enderror" />
+                                @error('social_run_times') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
+                                <p class="text-[10px] text-slate-400 mt-2">Pisahkan dengan koma dan pastikan jumlah jam sesuai jumlah run.</p>
                             </div>
                         </div>
                     </div>

@@ -33,6 +33,10 @@ class PackageManager extends Component
     public bool $use_portal = true;
     public int $news_interval_minutes = 5;
     public int $social_interval_minutes = 10;
+    public ?int $news_runs_per_day = null;
+    public string $news_run_times = '';
+    public ?int $social_runs_per_day = null;
+    public string $social_run_times = '';
     public bool $is_popular = false;
     public ?int $max_projects = null;
     public ?int $max_keywords_per_project = null;
@@ -109,6 +113,10 @@ class PackageManager extends Component
             'use_portal'              => 'boolean',
             'news_interval_minutes'   => 'required|integer|min:1',
             'social_interval_minutes' => 'required|integer|min:1',
+            'news_runs_per_day'       => 'nullable|integer|min:1|max:24',
+            'news_run_times'          => 'nullable|string|max:255',
+            'social_runs_per_day'     => 'nullable|integer|min:1|max:24',
+            'social_run_times'        => 'nullable|string|max:255',
             'is_popular'              => 'boolean',
             'max_projects'            => 'nullable|integer|min:1',
             'max_keywords_per_project'=> 'nullable|integer|min:1',
@@ -124,6 +132,10 @@ class PackageManager extends Component
             'price.numeric'   => 'Format harganya kurang tepat. Masukkan angka saja, tanpa huruf.',
             'price.min'       => 'Harga tidak bisa negatif. Minimal 0 ya.',
             'description.max' => 'Deskripsinya terlalu panjang. Maksimal 1.000 karakter saja.',
+            'news_runs_per_day.min' => 'Jumlah run portal minimal 1.',
+            'news_runs_per_day.max' => 'Jumlah run portal maksimal 24.',
+            'social_runs_per_day.min' => 'Jumlah run sosmed minimal 1.',
+            'social_runs_per_day.max' => 'Jumlah run sosmed maksimal 24.',
             'max_projects.integer' => 'Batas maksimal proyek harus berupa angka.',
             'max_projects.min' => 'Batas maksimal proyek minimal 1.',
             'max_keywords_per_project.integer' => 'Batas maksimal kata kunci harus berupa angka.',
@@ -235,6 +247,10 @@ class PackageManager extends Component
         $this->use_portal            = (bool) ($pkg->use_portal ?? true);
         $this->news_interval_minutes = (int) ($pkg->news_interval_minutes ?? 5);
         $this->social_interval_minutes = (int) ($pkg->social_interval_minutes ?? 10);
+        $this->news_runs_per_day     = $pkg->news_runs_per_day;
+        $this->news_run_times        = $this->serializeTimesForInput($pkg->news_run_times ?? []);
+        $this->social_runs_per_day   = $pkg->social_runs_per_day;
+        $this->social_run_times      = $this->serializeTimesForInput($pkg->social_run_times ?? []);
         $this->is_popular            = (bool) ($pkg->is_popular ?? false);
         $this->max_projects          = $pkg->max_projects;
         $this->max_keywords_per_project = $pkg->max_keywords_per_project;
@@ -280,6 +296,7 @@ class PackageManager extends Component
     {
         $this->validate();
         $this->validateActorPackageConfig();
+        $this->validatePackageRunSchedules();
 
         // Pastikan parameter limit system di set ke unlimited / 500k penyebutan jika user tidak mengetiknya secara manual
         $this->limit_projects = 'unlimited';
@@ -300,6 +317,10 @@ class PackageManager extends Component
             'use_portal'              => $this->use_portal,
             'news_interval_minutes'   => $this->news_interval_minutes,
             'social_interval_minutes' => $this->social_interval_minutes,
+            'news_runs_per_day'       => blank($this->news_runs_per_day) ? null : (int) $this->news_runs_per_day,
+            'news_run_times'          => $this->parseTimesInput($this->news_run_times),
+            'social_runs_per_day'     => blank($this->social_runs_per_day) ? null : (int) $this->social_runs_per_day,
+            'social_run_times'        => $this->parseTimesInput($this->social_run_times),
             'is_popular'              => $this->is_popular,
             'max_projects'            => blank($this->max_projects) ? null : (int) $this->max_projects,
             'max_keywords_per_project'=> blank($this->max_keywords_per_project) ? null : (int) $this->max_keywords_per_project,
@@ -632,6 +653,10 @@ class PackageManager extends Component
         $this->use_portal            = true;
         $this->news_interval_minutes = 5;
         $this->social_interval_minutes = 10;
+        $this->news_runs_per_day     = null;
+        $this->news_run_times        = '';
+        $this->social_runs_per_day   = null;
+        $this->social_run_times      = '';
         $this->is_popular            = false;
         $this->max_projects          = null;
         $this->max_keywords_per_project = null;
@@ -661,6 +686,77 @@ class PackageManager extends Component
             'title'   => $message,
             'message' => '',
         ]);
+    }
+
+    protected function validatePackageRunSchedules(): void
+    {
+        $newsTimes = $this->parseTimesInput($this->news_run_times);
+        $socialTimes = $this->parseTimesInput($this->social_run_times);
+
+        if ($this->news_runs_per_day !== null) {
+            if ($newsTimes === []) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'news_run_times' => 'Jam run portal wajib diisi jika jumlah run per hari diatur.',
+                ]);
+            }
+
+            if (count($newsTimes) !== (int) $this->news_runs_per_day) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'news_run_times' => 'Jumlah jam portal harus sama dengan jumlah run per hari.',
+                ]);
+            }
+        }
+
+        if ($this->social_runs_per_day !== null) {
+            if ($socialTimes === []) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'social_run_times' => 'Jam run sosmed wajib diisi jika jumlah run per hari diatur.',
+                ]);
+            }
+
+            if (count($socialTimes) !== (int) $this->social_runs_per_day) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'social_run_times' => 'Jumlah jam sosmed harus sama dengan jumlah run per hari.',
+                ]);
+            }
+        }
+    }
+
+    protected function parseTimesInput(string $value): array
+    {
+        $parts = preg_split('/[\s,]+/', trim($value)) ?: [];
+        $times = [];
+
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if ($part === '') {
+                continue;
+            }
+
+            if (! preg_match('/^(?:[01]?\d|2[0-3]):[0-5]\d$/', $part)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'news_run_times' => 'Gunakan format jam HH:MM, misalnya 08:00, 13:30, 20:15.',
+                    'social_run_times' => 'Gunakan format jam HH:MM, misalnya 08:00, 13:30, 20:15.',
+                ]);
+            }
+
+            $times[] = $part;
+        }
+
+        $times = array_values(array_unique($times));
+        sort($times);
+
+        return $times;
+    }
+
+    protected function serializeTimesForInput(array $times): string
+    {
+        $normalized = array_values(array_filter(array_map(
+            static fn ($time) => is_string($time) ? trim($time) : '',
+            $times
+        )));
+
+        return implode(', ', $normalized);
     }
 
     public function dismissFlash(): void
