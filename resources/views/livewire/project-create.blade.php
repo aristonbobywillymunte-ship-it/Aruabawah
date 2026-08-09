@@ -48,78 +48,127 @@
         @if($createStep === 1)
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
                 @foreach($packages as $p)
-                    @php $isSelected = (int) $packageId === (int) $p->id; @endphp
+                    @php 
+                        $isSelected = (int) $packageId === (int) $p->id; 
+                        $isPremiumTheme = ($p->price > 0 && $packages->count() > 1) || str_contains(strtolower($p->name), 'enterprise') || str_contains(strtolower($p->name), 'vip');
+                    @endphp
 
                     <div
                         wire:click="$set('packageId', {{ $p->id }})"
-                        class="group relative cursor-pointer rounded-2xl transition-all duration-200 flex flex-col overflow-hidden
-                            {{ $isSelected
-                                ? 'shadow-[0_0_0_2px_#1fa387] shadow-[#1fa387]/10'
-                                : 'shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.10)]' }}"
+                        class="group relative cursor-pointer bg-white rounded-2xl md:rounded-3xl flex flex-col justify-between overflow-hidden transition-all duration-300
+                            {{ $isSelected 
+                                ? 'shadow-[0_0_0_2px_#1fa387] shadow-[#1fa387]/10 border-transparent' 
+                                : 'border border-[#1fa387]/15 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] hover:shadow-xl hover:-translate-y-1' }}"
                     >
-                        {{-- Absolute Popular Badge --}}
-                        @if($p->is_popular)
-                            <div class="absolute top-5 right-5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-400 text-white shadow-sm z-10 pointer-events-none">
-                                ⭐ Terpopuler
-                            </div>
+                        {{-- Top gradient accent bar --}}
+                        @if($isPremiumTheme)
+                            <div class="h-1.5 w-full bg-gradient-to-r from-[#1fa387] via-emerald-400 to-teal-500"></div>
+                        @else
+                            <div class="h-1.5 w-full bg-slate-200 group-hover:bg-slate-300 transition-colors"></div>
                         @endif
 
-                        {{-- Card body --}}
-                        <div class="p-6 flex flex-col gap-5 flex-1 relative {{ $isSelected ? 'bg-gradient-to-b from-[#1fa387]/[0.03] to-white' : 'bg-white' }}">
-
-                            {{-- Package identity --}}
-                            <div class="flex items-center gap-4 relative z-0">
-                                <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200
-                                    {{ $isSelected ? 'bg-[#1fa387] text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-[#1fa387]/10 group-hover:text-[#1fa387]' }}">
-                                    <span class="material-symbols-outlined text-[22px]">
-                                        {{ $p->name === 'Enterprise' ? 'rocket_launch' : 'widgets' }}
+                        <div class="p-6 md:p-7 flex flex-col flex-1 {{ $isSelected ? 'bg-gradient-to-b from-[#1fa387]/[0.03] to-white' : '' }}">
+                            
+                            {{-- Top Row: Badges --}}
+                            <div class="flex justify-between items-start mb-5">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    {{-- Terpopuler badge --}}
+                                    @if($p->is_popular)
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-400 text-white shadow-sm">
+                                        ⭐ Terpopuler
                                     </span>
-                                </div>
-                                <div class="pr-16"> {{-- Tambah padding right agar tidak menabrak absolute badge --}}
-                                    <h3 class="text-base font-hanken font-bold text-slate-900 leading-tight">{{ $p->name }}</h3>
-                                    <p class="text-xs text-slate-500 mt-0.5 leading-snug">
-                                        {{ $p->description ?: 'Solusi monitoring otomatis untuk bisnis Anda.' }}
-                                    </p>
+                                    @endif
                                 </div>
                             </div>
 
-                            {{-- Price --}}
-                            <div class="flex flex-col">
-                                @if(($p->price ?? 0) > 0)
-                                    <span class="font-hanken text-3xl font-black text-slate-900 leading-none">
-                                        Rp {{ number_format($p->price, 0, ',', '.') }}
-                                    </span>
-                                    <span class="text-xs font-semibold text-slate-400 mt-1.5">per bulan</span>
-                                @else
-                                    <span class="font-hanken text-lg font-bold text-slate-800 leading-none">
-                                        Hubungi Kami
-                                    </span>
-                                    <span class="text-xs text-slate-400 mt-1.5">Harga disesuaikan kebutuhan</span>
+                            {{-- Plan Name & Price --}}
+                            <div class="mb-5">
+                                <p class="text-[12px] font-black uppercase tracking-[0.25em] {{ $isPremiumTheme ? 'text-[#1fa387]' : 'text-slate-500' }} mb-1.5">{{ $p->name }}</p>
+                                <div class="flex items-end gap-1.5 mb-2">
+                                    @if(($p->price ?? 0) > 0)
+                                        <span class="text-3xl md:text-4xl font-black {{ $isPremiumTheme ? 'text-slate-700' : 'text-slate-800' }} leading-none">Rp {{ number_format($p->price, 0, ',', '.') }}</span>
+                                        <span class="text-slate-400 text-xs font-semibold pb-1">/bulan</span>
+                                    @else
+                                        <span class="text-2xl md:text-3xl font-black {{ $isPremiumTheme ? 'text-slate-700' : 'text-[#1fa387]' }} leading-none">Hubungi Kami</span>
+                                    @endif
+                                </div>
+                                <p class="text-slate-400 text-[11px] leading-relaxed">{{ $p->description ?: 'Solusi monitoring otomatis untuk bisnis Anda.' }}</p>
+                                
+                                {{-- Scraping Intervals & Limits Information --}}
+                                <div class="mt-3 grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-[10px] text-slate-500 font-semibold">
+                                    <div class="flex items-center gap-1.5" title="Batas maksimal proyek">
+                                        <span class="material-symbols-outlined text-[14px] text-[#1fa387]">folder</span>
+                                        <span>Maks. Proyek: {{ $p->max_projects ? $p->max_projects : 'Unlimited' }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5" title="Batas maksimal keyword per proyek">
+                                        <span class="material-symbols-outlined text-[14px] text-[#1fa387]">key</span>
+                                        <span>Keyword: {{ $p->max_keywords_per_project ? $p->max_keywords_per_project . ' / Proyek' : 'Unlimited' }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 mt-1 pt-1 border-t border-slate-200">
+                                        <span class="material-symbols-outlined text-[14px] text-violet-500">newspaper</span>
+                                        <span>Berita: {{ $p->news_interval_minutes ?? 5 }}m</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 mt-1 pt-1 border-t border-slate-200">
+                                        <span class="material-symbols-outlined text-[14px] text-sky-500">share</span>
+                                        <span>Sosmed: {{ $p->social_interval_minutes ?? 10 }}m</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Divider --}}
+                            <div class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-4"></div>
+
+                            {{-- Feature Categories (Exact Admin Design) --}}
+                            <div class="space-y-4 flex-1 mb-6">
+                                @php
+                                    $hasData = !empty($p->advantages) || !empty($p->social_media_features) || !empty($p->news_portal_features);
+                                @endphp
+
+                                {{-- Fitur Sosial Media --}}
+                                @php $socialList = $hasData ? ($p->social_media_features ?? []) : []; @endphp
+                                @if(!empty($socialList))
+                                <div>
+                                    <div class="flex items-center gap-1.5 mb-2">
+                                        <span class="material-symbols-outlined text-[11px] text-sky-500">share</span>
+                                        <span class="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400">Sosial Media & Keunggulan</span>
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        @foreach(array_slice($socialList, 0, 4) as $feat)
+                                        <div class="flex items-start gap-2">
+                                            <span class="w-4 h-4 rounded-md bg-sky-50 flex items-center justify-center shrink-0 border border-sky-100 mt-0.5">
+                                                <span class="material-symbols-outlined text-[9px] text-sky-500">check</span>
+                                            </span>
+                                            <span class="text-[11px] text-slate-600 font-medium leading-tight break-words min-w-0">{{ $feat }}</span>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
+
+                                {{-- Fitur Portal Berita --}}
+                                @php $newsList = $hasData ? ($p->news_portal_features ?? []) : []; @endphp
+                                @if(!empty($newsList))
+                                <div>
+                                    <div class="flex items-center gap-1.5 mb-2">
+                                        <span class="material-symbols-outlined text-[11px] text-violet-500">newspaper</span>
+                                        <span class="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400">Portal Berita</span>
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        @foreach(array_slice($newsList, 0, 3) as $feat)
+                                        <div class="flex items-start gap-2">
+                                            <span class="w-4 h-4 rounded-md bg-violet-50 flex items-center justify-center shrink-0 border border-violet-100 mt-0.5">
+                                                <span class="material-symbols-outlined text-[9px] text-violet-500">check</span>
+                                            </span>
+                                            <span class="text-[11px] text-slate-600 font-medium leading-tight break-words min-w-0">{{ $feat }}</span>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </div>
                                 @endif
                             </div>
 
-                            {{-- Scraping Intervals & Limits Information --}}
-                            <div class="mt-2 mb-2 grid grid-cols-2 gap-2 bg-slate-50/70 rounded-xl p-3 border border-slate-100/80 text-[10px] text-slate-500 font-semibold">
-                                <div class="flex items-center gap-1.5" title="Batas maksimal proyek">
-                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387]">folder</span>
-                                    <span>Maks. Proyek: {{ $p->max_projects ? $p->max_projects : 'Unlimited' }}</span>
-                                </div>
-                                <div class="flex items-center gap-1.5" title="Batas maksimal keyword per proyek">
-                                    <span class="material-symbols-outlined text-[14px] text-[#1fa387]">key</span>
-                                    <span>Keyword: {{ $p->max_keywords_per_project ? $p->max_keywords_per_project . ' / Proyek' : 'Unlimited' }}</span>
-                                </div>
-                                <div class="flex items-center gap-1.5 mt-1 pt-1.5 border-t border-slate-200/60">
-                                    <span class="material-symbols-outlined text-[14px] text-violet-500">newspaper</span>
-                                    <span>Berita: {{ $p->news_interval_minutes ?? 5 }}m</span>
-                                </div>
-                                <div class="flex items-center gap-1.5 mt-1 pt-1.5 border-t border-slate-200/60">
-                                    <span class="material-symbols-outlined text-[14px] text-sky-500">share</span>
-                                    <span>Sosmed: {{ $p->social_interval_minutes ?? 10 }}m</span>
-                                </div>
-                            </div>
-
                             {{-- CTA button --}}
-                            <button type="button" class="w-full py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-1.5
+                            <button type="button" class="mt-auto w-full py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-1.5
                                 {{ $isSelected
                                     ? 'bg-[#1fa387] text-white shadow-sm shadow-[#1fa387]/20'
                                     : 'bg-[#1fa387]/10 text-[#1fa387] group-hover:bg-[#1fa387]/15' }}">
@@ -131,27 +180,6 @@
                                     Pilih Paket
                                 @endif
                             </button>
-
-                            {{-- Features list --}}
-                            @php
-                                $features = array_merge(
-                                    array_slice($p->social_media_features ?? [], 0, 4),
-                                    array_slice($p->news_portal_features ?? [], 0, 3)
-                                );
-                            @endphp
-                            @if(!empty($features))
-                                <div class="pt-4">
-                                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Fitur Termasuk</p>
-                                    <div class="space-y-2">
-                                        @foreach($features as $feat)
-                                            <div class="flex items-start gap-2.5">
-                                                <span class="material-symbols-outlined text-[15px] text-[#1fa387] shrink-0 mt-[1px]">check_circle</span>
-                                                <span class="text-xs text-slate-600 leading-snug font-medium">{{ $feat }}</span>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
                         </div>
                     </div>
                 @endforeach
