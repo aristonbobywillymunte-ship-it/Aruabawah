@@ -59,7 +59,7 @@
 
                         <button type="button"
                                 wire:click="assignProject"
-                                class="w-full sm:w-auto px-6 py-2.5 min-h-[44px] text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
+                                class="cursor-pointer w-full sm:w-auto px-6 py-2.5 min-h-[44px] text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
                                 wire:loading.attr="disabled"
                                 {{ empty($selectedProjectIds) ? 'disabled' : '' }}>
                             <span wire:loading.remove wire:target="assignProject">Tambahkan</span>
