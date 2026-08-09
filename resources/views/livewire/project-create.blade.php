@@ -59,9 +59,8 @@
                     >
                         {{-- Absolute Popular Badge --}}
                         @if($p->is_popular)
-                            <div class="absolute top-5 right-5 inline-flex items-center gap-1 px-2.5 py-1 bg-amber-400 text-white rounded-full shadow-sm z-10 pointer-events-none">
-                                <span class="material-symbols-outlined text-[12px]">star</span>
-                                <span class="text-[9px] font-black uppercase tracking-wider">Populer</span>
+                            <div class="absolute top-5 right-5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-400 text-white shadow-sm z-10 pointer-events-none">
+                                ⭐ Terpopuler
                             </div>
                         @endif
 
