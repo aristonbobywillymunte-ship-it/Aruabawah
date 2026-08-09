@@ -115,15 +115,16 @@
             <!-- Assign New Project -->
             <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center gap-4">
                 <div class="flex-1 w-full" id="project-select-container">
-                    <select id="project-select" wire:model="selectedProjectId" class="w-full px-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387]">
-                        <option value="">Pilih proyek untuk ditambahkan...</option>
-                        @foreach($availableProjects as $proj)
-                            <option value="{{ $proj->id }}">
-                                {{ $proj->name }} ({{ $proj->is_active ? 'Aktif' : 'Nonaktif' }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('selectedProjectId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <div wire:ignore>
+                        <select id="project-select" class="w-full" multiple="multiple">
+                            @foreach($availableProjects as $proj)
+                                <option value="{{ $proj->id }}">
+                                    {{ $proj->name }} ({{ $proj->is_active ? 'Aktif' : 'Nonaktif' }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @error('selectedProjectIds') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 
                 <button type="button" wire:click="assignProject" class="px-6 py-2 text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors whitespace-nowrap disabled:opacity-50" wire:loading.attr="disabled">
@@ -136,20 +137,31 @@
                 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
                 <style>
                     /* Custom style to match the modern look */
-                    .select2-container .select2-selection--single {
-                        height: 38px !important;
+                    .select2-container .select2-selection--multiple {
+                        min-height: 38px !important;
                         border-radius: 0.75rem !important;
                         border-color: #e2e8f0 !important;
                         display: flex !important;
                         align-items: center !important;
+                        padding: 2px 4px !important;
                     }
-                    .select2-container--default .select2-selection--single .select2-selection__rendered {
+                    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                        background-color: #f1f5f9 !important;
+                        border: 1px solid #e2e8f0 !important;
+                        border-radius: 0.5rem !important;
                         color: #0f172a !important;
-                        font-size: 0.875rem !important;
-                        line-height: 1.25rem !important;
+                        font-size: 0.8125rem !important;
+                        padding: 2px 8px !important;
+                        margin-top: 4px !important;
                     }
-                    .select2-container--default .select2-selection--single .select2-selection__arrow {
-                        height: 36px !important;
+                    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+                        color: #64748b !important;
+                        margin-right: 4px !important;
+                        border-right: none !important;
+                    }
+                    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+                        background-color: transparent !important;
+                        color: #ef4444 !important;
                     }
                     .select2-dropdown {
                         border-color: #e2e8f0 !important;
@@ -168,18 +180,33 @@
                         const initSelect2 = () => {
                             if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
                                 jQuery('#project-select').select2({
-                                    placeholder: 'Pilih proyek untuk ditambahkan...',
-                                    width: '100%'
+                                    placeholder: 'Pilih satu atau lebih proyek...',
+                                    width: '100%',
+                                    multiple: true,
+                                    allowClear: true
                                 }).off('change').on('change', function(e) {
-                                    @this.set('selectedProjectId', e.target.value);
+                                    let values = jQuery(this).val() || [];
+                                    @this.set('selectedProjectIds', values);
                                 });
+                                // sync value
+                                jQuery('#project-select').val(@this.selectedProjectIds).trigger('change.select2');
                             }
                         };
                         
                         initSelect2();
                         
                         Livewire.hook('morph.updated', ({ el, component }) => {
-                            initSelect2();
+                            // Only re-init if the select2 container is missing or destroyed
+                            if (!jQuery('#project-select').hasClass('select2-hidden-accessible')) {
+                                initSelect2();
+                            }
+                        });
+                        
+                        // Clear selection when successfully assigned
+                        Livewire.on('admin-toast', () => {
+                            if (jQuery('#project-select').hasClass('select2-hidden-accessible')) {
+                                jQuery('#project-select').val(null).trigger('change.select2');
+                            }
                         });
                     });
                 </script>
@@ -224,6 +251,5 @@
         </div>
     </div>
 
+    @include('components.admin-toast')
 </div>
-
-@include('components.admin-toast')

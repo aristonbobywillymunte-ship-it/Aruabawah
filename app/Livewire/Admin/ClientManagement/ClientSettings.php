@@ -98,7 +98,7 @@ class ClientSettings extends Component
         }
     }
 
-    public $selectedProjectId = null;
+    public $selectedProjectIds = [];
     public $confirmDetachProjectId = null;
 
     public function assignProject()
@@ -106,32 +106,33 @@ class ClientSettings extends Component
         abort_if(!auth()->check() || auth()->user()->isClient(), 403, 'Akses ditolak.');
 
         $this->validate([
-            'selectedProjectId' => 'required|integer|exists:projects,id'
+            'selectedProjectIds' => 'required|array|min:1',
+            'selectedProjectIds.*' => 'integer|exists:projects,id'
         ]);
 
-        $project = \App\Models\Project::findOrFail($this->selectedProjectId);
-
-        // Pastikan project tidak di-soft-delete (findOrFail otomatis menangani jika menggunakan SoftDeletes)
+        $projects = \App\Models\Project::whereIn('id', $this->selectedProjectIds)->get();
+        $activeProjectsToAssign = $projects->where('is_active', true)->count();
         
         // Quota / Limit Check
         // Limit max_projects hanya menghitung proyek AKTIF.
-        if ($project->is_active) {
+        if ($activeProjectsToAssign > 0) {
             $effectiveMaxProjects = $this->client->getEffectiveMaxProjects();
             
             if ($effectiveMaxProjects !== null) {
                 // Hitung proyek aktif yang sudah di-assign ke client ini
                 $currentActiveAssigned = $this->client->projects()->where('is_active', true)->count();
                 
-                if ($currentActiveAssigned >= $effectiveMaxProjects) {
-                    $this->addError('selectedProjectId', 'Klien telah mencapai batas maksimal proyek aktif (Batas: ' . $effectiveMaxProjects . ').');
+                if (($currentActiveAssigned + $activeProjectsToAssign) > $effectiveMaxProjects) {
+                    $sisa = max(0, $effectiveMaxProjects - $currentActiveAssigned);
+                    $this->addError('selectedProjectIds', 'Klien telah mencapai batas maksimal proyek aktif (Batas: ' . $effectiveMaxProjects . '). Anda hanya dapat menambahkan ' . $sisa . ' proyek aktif lagi.');
                     return;
                 }
             }
         }
 
-        $this->client->projects()->syncWithoutDetaching([$this->selectedProjectId]);
+        $this->client->projects()->syncWithoutDetaching($this->selectedProjectIds);
         
-        $this->selectedProjectId = null;
+        $this->selectedProjectIds = [];
         $this->dispatch('admin-toast', type: 'success', title: 'Berhasil', message: 'Proyek berhasil ditambahkan ke klien.');
     }
 

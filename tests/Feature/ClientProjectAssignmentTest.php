@@ -63,7 +63,7 @@ class ClientProjectAssignmentTest extends TestCase
         
         Livewire::actingAs($this->admin)
             ->test(ClientSettings::class, ['user' => $this->client])
-            ->set('selectedProjectId', $project->id)
+            ->set('selectedProjectIds', [$project->id])
             ->call('assignProject')
             ->assertHasNoErrors()
             ->assertSee('Proyek berhasil ditambahkan ke klien.');
@@ -85,7 +85,7 @@ class ClientProjectAssignmentTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(ClientSettings::class, ['user' => $this->client])
-            ->set('selectedProjectId', $project->id)
+            ->set('selectedProjectIds', [$project->id])
             ->call('assignProject');
 
         $count = \DB::table('project_user')
@@ -165,9 +165,9 @@ class ClientProjectAssignmentTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(ClientSettings::class, ['user' => $this->client])
-            ->set('selectedProjectId', $project3->id)
+            ->set('selectedProjectIds', [$project3->id])
             ->call('assignProject')
-            ->assertHasErrors(['selectedProjectId']);
+            ->assertHasErrors(['selectedProjectIds']);
     }
 
     public function test_inactive_project_bypasses_active_quota()
@@ -182,7 +182,7 @@ class ClientProjectAssignmentTest extends TestCase
 
         Livewire::actingAs($this->admin)
             ->test(ClientSettings::class, ['user' => $this->client])
-            ->set('selectedProjectId', $project3->id)
+            ->set('selectedProjectIds', [$project3->id])
             ->call('assignProject')
             ->assertHasNoErrors();
             
