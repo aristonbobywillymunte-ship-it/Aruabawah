@@ -1070,13 +1070,13 @@ new class extends Component
                                             {{ sprintf('%02d', $idx + 1) }}
                                         </div>
                                         <div>
-                                            <div class="flex items-center gap-1.5 mb-0.5">
-                                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PROYEK</span>
-                                                <span class="text-[9px] text-slate-300">•</span>
-                                                <span class="text-[9px] text-slate-400 font-bold">Dibuat: {{ $projectCreatedAt }}</span>
+                                            <div class="flex items-center flex-wrap gap-1.5 mb-0.5">
+                                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">PROYEK</span>
+                                                <span class="text-[9px] text-slate-300 whitespace-nowrap">•</span>
+                                                <span class="text-[9px] text-slate-400 font-bold whitespace-nowrap">Dibuat: {{ $projectCreatedAt }}</span>
                                                 @if(!empty($project['package_name']))
-                                                    <span class="text-[9px] text-slate-300">•</span>
-                                                    <span class="px-2 py-0.5 rounded-md bg-[#1fa387]/10 text-[#1fa387] font-bold text-[9px] uppercase tracking-wider border border-[#1fa387]/20">{{ $project['package_name'] }}</span>
+                                                    <span class="text-[9px] text-slate-300 whitespace-nowrap">•</span>
+                                                    <span class="px-2 py-0.5 rounded-md bg-[#1fa387]/10 text-[#1fa387] font-bold text-[9px] uppercase tracking-wider border border-[#1fa387]/20 whitespace-nowrap">{{ $project['package_name'] }}</span>
                                                 @endif
                                             </div>
                                             <h2 class="text-xl font-hanken font-extrabold text-[#1fa387] uppercase leading-tight">{{ $project['name'] }}</h2>
