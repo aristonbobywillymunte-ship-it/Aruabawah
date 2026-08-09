@@ -110,19 +110,12 @@
             <p class="text-slate-500 text-sm mt-1">Kelola proyek mana saja yang dapat diakses oleh klien ini.</p>
         </div>
 
-        @if (session()->has('project_message'))
-            <div class="mb-4 p-4 rounded-xl bg-green-50 text-green-700 border border-green-200 flex items-center gap-3">
-                <span class="material-symbols-outlined text-[20px]">check_circle</span>
-                <span class="text-sm font-medium">{{ session('project_message') }}</span>
-            </div>
-        @endif
-
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             
             <!-- Assign New Project -->
             <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center gap-4">
-                <div class="flex-1">
-                    <select wire:model="selectedProjectId" class="w-full px-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387]">
+                <div class="flex-1 w-full" id="project-select-container">
+                    <select id="project-select" wire:model="selectedProjectId" class="w-full px-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387]">
                         <option value="">Pilih proyek untuk ditambahkan...</option>
                         @foreach($availableProjects as $proj)
                             <option value="{{ $proj->id }}">
@@ -132,11 +125,65 @@
                     </select>
                     @error('selectedProjectId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
+                
                 <button type="button" wire:click="assignProject" class="px-6 py-2 text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors whitespace-nowrap disabled:opacity-50" wire:loading.attr="disabled">
                     <span wire:loading.remove wire:target="assignProject">Tambahkan</span>
                     <span wire:loading wire:target="assignProject">Memproses...</span>
                 </button>
             </div>
+            
+            @push('styles')
+                <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+                <style>
+                    /* Custom style to match the modern look */
+                    .select2-container .select2-selection--single {
+                        height: 38px !important;
+                        border-radius: 0.75rem !important;
+                        border-color: #e2e8f0 !important;
+                        display: flex !important;
+                        align-items: center !important;
+                    }
+                    .select2-container--default .select2-selection--single .select2-selection__rendered {
+                        color: #0f172a !important;
+                        font-size: 0.875rem !important;
+                        line-height: 1.25rem !important;
+                    }
+                    .select2-container--default .select2-selection--single .select2-selection__arrow {
+                        height: 36px !important;
+                    }
+                    .select2-dropdown {
+                        border-color: #e2e8f0 !important;
+                        border-radius: 0.75rem !important;
+                        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+                        font-size: 0.875rem !important;
+                    }
+                </style>
+            @endpush
+
+            @push('scripts')
+                <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+                <script>
+                    document.addEventListener('livewire:initialized', () => {
+                        const initSelect2 = () => {
+                            if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+                                jQuery('#project-select').select2({
+                                    placeholder: 'Pilih proyek untuk ditambahkan...',
+                                    width: '100%'
+                                }).off('change').on('change', function(e) {
+                                    @this.set('selectedProjectId', e.target.value);
+                                });
+                            }
+                        };
+                        
+                        initSelect2();
+                        
+                        Livewire.hook('morph.updated', ({ el, component }) => {
+                            initSelect2();
+                        });
+                    });
+                </script>
+            @endpush
 
             <!-- Assigned Projects List -->
             <div class="divide-y divide-slate-100">
@@ -178,3 +225,5 @@
     </div>
 
 </div>
+
+@include('components.admin-toast')

@@ -132,7 +132,7 @@ class ClientSettings extends Component
         $this->client->projects()->syncWithoutDetaching([$this->selectedProjectId]);
         
         $this->selectedProjectId = null;
-        session()->flash('project_message', 'Proyek berhasil ditambahkan ke klien.');
+        $this->dispatch('admin-toast', type: 'success', title: 'Berhasil', message: 'Proyek berhasil ditambahkan ke klien.');
     }
 
     public function detachProject($projectId)
@@ -143,7 +143,7 @@ class ClientSettings extends Component
         $this->client->projects()->detach($projectId);
         
         $this->confirmDetachProjectId = null;
-        session()->flash('project_message', 'Proyek berhasil dilepas dari klien.');
+        $this->dispatch('admin-toast', type: 'success', title: 'Berhasil', message: 'Proyek berhasil dilepas dari klien.');
     }
 
     public function render()
