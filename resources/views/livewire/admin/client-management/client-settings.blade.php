@@ -312,7 +312,7 @@
                     <input wire:model="can_delete_projects" type="checkbox" class="w-5 h-5 text-red-500 rounded border-slate-300 focus:ring-red-500">
                     <div>
                         <div class="text-sm font-bold text-slate-800">Izinkan Menghapus Proyek</div>
-                        <div class="text-xs text-slate-500">Klien dapat menonaktifkan/menghapus proyeknya.</div>
+                        <div class="text-xs text-slate-500">Klien dapat menonaktifkan/menghapus proyeknya (hanya <i>soft-delete</i>, bukan hapus permanen).</div>
                     </div>
                 </label>
             </div>
