@@ -1076,7 +1076,10 @@ new class extends Component
                                                 <span class="text-[9px] text-slate-400 font-bold whitespace-nowrap">Dibuat: {{ $projectCreatedAt }}</span>
                                                 @if(!empty($project['package_name']))
                                                     <span class="text-[9px] text-slate-300 whitespace-nowrap">•</span>
-                                                    <span class="px-2 py-0.5 rounded-md bg-[#1fa387]/10 text-[#1fa387] font-bold text-[9px] uppercase tracking-wider border border-[#1fa387]/20 whitespace-nowrap">{{ $project['package_name'] }}</span>
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1fa387] text-white font-extrabold text-[9px] uppercase tracking-widest shadow-sm whitespace-nowrap">
+                                                        <svg class="w-3 h-3 text-yellow-300" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                                        {{ $project['package_name'] }}
+                                                    </span>
                                                 @endif
                                             </div>
                                             <h2 class="text-xl font-hanken font-extrabold text-[#1fa387] uppercase leading-tight">{{ $project['name'] }}</h2>
