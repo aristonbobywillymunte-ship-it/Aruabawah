@@ -1,5 +1,21 @@
 # QA History
 
+# Package Daily Schedule Slot Limit Hotfix
+**Tanggal**: 2026-08-09
+**Area**: Admin Package Manager, daily schedule slot resizing
+
+### Skenario yang Diuji & Hasil:
+1. **Clamp Slot Maksimum 24**: `resizeTimeSlots()` dikunci agar hasil render tidak pernah melebihi 24 slot untuk portal maupun sosmed.
+2. **Preservasi Nilai Lama**: Nilai yang sudah ada tetap dipertahankan saat input besar diklem ke 24.
+3. **Validasi Helper**: Test helper tanpa database berhasil memverifikasi 24, 25, 1000, negatif, null, dan preservasi nilai.
+4. **QA Command**: `php -l`, `php artisan test --filter=PackageDailyScheduleSupportTest`, `php artisan view:clear`, `php artisan route:list`, dan `git diff --check` dijalankan.
+
+### Catatan QA:
+- Browser QA belum dijalankan.
+- Command berbasis database tidak dibutuhkan untuk hotfix ini.
+
+**Status Akhir**: PASS untuk helper dan validasi sintaks.
+
 # Package Daily Schedule Time Picker Hotfix
 **Tanggal**: 2026-08-09
 **Area**: Admin Package Manager, Package model, daily scraping schedulers, package schedule migration

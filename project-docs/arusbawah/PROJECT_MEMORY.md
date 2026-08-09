@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur PACKAGE-DAILY-SCHEDULE-SLOT-LIMIT-HOTFIX-2
+- **Alasan**: Dynamic time picker jadwal harian bisa dipaksa merender terlalu banyak slot sebelum validasi save berjalan.
+- **Solusi**: `resizeTimeSlots()` dikunci maksimal 24 elemen sehingga state UI tidak pernah membengkak lewat batas yang diizinkan.
+- **Batasan**: Tidak ada perubahan migrasi, scheduler, route, atau logika bisnis paket; hanya hardening defensive pada state Livewire.
+- **QA**: Test helper tanpa database dipakai untuk memverifikasi 24, 25, 1000, negatif, null, dan preservasi nilai lama saat diklem.
+
 ## Konteks Fitur PACKAGE-DAILY-SCHEDULE-TIME-PICKER-HOTFIX-1
 - **Alasan**: Paket scraping perlu jadwal harian yang lebih jelas daripada interval menit, dengan slot jam native yang mudah diatur per portal dan sosmed.
 - **Solusi**: Menyimpan `runs_per_day` dan `run_times` sebagai array JSON terpisah untuk portal dan sosial media, lalu memetakan slot itu ke input `type="time"` dinamis di form paket.

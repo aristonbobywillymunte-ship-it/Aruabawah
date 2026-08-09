@@ -34,6 +34,63 @@ class PackageDailyScheduleSupportTest extends TestCase
         $this->assertSame(['08:00', '13:00', '', ''], $result);
     }
 
+    public function test_package_manager_caps_time_slots_at_twenty_four(): void
+    {
+        $component = new PackageManager();
+
+        $result24 = $this->invokeProtected($component, 'resizeTimeSlots', [
+            ['08:00', '13:00'],
+            24,
+        ]);
+
+        $result25 = $this->invokeProtected($component, 'resizeTimeSlots', [
+            ['08:00', '13:00'],
+            25,
+        ]);
+
+        $result1000 = $this->invokeProtected($component, 'resizeTimeSlots', [
+            ['08:00', '13:00'],
+            1000,
+        ]);
+
+        $this->assertCount(24, $result24);
+        $this->assertCount(24, $result25);
+        $this->assertCount(24, $result1000);
+    }
+
+    public function test_package_manager_resizes_negative_and_blank_values_to_empty_slots(): void
+    {
+        $component = new PackageManager();
+
+        $negative = $this->invokeProtected($component, 'resizeTimeSlots', [
+            ['08:00', '13:00'],
+            -5,
+        ]);
+
+        $blank = $this->invokeProtected($component, 'resizeTimeSlots', [
+            ['08:00', '13:00'],
+            null,
+        ]);
+
+        $this->assertSame([], $negative);
+        $this->assertSame([], $blank);
+    }
+
+    public function test_package_manager_preserves_existing_values_when_count_is_clamped(): void
+    {
+        $component = new PackageManager();
+
+        $result = $this->invokeProtected($component, 'resizeTimeSlots', [
+            ['08:00', '13:00'],
+            1000,
+        ]);
+
+        $this->assertSame('08:00', $result[0]);
+        $this->assertSame('13:00', $result[1]);
+        $this->assertSame('', $result[2]);
+        $this->assertSame('', $result[23]);
+    }
+
     public function test_package_manager_rejects_duplicate_times_per_field(): void
     {
         $component = new PackageManager();

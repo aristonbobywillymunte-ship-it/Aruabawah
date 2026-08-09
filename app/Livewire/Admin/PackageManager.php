@@ -736,7 +736,7 @@ class PackageManager extends Component
 
     protected function resizeTimeSlots(array $values, $runsPerDay): array
     {
-        $count = blank($runsPerDay) ? 0 : max(0, (int) $runsPerDay);
+        $count = blank($runsPerDay) ? 0 : min(24, max(0, (int) $runsPerDay));
         $values = array_values($values);
 
         if ($count <= 0) {

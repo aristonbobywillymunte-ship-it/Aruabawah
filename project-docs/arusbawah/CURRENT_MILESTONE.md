@@ -1,3 +1,28 @@
+# Milestone: Package Daily Schedule Slot Limit Hotfix
+
+## Tambahan Milestone: PACKAGE-DAILY-SCHEDULE-SLOT-LIMIT-HOTFIX-2
+
+## Apa yang Diubah
+Membatasi dynamic slot jadwal harian agar Livewire tidak pernah merender lebih dari 24 slot time picker untuk portal maupun sosmed.
+
+## Behavior Final
+- `resizeTimeSlots()` kini meng-clamp permintaan slot ke maksimum 24.
+- Nilai forged atau manual yang lebih besar dari 24 tidak dapat membengkakkan state UI.
+- Perilaku tambah/kurang slot, preservasi nilai lama, dan fallback interval lama tetap dipertahankan.
+
+## Komponen Kunci
+- `app/Livewire/Admin/PackageManager.php`
+- `tests/Feature/PackageDailyScheduleSupportTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Backend behavior berubah**: YES, defensif pada state UI Livewire
+- **Scraping / AI**: NO
+
+## Commit SHA Terkait
+- Pending
+
 # Milestone: Package Daily Schedule Time Picker Hotfix
 
 ## Tambahan Milestone: PACKAGE-DAILY-SCHEDULE-TIME-PICKER-HOTFIX-1
