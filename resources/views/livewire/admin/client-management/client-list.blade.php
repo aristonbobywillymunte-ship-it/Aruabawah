@@ -1,21 +1,22 @@
-@section('title', 'Manajemen Klien')
-
-@section('page-header')
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <h1 class="text-xl font-bold text-slate-900">Manajemen Klien</h1>
-            <p class="text-slate-500 text-sm mt-0.5">Kelola akun klien, batas limit, dan izin proyek secara real-time.</p>
-        </div>
-        <a href="{{ route('admin.clients.create') }}" wire:navigate
-           class="inline-flex items-center gap-2 px-4 py-2 bg-[#1fa387] hover:bg-[#188c73] text-white rounded-xl text-sm font-semibold transition-all shadow-sm shadow-[#1fa387]/20 hover:shadow-[#1fa387]/40 shrink-0">
-            <span class="material-symbols-outlined text-[18px]">person_add</span>
-            <span>Tambah Klien</span>
-        </a>
-    </div>
-@endsection
-
 <div>
+    @section('title', 'Manajemen Klien')
+
+    @section('page-header')
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Manajemen Klien</h1>
+                <p class="text-slate-500 text-sm mt-0.5">Kelola akun klien, batas limit, dan izin proyek secara real-time.</p>
+            </div>
+            <a href="{{ route('admin.clients.create') }}" wire:navigate
+               class="inline-flex items-center gap-2 px-4 py-2 bg-[#1fa387] hover:bg-[#188c73] text-white rounded-xl text-sm font-semibold transition-all shadow-sm shadow-[#1fa387]/20 hover:shadow-[#1fa387]/40 shrink-0">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>
+                <span>Tambah Klien</span>
+            </a>
+        </div>
+    @endsection
+
     {{-- Table Container --}}
+
     <div class="bg-white rounded-2xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-200 overflow-hidden flex flex-col">
         {{-- Toolbar --}}
         <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">

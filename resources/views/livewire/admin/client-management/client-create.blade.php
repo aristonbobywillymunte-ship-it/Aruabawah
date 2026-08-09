@@ -1,19 +1,20 @@
-@section('title', 'Tambah Klien Baru')
-
-@section('page-header')
-    <div class="flex items-center gap-3">
-        <a href="{{ route('admin.clients') }}" wire:navigate
-           class="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors">
-            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
-        </a>
-        <div>
-            <h1 class="text-xl font-bold text-slate-900">Tambah Klien Baru</h1>
-            <p class="text-slate-500 text-sm">Buat akun untuk klien Anda agar bisa mengelola proyek.</p>
-        </div>
-    </div>
-@endsection
-
 <div class="max-w-3xl">
+    @section('title', 'Tambah Klien Baru')
+
+    @section('page-header')
+        <div class="flex items-center gap-3">
+            <a href="{{ route('admin.clients') }}" wire:navigate
+               class="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Tambah Klien Baru</h1>
+                <p class="text-slate-500 text-sm">Buat akun untuk klien Anda agar bisa mengelola proyek.</p>
+            </div>
+        </div>
+    @endsection
+
+
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <form wire:submit.prevent="createClient" class="p-6 space-y-6">
 

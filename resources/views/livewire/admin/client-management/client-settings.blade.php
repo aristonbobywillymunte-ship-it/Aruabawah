@@ -1,19 +1,19 @@
-@section('title', 'Pengaturan Klien')
-
-@section('page-header')
-    <div class="flex items-center gap-3">
-        <a href="{{ route('admin.clients') }}" wire:navigate
-           class="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors">
-            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
-        </a>
-        <div>
-            <h1 class="text-xl font-bold text-slate-900">Pengaturan Klien: {{ $client->name }}</h1>
-            <p class="text-slate-500 text-sm">Atur hak akses, batas sumber daya, dan ketersediaan paket.</p>
-        </div>
-    </div>
-@endsection
-
 <div class="max-w-4xl">
+    @section('title', 'Pengaturan Klien')
+
+    @section('page-header')
+        <div class="flex items-center gap-3">
+            <a href="{{ route('admin.clients') }}" wire:navigate
+               class="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Pengaturan Klien: {{ $client->name }}</h1>
+                <p class="text-slate-500 text-sm">Atur hak akses, batas sumber daya, dan ketersediaan paket.</p>
+            </div>
+        </div>
+    @endsection
+
 
     <!-- PROYEK KLIEN SECTION -->
     <div class="mb-6">
