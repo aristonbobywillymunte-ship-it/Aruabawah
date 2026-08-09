@@ -19,11 +19,7 @@
     @endif
 
     <!-- PROYEK KLIEN SECTION -->
-    <div class="mt-10 mb-10">
-        <div class="mb-4">
-            <h2 class="text-xl font-bold text-slate-900">Proyek Klien</h2>
-            <p class="text-slate-500 text-sm mt-1">Kelola proyek mana saja yang dapat diakses oleh klien ini.</p>
-        </div>
+    <div class="mb-6">
 
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 
