@@ -1,5 +1,37 @@
 # Milestone: Client Project Assignment Hotfix
 
+## Tambahan Milestone: ADMIN-HEADER-CONSISTENCY-2
+
+## Apa yang Diubah
+Menyelesaikan konsistensi visual header untuk 6 halaman Admin yang masih memakai header lokal atau menaruh konten berat di area header.
+
+## Behavior Final
+- `Apify`, `Apify Financial Report`, `Packages`, `News Sources`, `Branding Aplikasi`, dan `AI Prompt Templates` kini memakai pola header Admin yang konsisten.
+- Dashboard tetap dipakai hanya sebagai referensi visual, bukan dependensi komponen.
+- Kontrol interaktif dipindahkan ke toolbar/konten jika sebelumnya membebani header.
+- Informational warning dan kartu penjelasan dipindah keluar dari header ke konten halaman.
+- Tidak ada shared header component dan tidak ada perubahan business logic.
+
+## Komponen Kunci
+- `resources/views/admin/apify-financial-report.blade.php`
+- `resources/views/admin/packages.blade.php`
+- `resources/views/admin/branding.blade.php`
+- `resources/views/admin/ai-prompt-templates.blade.php`
+- `resources/views/livewire/admin/apify-configuration.blade.php`
+- `resources/views/livewire/admin/apify-financial-report.blade.php`
+- `resources/views/livewire/admin/package-manager.blade.php`
+- `resources/views/livewire/admin/news-sources.blade.php`
+- `resources/views/livewire/admin/branding-manager.blade.php`
+- `resources/views/livewire/admin/ai-prompt-templates.blade.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Scraping / AI berubah**: NO
+
+## Commit SHA Terkait
+- Pending
+
 ## Tambahan Milestone: ADMIN-HEADER-STRUCTURE-HOTFIX-2
 
 ## Apa yang Diubah

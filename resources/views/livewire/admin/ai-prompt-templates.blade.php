@@ -1,12 +1,6 @@
 <div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
-        <div class="text-left">
-            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
-            <h1 class="text-2xl font-black text-slate-900 mt-1">AI Prompt Templates</h1>
-            <p class="text-xs text-slate-500 mt-1">Atur prompt utama, user prompt template, dan schema output secara manual untuk semua alur AI.</p>
-        </div>
-
+    <!-- Toolbar -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
             <div class="relative w-full sm:w-80">
                 <input 

@@ -41,25 +41,17 @@
     {{-- ═══════════════════════════════════════════════════════════════════ --}}
     @if($view === 'list')
     <div class="px-2 md:px-0">
-        {{-- Header Section --}}
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 text-left">
-            <div>
-                <p class="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Konfigurasi Sistem</p>
-                <h1 class="text-xl md:text-2xl font-black text-slate-900 mt-1 tracking-tight">Manajemen Paket</h1>
-                <p class="text-[11px] md:text-xs text-slate-500 mt-1 leading-relaxed">Buat bundel actor Apify dan kelola biaya per run yang di-override khusus per paket.</p>
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 text-left">
+            <div class="relative w-full md:max-w-md flex items-center">
+                <span class="material-symbols-outlined absolute left-4 text-slate-400 text-[18px] md:text-[20px] select-none pointer-events-none">search</span>
+                <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari paket berdasarkan nama atau deskripsi..." style="padding-left: 2.75rem;"
+                    class="w-full pr-4 py-2.5 md:py-3 rounded-xl md:rounded-2xl border border-slate-200 text-[11px] md:text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387] shadow-sm transition-all duration-200" />
             </div>
             <button wire:click="createPackage"
                 class="self-start md:self-auto flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl bg-[#1fa387] text-white text-[11px] md:text-xs font-black hover:bg-[#178a71] shadow-md hover:shadow-lg shadow-[#1fa387]/20 transition-all duration-200 active:scale-95 cursor-pointer">
                 <span class="material-symbols-outlined text-[16px] md:text-[18px]">add_box</span>
                 <span>Buat Paket Baru</span>
             </button>
-        </div>
-
-        {{-- Search Input (Premium Styling) --}}
-        <div class="mb-6 relative w-full max-w-full md:max-w-md flex items-center">
-            <span class="material-symbols-outlined absolute left-4 text-slate-400 text-[18px] md:text-[20px] select-none pointer-events-none">search</span>
-            <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari paket berdasarkan nama atau deskripsi..." style="padding-left: 2.75rem;"
-                class="w-full pr-4 py-2.5 md:py-3 rounded-xl md:rounded-2xl border border-slate-200 text-[11px] md:text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#1fa387]/40 focus:border-[#1fa387] shadow-sm transition-all duration-200" />
         </div>
 
         {{-- Grid Cards Layout --}}

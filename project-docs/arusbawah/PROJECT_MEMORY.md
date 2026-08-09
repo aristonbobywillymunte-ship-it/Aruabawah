@@ -1,5 +1,10 @@
 # Project Memory
 
+## Konteks Fitur ADMIN-HEADER-CONSISTENCY-2
+- **Alasan**: Enam halaman Admin masih memiliki header lokal yang tidak sepenuhnya konsisten dengan pola visual Dashboard.
+- **Solusi**: Menambahkan `page-header` yang ringan di wrapper untuk Apify Financial Report, Packages, Branding, dan AI Prompt Templates; mempertahankan teleport pada News Sources; serta memindahkan warning/kontrol berat ke toolbar konten atau block informasi di bawah header.
+- **Batasan**: Tidak ada shared header component, tidak ada refactor layout besar, dan tidak ada perubahan business logic.
+
 ## Konteks Fitur ADMIN-HEADER-STRUCTURE-HOTFIX-2
 - **Alasan**: Setelah hotfix header sebelumnya, audit menemukan dua regresi struktur Blade yang berpotensi memicu render error Livewire.
 - **Root Cause**: `resources/views/livewire/admin/system-logs.blade.php` masih memiliki orphan `@endsection` dan penutup root tambahan, sedangkan `resources/views/livewire/admin/client-management/client-settings.blade.php` masih memiliki Back button di luar root utama.

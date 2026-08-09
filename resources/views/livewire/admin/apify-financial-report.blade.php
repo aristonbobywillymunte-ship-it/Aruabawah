@@ -1,15 +1,9 @@
-<div class="w-full">
-    <!-- Header Page -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 text-left">
-        <div>
-            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Laporan Keuangan</p>
-            <h1 class="text-2xl font-hanken font-extrabold text-slate-800 mt-1">Apify Billing & Usage</h1>
-            <p class="text-xs text-slate-400 mt-1 font-medium">Pantau tagihan riil dan penggunaan saldo Apify dari setiap proses penarikan data selama 30 hari terakhir.</p>
-        </div>
-        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs font-black text-emerald-700 shadow-sm self-start md:self-auto">
+<div class="w-full space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 text-left">
+        <div class="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs font-black text-emerald-700 shadow-sm">
             <span class="material-symbols-outlined text-[16px]">payments</span>
             Total Penggunaan: ${{ $costSummary['total_all'] ?? '0.0000' }}
-        </span>
+        </div>
     </div>
 
     <!-- Filter Section per Proyek & Tanggal -->

@@ -1,5 +1,24 @@
 # QA History
 
+## Admin Header Consistency 2
+**Tanggal**: 2026-08-09
+**Area**: Apify, Apify Financial Report, Packages, News Sources, Branding, AI Prompt Templates
+
+### Skenario yang Diuji & Hasil:
+1. **Wrapper Headers Ditambahkan**: `resources/views/admin/apify-financial-report.blade.php`, `resources/views/admin/packages.blade.php`, `resources/views/admin/branding.blade.php`, dan `resources/views/admin/ai-prompt-templates.blade.php` kini memiliki page-header yang ringan dan konsisten.
+2. **Apify Warning Dipindah**: Blok penjelasan amber pada Apify dipindah keluar dari page-header ke blok informasi pertama di konten Livewire.
+3. **Apify Financial Summary**: `Total Penggunaan` tetap tampil di konten sebagai ringkasan, sementara header halaman dipegang wrapper.
+4. **Packages Toolbar**: Search dan `Buat Paket Baru` dirapikan menjadi toolbar awal di konten, tanpa header lokal yang berat.
+5. **News Sources Teleport**: `@teleport` dipertahankan, tetapi header diringankan dan kontrol interaktif dipindah ke toolbar konten.
+6. **Branding & AI Prompt Templates**: Header lokal lama dihapus dari Livewire, sehingga hanya wrapper yang mengendalikan page-header.
+7. **Validation / Lint**: Akan divalidasi dengan `php artisan view:clear`, `php artisan route:list`, dan `git diff --check`.
+
+### Catatan QA:
+- Browser QA belum dijalankan pada tahap ini.
+- Test framework yang memerlukan infrastruktur tidak dijalankan pada tahap ini.
+
+**Status Akhir**: Akan diperbarui setelah validasi final dan deploy sinkron.
+
 ## Admin Header Structure Hotfix
 **Tanggal**: 2026-08-09
 **Area**: Admin logs dan client settings Livewire views

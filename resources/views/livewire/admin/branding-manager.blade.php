@@ -1,13 +1,4 @@
 <div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
-        <div class="text-left">
-            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
-            <h1 class="text-2xl font-black text-slate-900 mt-1">Branding Aplikasi</h1>
-            <p class="text-xs text-slate-500 mt-1">Kustomisasi nama dan logo aplikasi Anda secara dinamis.</p>
-        </div>
-    </div>
-
     <div class="grid gap-6 md:grid-cols-3">
         <!-- Left Side: Form -->
         <div class="md:col-span-2 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-left">

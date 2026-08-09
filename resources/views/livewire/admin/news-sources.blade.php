@@ -6,37 +6,41 @@
 
     @teleport('#page-header-teleport-target')
         <!-- Header Section -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div class="text-left">
-                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
-                <h1 class="text-2xl font-black text-slate-900 mt-1">Manajemen Sumber Berita</h1>
-            </div>
+        <div class="flex flex-col gap-1 text-left max-w-3xl">
+            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
+            <h1 class="text-2xl font-black text-slate-900">Manajemen Sumber Berita</h1>
+            <p class="text-xs text-slate-500">Kelola portal berita, konfigurasi sumber, dan alur scraping manual.</p>
+        </div>
+    @endteleport
 
-            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                <div class="relative w-full sm:w-64">
-                    <input 
-                        wire:model.live.debounce.300ms="search" 
-                        type="text" 
-                        placeholder="Cari portal..." 
-                        class="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20"
-                    />
-                </div>
-                <button 
-                    wire:click="openTrashModal" 
+    <!-- News Sources Table Card -->
+    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left relative flex flex-col flex-1 min-h-0">
+        <div class="border-b border-slate-100 px-5 py-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="relative w-full sm:w-64">
+                <input
+                    wire:model.live.debounce.300ms="search"
+                    type="text"
+                    placeholder="Cari portal..."
+                    class="h-10 w-full rounded-2xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#1fa387] focus:ring-1 focus:ring-[#1fa387]/20"
+                />
+            </div>
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <button
+                    wire:click="openTrashModal"
                     class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
                 >
                     <span class="material-symbols-outlined text-[18px]">delete</span>
                     <span>Data Dihapus</span>
                 </button>
-                <a 
-                    href="{{ route('admin.logs', ['file' => 'portal-manual.log', 'source' => 'portal_manual']) }}" 
+                <a
+                    href="{{ route('admin.logs', ['file' => 'portal-manual.log', 'source' => 'portal_manual']) }}"
                     class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
                 >
                     <span class="material-symbols-outlined text-[18px]">terminal</span>
                     <span>Log Scraping</span>
                 </a>
-                <button 
-                    wire:click="create" 
+                <button
+                    wire:click="create"
                     class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap"
                 >
                     <span class="material-symbols-outlined text-[18px]">add</span>
@@ -68,10 +72,7 @@
                 </div>
             </div>
         </div>
-    @endteleport
 
-    <!-- News Sources Table Card -->
-    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left relative flex flex-col flex-1 min-h-0">
         <!-- Premium Modal-style Loading Overlay covering entire card body -->
         <div wire:loading wire:target="search, previousPage, nextPage, gotoPage" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/10 backdrop-blur-[2px] rounded-3xl transition-all duration-300">
             <div class="w-full max-w-[280px] rounded-3xl bg-white/95 border border-slate-100 p-5 shadow-2xl text-center space-y-3.5 flex flex-col items-center justify-center">
