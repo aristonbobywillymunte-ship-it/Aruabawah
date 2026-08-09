@@ -113,24 +113,52 @@
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             
             <!-- Assign New Project -->
-            <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center gap-4">
-                <div class="flex-1 w-full" id="project-select-container">
-                    <div wire:ignore>
-                        <select id="project-select" class="w-full" multiple="multiple">
-                            @foreach($availableProjects as $proj)
-                                <option value="{{ $proj->id }}">
-                                    {{ $proj->name }} ({{ $proj->is_active ? 'Aktif' : 'Nonaktif' }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @error('selectedProjectIds') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            <div class="p-5 border-b border-slate-100 bg-slate-50 flex flex-col gap-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800">Tambahkan Proyek</h3>
+                    <p class="text-slate-500 text-xs mt-0.5">Cari proyek yang ingin diberikan akses ke klien.</p>
                 </div>
-                
-                <button type="button" wire:click="assignProject" class="px-6 py-2 text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors whitespace-nowrap disabled:opacity-50" wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="assignProject">Tambahkan</span>
-                    <span wire:loading wire:target="assignProject">Memproses...</span>
-                </button>
+
+                @if($availableProjects->isEmpty())
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 text-center text-sm text-slate-500">
+                        Tidak ada proyek tersedia untuk ditambahkan.
+                    </div>
+                @else
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-4">
+                        <div class="flex-1 w-full" id="project-select-container">
+                            <div wire:ignore>
+                                <select id="project-select" class="w-full" multiple="multiple">
+                                    @foreach($availableProjects as $proj)
+                                        <option value="{{ $proj->id }}" 
+                                                data-status="{{ $proj->is_active ? 'Aktif' : 'Nonaktif' }}" 
+                                                data-package="{{ $proj->package ? $proj->package->name : 'Tanpa Paket' }}">
+                                            {{ $proj->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="flex items-center justify-between mt-1 min-h-[20px]">
+                                <div>
+                                    @error('selectedProjectIds') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
+                                </div>
+                                @if(count($selectedProjectIds) > 0)
+                                    <div class="text-xs font-bold text-[#1fa387]">
+                                        {{ count($selectedProjectIds) }} proyek dipilih
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <button type="button" 
+                                wire:click="assignProject" 
+                                class="w-full sm:w-auto px-6 py-2.5 min-h-[44px] text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed" 
+                                wire:loading.attr="disabled"
+                                {{ empty($selectedProjectIds) ? 'disabled' : '' }}>
+                            <span wire:loading.remove wire:target="assignProject">Tambahkan</span>
+                            <span wire:loading wire:target="assignProject">Memproses...</span>
+                        </button>
+                    </div>
+                @endif
             </div>
             
             @assets
@@ -138,26 +166,35 @@
                 <style>
                     /* Custom style to match the modern look */
                     .select2-container .select2-selection--multiple {
-                        min-height: 38px !important;
+                        min-height: 44px !important;
                         border-radius: 0.75rem !important;
                         border-color: #e2e8f0 !important;
                         display: flex !important;
                         align-items: center !important;
-                        padding: 2px 4px !important;
+                        padding: 4px 8px !important;
                     }
                     .select2-container--default .select2-selection--multiple .select2-selection__choice {
                         background-color: #f1f5f9 !important;
                         border: 1px solid #e2e8f0 !important;
-                        border-radius: 0.5rem !important;
+                        border-radius: 9999px !important;
                         color: #0f172a !important;
                         font-size: 0.8125rem !important;
-                        padding: 2px 8px !important;
+                        font-weight: 500 !important;
+                        padding: 4px 12px !important;
                         margin-top: 4px !important;
+                        display: flex !important;
+                        flex-direction: row-reverse !important;
+                        align-items: center !important;
+                        gap: 6px !important;
                     }
                     .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
                         color: #64748b !important;
-                        margin-right: 4px !important;
-                        border-right: none !important;
+                        margin: 0 !important;
+                        border: none !important;
+                        position: static !important;
+                        font-weight: normal !important;
+                        font-size: 1rem !important;
+                        line-height: 1 !important;
                     }
                     .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
                         background-color: transparent !important;
@@ -166,8 +203,22 @@
                     .select2-dropdown {
                         border-color: #e2e8f0 !important;
                         border-radius: 0.75rem !important;
-                        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+                        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
                         font-size: 0.875rem !important;
+                        padding: 4px !important;
+                    }
+                    .select2-search__field {
+                        color: #0f172a !important;
+                        margin-top: 5px !important;
+                    }
+                    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+                        background-color: #f8fafc !important;
+                        color: #0f172a !important;
+                        border-radius: 0.5rem !important;
+                    }
+                    .select2-results__option {
+                        padding: 6px 12px !important;
+                        margin-bottom: 2px !important;
                     }
                 </style>
                 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -184,11 +235,42 @@
                             if (el.hasClass('select2-hidden-accessible')) {
                                 el.select2('destroy');
                             }
+                            const formatProject = (project) => {
+                                if (!project.id) return project.text;
+                                
+                                const el = $(project.element);
+                                const status = el.data('status');
+                                const pkg = el.data('package');
+                                const isActive = status === 'Aktif';
+                                
+                                const statusBadge = isActive 
+                                    ? `<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md whitespace-nowrap">Aktif</span>`
+                                    : `<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 border border-slate-200 rounded-md whitespace-nowrap">Nonaktif</span>`;
+                                    
+                                return $(`
+                                    <div class="flex items-center justify-between gap-4 py-1">
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-slate-800 text-sm leading-tight">${project.text}</span>
+                                            <span class="text-xs text-slate-500 mt-0.5">${pkg}</span>
+                                        </div>
+                                        <div>
+                                            ${statusBadge}
+                                        </div>
+                                    </div>
+                                `);
+                            };
+
+                            const formatSelection = (project) => {
+                                return project.text;
+                            };
+
                             el.select2({
-                                placeholder: 'Pilih satu atau lebih proyek...',
+                                placeholder: 'Cari & pilih proyek...',
                                 width: '100%',
                                 multiple: true,
-                                allowClear: true
+                                allowClear: true,
+                                templateResult: formatProject,
+                                templateSelection: formatSelection
                             });
                             
                             el.off('change').on('change', function(e) {

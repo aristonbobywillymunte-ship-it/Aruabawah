@@ -7,7 +7,7 @@ Menambahkan fitur relasi *Assign* & *Detach* antara Client dan Project di halama
 - User internal dapat melihat, menambah (multi-select), dan melepas proyek yang diakses oleh klien.
 - "Lepas" hanya menghapus relasi pivot (`project_user`), tidak menghapus proyek atau memicu *scraping*.
 - Quota (limit `max_projects` aktif) klien ditegakkan secara absolut selama pemilihan proyek, menjumlahkan total proyek aktif existing dengan pilihan baru.
-- UI menggunakan Select2 pillbox (multi-select) yang dapat memuat ulang opsinya dengan handal saat SPA navigation menggunakan `@assets` dan `@script` Livewire 4.
+- UI menggunakan Select2 pillbox (multi-select) yang dapat memuat ulang opsinya dengan handal saat SPA navigation menggunakan `@assets` dan `@script` Livewire 4. Desain dipercantik dengan meta-data opsi (*templateResult*), *placeholder* & label informatif, serta status tombol *disabled* jika kosong.
 - Select2 initialization dibuat *idempotent* (destroy-before-init) dan ter-*scope* ke instance `$wire.$el` agar tidak bentrok saat Livewire 4 melakukan morphing DOM.
 - Relasi Assign/Detach otomatis mereset dan memuat ulang dropdown options Select2 tanpa merusak integrasi JavaScript.
 
