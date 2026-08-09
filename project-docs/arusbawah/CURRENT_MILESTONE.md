@@ -22,7 +22,7 @@ Menambahkan fitur relasi *Assign* & *Detach* antara Client dan Project di halama
 - **Scraping / AI / Route berubah**: NO
 
 ## Commit SHA Terkait
-- `[TODO_COMMIT_SHA]` (fix: stabilize client project select2 on livewire 4)
+- `3e71ac8` (fix: stabilize client project select2 on livewire 4)
 - `3e59302` (fix: use native Livewire v3 @assets and @script for robust select2 SPA init)
 - `7c12653` (fix: select2 init hooks on SPA navigation)
 - `96ce116` (fix: add @stack('scripts') to welcome layout for select2)
