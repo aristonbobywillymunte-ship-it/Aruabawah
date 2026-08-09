@@ -979,22 +979,7 @@ new class extends Component
                     <!-- Title Section -->
                     <section class="mb-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <div class="flex items-center gap-3 mb-1">
-                                <h1 class="text-2xl font-hanken font-bold text-slate-900">Daftar Proyek Anda</h1>
-                                @php
-                                    $user = auth()->user();
-                                    $packages = $user->isClient() ? $user->allowedPackages : collect();
-                                @endphp
-                                @if($packages->isNotEmpty())
-                                    <div class="flex gap-1.5">
-                                        @foreach($packages as $pkg)
-                                            <span class="px-2.5 py-0.5 rounded-md bg-[#1fa387]/10 text-[#1fa387] text-xs font-bold border border-[#1fa387]/20 uppercase tracking-wider">
-                                                Paket {{ $pkg->name }}
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            </div>
+                            <h1 class="text-2xl font-hanken font-bold text-slate-900 mb-1">Daftar Proyek Anda</h1>
                             <p class="text-slate-500 text-sm">Kelola dan pantau seluruh kampanye media monitoring Anda secara real-time.</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-3">
@@ -1089,6 +1074,10 @@ new class extends Component
                                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PROYEK</span>
                                                 <span class="text-[9px] text-slate-300">•</span>
                                                 <span class="text-[9px] text-slate-400 font-bold">Dibuat: {{ $projectCreatedAt }}</span>
+                                                @if(!empty($project['package_name']))
+                                                    <span class="text-[9px] text-slate-300">•</span>
+                                                    <span class="px-2 py-0.5 rounded-md bg-[#1fa387]/10 text-[#1fa387] font-bold text-[9px] uppercase tracking-wider border border-[#1fa387]/20">{{ $project['package_name'] }}</span>
+                                                @endif
                                             </div>
                                             <h2 class="text-xl font-hanken font-extrabold text-[#1fa387] uppercase leading-tight">{{ $project['name'] }}</h2>
                                         </div>

@@ -305,6 +305,7 @@ class ProjectsList extends Component
     {
         return Project::accessibleBy(auth()->user())
             ->where('is_active', true)
+            ->with('package')
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()
@@ -443,6 +444,7 @@ class ProjectsList extends Component
         return [
             'id' => $project->id,
             'name' => $project->name,
+            'package_name' => optional($project->package)->name,
             'mentions' => number_format($mentions, 0, ',', '.'),
             'reach' => $reach,
             'positive' => $posPercent . '%',
