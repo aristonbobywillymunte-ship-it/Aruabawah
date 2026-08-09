@@ -102,9 +102,6 @@
             </div>
         </div>
     </div>
-@endsection
-
-<div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
 
     <!-- Terminal Output -->
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left flex flex-col">
@@ -190,5 +187,4 @@
                 </tbody>
             </table>
         </div>
-    </div>
     </div>

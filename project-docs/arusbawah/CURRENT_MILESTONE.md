@@ -1,5 +1,30 @@
 # Milestone: Client Project Assignment Hotfix
 
+## Tambahan Milestone: ADMIN-HEADER-STRUCTURE-HOTFIX-2
+
+## Apa yang Diubah
+Memperbaiki struktur Blade pada `system-logs` dan `client-settings` setelah hotfix header sebelumnya, agar setiap halaman tetap punya satu root Livewire yang valid.
+
+## Behavior Final
+- `system-logs` sekarang memiliki satu root Livewire, tanpa orphan `@endsection`.
+- `client-settings` sekarang menempatkan Back button di dalam root, dekat toolbar atas, sebelum section proyek.
+- Tidak ada perubahan pada page-header ownership: `logs` tetap dimiliki wrapper `admin/logs.blade.php`, dan `client-settings` tetap dimiliki wrapper `admin/clients-settings.blade.php`.
+- Tidak ada perubahan pada Select2, assign/detach, quota, save flow, permissions, route, scraping, AI, atau database operations.
+
+## Komponen Kunci
+- `resources/views/livewire/admin/system-logs.blade.php`
+- `resources/views/livewire/admin/client-management/client-settings.blade.php`
+- `resources/views/admin/logs.blade.php`
+- `resources/views/admin/clients-settings.blade.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Scraping / AI berubah**: NO
+
+## Commit SHA Terkait
+- Pending
+
 ## Tambahan Milestone: ADMIN-HEADER-VISUAL-CONSISTENCY-1
 
 ## Apa yang Diubah
@@ -23,7 +48,7 @@ Menyamakan tampilan header halaman Admin agar mengikuti gaya visual Dashboard ya
 - **Scraping / AI berubah**: NO
 
 ## Commit SHA Terkait
-- Pending
+- `f56f6f5c774ea781d191c661aeb8b48e32fc19ca`
 
 ## Apa yang Diubah
 Menambahkan fitur relasi *Assign* & *Detach* antara Client dan Project di halaman `Client Settings` melalui antarmuka *multi-select* (Select2 pillbox).

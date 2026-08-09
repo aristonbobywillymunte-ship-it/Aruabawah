@@ -1,5 +1,21 @@
 # QA History
 
+## Admin Header Structure Hotfix
+**Tanggal**: 2026-08-09
+**Area**: Admin logs dan client settings Livewire views
+
+### Skenario yang Diuji & Hasil:
+1. **System Logs Root Structure**: `resources/views/livewire/admin/system-logs.blade.php` diperiksa untuk memastikan hanya ada satu root Livewire, tanpa orphan `@endsection`, dan semua toolbar/filter/terminal berada di dalam root yang sama.
+2. **Client Settings Root Structure**: `resources/views/livewire/admin/client-management/client-settings.blade.php` diperiksa untuk memastikan Back button berada di dalam root utama dan tampil di bagian atas sebelum section proyek.
+3. **One Header Owner Rule**: `resources/views/admin/logs.blade.php` dan `resources/views/admin/clients-settings.blade.php` tetap menjadi pemilik header halaman masing-masing.
+4. **Validation / Lint**: Akan divalidasi dengan `git diff --check` dan `php artisan view:clear`.
+
+### Catatan QA:
+- Browser QA belum dijalankan pada tahap ini.
+- Test framework lain belum dijalankan pada saat catatan ini dibuat.
+
+**Status Akhir**: Diperbarui setelah validasi final dan sinkronisasi deploy.
+
 ## Admin Header Visual Consistency
 **Tanggal**: 2026-08-09
 **Area**: Admin dashboard, users, clients, client create, client settings, packages, AI providers, scraping settings, logs, maintenance, database

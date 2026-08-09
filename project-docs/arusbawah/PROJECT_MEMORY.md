@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur ADMIN-HEADER-STRUCTURE-HOTFIX-2
+- **Alasan**: Setelah hotfix header sebelumnya, audit menemukan dua regresi struktur Blade yang berpotensi memicu render error Livewire.
+- **Root Cause**: `resources/views/livewire/admin/system-logs.blade.php` masih memiliki orphan `@endsection` dan penutup root tambahan, sedangkan `resources/views/livewire/admin/client-management/client-settings.blade.php` masih memiliki Back button di luar root utama.
+- **Solusi**: Menjaga page-header tetap dimiliki wrapper, lalu membenahi struktur Livewire agar masing-masing view hanya memiliki satu root element dan semua kontrol penting tetap berada di dalam root yang sama.
+- **Batasan**: Tidak ada perubahan backend, route, permission, scraper, AI, atau migrasi.
+
 ## Konteks Fitur ADMIN-HEADER-VISUAL-CONSISTENCY-1
 - **Alasan**: Beberapa halaman Admin menampilkan header dengan markup dan spacing yang berbeda-beda, sehingga pengalaman visual terasa tidak seragam dibanding Dashboard.
 - **Solusi**: Menyamakan header per-halaman pada wrapper Blade dan komponen Livewire yang memang membutuhkan toolbar interaktif, dengan mempertahankan judul, deskripsi, dan action masing-masing halaman.

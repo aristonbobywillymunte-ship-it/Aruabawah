@@ -1,6 +1,13 @@
 <div class="max-w-4xl space-y-6">
     @section('title', 'Pengaturan Klien')
 
+    <div class="flex items-center justify-between">
+        <a href="{{ route('admin.clients') }}" wire:navigate
+           class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors">
+            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        </a>
+    </div>
+
 
     <!-- PROYEK KLIEN SECTION -->
     <div class="mb-6">
@@ -357,9 +364,3 @@
     </form>
 
 </div>
-    <div class="flex items-center justify-between">
-        <a href="{{ route('admin.clients') }}" wire:navigate
-           class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors">
-            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
-        </a>
-    </div>
