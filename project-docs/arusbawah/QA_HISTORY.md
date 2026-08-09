@@ -25,3 +25,30 @@
 4. **Resync Otomatis**: Memastikan bahwa *backend pipeline* sinkronisasi tidak tersentuh dan service `ContentMatchingService::resyncProjectContent()` maupun *Job* lain yang berjalan otomatis pasca Create/Edit Project masih sepenuhnya berfungsi secara siluman (*background*).
 
 **Status Akhir**: PASS (Deployed di server `main`)
+
+## PROJECT-TRASH-AUTH-HARDENING
+**Tanggal**: 2026-08-09
+**Area**: ProjectsList Livewire Component - Deactivate/Restore/Force Delete Authorization
+
+### Skenario yang Diuji & Hasil:
+1. **UI Terminology**: "Proyek Dinonaktifkan" tampil menggantikan "Lihat/Daftar Proyek Dihapus" di button dan modal header.
+2. **Admin/User Internal - Deactivate**: Dapat membuka modal konfirmasi dan menonaktifkan proyek. Proyek ter-soft-delete.
+3. **Admin/User Internal - Open Trashed Modal**: `openTrashedProjectsModal()` membuka modal "Proyek Dinonaktifkan".
+4. **Admin/User Internal - Restore**: Dapat memulihkan proyek yang dinonaktifkan. `deleted_at` menjadi null.
+5. **Admin/User Internal - Force Delete**: Dapat menghapus proyek secara permanen. Record `projects` hilang, relasi operasional terhapus, record `Article`/`SocialMediaItem` tetap ada.
+6. **Client (can_delete_projects=false) - Tombol Deactivate**: Tombol tidak tampil di UI. Panggilan langsung ke `confirmDeleteProject()` ditolak (modal tidak terbuka).
+7. **Client (can_delete_projects=false) - Bypass Deactivate**: `deleteProject()` langsung ditolak oleh backend, proyek tetap aktif.
+8. **Client (can_delete_projects=false) - Trashed Modal**: `openTrashedProjectsModal()` ditolak, `showTrashedModal` tetap false.
+9. **Client (can_delete_projects=false) - Restore/ForceDelete**: Ditolak di `confirmRestoreProject()`, `restoreProject()`, `confirmForceDeleteProject()`, `forceDeleteProject()`. Tidak ada perubahan pada state proyek.
+10. **Client (can_delete_projects=true) - Deactivate**: Dapat menonaktifkan proyek yang ter-assign. Proyek ter-soft-delete.
+11. **Client (can_delete_projects=true) - Trashed Modal**: Tetap ditolak. `showTrashedModal` tetap false.
+12. **Client (can_delete_projects=true) - Restore/ForceDelete**: Tetap ditolak meski punya izin hapus aktif.
+13. **Source Data Preservation**: Setelah force-delete Admin, `Article` dan `SocialMediaItem` source record tetap ada di database. Hanya `project_id` yang di-null-kan.
+14. **Pivot Cleanup**: `project_user` pivot untuk project yang di-force-delete berhasil dihapus.
+
+### Test Coverage:
+- `tests/Feature/ProjectTrashAuthorizationTest.php` (17 test cases baru)
+- PHP Lint: PASS untuk semua file yang diubah
+
+**Status Akhir**: PASS (Deployed di server `main`)
+

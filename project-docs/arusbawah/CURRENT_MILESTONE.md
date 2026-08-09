@@ -34,3 +34,31 @@ Menambahkan fitur relasi *Assign* & *Detach* antara Client dan Project di halama
 - `fdab246` (feat: select2 multi-select pillbox for projects)
 - `cefc5f2` (fix: use toast and select2 for client project assignment)
 - `876a9b8` (feat: allow internal users to manage client project assignments)
+
+---
+
+# Milestone: PROJECT-TRASH-AUTH-HARDENING
+
+## Apa yang Diubah
+Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Client tidak dapat mengakses fitur yang tidak seharusnya, bahkan dengan bypass UI.
+
+## Behavior Final
+- **Terminologi**: Rename "Lihat Proyek Dihapus" dan "Daftar Proyek Dihapus" menjadi "Proyek Dinonaktifkan" di seluruh UI.
+- **Tombol Deactivate**: Disembunyikan dari Client jika `clientSettings.can_delete_projects = false`. Admin/User Internal tetap memiliki akses penuh.
+- **Modal Proyek Dinonaktifkan**: Hanya dapat dibuka oleh Admin dan User Internal. Client tidak dapat mengakses modal restore/force-delete meski memiliki `can_delete_projects = true`.
+- **Backend Guards**: Semua method `confirmDeleteProject`, `deleteProject`, `openTrashedProjectsModal`, `confirmRestoreProject`, `restoreProject`, `confirmForceDeleteProject`, `forceDeleteProject` dilindungi oleh pemeriksaan `isClient()` eksplisit.
+- **Permanent Delete Message**: Diperbarui menjadi pesan yang akurat tentang preservasi data sumber dan penghapusan relasi operasional.
+- **Source Data Preservation**: `Article` dan `SocialMediaItem` tidak dihapus saat force delete — hanya kolom `project_id` yang di-null-kan.
+- **Dedicated Method**: Tombol modal trashed menggunakan `wire:click="openTrashedProjectsModal"` (bukan inline `$set`) untuk menjamin guard backend aktif.
+
+## Komponen Kunci
+- `app/Http/Livewire/ProjectsList.php` (backend auth guards, `openTrashedProjectsModal`)
+- `resources/views/components/⚡projects-list.blade.php` (UI rename, visibility guards, button restrictions)
+- `tests/Feature/ProjectTrashAuthorizationTest.php` (17 regression tests baru)
+
+## Status
+- **Migration berubah**: NO
+- **Scraping / AI / Route berubah**: NO
+- **Source Article/Social preservation**: YES
+- **Stale Volt class di blade**: DOCUMENTED (dijadikan catatan cleanup terpisah)
+

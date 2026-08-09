@@ -514,6 +514,16 @@ class ProjectsList extends Component
     // Trashed projects modal state
     public $showTrashedModal = false;
 
+    public function openTrashedProjectsModal()
+    {
+        $user = auth()->user();
+        if ($user && $user->isClient()) {
+            $this->notifyProjectAction('Anda tidak memiliki izin untuk mengakses halaman ini.', 'error');
+            return;
+        }
+        $this->showTrashedModal = true;
+    }
+
     public function closeModals()
     {
         $this->showSuccessModal = false;
@@ -551,7 +561,16 @@ class ProjectsList extends Component
 
     public function confirmDeleteProject($id)
     {
-        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
+        $user = auth()->user();
+        if ($user && $user->isClient()) {
+            if (! optional($user->clientSettings)->can_delete_projects) {
+                $this->notifyProjectAction('Anda tidak memiliki izin untuk menonaktifkan proyek.', 'error');
+                $this->resetConfirmState();
+                return;
+            }
+        }
+
+        $project = Project::accessibleBy($user)->findOrFail($id);
 
         $this->confirmAction = 'delete';
         $this->confirmProjectId = $project->id;
@@ -563,7 +582,14 @@ class ProjectsList extends Component
 
     public function confirmRestoreProject($id)
     {
-        $project = Project::accessibleBy(auth()->user())
+        $user = auth()->user();
+        if ($user && $user->isClient()) {
+            $this->notifyProjectAction('Anda tidak memiliki izin untuk memulihkan proyek.', 'error');
+            $this->resetConfirmState();
+            return;
+        }
+
+        $project = Project::accessibleBy($user)
             ->onlyTrashed()
             ->findOrFail($id);
 
@@ -577,7 +603,14 @@ class ProjectsList extends Component
 
     public function confirmForceDeleteProject($id)
     {
-        $project = Project::accessibleBy(auth()->user())
+        $user = auth()->user();
+        if ($user && $user->isClient()) {
+            $this->notifyProjectAction('Anda tidak memiliki izin untuk menghapus permanen proyek.', 'error');
+            $this->resetConfirmState();
+            return;
+        }
+
+        $project = Project::accessibleBy($user)
             ->onlyTrashed()
             ->findOrFail($id);
 
@@ -585,7 +618,7 @@ class ProjectsList extends Component
         $this->confirmProjectId = $project->id;
         $this->confirmProjectName = $project->name;
         $this->confirmTitle = 'Hapus permanen proyek?';
-        $this->confirmMessage = 'Proyek akan dihapus permanen dari daftar. Data artikel dan hasil monitoring yang sudah tersimpan tidak ikut dihapus.';
+        $this->confirmMessage = 'Proyek tidak dapat dipulihkan setelah dihapus. Konten artikel dan media sosial sumber tetap tersimpan, tetapi relasi dan data operasional khusus proyek akan dihapus.';
         $this->showConfirmModal = true;
     }
 
@@ -710,7 +743,15 @@ class ProjectsList extends Component
 
     public function restoreProject($id)
     {
-        $project = Project::accessibleBy(auth()->user())
+        $user = auth()->user();
+        if ($user && $user->isClient()) {
+            $this->showConfirmModal = false;
+            $this->resetConfirmState();
+            $this->notifyProjectAction('Anda tidak memiliki izin untuk memulihkan proyek.', 'error');
+            return;
+        }
+
+        $project = Project::accessibleBy($user)
             ->onlyTrashed()
             ->findOrFail($id);
             
@@ -723,13 +764,20 @@ class ProjectsList extends Component
         $this->notifyProjectAction('Proyek aktif kembali dan siap dipantau.');
         $this->resetConfirmState();
 
-        // Refresh/reload halaman proyek agar langsung memuat data yang baru dipulihkan
         $this->redirect(request()->header('Referer') ?: '/');
     }
 
     public function forceDeleteProject($id)
     {
-        $project = Project::accessibleBy(auth()->user())
+        $user = auth()->user();
+        if ($user && $user->isClient()) {
+            $this->showConfirmModal = false;
+            $this->resetConfirmState();
+            $this->notifyProjectAction('Anda tidak memiliki izin untuk menghapus permanen proyek.', 'error');
+            return;
+        }
+
+        $project = Project::accessibleBy($user)
             ->onlyTrashed()
             ->findOrFail($id);
 
