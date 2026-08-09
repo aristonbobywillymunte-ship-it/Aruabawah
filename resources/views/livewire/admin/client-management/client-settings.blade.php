@@ -102,4 +102,79 @@
         </div>
 
     </form>
+
+    <!-- PROYEK KLIEN SECTION -->
+    <div class="mt-10 mb-10">
+        <div class="mb-4">
+            <h2 class="text-xl font-bold text-slate-900">Proyek Klien</h2>
+            <p class="text-slate-500 text-sm mt-1">Kelola proyek mana saja yang dapat diakses oleh klien ini.</p>
+        </div>
+
+        @if (session()->has('project_message'))
+            <div class="mb-4 p-4 rounded-xl bg-green-50 text-green-700 border border-green-200 flex items-center gap-3">
+                <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                <span class="text-sm font-medium">{{ session('project_message') }}</span>
+            </div>
+        @endif
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            
+            <!-- Assign New Project -->
+            <div class="p-4 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div class="flex-1">
+                    <select wire:model="selectedProjectId" class="w-full px-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387]">
+                        <option value="">Pilih proyek untuk ditambahkan...</option>
+                        @foreach($availableProjects as $proj)
+                            <option value="{{ $proj->id }}">
+                                {{ $proj->name }} ({{ $proj->is_active ? 'Aktif' : 'Nonaktif' }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('selectedProjectId') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+                <button type="button" wire:click="assignProject" class="px-6 py-2 text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors whitespace-nowrap disabled:opacity-50" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="assignProject">Tambahkan</span>
+                    <span wire:loading wire:target="assignProject">Memproses...</span>
+                </button>
+            </div>
+
+            <!-- Assigned Projects List -->
+            <div class="divide-y divide-slate-100">
+                @forelse($assignedProjects as $ap)
+                    <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">{{ $ap->name }}</div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-xs text-slate-500">{{ $ap->package ? $ap->package->name : 'Tanpa Paket' }}</span>
+                                <span class="text-slate-300">•</span>
+                                <span class="text-xs font-medium {{ $ap->is_active ? 'text-emerald-600' : 'text-slate-400' }}">
+                                    {{ $ap->is_active ? 'Aktif' : 'Nonaktif' }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            @if($confirmDetachProjectId === $ap->id)
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-slate-500 mr-2">Lepas proyek dari klien?</span>
+                                    <button type="button" wire:click="detachProject({{ $ap->id }})" class="px-3 py-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">Ya, Lepas</button>
+                                    <button type="button" wire:click="$set('confirmDetachProjectId', null)" class="px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Batal</button>
+                                </div>
+                            @else
+                                <button type="button" wire:click="$set('confirmDetachProjectId', {{ $ap->id }})" class="px-4 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100">
+                                    Lepas
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-slate-500 text-sm">
+                        Belum ada proyek yang terhubung ke klien ini.
+                    </div>
+                @endforelse
+            </div>
+            
+        </div>
+    </div>
+
 </div>

@@ -98,10 +98,67 @@ class ClientSettings extends Component
         }
     }
 
+    public $selectedProjectId = null;
+    public $confirmDetachProjectId = null;
+
+    public function assignProject()
+    {
+        abort_if(!auth()->check() || auth()->user()->isClient(), 403, 'Akses ditolak.');
+
+        $this->validate([
+            'selectedProjectId' => 'required|integer|exists:projects,id'
+        ]);
+
+        $project = \App\Models\Project::findOrFail($this->selectedProjectId);
+
+        // Pastikan project tidak di-soft-delete (findOrFail otomatis menangani jika menggunakan SoftDeletes)
+        
+        // Quota / Limit Check
+        // Limit max_projects hanya menghitung proyek AKTIF.
+        if ($project->is_active) {
+            $effectiveMaxProjects = $this->client->getEffectiveMaxProjects();
+            
+            if ($effectiveMaxProjects !== null) {
+                // Hitung proyek aktif yang sudah di-assign ke client ini
+                $currentActiveAssigned = $this->client->projects()->where('is_active', true)->count();
+                
+                if ($currentActiveAssigned >= $effectiveMaxProjects) {
+                    $this->addError('selectedProjectId', 'Klien telah mencapai batas maksimal proyek aktif (Batas: ' . $effectiveMaxProjects . ').');
+                    return;
+                }
+            }
+        }
+
+        $this->client->projects()->syncWithoutDetaching([$this->selectedProjectId]);
+        
+        $this->selectedProjectId = null;
+        session()->flash('project_message', 'Proyek berhasil ditambahkan ke klien.');
+    }
+
+    public function detachProject($projectId)
+    {
+        abort_if(!auth()->check() || auth()->user()->isClient(), 403, 'Akses ditolak.');
+
+        // Hanya hapus relasi pivot, JANGAN hapus / ubah project-nya
+        $this->client->projects()->detach($projectId);
+        
+        $this->confirmDetachProjectId = null;
+        session()->flash('project_message', 'Proyek berhasil dilepas dari klien.');
+    }
+
     public function render()
     {
+        $assignedProjects = $this->client->projects()->with('package')->orderBy('name')->get();
+        $assignedProjectIds = $assignedProjects->pluck('id')->toArray();
+        
+        $availableProjects = \App\Models\Project::whereNotIn('id', $assignedProjectIds)
+                                ->orderBy('name')
+                                ->get();
+
         return view('livewire.admin.client-management.client-settings', [
-            'packages' => Package::where('is_active', true)->get()
+            'packages' => Package::where('is_active', true)->get(),
+            'assignedProjects' => $assignedProjects,
+            'availableProjects' => $availableProjects,
         ]);
     }
 }
