@@ -12,16 +12,19 @@ Menambahkan fitur relasi *Assign* & *Detach* antara Client dan Project di halama
 - Select2 initialization dibuat *idempotent* (destroy-before-init) dan ter-*scope* ke instance `$wire.$el` agar tidak bentrok saat Livewire 4 melakukan morphing DOM.
 - Relasi Assign/Detach otomatis mereset dan memuat ulang dropdown options Select2 tanpa merusak integrasi JavaScript.
 - Alur penyimpanan Client Settings disempurnakan dengan *loading spinner* interaktif (`wire:loading`), navigasi SPA instan menggunakan `wire:navigate` ke halaman Client Management, dan notifikasi konfirmasi *sweetalert* global (`admin-toast`).
+- Menghapus UI tombol "Sinkronisasi" / "Sinkronisasi Ulang" manual dari setiap kartu proyek untuk menyederhanakan antarmuka, namun tetap mempertahankan mekanisme *background resync* otomatis (`ProjectContentResyncJob` & `ContentMatchingService`).
 
 ## Komponen Kunci
 - `app/Livewire/Admin/ClientManagement/ClientSettings.php` (pengaturan logic `syncWithoutDetaching` dan array validation)
 - `resources/views/livewire/admin/client-management/client-settings.blade.php` (integrasi Select2 CDN, SPA event hooking, `$wire.$set` Livewire 4)
 - `tests/Feature/ClientProjectAssignmentTest.php` (unit test limitasi aktif/non-aktif)
 - `resources/views/welcome.blade.php` (struktur root element / stack scripts)
+- `resources/views/components/⚡projects-list.blade.php` (UI styling & removal of manual sync button)
 
 ## Status Migrasi / Routing / Scraping
 - **Migration berubah**: NO (memanfaatkan relasi `project_user` existing)
-- **Scraping / AI / Route berubah**: NO
+- **Scraping / AI / Route berubah**: NO (Scraping scheduler & AI pipeline unchanged)
+- **Automatic Resync Preserved**: YES (Create/Edit otomatis men-trigger backend sync)
 
 ## Commit SHA Terkait
 - `3e71ac8` (fix: stabilize client project select2 on livewire 4)

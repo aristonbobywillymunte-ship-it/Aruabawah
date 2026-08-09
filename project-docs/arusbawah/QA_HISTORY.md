@@ -13,3 +13,15 @@
 6. **Simpan Pengaturan UX** (Manual): Mengubah alur simpan `ClientSettings.php` dari refresh sepihak menjadi navigasi SPA `wire:navigate` ke halaman daftar klien, yang dibarengi dengan munculnya `admin-toast` notifikasi sukses, serta melengkapi tombol simpan dengan status `wire:loading` ("Menyimpan...").
 
 **Status Akhir**: PASS (Deployed di server `main`)
+
+## Project Card UI Sync Removal
+**Tanggal**: 2026-08-09
+**Area**: Halaman Daftar Proyek (Komponen `⚡projects-list.blade.php`)
+
+### Skenario yang Diuji & Hasil:
+1. **Penghapusan UI**: Memastikan tombol "Sinkronisasi" / "Sinkronisasi Ulang" tidak lagi dirender di UI kartu proyek.
+2. **Layout Kartu**: Memastikan struktur flexbox dan tata letak tidak berantakan (tidak meninggalkan ruang kosong (*gap*) yang janggal) dan reflow metadata proyek yang tersisa (tanggal dibuat, label paket) berjalan aman.
+3. **Fungsionalitas Aksi Lain**: Memastikan fungsi Hapus, Nonaktifkan, Edit, dan masuk ke detail proyek tetap bekerja tanpa ada regresi akibat penghapusan tombol Sinkronisasi.
+4. **Resync Otomatis**: Memastikan bahwa *backend pipeline* sinkronisasi tidak tersentuh dan service `ContentMatchingService::resyncProjectContent()` maupun *Job* lain yang berjalan otomatis pasca Create/Edit Project masih sepenuhnya berfungsi secara siluman (*background*).
+
+**Status Akhir**: PASS (Deployed di server `main`)
