@@ -142,22 +142,30 @@
                 @endforeach
             </div>
 
-            <div class="mt-8 flex items-center justify-between pt-6">
-                <p class="text-xs text-slate-400">
-                    <span class="material-symbols-outlined text-[14px] align-middle mr-1">lock</span>
-                    Paket dapat diubah kapan saja setelah proyek dibuat.
-                </p>
+            <div class="mt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-6 border-t border-slate-100">
+                <!-- Inline Toast Notification -->
+                <div class="inline-flex items-center gap-2.5 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 shadow-sm">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="text-xs font-bold tracking-wide">Paket dapat diubah kapan saja setelah proyek dibuat.</span>
+                </div>
+                
                 <button
                     type="button"
                     wire:click="$set('createStep', 2)"
                     @disabled(!$packageId)
-                    class="inline-flex items-center gap-1.5 px-5 py-2.5 font-extrabold rounded-xl text-xs transition-all duration-200
+                    class="inline-flex justify-center items-center gap-2 px-6 py-3 font-extrabold rounded-xl text-sm transition-all duration-200 min-w-[220px]
                         {{ $packageId
-                            ? 'bg-[#1fa387] hover:bg-[#178a71] text-white shadow-sm cursor-pointer active:scale-[0.98]'
+                            ? 'bg-[#1fa387] hover:bg-[#178a71] text-white shadow-sm cursor-pointer active:scale-[0.98] shadow-[#1fa387]/20 hover:shadow-[#1fa387]/40'
                             : 'bg-slate-100 text-slate-400 cursor-not-allowed' }}"
                 >
-                    Lanjut ke Pengaturan
-                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                    <span wire:loading.remove wire:target="$set('createStep', 2)">Lanjut ke Pengaturan</span>
+                    <span wire:loading wire:target="$set('createStep', 2)">Memuat...</span>
+                    
+                    <svg wire:loading wire:target="$set('createStep', 2)" class="animate-spin w-4 h-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span wire:loading.remove wire:target="$set('createStep', 2)" class="material-symbols-outlined text-[18px]">arrow_forward</span>
                 </button>
             </div>
 
