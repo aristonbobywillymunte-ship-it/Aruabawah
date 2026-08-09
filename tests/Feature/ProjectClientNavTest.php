@@ -20,9 +20,9 @@ class ProjectClientNavTest extends TestCase
         Livewire::actingAs($user)
             ->test(\App\Livewire\ProjectsList::class)
             ->call('loadProjects')
-            ->assertSee('Buat Client')
+            ->assertSee('Kelola Client')
             ->assertSee('wire:navigate')
-            ->assertSee(route('admin.clients.create'));
+            ->assertSee(route('admin.clients'));
     }
 
     public function test_client_cannot_see_create_client_button_on_projects_page()
@@ -32,7 +32,7 @@ class ProjectClientNavTest extends TestCase
         Livewire::actingAs($client)
             ->test(\App\Livewire\ProjectsList::class)
             ->call('loadProjects')
-            ->assertDontSee('Buat Client');
+            ->assertDontSee('Kelola Client');
     }
 
     public function test_client_gets_403_when_accessing_client_create_directly()

@@ -985,14 +985,14 @@ new class extends Component
                         <div class="flex flex-wrap items-center gap-3">
                             @if(auth()->check() && auth()->user()->isUser())
                                 <a 
-                                    href="{{ route('admin.clients.create') }}" 
+                                    href="{{ route('admin.clients') }}" 
                                     wire:navigate
                                     class="px-4 py-2 bg-white border border-slate-300 hover:border-[#1fa387] text-slate-700 hover:text-[#1fa387] rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2"
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                     </svg>
-                                    <span>Buat Client</span>
+                                    <span>Kelola Client</span>
                                 </a>
                             @endif
                             <button 

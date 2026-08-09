@@ -7,6 +7,18 @@
         </a>
     </div>
 
+    @if (session()->has('message'))
+        <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)" class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-xl flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-2">
+                <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                <span class="text-sm font-medium">{{ session('message') }}</span>
+            </div>
+            <button @click="show = false" class="text-emerald-500 hover:text-emerald-700">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+    @endif
+
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold text-slate-900">Manajemen Klien</h1>
@@ -54,9 +66,17 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <a href="{{ route('admin.clients.settings', $client->id) }}" wire:navigate class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-[#1fa387] hover:text-white transition-colors" title="Pengaturan Klien">
-                                    <span class="material-symbols-outlined text-[18px]">settings</span>
-                                </a>
+                                <div class="flex items-center justify-end gap-2">
+                                    <button wire:click="toggleStatus({{ $client->id }})" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-amber-500 hover:text-white transition-colors" title="{{ $client->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                        <span class="material-symbols-outlined text-[18px]">{{ $client->status === 'active' ? 'block' : 'check_circle' }}</span>
+                                    </button>
+                                    <a href="{{ route('admin.clients.settings', $client->id) }}" wire:navigate class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-[#1fa387] hover:text-white transition-colors" title="Pengaturan Klien">
+                                        <span class="material-symbols-outlined text-[18px]">settings</span>
+                                    </a>
+                                    <button wire:click="deleteClient({{ $client->id }})" wire:confirm="Apakah Anda yakin ingin menghapus akun klien ini secara permanen?" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-500 hover:text-white transition-colors" title="Hapus Klien">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @empty
