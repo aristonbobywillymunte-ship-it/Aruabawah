@@ -57,30 +57,26 @@
                                 ? 'shadow-[0_0_0_2px_#1fa387] shadow-[#1fa387]/10'
                                 : 'shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_24px_rgba(0,0,0,0.10)]' }}"
                     >
-                        {{-- Header strip: popular = hijau, standar = transparan tapi sama tinggi --}}
+                        {{-- Absolute Popular Badge --}}
                         @if($p->is_popular)
-                            <div class="bg-[#1fa387] px-5 py-2.5 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-white text-[14px]">star</span>
-                                <span class="text-white text-[11px] font-black uppercase tracking-[0.12em]">Paling Populer</span>
-                            </div>
-                        @else
-                            <div class="px-5 py-2.5" aria-hidden="true" style="visibility:hidden">
-                                <span class="text-[11px] font-black uppercase tracking-[0.12em]">_</span>
+                            <div class="absolute top-5 right-5 inline-flex items-center gap-1 px-2.5 py-1 bg-amber-400 text-white rounded-full shadow-sm z-10 pointer-events-none">
+                                <span class="material-symbols-outlined text-[12px]">star</span>
+                                <span class="text-[9px] font-black uppercase tracking-wider">Populer</span>
                             </div>
                         @endif
 
                         {{-- Card body --}}
-                        <div class="p-6 flex flex-col gap-5 flex-1 {{ $isSelected ? 'bg-gradient-to-b from-[#1fa387]/[0.03] to-white' : 'bg-white' }}">
+                        <div class="p-6 flex flex-col gap-5 flex-1 relative {{ $isSelected ? 'bg-gradient-to-b from-[#1fa387]/[0.03] to-white' : 'bg-white' }}">
 
                             {{-- Package identity --}}
-                            <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-4 relative z-0">
                                 <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200
                                     {{ $isSelected ? 'bg-[#1fa387] text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-[#1fa387]/10 group-hover:text-[#1fa387]' }}">
                                     <span class="material-symbols-outlined text-[22px]">
                                         {{ $p->name === 'Enterprise' ? 'rocket_launch' : 'widgets' }}
                                     </span>
                                 </div>
-                                <div>
+                                <div class="pr-16"> {{-- Tambah padding right agar tidak menabrak absolute badge --}}
                                     <h3 class="text-base font-hanken font-bold text-slate-900 leading-tight">{{ $p->name }}</h3>
                                     <p class="text-xs text-slate-500 mt-0.5 leading-snug">
                                         {{ $p->description ?: 'Solusi monitoring otomatis untuk bisnis Anda.' }}
