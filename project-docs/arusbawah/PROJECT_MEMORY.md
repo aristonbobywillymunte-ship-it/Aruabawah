@@ -1,5 +1,10 @@
 # Project Memory
 
+## Konteks Fitur ADMIN-HEADER-VISUAL-CONSISTENCY-1
+- **Alasan**: Beberapa halaman Admin menampilkan header dengan markup dan spacing yang berbeda-beda, sehingga pengalaman visual terasa tidak seragam dibanding Dashboard.
+- **Solusi**: Menyamakan header per-halaman pada wrapper Blade dan komponen Livewire yang memang membutuhkan toolbar interaktif, dengan mempertahankan judul, deskripsi, dan action masing-masing halaman.
+- **Batasan**: Tidak dibuat komponen header bersama, tidak ada refactor layout besar, dan tidak ada perubahan business logic atau navigasi.
+
 ## Konteks Fitur Client Project Assignment
 - **Alasan & Root Cause**: Client memerlukan penunjukan proyek manual oleh akun internal (Admin) tanpa menghapus database asal proyek saat dilepas (`detach`). Integrasi antar-halaman berbasis Livewire SPA (`wire:navigate`) menyebabkan komponen JavaScript dari pihak ketiga (Select2) gagal diinisialisasi ulang karena `livewire:initialized` hanya jalan sekali di awal. Livewire 4 mewajibkan akses properti JS scope lewat identifier khusus `$wire.$set`, `$wire.$get`, `$wire.$on` (bukan `$wire.set`).
 - **Solusi**: Menggunakan fitur bawaan Livewire 4 yaitu `@assets` dan `@script` untuk melampirkan *dependencies* CDN secara *lazy-load* dan aman. Syntax pemanggilan di-update ke `$wire.$set`, `$wire.$get`, `$wire.$on` dan Select2 scope difokuskan pada DOM component via `$($wire.$el)`. Setiap inisialisasi Select2 dibuat *idempotent* dengan mendestroy instance lama sebelum *re-init*. Batas maksimal proyek klien (`max_projects`) selalu mengacu pada metode turunan `getEffectiveMaxProjects()` dan diverifikasi ketat di back-end.
@@ -13,4 +18,3 @@
 - **Preservasi Data Sumber**: `forceDeleteProject()` TIDAK menghapus record `Article` atau `SocialMediaItem`. Hanya kolom `project_id` yang di-null-kan, dan relasi operasional (pivot `project_user`, `ai_analysis_dispatch_states`, `apify_dispatch_states`, dll.) yang dihapus.
 - **Stale Volt Class di Blade**: `resources/views/components/⚡projects-list.blade.php` mengandung anonymous PHP class (stale Volt-like syntax) yang tidak dieksekusi — backend logic aktif berasal dari `app/Http/Livewire/ProjectsList.php`. Cleanup refactoring dijadwalkan sebagai task terpisah.
 - **UI Terminology**: "Lihat Proyek Dihapus" dan "Daftar Proyek Dihapus" diubah menjadi "Proyek Dinonaktifkan" karena soft-delete hanya menonaktifkan proyek dari monitoring, bukan menghapus datanya.
-

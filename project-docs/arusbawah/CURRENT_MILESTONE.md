@@ -1,5 +1,30 @@
 # Milestone: Client Project Assignment Hotfix
 
+## Tambahan Milestone: ADMIN-HEADER-VISUAL-CONSISTENCY-1
+
+## Apa yang Diubah
+Menyamakan tampilan header halaman Admin agar mengikuti gaya visual Dashboard yang sudah ada, tanpa membuat komponen header bersama atau mengubah perilaku halaman.
+
+## Behavior Final
+- Header Admin kini memakai pola visual yang konsisten: eyebrow `Panel Administrator`, judul 2xl tebal, deskripsi singkat, rata kiri, dan jarak vertikal yang seragam.
+- Dashboard tetap dipakai hanya sebagai referensi visual, bukan dependensi bersama.
+- Halaman wrapper `admin/*` yang memuat Livewire kini memiliki header yang seragam, sementara aksi interaktif tetap berada di toolbar konten bila diperlukan.
+- Halaman client management, users, logs, maintenance, database, scraping settings, dan AI providers diselaraskan tipografinya untuk menghindari judul ganda dan spacing yang tidak konsisten.
+- Tidak ada perubahan route, permission, migration, scraping, AI behavior, atau skema database.
+
+## Komponen Kunci
+- `resources/views/layouts/admin.blade.php`
+- `resources/views/admin/*.blade.php`
+- `resources/views/livewire/admin/**/*.blade.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Scraping / AI berubah**: NO
+
+## Commit SHA Terkait
+- Pending
+
 ## Apa yang Diubah
 Menambahkan fitur relasi *Assign* & *Detach* antara Client dan Project di halaman `Client Settings` melalui antarmuka *multi-select* (Select2 pillbox).
 
@@ -61,4 +86,3 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - **Scraping / AI / Route berubah**: NO
 - **Source Article/Social preservation**: YES
 - **Stale Volt class di blade**: DOCUMENTED (dijadikan catatan cleanup terpisah)
-

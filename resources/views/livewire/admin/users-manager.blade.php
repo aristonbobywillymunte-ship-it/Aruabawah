@@ -10,11 +10,11 @@
         </div>
     </div>
     <!-- Top Header & Search Bar -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
-        <div class="text-left">
+    <div class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-3xl text-left space-y-1">
             <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
-            <h1 class="text-2xl font-black text-slate-900 mt-1">Kelola Pengguna</h1>
-            <p class="text-xs text-slate-500 mt-1">Manajemen akun, status keaktifan, role hak akses, dan pengaturan kata sandi.</p>
+            <h1 class="text-2xl font-black leading-tight text-slate-900">Kelola Pengguna</h1>
+            <p class="text-xs text-slate-500">Manajemen akun, status keaktifan, role hak akses, dan pengaturan kata sandi.</p>
         </div>
 
         <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">

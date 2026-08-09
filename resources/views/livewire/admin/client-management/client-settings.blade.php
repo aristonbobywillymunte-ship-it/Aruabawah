@@ -1,16 +1,17 @@
-<div class="max-w-4xl">
+<div class="max-w-4xl space-y-6">
     @section('title', 'Pengaturan Klien')
 
     @section('page-header')
-        <div class="flex items-center gap-3">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-3xl text-left space-y-1">
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
+                <h1 class="text-2xl font-black leading-tight text-slate-900">Pengaturan Klien: {{ $client->name }}</h1>
+                <p class="text-xs text-slate-500">Atur hak akses, batas sumber daya, dan ketersediaan paket.</p>
+            </div>
             <a href="{{ route('admin.clients') }}" wire:navigate
-               class="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors">
+               class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors self-start lg:self-auto">
                 <span class="material-symbols-outlined text-[20px]">arrow_back</span>
             </a>
-            <div>
-                <h1 class="text-xl font-bold text-slate-900">Pengaturan Klien: {{ $client->name }}</h1>
-                <p class="text-slate-500 text-sm">Atur hak akses, batas sumber daya, dan ketersediaan paket.</p>
-            </div>
         </div>
     @endsection
 
@@ -370,4 +371,3 @@
     </form>
 
 </div>
-

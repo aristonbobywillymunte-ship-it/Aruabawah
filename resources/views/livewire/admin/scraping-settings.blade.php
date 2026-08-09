@@ -1,10 +1,10 @@
 <div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
     <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
-        <div class="text-left">
+    <div class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-3xl text-left space-y-1">
             <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
-            <h1 class="text-2xl font-black text-slate-900 mt-1">Pengaturan Scraping</h1>
-            <p class="text-xs text-slate-500 mt-1">Atur parameter interval, limit crawler berita online, serta retry limit.</p>
+            <h1 class="text-2xl font-black leading-tight text-slate-900">Pengaturan Scraping</h1>
+            <p class="text-xs text-slate-500">Atur parameter interval, limit crawler berita online, serta retry limit.</p>
         </div>
 
         <div class="flex items-center gap-3">

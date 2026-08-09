@@ -1,9 +1,10 @@
 <div>
     {{-- Page Header --}}
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-slate-900">Manajemen Klien</h1>
-            <p class="text-slate-500 text-sm mt-0.5">Kelola akun klien, batas limit, dan izin proyek secara real-time.</p>
+    <div class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-3xl text-left space-y-1">
+            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#1fa387]">Panel Administrator</p>
+            <h1 class="text-2xl font-black leading-tight text-slate-900">Manajemen Klien</h1>
+            <p class="text-xs text-slate-500">Kelola akun klien, batas limit, dan izin proyek secara real-time.</p>
         </div>
         <a href="{{ route('admin.clients.create') }}" wire:navigate
            class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-[#1fa387] hover:bg-[#188c73] text-white rounded-xl text-sm font-semibold transition-all shadow-sm shrink-0">
