@@ -157,10 +157,17 @@ Route::middleware('auth')->group(function () {
         return view('admin.database');
     })->middleware('admin')->name('admin.database');
 
-    // ─── Client Management (Admin & User) ───
-    Route::get('/admin/clients', \App\Livewire\Admin\ClientManagement\ClientList::class)->name('admin.clients');
-    Route::get('/admin/clients/create', \App\Livewire\Admin\ClientManagement\ClientCreate::class)->name('admin.clients.create');
-    Route::get('/admin/clients/{user}/settings', \App\Livewire\Admin\ClientManagement\ClientSettings::class)->name('admin.clients.settings');
+    // ─── Client Management ───
+    Route::get('/admin/clients', function () {
+        return view('admin.clients');
+    })->middleware('admin')->name('admin.clients');
+    Route::get('/admin/clients/create', function () {
+        return view('admin.clients-create');
+    })->middleware('admin')->name('admin.clients.create');
+    Route::get('/admin/clients/{user}/settings', function (\App\Models\User $user) {
+        return view('admin.clients-settings', ['user' => $user]);
+    })->middleware('admin')->name('admin.clients.settings');
+
 
 
     Route::get('/change-password', [LoginController::class, 'showChangePasswordForm'])->name('password.change');

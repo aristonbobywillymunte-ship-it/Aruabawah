@@ -6,11 +6,7 @@ use Livewire\Component;
 use App\Models\User;
 use App\Models\ClientSetting;
 use Illuminate\Support\Facades\Hash;
-use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 
-#[Layout('layouts.admin')]
-#[Title('Tambah Klien Baru')]
 class ClientCreate extends Component
 {
     public $name = '';

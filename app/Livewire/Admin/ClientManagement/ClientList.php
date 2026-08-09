@@ -5,11 +5,7 @@ namespace App\Livewire\Admin\ClientManagement;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\User;
-use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 
-#[Layout('layouts.admin')]
-#[Title('Manajemen Klien')]
 class ClientList extends Component
 {
     use WithPagination;
