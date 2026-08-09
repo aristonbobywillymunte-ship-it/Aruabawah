@@ -229,7 +229,7 @@
                             </div>
                         </div>
                         <button type="button" wire:click="$set('createStep', 1)"
-                            class="text-xs font-bold text-[#1fa387] hover:text-[#178a71] inline-flex items-center gap-1 transition-colors">
+                            class="text-xs font-bold text-[#1fa387] hover:text-[#178a71] inline-flex items-center gap-1 transition-colors cursor-pointer">
                             <span class="material-symbols-outlined text-[14px]">edit</span>
                             Ubah
                         </button>
