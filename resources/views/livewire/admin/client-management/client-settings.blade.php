@@ -18,91 +18,6 @@
         </div>
     @endif
 
-    <form wire:submit.prevent="saveSettings" class="space-y-6">
-        
-        <!-- Izin Dasar -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 bg-slate-50">
-                <h2 class="text-sm font-bold text-slate-800">Hak Akses Proyek</h2>
-            </div>
-            <div class="p-6 space-y-4">
-                <label class="flex items-center gap-3 cursor-pointer">
-                    <input wire:model="can_create_projects" type="checkbox" class="w-5 h-5 text-[#1fa387] rounded border-slate-300 focus:ring-[#1fa387]">
-                    <div>
-                        <div class="text-sm font-bold text-slate-800">Izinkan Membuat Proyek</div>
-                        <div class="text-xs text-slate-500">Klien dapat membuat proyek baru sendiri.</div>
-                    </div>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                    <input wire:model="can_edit_projects" type="checkbox" class="w-5 h-5 text-[#1fa387] rounded border-slate-300 focus:ring-[#1fa387]">
-                    <div>
-                        <div class="text-sm font-bold text-slate-800">Izinkan Mengedit Proyek</div>
-                        <div class="text-xs text-slate-500">Klien dapat mengedit nama dan kata kunci proyeknya.</div>
-                    </div>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                    <input wire:model="can_delete_projects" type="checkbox" class="w-5 h-5 text-red-500 rounded border-slate-300 focus:ring-red-500">
-                    <div>
-                        <div class="text-sm font-bold text-slate-800">Izinkan Menghapus Proyek</div>
-                        <div class="text-xs text-slate-500">Klien dapat menonaktifkan/menghapus proyeknya.</div>
-                    </div>
-                </label>
-            </div>
-        </div>
-
-        <!-- Batas Sumber Daya -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 bg-slate-50">
-                <h2 class="text-sm font-bold text-slate-800">Batas Sumber Daya Khusus Klien</h2>
-                <p class="text-xs text-slate-500 mt-1">Kosongkan jika ingin menggunakan batas default dari paket.</p>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-1.5">
-                    <label class="text-sm font-bold text-slate-800">Maksimal Proyek</label>
-                    <input wire:model="max_projects" type="number" min="1" placeholder="Batas jumlah proyek" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387]">
-                    @error('max_projects') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-sm font-bold text-slate-800">Maksimal Kata Kunci / Proyek</label>
-                    <input wire:model="max_keywords_per_project" type="number" min="1" placeholder="Batas kata kunci per proyek" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387]">
-                    @error('max_keywords_per_project') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
-            </div>
-        </div>
-
-        <!-- Paket yang Diizinkan -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-4 border-b border-slate-100 bg-slate-50">
-                <h2 class="text-sm font-bold text-slate-800">Paket yang Tersedia (Whitelist)</h2>
-                <p class="text-xs text-slate-500 mt-1">Pilih paket mana saja yang boleh dipilih oleh klien ini saat membuat proyek.</p>
-            </div>
-            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                @foreach($packages as $package)
-                    <label class="flex items-start gap-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors {{ in_array($package->id, $allowedPackages) ? 'border-[#1fa387] bg-[#1fa387]/5' : '' }}">
-                        <input wire:model="allowedPackages" type="checkbox" value="{{ $package->id }}" class="mt-1 w-5 h-5 text-[#1fa387] rounded border-slate-300 focus:ring-[#1fa387]">
-                        <div>
-                            <div class="text-sm font-bold text-slate-800">{{ $package->name }}</div>
-                            <div class="text-xs font-medium text-[#1fa387] mt-0.5">Rp {{ number_format($package->price, 0, ',', '.') }}</div>
-                            <div class="text-xs text-slate-500 mt-1">
-                                Limit Proyek: {{ $package->max_projects ?? '∞' }} | Limit KW: {{ $package->max_keywords_per_project ?? '∞' }}
-                            </div>
-                        </div>
-                    </label>
-                @endforeach
-            </div>
-            @error('allowedPackages') <p class="text-red-500 text-xs mt-1 px-6 pb-4">{{ $message }}</p> @enderror
-        </div>
-
-        <div class="flex justify-end gap-3">
-            <button type="submit" class="px-6 py-2.5 text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors flex items-center gap-2">
-                <span wire:loading.remove wire:target="saveSettings" class="material-symbols-outlined text-[18px]">save</span>
-                <span wire:loading wire:target="saveSettings" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-                <span>Simpan Pengaturan</span>
-            </button>
-        </div>
-
-    </form>
-
     <!-- PROYEK KLIEN SECTION -->
     <div class="mt-10 mb-10">
         <div class="mb-4">
@@ -111,7 +26,7 @@
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            
+
             <!-- Assign New Project -->
             <div class="p-5 border-b border-slate-100 bg-slate-50 flex flex-col gap-4">
                 <div>
@@ -129,8 +44,8 @@
                             <div wire:ignore>
                                 <select id="project-select" class="w-full" multiple="multiple">
                                     @foreach($availableProjects as $proj)
-                                        <option value="{{ $proj->id }}" 
-                                                data-status="{{ $proj->is_active ? 'Aktif' : 'Nonaktif' }}" 
+                                        <option value="{{ $proj->id }}"
+                                                data-status="{{ $proj->is_active ? 'Aktif' : 'Nonaktif' }}"
                                                 data-package="{{ $proj->package ? $proj->package->name : 'Tanpa Paket' }}">
                                             {{ $proj->name }}
                                         </option>
@@ -148,9 +63,9 @@
                                 @endif
                             </div>
                         </div>
-                        
-                        <button type="button" 
-                                wire:click="assignProject" 
+
+                        <button type="button"
+                                wire:click="assignProject"
                                 class="w-full sm:w-auto px-6 py-2.5 min-h-[44px] text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
                                 wire:loading.attr="disabled"
                                 {{ empty($selectedProjectIds) ? 'disabled' : '' }}>
@@ -160,7 +75,7 @@
                     </div>
                 @endif
             </div>
-            
+
             @assets
                 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
                 <style>
@@ -271,16 +186,16 @@
                             }
                             const formatProject = (project) => {
                                 if (!project.id) return project.text;
-                                
+
                                 const el = $(project.element);
                                 const status = el.data('status');
                                 const pkg = el.data('package');
                                 const isActive = status === 'Aktif';
-                                
-                                const statusBadge = isActive 
+
+                                const statusBadge = isActive
                                     ? `<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md whitespace-nowrap">Aktif</span>`
                                     : `<span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 border border-slate-200 rounded-md whitespace-nowrap">Nonaktif</span>`;
-                                    
+
                                 return $(`
                                     <div class="flex items-center justify-between gap-4 py-1">
                                         <div class="flex flex-col">
@@ -306,25 +221,25 @@
                                 templateResult: formatProject,
                                 templateSelection: formatSelection
                             });
-                            
+
                             el.off('change').on('change', function(e) {
                                 $wire.$set('selectedProjectIds', $(this).val() || []);
                             });
-                            
+
                             // sync value on init
                             el.val($wire.$get('selectedProjectIds')).trigger('change.select2');
                         }
                     };
-                    
+
                     initSelect2();
-                    
+
                     Livewire.hook('morph.updated', ({ el, component }) => {
                         // Re-initialize Select2 when Livewire DOM morphs to ensure dropdown options are synced
                         if (component.el === $wire.$el) {
                             initSelect2();
                         }
                     });
-                    
+
                     $wire.$on('admin-toast', () => {
                         const el = $($wire.$el).find('#project-select');
                         if (el.hasClass('select2-hidden-accessible')) {
@@ -348,7 +263,7 @@
                                 </span>
                             </div>
                         </div>
-                        
+
                         <div>
                             @if($confirmDetachProjectId === $ap->id)
                                 <div class="flex items-center gap-2">
@@ -369,9 +284,96 @@
                     </div>
                 @endforelse
             </div>
-            
+
         </div>
     </div>
+
+
+
+<form wire:submit.prevent="saveSettings" class="space-y-6">
+
+        <!-- Izin Dasar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                <h2 class="text-sm font-bold text-slate-800">Hak Akses Proyek</h2>
+            </div>
+            <div class="p-6 space-y-4">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input wire:model="can_create_projects" type="checkbox" class="w-5 h-5 text-[#1fa387] rounded border-slate-300 focus:ring-[#1fa387]">
+                    <div>
+                        <div class="text-sm font-bold text-slate-800">Izinkan Membuat Proyek</div>
+                        <div class="text-xs text-slate-500">Klien dapat membuat proyek baru sendiri.</div>
+                    </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input wire:model="can_edit_projects" type="checkbox" class="w-5 h-5 text-[#1fa387] rounded border-slate-300 focus:ring-[#1fa387]">
+                    <div>
+                        <div class="text-sm font-bold text-slate-800">Izinkan Mengedit Proyek</div>
+                        <div class="text-xs text-slate-500">Klien dapat mengedit nama dan kata kunci proyeknya.</div>
+                    </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input wire:model="can_delete_projects" type="checkbox" class="w-5 h-5 text-red-500 rounded border-slate-300 focus:ring-red-500">
+                    <div>
+                        <div class="text-sm font-bold text-slate-800">Izinkan Menghapus Proyek</div>
+                        <div class="text-xs text-slate-500">Klien dapat menonaktifkan/menghapus proyeknya.</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Batas Sumber Daya -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                <h2 class="text-sm font-bold text-slate-800">Batas Sumber Daya Khusus Klien</h2>
+                <p class="text-xs text-slate-500 mt-1">Kosongkan jika ingin menggunakan batas default dari paket.</p>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-1.5">
+                    <label class="text-sm font-bold text-slate-800">Maksimal Proyek</label>
+                    <input wire:model="max_projects" type="number" min="1" placeholder="Batas jumlah proyek" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387]">
+                    @error('max_projects') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-sm font-bold text-slate-800">Maksimal Kata Kunci / Proyek</label>
+                    <input wire:model="max_keywords_per_project" type="number" min="1" placeholder="Batas kata kunci per proyek" class="w-full px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387]">
+                    @error('max_keywords_per_project') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+            </div>
+        </div>
+
+        <!-- Paket yang Diizinkan -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                <h2 class="text-sm font-bold text-slate-800">Paket yang Tersedia (Whitelist)</h2>
+                <p class="text-xs text-slate-500 mt-1">Pilih paket mana saja yang boleh dipilih oleh klien ini saat membuat proyek.</p>
+            </div>
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                @foreach($packages as $package)
+                    <label class="flex items-start gap-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors {{ in_array($package->id, $allowedPackages) ? 'border-[#1fa387] bg-[#1fa387]/5' : '' }}">
+                        <input wire:model="allowedPackages" type="checkbox" value="{{ $package->id }}" class="mt-1 w-5 h-5 text-[#1fa387] rounded border-slate-300 focus:ring-[#1fa387]">
+                        <div>
+                            <div class="text-sm font-bold text-slate-800">{{ $package->name }}</div>
+                            <div class="text-xs font-medium text-[#1fa387] mt-0.5">Rp {{ number_format($package->price, 0, ',', '.') }}</div>
+                            <div class="text-xs text-slate-500 mt-1">
+                                Limit Proyek: {{ $package->max_projects ?? '∞' }} | Limit KW: {{ $package->max_keywords_per_project ?? '∞' }}
+                            </div>
+                        </div>
+                    </label>
+                @endforeach
+            </div>
+            @error('allowedPackages') <p class="text-red-500 text-xs mt-1 px-6 pb-4">{{ $message }}</p> @enderror
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <button type="submit" class="px-6 py-2.5 text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors flex items-center gap-2">
+                <span wire:loading.remove wire:target="saveSettings" class="material-symbols-outlined text-[18px]">save</span>
+                <span wire:loading wire:target="saveSettings" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                <span>Simpan Pengaturan</span>
+            </button>
+        </div>
+
+    </form>
 
     @include('components.admin-toast')
 </div>
