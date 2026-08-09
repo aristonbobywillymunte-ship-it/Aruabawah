@@ -7,8 +7,10 @@ use App\Models\User;
 use App\Models\Package;
 use App\Models\ClientSetting;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 
-#[Layout('welcome')]
+#[Layout('layouts.admin')]
+#[Title('Pengaturan Klien')]
 class ClientSettings extends Component
 {
     public $client;
