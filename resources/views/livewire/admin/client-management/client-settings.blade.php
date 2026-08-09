@@ -151,7 +151,7 @@
                         
                         <button type="button" 
                                 wire:click="assignProject" 
-                                class="w-full sm:w-auto px-6 py-2.5 min-h-[44px] text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed" 
+                                class="w-full sm:w-auto px-6 py-2.5 min-h-[44px] text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
                                 wire:loading.attr="disabled"
                                 {{ empty($selectedProjectIds) ? 'disabled' : '' }}>
                             <span wire:loading.remove wire:target="assignProject">Tambahkan</span>
@@ -198,10 +198,11 @@
                         font-weight: 400 !important;
                         font-size: 1.125rem !important;
                         line-height: 1 !important;
-                        display: flex !important;
+                        display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
-                        padding-bottom: 2px !important;
+                        width: 18px !important;
+                        height: 18px !important;
                     }
                     .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
                         background-color: transparent !important;
@@ -221,9 +222,28 @@
                         font-size: 0.875rem !important;
                         padding: 4px !important;
                     }
+                    .select2-selection__rendered {
+                        display: flex !important;
+                        align-items: center !important;
+                        flex-wrap: wrap !important;
+                        width: 100% !important;
+                        min-height: 42px !important;
+                        padding: 0 !important;
+                    }
+                    .select2-search--inline {
+                        display: flex !important;
+                        align-items: center !important;
+                        min-height: 34px !important;
+                    }
+                    .select2-search--inline .select2-search__field {
+                        margin: 0 !important;
+                        padding: 0 6px !important;
+                        height: 34px !important;
+                        line-height: 34px !important;
+                    }
                     .select2-search__field {
                         color: #0f172a !important;
-                        margin-top: 5px !important;
+                        margin-top: 0 !important;
                     }
                     .select2-container--default .select2-results__option--highlighted[aria-selected] {
                         background-color: #f8fafc !important;
