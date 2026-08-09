@@ -160,13 +160,13 @@ Route::middleware('auth')->group(function () {
     // ─── Client Management ───
     Route::get('/admin/clients', function () {
         return view('admin.clients');
-    })->middleware('admin')->name('admin.clients');
+    })->name('admin.clients');
     Route::get('/admin/clients/create', function () {
         return view('admin.clients-create');
-    })->middleware('admin')->name('admin.clients.create');
+    })->name('admin.clients.create');
     Route::get('/admin/clients/{user}/settings', function (\App\Models\User $user) {
         return view('admin.clients-settings', ['user' => $user]);
-    })->middleware('admin')->name('admin.clients.settings');
+    })->name('admin.clients.settings');
 
 
 
