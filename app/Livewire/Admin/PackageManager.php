@@ -34,6 +34,8 @@ class PackageManager extends Component
     public int $news_interval_minutes = 5;
     public int $social_interval_minutes = 10;
     public bool $is_popular = false;
+    public ?int $max_projects = null;
+    public ?int $max_keywords_per_project = null;
 
     // ─── CRUD-based Limits & Features (Advantages Wrapper) ───────────────
     public string $limit_projects = 'unlimited';
@@ -108,6 +110,8 @@ class PackageManager extends Component
             'news_interval_minutes'   => 'required|integer|min:1',
             'social_interval_minutes' => 'required|integer|min:1',
             'is_popular'              => 'boolean',
+            'max_projects'            => 'nullable|integer|min:1',
+            'max_keywords_per_project'=> 'nullable|integer|min:1',
         ];
     }
 
@@ -120,6 +124,10 @@ class PackageManager extends Component
             'price.numeric'   => 'Format harganya kurang tepat. Masukkan angka saja, tanpa huruf.',
             'price.min'       => 'Harga tidak bisa negatif. Minimal 0 ya.',
             'description.max' => 'Deskripsinya terlalu panjang. Maksimal 1.000 karakter saja.',
+            'max_projects.integer' => 'Batas maksimal proyek harus berupa angka.',
+            'max_projects.min' => 'Batas maksimal proyek minimal 1.',
+            'max_keywords_per_project.integer' => 'Batas maksimal kata kunci harus berupa angka.',
+            'max_keywords_per_project.min' => 'Batas maksimal kata kunci minimal 1.',
         ];
     }
 
@@ -228,6 +236,8 @@ class PackageManager extends Component
         $this->news_interval_minutes = (int) ($pkg->news_interval_minutes ?? 5);
         $this->social_interval_minutes = (int) ($pkg->social_interval_minutes ?? 10);
         $this->is_popular            = (bool) ($pkg->is_popular ?? false);
+        $this->max_projects          = $pkg->max_projects;
+        $this->max_keywords_per_project = $pkg->max_keywords_per_project;
         
         // Parse advantages to find toggles and clean them up
         $this->parseAdvantagesToProperties();
@@ -291,6 +301,8 @@ class PackageManager extends Component
             'news_interval_minutes'   => $this->news_interval_minutes,
             'social_interval_minutes' => $this->social_interval_minutes,
             'is_popular'              => $this->is_popular,
+            'max_projects'            => blank($this->max_projects) ? null : (int) $this->max_projects,
+            'max_keywords_per_project'=> blank($this->max_keywords_per_project) ? null : (int) $this->max_keywords_per_project,
         ];
 
         if ($this->editingPackageId) {
@@ -621,6 +633,8 @@ class PackageManager extends Component
         $this->news_interval_minutes = 5;
         $this->social_interval_minutes = 10;
         $this->is_popular            = false;
+        $this->max_projects          = null;
+        $this->max_keywords_per_project = null;
         
         // Reset limit properties
         $this->limit_projects        = 'unlimited';
