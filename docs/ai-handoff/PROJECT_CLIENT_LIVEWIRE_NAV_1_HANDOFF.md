@@ -13,9 +13,10 @@ Dokumen serah terima ini menandakan keberhasilan penambahan navigasi *Single Pag
 - **Visible to CLIENT**: NO (Klien tidak akan pernah melihat tombol "Buat Client" ini)
 - **Client direct access blocked**: YES (`abort_if` pada *method* `mount()` melempar 403 HTTP Forbidden jika diakses *client* secara langsung)
 - **Create Client success uses Livewire navigation**: YES (Sudah otomatis terpasang: `return $this->redirectRoute('admin.clients', navigate: true)`)
+- **Layout update**: YES (Seluruh halaman manajemen klien kini menggunakan layout/desain *User Dashboard* alias `#[Layout('welcome')]`, dan terbebas dari desain panel Admin)
 - **Business logic changed**: NO
 - **Migration**: NO
-- **Tests**: Uji coba eksklusif bernama `ProjectClientNavTest` (dengan *dependency* `Livewire::actingAs()->test()->call('loadProjects')`) dijalankan secara independen. Seluruh asersi berhasil tervalidasi pada lokal dengan 4 lulusan hijau.
-- **Commit SHA**: `d9c2a74`
+- **Tests**: Uji coba eksklusif bernama `ProjectClientNavTest` (dengan *dependency* `Livewire::actingAs()->test()->call('loadProjects')`) dijalankan secara independen. Seluruh asersi berhasil tervalidasi pada lokal dengan lulusan hijau.
+- **Commit SHA**: `d9c2a74`, `ee7ca73`, `5c7f2ab`, `67f5b17`
 
 Seluruh iterasi kode sudah di-*push* dan ditarik (`git pull --ff-only`) pada penampungan produksi, disusul kliring seluruh *view* secara tuntas.
