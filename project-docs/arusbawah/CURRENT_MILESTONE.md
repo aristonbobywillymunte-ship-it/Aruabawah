@@ -28,7 +28,7 @@ Mengeraskan fitur jadwal scraping harian untuk paket dengan migrasi yang aman, i
 - **Scraping / AI berubah**: YES, hanya pada semantik jadwal paket dan fallback interval
 
 ## Commit SHA Terkait
-- Pending
+- `067dc1fec1339356e82e06a88cbf9891c7130dfa`
 
 # Milestone: Client Project Assignment Hotfix
 
