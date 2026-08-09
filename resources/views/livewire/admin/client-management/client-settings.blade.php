@@ -359,7 +359,7 @@
         </div>
 
         <div class="flex justify-end gap-3">
-            <button type="submit" wire:loading.attr="disabled" wire:target="saveSettings" class="px-6 py-2.5 text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button type="submit" wire:loading.attr="disabled" wire:target="saveSettings" class="cursor-pointer px-6 py-2.5 text-sm font-bold text-white bg-[#1fa387] hover:bg-[#178a71] rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 <span wire:loading.remove wire:target="saveSettings" class="material-symbols-outlined text-[18px]">save</span>
                 <span wire:loading wire:target="saveSettings" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
                 <span wire:loading.remove wire:target="saveSettings">Simpan Pengaturan</span>
