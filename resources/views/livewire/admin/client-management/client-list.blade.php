@@ -1,23 +1,19 @@
 <div>
-    @section('title', 'Manajemen Klien')
-
-    @section('page-header')
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h1 class="text-xl font-bold text-slate-900">Manajemen Klien</h1>
-                <p class="text-slate-500 text-sm mt-0.5">Kelola akun klien, batas limit, dan izin proyek secara real-time.</p>
-            </div>
-            <a href="{{ route('admin.clients.create') }}" wire:navigate
-               class="inline-flex items-center gap-2 px-4 py-2 bg-[#1fa387] hover:bg-[#188c73] text-white rounded-xl text-sm font-semibold transition-all shadow-sm shadow-[#1fa387]/20 hover:shadow-[#1fa387]/40 shrink-0">
-                <span class="material-symbols-outlined text-[18px]">person_add</span>
-                <span>Tambah Klien</span>
-            </a>
+    {{-- Page Header --}}
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Manajemen Klien</h1>
+            <p class="text-slate-500 text-sm mt-0.5">Kelola akun klien, batas limit, dan izin proyek secara real-time.</p>
         </div>
-    @endsection
+        <a href="{{ route('admin.clients.create') }}" wire:navigate
+           class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-[#1fa387] hover:bg-[#188c73] text-white rounded-xl text-sm font-semibold transition-all shadow-sm shrink-0">
+            <span class="material-symbols-outlined text-[18px]">person_add</span>
+            <span>Tambah Klien</span>
+        </a>
+    </div>
 
     {{-- Table Container --}}
-
-    <div class="bg-white rounded-2xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-200 overflow-hidden flex flex-col">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {{-- Toolbar --}}
         <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
             <div class="relative w-full sm:w-80">
@@ -43,7 +39,7 @@
                         <tr class="hover:bg-slate-50/70 transition-colors group">
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0 text-[#1fa387] font-bold shadow-sm">
+                                    <div class="w-10 h-10 rounded-full bg-[#1fa387]/10 border border-[#1fa387]/20 flex items-center justify-center flex-shrink-0 text-[#1fa387] font-bold text-sm">
                                         {{ strtoupper(substr($client->name, 0, 1)) }}
                                     </div>
                                     <div>
@@ -74,17 +70,17 @@
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                     <button wire:click="toggleStatus({{ $client->id }})"
-                                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-amber-500 hover:text-amber-500 hover:bg-amber-50 transition-all shadow-sm"
+                                            class="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-amber-500 hover:text-amber-500 hover:bg-amber-50 transition-all shadow-sm"
                                             title="{{ $client->status === 'active' ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}">
                                         <span class="material-symbols-outlined text-[16px]">{{ $client->status === 'active' ? 'do_not_disturb_on' : 'check_circle' }}</span>
                                     </button>
                                     <a href="{{ route('admin.clients.settings', $client->id) }}" wire:navigate
-                                       class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-[#1fa387] hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-all shadow-sm"
+                                       class="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-[#1fa387] hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-all shadow-sm"
                                        title="Pengaturan & Limitasi Klien">
                                         <span class="material-symbols-outlined text-[16px]">settings</span>
                                     </a>
                                     <button wire:click="deleteClient({{ $client->id }})" wire:confirm="Apakah Anda yakin ingin menghapus klien ini permanen? Tindakan ini tidak dapat dibatalkan."
-                                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-rose-500 hover:text-rose-500 hover:bg-rose-50 transition-all shadow-sm"
+                                            class="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-rose-500 hover:text-rose-500 hover:bg-rose-50 transition-all shadow-sm"
                                             title="Hapus Klien">
                                         <span class="material-symbols-outlined text-[16px]">delete</span>
                                     </button>
@@ -98,8 +94,8 @@
                                     <span class="material-symbols-outlined text-3xl text-slate-400">group</span>
                                 </div>
                                 <h3 class="text-lg font-bold text-slate-800 mb-1">Belum Ada Klien</h3>
-                                <p class="text-sm max-w-sm mx-auto mb-6">Anda belum mendaftarkan akun klien. Buat klien baru untuk mulai membagikan akses dashboard media monitoring.</p>
-                                <a href="{{ route('admin.clients.create') }}" wire:navigate class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1fa387] hover:bg-[#188c73] text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
+                                <p class="text-sm max-w-sm mx-auto mb-6">Anda belum mendaftarkan akun klien. Buat klien baru untuk mulai membagikan akses dashboard.</p>
+                                <a href="{{ route('admin.clients.create') }}" wire:navigate class="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-[#1fa387] hover:bg-[#188c73] text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
                                     <span class="material-symbols-outlined text-[18px]">person_add</span>
                                     Buat Klien Pertama
                                 </a>
