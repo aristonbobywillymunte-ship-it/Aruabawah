@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur ACTOR-INTERVAL-REMOVAL-7A-UI
+- **Alasan**: Interval Actor tidak boleh lagi menjadi pengaturan yang bisa diedit di admin surface karena scheduling kini ditentukan oleh Package/Project, sementara Actor hanya menjelaskan bagaimana scraping berjalan.
+- **Solusi**: Menghapus field `interval_minutes` dari form, state, validasi, dan payload save/update di `ApifyConfiguration`, serta mengganti judul section menjadi `Konfigurasi Performa`.
+- **Batasan**: Kolom DB legacy `apify_actors.interval_minutes` tetap dipertahankan, dan runtime `RunApifyScraping` belum diubah pada task ini.
+- **Fallback / Legacy**: Data legacy interval masih ada di database dan bisa dibaca runtime lama sampai task 7B menghapus dependensi runtime-nya.
+
 ## Konteks Fitur PORTAL-SLOT-RECOVERY-6C
 - **Alasan**: Portal otomatis perlu recovery bounded agar slot yang terlewat atau gagal dapat dikejar sekali tanpa replay backlog atau retry setiap menit.
 - **Solusi**: Menambahkan latest-due-slot evaluation dan cooldown retry per Project+slot di `RunNewsPortalScraping`, dengan cooldown duration kecil dari `config/services.php`.

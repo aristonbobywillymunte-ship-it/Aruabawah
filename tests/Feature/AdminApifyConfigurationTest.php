@@ -49,8 +49,15 @@ class AdminApifyConfigurationTest extends TestCase
             ->get(route('admin.apify'))
             ->assertStatus(200)
             ->assertSee('Konfigurasi Scraper Apify')
+            ->assertDontSee('Konfigurasi Performa & Jadwal')
+            ->assertDontSee('Interval Scraping')
             ->assertSee('Aktor Bawaan Sistem')
             ->assertDontSee('Legacy / Inactive');
+    }
+
+    public function test_actor_form_does_not_expose_interval_minutes_as_editable_state()
+    {
+        $this->assertFalse(property_exists(\App\Livewire\Admin\ApifyConfiguration::class, 'interval_minutes'));
     }
 
     public function test_registry_sync_keeps_primary_actors_and_uses_hashtag_instagram_actor()
@@ -82,7 +89,6 @@ class AdminApifyConfigurationTest extends TestCase
             'status' => 'active',
             'priority' => 1,
             'default_limit' => 20,
-            'interval_minutes' => 240,
             'memory_limit' => 1024,
             'range_mode' => '7d',
             'keyword_field_mapping' => 'hashtags',
@@ -110,7 +116,6 @@ class AdminApifyConfigurationTest extends TestCase
             ->set('defaultLimit', 50)
             ->set('instagram_results_type', 'posts')
             ->set('instagram_results_limit', 50)
-            ->set('interval_minutes', 240)
             ->set('memory_limit', 1024)
             ->set('range_mode', '7d')
             ->set('priority', 1)
@@ -135,11 +140,41 @@ class AdminApifyConfigurationTest extends TestCase
             ->set('facebook_use_apify_proxy', true)
             ->set('facebook_post_time_range', '24h')
             ->set('facebook_max_posts', 50)
-            ->set('interval_minutes', 240)
             ->set('memory_limit', 1024)
             ->set('range_mode', '7d')
             ->set('priority', 1)
             ->call('saveActor')
             ->assertHasErrors(['actorSlug']);
+    }
+
+    public function test_saving_actor_configuration_preserves_legacy_interval_minutes_column()
+    {
+        $actor = ApifyActor::create([
+            'platform' => 'Instagram',
+            'actor_name' => 'Instagram Hashtag Scraper',
+            'actor_slug' => 'apify/instagram-hashtag-scraper',
+            'function_type' => 'Search Post',
+            'status' => 'active',
+            'priority' => 1,
+            'default_limit' => 20,
+            'interval_minutes' => 240,
+            'memory_limit' => 1024,
+            'range_mode' => '7d',
+            'keyword_field_mapping' => 'hashtags',
+        ]);
+
+        Livewire::actingAs($this->adminUser)
+            ->test(\App\Livewire\Admin\ApifyConfiguration::class)
+            ->call('editActor', $actor->id)
+            ->set('memory_limit', 2048)
+            ->set('priority', 2)
+            ->call('saveActor')
+            ->assertHasNoErrors();
+
+        $saved = $actor->fresh();
+
+        $this->assertSame(240, (int) $saved->interval_minutes);
+        $this->assertSame(2048, (int) $saved->memory_limit);
+        $this->assertSame(2, (int) $saved->priority);
     }
 }

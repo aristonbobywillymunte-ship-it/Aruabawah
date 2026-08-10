@@ -1,3 +1,43 @@
+# Milestone: Actor Interval Removal 7A UI
+
+## Apa yang Diubah
+Menghapus pengaturan interval menit Actor dari surface admin Apify, sehingga Actor hanya menyimpan cara scraping berjalan dan bukan jadwal kapan dijalankan.
+
+## Behavior Final
+- Field `interval_minutes` tidak lagi tampil di form Actor admin.
+- Section actor performance memakai label `Konfigurasi Performa`.
+- Save/update Actor tidak lagi membaca, memvalidasi, atau mengirim `interval_minutes` dari UI.
+- Kolom DB `apify_actors.interval_minutes` tetap ada sebagai legacy compatibility.
+- Runtime `RunApifyScraping` belum diubah pada task ini.
+- Package/Project scheduling tetap tidak berubah.
+
+## Komponen Kunci
+- `app/Livewire/Admin/ApifyConfiguration.php`
+- `resources/views/livewire/admin/apify-configuration.blade.php`
+- `tests/Feature/AdminApifyConfigurationTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: NO
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Livewire/Admin/ApifyConfiguration.php`: PASS
+- `php -l app/Models/ApifyActor.php`: PASS
+- `php -l tests/Feature/AdminApifyConfigurationTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=AdminApifyConfigurationTest`: NOT VERIFIED di default DB, FAIL di SQLite temp harness karena satu assert raw HTML terlalu sensitif, lalu test diperbaiki dan perlu rerun final
+
+## Catatan QA
+- Browser QA belum diverifikasi.
+- Runtime scraping tidak dijalankan.
+
+## Commit SHA Terkait
+- pending
+
 # Milestone: Global Scraping Switches 2B Closure
 
 ## Tambahan Milestone: PORTAL-SLOT-RECOVERY-6C

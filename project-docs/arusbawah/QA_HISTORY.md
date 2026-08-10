@@ -1,5 +1,25 @@
 # QA History
 
+# ACTOR-INTERVAL-REMOVAL-7A-UI
+**Tanggal**: 2026-08-10
+**Area**: Admin Apify Configuration, actor performance surface
+
+### Skenario yang Diuji & Hasil:
+1. **Interval Field Removed**: Field `Interval Scraping (Menit)` tidak lagi tampil di form Actor.
+2. **Section Renamed**: Section yang semula membawa wording Jadwal sekarang memakai label `Konfigurasi Performa`.
+3. **Form State Removed**: Livewire `ApifyConfiguration` tidak lagi memiliki public state `interval_minutes`.
+4. **Legacy Column Preserved**: Save/update Actor tidak mengubah kolom legacy `apify_actors.interval_minutes`.
+5. **Other Actor Settings Preserved**: Memory, timeout, build, no_timeout, payload mapping, dan priority tetap tersimpan normal.
+6. **Runtime Unchanged**: `RunApifyScraping` tidak disentuh pada task ini.
+7. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+8. **Targeted Test Run**: `php artisan test --filter=AdminApifyConfigurationTest` belum final karena environment default mengarah ke PostgreSQL lokal yang tidak tersedia; SQLite temp harness sempat lulus sebagian lalu satu assertion HTML terlalu sensitif diperbaiki dan perlu rerun final.
+
+### Catatan QA:
+- Browser QA belum diverifikasi.
+- Runtime scraping tidak dijalankan.
+
+**Status Akhir**: NOT VERIFIED menunggu rerun final test SQLite setelah penyesuaian assertion.
+
 ## PORTAL-SLOT-RECOVERY-6C
 **Tanggal**: 2026-08-10
 **Area**: `RunNewsPortalScraping`, bounded portal recovery

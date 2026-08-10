@@ -299,7 +299,6 @@
                                 </td>
                                 <td class="px-3 py-3 align-top font-semibold text-slate-600">
                                     <div>{{ $actor->memory_limit }} MB RAM</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">{{ $actor->interval_minutes }} menit</div>
                                 </td>
                                 <td class="px-3 py-3 align-top font-bold text-slate-700">
                                     <div class="uppercase truncate">{{ $actor->range_mode }}</div>
@@ -450,19 +449,14 @@
                             </div>
                         @endif
                         <!-- Group 1: Identitas & Target -->
-                        <!-- Group 2: Performa & Jadwal -->
+                        <!-- Group 2: Performa -->
                         <div>
                             <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                                 <span class="w-5 h-5 rounded bg-blue-50 flex items-center justify-center text-blue-500"><span class="material-symbols-outlined text-[13px]">speed</span></span>
-                                Konfigurasi Performa & Jadwal
+                                Konfigurasi Performa
                             </h3>
                             <div class="bg-blue-50/30 border border-blue-100/50 p-4 rounded-2xl space-y-4">
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Interval Scraping (Menit)</label>
-                                        <input wire:model="interval_minutes" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
-                                        @error('interval_minutes') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                                    </div>
+                                <div class="grid gap-4 sm:grid-cols-1">
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Prioritas Fallback</label>
                                         <input wire:model="priority" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">

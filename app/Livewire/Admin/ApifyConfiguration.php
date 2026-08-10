@@ -56,7 +56,6 @@ class ApifyConfiguration extends Component
     public string $build = 'latest';
     public int $timeout_seconds = 10000;
     public bool $no_timeout = false;
-    public int $interval_minutes = 240;
     public int $memory_limit = 0;
     public string $range_mode = '7d';
     public int $priority = 1;
@@ -367,7 +366,6 @@ class ApifyConfiguration extends Component
                 $this->functionType = $facebook['function_type'];
                 $this->actorStatus = (string) ($facebook['status'] ?? 'active');
                 $this->memory_limit = (int) $facebook['memory_limit'];
-                $this->interval_minutes = (int) $facebook['interval_minutes'];
                 $this->range_mode = (string) $facebook['range_mode'];
             }
         } elseif ($value === 'Instagram') {
@@ -455,7 +453,6 @@ class ApifyConfiguration extends Component
         $this->build = (string) ($actor->build ?? 'latest');
         $this->timeout_seconds = (int) ($actor->timeout_seconds ?? 10000);
         $this->no_timeout = (bool) ($actor->no_timeout ?? false);
-        $this->interval_minutes = $actor->interval_minutes;
         $this->memory_limit = $actor->memory_limit;
         $this->range_mode = $actor->range_mode;
         $this->priority = $actor->priority;
@@ -495,7 +492,6 @@ class ApifyConfiguration extends Component
                 'build' => ['required', 'in:latest,beta,prod'],
                 'timeout_seconds' => ['required', 'integer'],
                 'no_timeout' => ['boolean'],
-                'interval_minutes' => ['required', 'integer'],
                 'memory_limit' => ['required', 'integer'],
                 'range_mode' => ['required', 'string'],
                 'priority' => ['required', 'integer'],
@@ -583,7 +579,6 @@ class ApifyConfiguration extends Component
             'status' => $data['actorStatus'],
             'keyword_field_mapping' => $data['keyword_field_mapping'],
             'output_mapping' => $resolvedOutputMapping ?: null,
-            'interval_minutes' => $data['interval_minutes'],
             'memory_limit' => $data['memory_limit'],
             'range_mode' => $data['range_mode'],
             'priority' => $data['priority'],
@@ -821,7 +816,6 @@ class ApifyConfiguration extends Component
         $this->build = 'latest';
         $this->timeout_seconds = 10000;
         $this->no_timeout = false;
-        $this->interval_minutes = 240;
         $this->memory_limit = 0;
         $this->range_mode = '7d';
         $this->facebook_post_time_range = '24h';
@@ -1008,7 +1002,6 @@ class ApifyConfiguration extends Component
         $this->build = (string) ($definition['build'] ?? $this->build ?: 'latest');
         $this->timeout_seconds = (int) ($definition['timeout_seconds'] ?? $this->timeout_seconds ?: 10000);
         $this->no_timeout = (bool) ($definition['no_timeout'] ?? $this->no_timeout ?: false);
-        $this->interval_minutes = (int) ($definition['interval_minutes'] ?? $this->interval_minutes ?: 240);
         $this->memory_limit = (int) ($definition['memory_limit'] ?? $this->memory_limit ?: 0);
         $this->range_mode = (string) ($definition['range_mode'] ?? $this->range_mode ?: '7d');
         $this->priority = (int) ($definition['priority'] ?? $this->priority ?: 1);

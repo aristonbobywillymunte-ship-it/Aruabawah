@@ -1,5 +1,17 @@
 # QA Checklist
 
+## ACTOR-INTERVAL-REMOVAL-7A-UI
+- [x] `php -l app/Livewire/Admin/ApifyConfiguration.php`
+- [x] `php -l app/Models/ApifyActor.php`
+- [x] `php -l tests/Feature/AdminApifyConfigurationTest.php`
+- [x] `php artisan route:list`
+- [x] `php artisan view:clear`
+- [x] `git diff --check`
+- [ ] `php artisan test --filter=AdminApifyConfigurationTest` final rerun after assertion fix
+- [ ] Browser QA
+- [ ] Runtime scraping
+- [ ] Production migration
+
 ## PORTAL-SLOT-RECOVERY-6C
 - [x] `php -l config/services.php`
 - [x] `php -l app/Console/Commands/RunNewsPortalScraping.php`
