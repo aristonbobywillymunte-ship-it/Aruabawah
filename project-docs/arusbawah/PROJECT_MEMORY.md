@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur PROJECT-SCHEDULE-OVERRIDE-4B-UI
+- **Alasan**: Project membutuhkan UI create/edit untuk override jadwal harian opsional agar user bisa memilih ikut jadwal paket atau mengatur jam sendiri per project.
+- **Solusi**: Menambahkan state Livewire dan input `type="time"` dinamis di Project Create/Edit yang mengikuti `runs_per_day` paket, lalu menyimpan override sebagai array normalized atau `null` jika seluruh slot dikosongkan.
+- **Batasan**: Tidak ada perubahan pada runtime scheduling, package schedule, actor interval, project/package relation, authorization, atau content sync.
+- **Fallback / Legacy**: Mengosongkan semua slot tetap berarti inherit jadwal paket.
+
 ## Konteks Fitur PROJECT-SCHEDULE-OVERRIDE-4A-DATA
 - **Alasan**: Project perlu fondasi data-layer untuk override jadwal harian opsional agar nanti bisa menyimpan waktu Portal dan Sosial sendiri tanpa mengubah sumber utama paket.
 - **Solusi**: Menambahkan dua field JSON nullable pada `projects`, yaitu `news_run_times_override` dan `social_run_times_override`, lalu memetakan keduanya sebagai array di model `Project`.

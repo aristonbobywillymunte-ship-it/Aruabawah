@@ -1,5 +1,43 @@
 # Milestone: Global Scraping Switches 2B Closure
 
+## Tambahan Milestone: PROJECT-SCHEDULE-OVERRIDE-4B-UI
+
+## Apa yang Diubah
+Menambahkan UI create/edit Project untuk override jadwal harian opsional per project, beserta validasi all-or-nothing yang mengikuti jumlah slot dari paket terpilih.
+
+## Behavior Final
+- Project Create dan Project Edit kini menampilkan referensi jadwal paket serta input override waktu Portal dan Sosial.
+- Jumlah input override mengikuti `runs_per_day` paket, tanpa menambah input run-count baru di level Project.
+- Jika semua slot dikosongkan, Project akan mewarisi jadwal paket.
+- Jika sebagian slot diisi, save ditolak dengan pesan Indonesia yang jelas.
+- Nilai valid disimpan sebagai array normalized; nilai kosong penuh disimpan sebagai `null`.
+- Tidak ada perubahan pada runtime scheduling.
+
+## Komponen Kunci
+- `app/Livewire/ProjectCreate.php`
+- `app/Livewire/ProjectEditModal.php`
+- `resources/views/livewire/project-create.blade.php`
+- `resources/views/livewire/project-edit-modal.blade.php`
+- `tests/Feature/ProjectScheduleOverrideUiTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: NO
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Livewire/ProjectCreate.php`: PASS
+- `php -l app/Livewire/ProjectEditModal.php`: PASS
+- `php -l tests/Feature/ProjectScheduleOverrideUiTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=ProjectScheduleOverrideUiTest`: PASS pada SQLite temp test harness
+
+## Commit SHA Terkait
+- `c13f08ecd5d136b59e3e0acab9d34c21a76ce7ed`
+
 ## Tambahan Milestone: PROJECT-SCHEDULE-OVERRIDE-4A-DATA
 
 ## Apa yang Diubah

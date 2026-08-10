@@ -1,5 +1,24 @@
 # QA History
 
+## PROJECT-SCHEDULE-OVERRIDE-4B-UI
+**Tanggal**: 2026-08-10
+**Area**: Project Create/Edit UI, optional schedule overrides
+
+### Skenario yang Diuji & Hasil:
+1. **Create Persist**: Project Create menyimpan override Portal dan Sosial sebagai array waktu.
+2. **Partial Portal Rejected**: Override Portal setengah isi ditolak dengan pesan all-or-nothing yang jelas.
+3. **Edit Persist**: Project Edit menyimpan override dan mendukung null/full blank sebagai inherit Paket.
+4. **Partial Social Rejected**: Override Sosial setengah isi ditolak.
+5. **Package Reference Shown**: UI tetap menampilkan referensi jadwal paket secara ringkas.
+6. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+7. **Targeted Test Run**: `php artisan test --filter=ProjectScheduleOverrideUiTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser/runtime QA tidak relevan untuk perubahan ini.
+- Queue background difake di test agar hanya alur UI/data-layer yang diverifikasi.
+
+**Status Akhir**: PASS
+
 ## PROJECT-SCHEDULE-OVERRIDE-4A-DATA
 **Tanggal**: 2026-08-10
 **Area**: Project data layer, optional schedule overrides
