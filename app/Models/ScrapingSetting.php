@@ -14,6 +14,9 @@ class ScrapingSetting extends Model
         'retry_limit',
         'retry_delay_minutes',
         'is_active',
+        'google_news_enabled',
+        'manual_portal_enabled',
+        'apify_enabled',
         'enable_realtime',
     ];
 
@@ -25,6 +28,9 @@ class ScrapingSetting extends Model
         'retry_limit' => 'integer',
         'retry_delay_minutes' => 'integer',
         'is_active' => 'boolean',
+        'google_news_enabled' => 'boolean',
+        'manual_portal_enabled' => 'boolean',
+        'apify_enabled' => 'boolean',
         'enable_realtime' => 'boolean',
     ];
 }

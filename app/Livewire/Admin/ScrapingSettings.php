@@ -15,6 +15,9 @@ class ScrapingSettings extends Component
     public int $retry_limit = 3;
     public int $retry_delay_minutes = 10;
     public bool $is_active = true;
+    public bool $google_news_enabled = true;
+    public bool $manual_portal_enabled = true;
+    public bool $apify_enabled = true;
     public bool $enable_realtime = false;
 
     // UI state
@@ -42,6 +45,9 @@ class ScrapingSettings extends Component
             'retry_limit' => ['required', 'integer', 'min:0', 'max:10'],
             'retry_delay_minutes' => ['required', 'integer', 'min:1', 'max:180'],
             'is_active' => ['boolean'],
+            'google_news_enabled' => ['boolean'],
+            'manual_portal_enabled' => ['boolean'],
+            'apify_enabled' => ['boolean'],
             'enable_realtime' => ['boolean'],
         ];
     }
@@ -70,6 +76,9 @@ class ScrapingSettings extends Component
         $this->retry_limit = (int) ($setting->retry_limit ?? 3);
         $this->retry_delay_minutes = (int) ($setting->retry_delay_minutes ?? 10);
         $this->is_active = (bool) ($setting->is_active ?? true);
+        $this->google_news_enabled = (bool) ($setting->google_news_enabled ?? true);
+        $this->manual_portal_enabled = (bool) ($setting->manual_portal_enabled ?? true);
+        $this->apify_enabled = (bool) ($setting->apify_enabled ?? true);
         $this->enable_realtime = $setting->enable_realtime ?? false;
     }
 
@@ -94,6 +103,9 @@ class ScrapingSettings extends Component
             'retry_limit' => $this->retry_limit,
             'retry_delay_minutes' => $this->retry_delay_minutes,
             'is_active' => $this->is_active,
+            'google_news_enabled' => $this->google_news_enabled,
+            'manual_portal_enabled' => $this->manual_portal_enabled,
+            'apify_enabled' => $this->apify_enabled,
             'enable_realtime' => $this->enable_realtime,
         ]);
 

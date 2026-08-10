@@ -14,33 +14,57 @@
 
     <!-- Configurations Status Grid -->
     <div class="grid gap-6 md:grid-cols-3">
-        <!-- Card 1: System Status -->
+        <!-- Card 1: Global Switches -->
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between text-left">
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Aktivitas Scraping</h2>
+                    <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Global Switches</h2>
                     <span class="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold {{ $setting->is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-600 border border-slate-200' }}">
-                        {{ $setting->is_active ? 'Aktif' : 'Nonaktif' }}
+                        {{ $setting->is_active ? 'Master ON' : 'Master OFF' }}
                     </span>
                 </div>
-                <p class="text-xs text-slate-500 leading-relaxed">Saat dinonaktifkan, seluruh proses pencarian (*discovery*) dan pengambilan (*crawling*) berita akan ditangguhkan.</p>
+                <p class="text-xs text-slate-500 leading-relaxed">Kontrol utama seluruh scraping otomatis. Switch di bawah ini disimpan persisten untuk tiap engine.</p>
             </div>
             
             <div class="mt-6 space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <div class="flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-2">
-                        <span class="flex h-2 w-2 relative">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full {{ $setting->is_active ? 'bg-emerald-400' : 'bg-slate-300' }} opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 {{ $setting->is_active ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
-                        </span>
-                        <span class="text-[11px] font-bold text-slate-600">Sistem Scraping</span>
+                    <div class="space-y-0.5">
+                        <span class="text-[11px] font-bold text-slate-700">Master Scraping Otomatis</span>
+                        <p class="text-[10px] text-slate-400">Kontrol utama seluruh scraping otomatis.</p>
                     </div>
                     <button 
                         wire:click="toggleStatus" 
                         class="inline-flex h-8 items-center gap-1.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 px-3.5 text-[11px] font-bold transition shadow-sm cursor-pointer"
                     >
-                        <span>{{ $setting->is_active ? 'Matikan' : 'Aktifkan' }}</span>
+                        <span>{{ $setting->is_active ? 'ON' : 'OFF' }}</span>
                     </button>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                    <div class="space-y-0.5">
+                        <span class="text-[11px] font-bold text-slate-700">Google News</span>
+                        <p class="text-[10px] text-slate-400">Mengizinkan proses otomatis Google News.</p>
+                    </div>
+                    <span class="inline-flex h-8 items-center rounded-xl border border-slate-200 bg-white px-3.5 text-[11px] font-bold text-slate-700 shadow-sm">
+                        {{ $setting->google_news_enabled ? 'ON' : 'OFF' }}
+                    </span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                    <div class="space-y-0.5">
+                        <span class="text-[11px] font-bold text-slate-700">Portal Manual</span>
+                        <p class="text-[10px] text-slate-400">Mengizinkan crawling portal yang dikonfigurasi secara manual.</p>
+                    </div>
+                    <span class="inline-flex h-8 items-center rounded-xl border border-slate-200 bg-white px-3.5 text-[11px] font-bold text-slate-700 shadow-sm">
+                        {{ $setting->manual_portal_enabled ? 'ON' : 'OFF' }}
+                    </span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                    <div class="space-y-0.5">
+                        <span class="text-[11px] font-bold text-slate-700">Apify / Sosial Media</span>
+                        <p class="text-[10px] text-slate-400">Mengizinkan scraping sosial media melalui Apify.</p>
+                    </div>
+                    <span class="inline-flex h-8 items-center rounded-xl border border-slate-200 bg-white px-3.5 text-[11px] font-bold text-slate-700 shadow-sm">
+                        {{ $setting->apify_enabled ? 'ON' : 'OFF' }}
+                    </span>
                 </div>
             </div>
         </div>
@@ -151,7 +175,19 @@
                     <div class="space-y-2 pt-2">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" wire:model="is_active" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
-                            <span class="text-xs font-bold text-slate-700">Jalankan Scheduler & Scraping Otomatis</span>
+                            <span class="text-xs font-bold text-slate-700">Master Scraping Otomatis</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" wire:model="google_news_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
+                            <span class="text-xs font-bold text-slate-700">Google News</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" wire:model="manual_portal_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
+                            <span class="text-xs font-bold text-slate-700">Portal Manual</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" wire:model="apify_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
+                            <span class="text-xs font-bold text-slate-700">Apify / Sosial Media</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" wire:model="enable_realtime" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
