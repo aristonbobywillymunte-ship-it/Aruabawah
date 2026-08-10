@@ -1,5 +1,23 @@
 # QA History
 
+# SCRAPING-GLOBAL-SWITCHES-2A
+**Tanggal**: 2026-08-10
+**Area**: Admin Scraping Settings, global engine switches
+
+### Skenario yang Diuji & Hasil:
+1. **Model / Livewire Wiring**: Field `google_news_enabled`, `manual_portal_enabled`, dan `apify_enabled` sudah ada di model dan state Livewire, dengan `is_active` tetap menjadi master switch.
+2. **UI Global Switches**: Kartu global menampilkan kontrol master, Google News, Portal Manual, dan Apify / Sosial Media dalam layout ringkas.
+3. **Legacy Fields Preserved**: Interval lama dan field timeout/retry tetap utuh, tanpa perubahan semantik runtime.
+4. **Migration Scope**: Migration baru hanya menambahkan tiga boolean field baru di `scraping_settings`.
+5. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+6. **Targeted Test Run**: `php artisan test --filter=ScrapingSettingsTest` tidak bisa diverifikasi di environment ini karena database test lokal tidak tersedia dan Docker daemon tidak berjalan.
+
+### Catatan QA:
+- Browser/runtime QA tidak dijalankan.
+- Runtime scheduler belum di-wiring pada task ini.
+
+**Status Akhir**: PASS untuk perubahan kode dan verifikasi statik; NOT VERIFIED untuk test framework karena blocker environment database.
+
 # Package Daily Schedule Slot Limit Hotfix
 **Tanggal**: 2026-08-09
 **Area**: Admin Package Manager, daily schedule slot resizing

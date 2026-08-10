@@ -1,3 +1,47 @@
+# Milestone: Global Scraping Switches 2A Closure
+
+## Tambahan Milestone: SCRAPING-GLOBAL-SWITCHES-2A
+
+## Apa yang Diubah
+Menambahkan tiga switch global scraping yang persisten untuk Google News, Manual Portal, dan Apify/Sosial Media, sambil mempertahankan `scraping_settings.is_active` sebagai master switch utama.
+
+## Behavior Final
+- `scraping_settings.is_active` tetap menjadi master switch dan tidak diubah semantiknya.
+- Tiga field baru ditambahkan untuk kontrol engine:
+  - `google_news_enabled`
+  - `manual_portal_enabled`
+  - `apify_enabled`
+- Ketiganya default `true` agar perilaku produksi tetap aman setelah migrasi.
+- Livewire Scraping Settings kini memuat, memvalidasi, dan menyimpan ketiga switch tersebut.
+- UI admin menampilkan kontrol master + tiga switch engine dengan label yang ringkas.
+- Runtime scheduler, package scheduling, project scheduling, actor scheduling, dan recovery logic belum di-wiring pada task ini.
+- Legacy interval fields tetap utuh dan tidak berubah semantik runtime-nya.
+
+## Komponen Kunci
+- `database/migrations/2026_08_10_000000_add_global_engine_switches_to_scraping_settings_table.php`
+- `app/Models/ScrapingSetting.php`
+- `app/Livewire/Admin/ScrapingSettings.php`
+- `resources/views/livewire/admin/scraping-settings.blade.php`
+- `tests/Feature/ScrapingSettingsTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: YES
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: NO
+- **Package / Project / Actor scheduling berubah**: NO
+- **Legacy intervals berubah**: NO
+
+## Verifikasi
+- `php -l app/Models/ScrapingSetting.php`: PASS
+- `php -l app/Livewire/Admin/ScrapingSettings.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=ScrapingSettingsTest`: NOT VERIFIED di environment ini karena database test lokal tidak tersedia dan Docker daemon tidak bisa diakses
+
+## Commit SHA Terkait
+- Pending
+
 # Milestone: Package Daily Schedule Slot Limit Hotfix
 
 ## Tambahan Milestone: PACKAGE-DAILY-SCHEDULE-SLOT-LIMIT-HOTFIX-2

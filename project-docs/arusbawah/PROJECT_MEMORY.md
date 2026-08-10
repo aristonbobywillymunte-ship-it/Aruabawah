@@ -1,5 +1,11 @@
 # Project Memory
 
+# Konteks Fitur SCRAPING-GLOBAL-SWITCHES-2A
+- **Alasan**: Sistem membutuhkan switch global persisten per engine agar Google News, Portal Manual, dan Apify/Sosial Media bisa dikontrol terpisah tanpa mengubah runtime scheduler dulu.
+- **Solusi**: Menambahkan field `google_news_enabled`, `manual_portal_enabled`, dan `apify_enabled` ke `scraping_settings`, lalu memuat dan menyimpan semuanya dari Livewire Scraping Settings.
+- **Batasan**: `scraping_settings.is_active` tetap menjadi master switch; runtime scheduler, package, project, actor, dan recovery logic tidak diubah pada task ini.
+- **Fallback / Legacy**: Interval lama tetap dipertahankan dan belum dipensiunkan.
+
 ## Konteks Fitur PACKAGE-DAILY-SCHEDULE-SLOT-LIMIT-HOTFIX-2
 - **Alasan**: Dynamic time picker jadwal harian bisa dipaksa merender terlalu banyak slot sebelum validasi save berjalan.
 - **Solusi**: `resizeTimeSlots()` dikunci maksimal 24 elemen sehingga state UI tidak pernah membengkak lewat batas yang diizinkan.
