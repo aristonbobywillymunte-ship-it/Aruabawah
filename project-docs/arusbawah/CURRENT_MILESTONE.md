@@ -1,5 +1,41 @@
 # Milestone: Global Scraping Switches 2B Closure
 
+## Tambahan Milestone: PROJECT-SCHEDULE-OVERRIDE-4A-DATA
+
+## Apa yang Diubah
+Menambahkan fondasi data-layer Project untuk override jadwal harian opsional per project, tanpa menyentuh UI atau runtime scheduler.
+
+## Behavior Final
+- Project kini dapat menyimpan override waktu Portal melalui `news_run_times_override`.
+- Project kini dapat menyimpan override waktu Sosial melalui `social_run_times_override`.
+- Kedua field bersifat nullable JSON dan dibaca sebagai array oleh model.
+- Package tetap menjadi sumber utama untuk `runs_per_day`.
+- Tidak ada perubahan pada UI Project create/edit.
+- Tidak ada perubahan pada runtime scheduling.
+
+## Komponen Kunci
+- `database/migrations/2026_08_10_000001_add_schedule_run_times_overrides_to_projects_table.php`
+- `app/Models/Project.php`
+- `tests/Feature/ProjectScheduleOverrideDataTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: YES
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: NO
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Models/Project.php`: PASS
+- `php -l database/migrations/2026_08_10_000001_add_schedule_run_times_overrides_to_projects_table.php`: PASS
+- `php -l tests/Feature/ProjectScheduleOverrideDataTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=ProjectScheduleOverrideDataTest`: PASS pada SQLite temp test harness
+
+## Commit SHA Terkait
+- `ed255c999f94487cd442abd7dd4bd01d19d0f907`
+
 ## Tambahan Milestone: PACKAGE-SCHEDULE-STRICT-3A
 
 ## Apa yang Diubah

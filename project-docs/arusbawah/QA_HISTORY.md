@@ -1,5 +1,24 @@
 # QA History
 
+## PROJECT-SCHEDULE-OVERRIDE-4A-DATA
+**Tanggal**: 2026-08-10
+**Area**: Project data layer, optional schedule overrides
+
+### Skenario yang Diuji & Hasil:
+1. **Portal Override Persist**: `news_run_times_override` tersimpan sebagai array waktu Portal.
+2. **Social Override Persist**: `social_run_times_override` tersimpan sebagai array waktu Sosial.
+3. **Null Override Support**: Nilai `null` untuk kedua override tetap valid.
+4. **Model Casts**: Override dibaca kembali dari model sebagai array ketika berisi data.
+5. **Package Relation Preserved**: Relasi `package` pada Project tetap utuh.
+6. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+7. **Targeted Test Run**: `php artisan test --filter=ProjectScheduleOverrideDataTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser/runtime QA tidak relevan untuk perubahan ini.
+- Tidak ada perubahan UI atau scheduler runtime pada task ini.
+
+**Status Akhir**: PASS
+
 ## PACKAGE-SCHEDULE-STRICT-3A
 **Tanggal**: 2026-08-10
 **Area**: Admin Package Manager, daily schedules

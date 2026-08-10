@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur PROJECT-SCHEDULE-OVERRIDE-4A-DATA
+- **Alasan**: Project perlu fondasi data-layer untuk override jadwal harian opsional agar nanti bisa menyimpan waktu Portal dan Sosial sendiri tanpa mengubah sumber utama paket.
+- **Solusi**: Menambahkan dua field JSON nullable pada `projects`, yaitu `news_run_times_override` dan `social_run_times_override`, lalu memetakan keduanya sebagai array di model `Project`.
+- **Batasan**: Tidak ada perubahan pada UI Project create/edit, runtime scheduling, project/package resolution logic, AI, matching, authorization, atau content sync.
+- **Fallback / Legacy**: Paket tetap menjadi sumber utama untuk `runs_per_day`; override project hanya menyimpan waktu opsional untuk langkah lanjutan.
+
 ## Konteks Fitur PACKAGE-SCHEDULE-STRICT-3A
 - **Alasan**: Jadwal harian paket perlu bersifat tegas agar portal dan sosial tidak bisa disimpan dengan jumlah run yang tidak lengkap atau ambigu.
 - **Solusi**: `PackageManager` sekarang mewajibkan `news_runs_per_day` beserta seluruh `news_run_times` saat portal aktif, dan mewajibkan `social_runs_per_day` beserta seluruh `social_run_times` saat sosial benar-benar aktif menurut semantik paket yang sudah ada.
