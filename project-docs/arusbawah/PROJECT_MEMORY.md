@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur PORTAL-SLOT-FULFILLMENT-6B
+- **Alasan**: Portal otomatis membutuhkan penanda fulfillment yang terpisah dari attempt/prioritas supaya slot harian hanya dianggap terpakai setelah eksekusi otomatis sukses.
+- **Solusi**: Menambahkan `portal_last_scheduled_success_at` pada Project, membaca marker itu untuk due-check portal otomatis, dan menulisnya hanya setelah eksekusi otomatis selesai sukses.
+- **Batasan**: Tidak ada perubahan pada ProjectScheduleResolver precedence, project/package UI, Apify/social runtime, global switches, atau prioritas project selain pemisahan fulfillment.
+- **Catatan Implementasi**: Manual `--project-id` tidak menulis fulfillment otomatis; prioritas tetap memakai `news_last_scraped_at`.
+
 ## Konteks Fitur PORTAL-EFFECTIVE-SCHEDULE-6A
 - **Alasan**: Jalur otomatis portal perlu memakai schedule efektif Project agar override per project benar-benar mengalahkan default Package saat menentukan kapan scraping berjalan.
 - **Solusi**: `RunNewsPortalScraping` sekarang memanggil `ProjectScheduleResolver::resolvePortal()` pada mode otomatis dan memakai hasilnya untuk gate timing portal.

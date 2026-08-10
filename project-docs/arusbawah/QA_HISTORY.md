@@ -1,5 +1,28 @@
 # QA History
 
+## PORTAL-SLOT-FULFILLMENT-6B
+**Tanggal**: 2026-08-10
+**Area**: `RunNewsPortalScraping`, portal automatic slot fulfillment
+
+### Skenario yang Diuji & Hasil:
+1. **Automatic Success Writes Fulfillment**: Run otomatis yang sukses menulis `portal_last_scheduled_success_at`.
+2. **Immediate Re-evaluation Skips**: Evaluasi otomatis berikutnya tidak mengulang slot yang sudah fulfilled.
+3. **Automatic Failure Does Not Fulfill**: Run otomatis gagal tidak mengubah fulfillment marker.
+4. **Failed Slot Remains Due**: Slot yang gagal tetap bisa dipenuhi oleh run otomatis sukses berikutnya.
+5. **Manual Bypass**: `--project-id` tidak menulis fulfillment otomatis.
+6. **Manual Before/After Slot**: Run manual tidak memakan slot otomatis yang belum fulfilled.
+7. **Zero-New-Article Success**: Run sukses tanpa artikel baru tetap boleh memenuhi slot.
+8. **Override / Package Inheritance**: Schedules dari override Project dan Package tetap bekerja dengan fulfillment tracking.
+9. **Legacy Interval Ignored**: `news_interval_minutes` tidak memengaruhi due-check fulfillment Portal.
+10. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan schedule:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+11. **Targeted Test Run**: `php artisan test --filter=PortalScheduleFulfillmentTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+
+**Status Akhir**: PASS
+
 ## PORTAL-EFFECTIVE-SCHEDULE-6A
 **Tanggal**: 2026-08-10
 **Area**: `RunNewsPortalScraping`, portal automatic scheduling

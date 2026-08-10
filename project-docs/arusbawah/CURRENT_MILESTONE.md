@@ -1,5 +1,50 @@
 # Milestone: Global Scraping Switches 2B Closure
 
+## Tambahan Milestone: PORTAL-SLOT-FULFILLMENT-6B
+
+## Apa yang Diubah
+Memisahkan penanda fulfillment slot Portal otomatis dari timestamp attempt/prioritas dengan menambahkan marker persisten `portal_last_scheduled_success_at` pada Project dan memakai marker itu untuk due-check portal otomatis.
+
+## Behavior Final
+- Portal otomatis sekarang dianggap memenuhi slot hanya setelah eksekusi otomatis yang sukses.
+- Manual `--project-id` tidak menulis marker fulfillment otomatis.
+- Jika eksekusi otomatis gagal, marker fulfillment tidak berubah.
+- Zero-new-article run tetap boleh memenuhi slot selama run operasional selesai normal.
+- `ProjectScheduleResolver` tetap hanya menentukan schedule yang berlaku, bukan fulfillment.
+- Apify dan scheduling sosial tidak berubah.
+
+## Komponen Kunci
+- `database/migrations/2026_08_11_000000_add_portal_last_scheduled_success_at_to_projects_table.php`
+- `app/Models/Project.php`
+- `app/Console/Commands/RunNewsPortalScraping.php`
+- `tests/Feature/PortalScheduleFulfillmentTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: YES
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: YES, tetapi hanya penentuan fulfillment portal otomatis
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Console/Commands/RunNewsPortalScraping.php`: PASS
+- `php -l app/Models/Project.php`: PASS
+- `php -l database/migrations/2026_08_11_000000_add_portal_last_scheduled_success_at_to_projects_table.php`: PASS
+- `php -l tests/Feature/PortalScheduleFulfillmentTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan schedule:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=PortalScheduleFulfillmentTest`: PASS pada SQLite temp test harness
+- `php artisan test --filter=PortalEffectiveScheduleRuntimeTest`: PASS pada SQLite temp test harness
+- `php artisan test --filter=ProjectScheduleResolverTest`: PASS pada SQLite temp test harness
+
+## Catatan QA
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+
+## Commit SHA Terkait
+- pending
+
 ## Tambahan Milestone: PORTAL-EFFECTIVE-SCHEDULE-6A
 
 ## Apa yang Diubah
