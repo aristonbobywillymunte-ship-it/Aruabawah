@@ -100,6 +100,7 @@ class RunNewsPortalScraping extends Command
                     'id', 'name', 'is_active', 'package_id',
                     'created_at', 'updated_at', 'deleted_at',
                     'first_news_scrape_attempt_at', 'news_last_scraped_at',
+                    'portal_last_scheduled_success_at',
                     'topics', 'context_keywords', 'exclude_keywords', 'sources',
                     'news_run_times_override', 'social_run_times_override',
                 ])
@@ -165,9 +166,6 @@ class RunNewsPortalScraping extends Command
                     continue;
                 }
 
-                $lastNewsScrapedAt = Cache::get('news_last_scrape_at:' . $project->id);
-                $lastScrapedTime = $lastNewsScrapedAt ? \Carbon\Carbon::parse($lastNewsScrapedAt) : null;
-
                 if (! $filterProjectId) {
                     $effectiveNewsSchedule = $this->projectScheduleResolver->resolvePortal($project);
 
@@ -182,20 +180,22 @@ class RunNewsPortalScraping extends Command
                     }
 
                     $newsSchedule = $effectiveNewsSchedule['times'];
+                    $lastSuccessfulScheduledRunAt = $this->portalScheduleFulfillmentAt($project);
 
                     $portalLog->info('[Portal] Effective schedule evaluated.', [
                         'project_id' => $project->id,
                         'project_name' => $project->name,
                         'schedule_source' => $effectiveNewsSchedule['source'] ?? 'none',
                         'schedule' => $newsSchedule,
+                        'last_successful_scheduled_run_at' => optional($lastSuccessfulScheduledRunAt)?->toDateTimeString(),
                     ]);
 
-                    if (! $this->isWithinDailyRunWindow($lastScrapedTime, $newsSchedule)) {
+                    if (! $this->isWithinDailyRunWindow($lastSuccessfulScheduledRunAt, $newsSchedule)) {
                         $this->line("Skipping project [{$project->name}] — news schedule not due.");
                         $portalLog->info('[Portal] Project skipped: news daily schedule not due.', [
                             'project_id' => $project->id,
                             'project_name' => $project->name,
-                            'last_run_at' => optional($lastScrapedTime)?->toDateTimeString(),
+                            'last_successful_scheduled_run_at' => optional($lastSuccessfulScheduledRunAt)?->toDateTimeString(),
                             'schedule' => $newsSchedule,
                             'schedule_source' => $effectiveNewsSchedule['source'] ?? 'none',
                         ]);
@@ -225,6 +225,7 @@ class RunNewsPortalScraping extends Command
             }
 
             try {
+                $projectSuccessful = false;
                 foreach ($keywords as $keyword) {
                     $this->info("Scraping news for: [{$project->name}] keyword=\"{$keyword}\"");
                     if ($directUrl !== '') {
@@ -263,10 +264,18 @@ class RunNewsPortalScraping extends Command
                     ]);
                     $totalInserted += (int) ($outcome['newly_inserted'] ?? 0);
                     $totalReused += (int) ($outcome['reused_existing'] ?? 0);
+                    $projectSuccessful = $projectSuccessful || (
+                        ((int) ($outcome['newly_inserted'] ?? 0))
+                        + ((int) ($outcome['reused_existing'] ?? 0))
+                        + ((int) ($outcome['rejected'] ?? 0))
+                        + ((int) ($outcome['partial'] ?? 0))
+                    ) > 0;
                 }
-                Cache::put('news_last_scrape_at:' . $project->id, now()->toDateTimeString(), now()->addDays(7));
                 // Catat ke DB agar prioritisasi proyek berikutnya akurat (round-robin berbasis DB)
                 $this->projectScrapePriorityService->recordLastScraped($project);
+                if (! $filterProjectId && $projectSuccessful) {
+                    $this->markPortalScheduleFulfilled($project);
+                }
             } catch (\Throwable $e) {
                 $this->error("Error scraping project [{$project->name}]: " . $e->getMessage());
                 $portalLog->error("Error scraping project [{$project->name}]", [
@@ -318,6 +327,7 @@ class RunNewsPortalScraping extends Command
         $manualRejected = 0;
         $manualPartial = 0;
         $manualError = 0;
+        $manualSuccessful = false;
         $manualRequested = in_array($discoveryMode, ['auto', 'manual_only'], true);
         $fallbackRequested = in_array($discoveryMode, ['auto', 'google_news_only'], true);
 
@@ -349,6 +359,7 @@ class RunNewsPortalScraping extends Command
                         continue;
                     }
 
+                    $manualSuccessful = true;
                     $candidateUrls = $this->extractArticleUrlsFromDiscovery($source, (string) $response->body(), max($limit * 3, $limit));
                     if (empty($candidateUrls)) {
                         Log::info('[NewsPortal] Manual portal source returned no valid candidate URLs.', [
@@ -441,6 +452,7 @@ class RunNewsPortalScraping extends Command
         }
 
         $googleSaved = 0;
+        $googleSuccessful = false;
         if ($fallbackRequested) {
             $this->info(sprintf(
                 '  → manual discovery completed (Inserted %d / Reused %d). Starting Google News fallback stage.',
@@ -450,6 +462,7 @@ class RunNewsPortalScraping extends Command
 
             $googleOutcome = $this->scrapeGoogleNews($keyword, $project, $limit, $suppressTelegram, $suppressAi, $suppressReach);
             $googleSaved = (int) (($googleOutcome['newly_inserted'] ?? 0) + ($googleOutcome['reused_existing'] ?? 0));
+            $googleSuccessful = (bool) ($googleOutcome['successful'] ?? false);
             if ($googleSaved > 0) {
                 $this->runStats['discovery_source'] = $manualRequested ? 'auto_with_google_news_fallback' : 'google_news_only';
             }
@@ -478,6 +491,7 @@ class RunNewsPortalScraping extends Command
             'rejected' => $manualRejected,
             'partial' => $manualPartial,
             'error' => $manualError,
+            'successful' => $manualSuccessful || $googleSuccessful,
         ];
     }
 
@@ -491,6 +505,7 @@ class RunNewsPortalScraping extends Command
     ): array
     {
         $projectId = $project->id;
+        $successful = false;
         // Google News RSS – supports Bahasa Indonesia (hl=id&gl=ID)
         $url = 'https://news.google.com/rss/search?' . http_build_query([
             'q'    => $keyword,
@@ -520,6 +535,7 @@ class RunNewsPortalScraping extends Command
                     'rejected' => 0,
                     'partial' => 0,
                     'error' => 1,
+                    'successful' => false,
                 ];
             }
 
@@ -539,8 +555,10 @@ class RunNewsPortalScraping extends Command
                     'rejected' => 0,
                     'partial' => 0,
                     'error' => 1,
+                    'successful' => true,
                 ];
             }
+            $successful = true;
 
             $saved = 0;
             $inserted = 0;
@@ -672,6 +690,7 @@ class RunNewsPortalScraping extends Command
                 'rejected' => $rejected,
                 'partial' => $partial,
                 'error' => $error,
+                'successful' => $successful,
             ];
         } catch (\Exception $e) {
             Log::error("[NewsPortal] Exception for keyword \"{$keyword}\": " . $e->getMessage());
@@ -687,6 +706,7 @@ class RunNewsPortalScraping extends Command
                 'rejected' => 0,
                 'partial' => 0,
                 'error' => 1,
+                'successful' => false,
             ];
         }
     }
@@ -1428,6 +1448,41 @@ class RunNewsPortalScraping extends Command
     private function beginProjectFirstAttempt(Project $project): void
     {
         $this->projectScrapePriorityService->recordAttempt($project);
+    }
+
+    private function portalScheduleFulfillmentAt(Project $project): ?Carbon
+    {
+        $value = $project->portal_last_scheduled_success_at
+            ?? Project::query()->whereKey($project->id)->value('portal_last_scheduled_success_at');
+
+        if ($value instanceof Carbon) {
+            return $value;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return Carbon::instance($value);
+        }
+
+        if (is_string($value) && $value !== '') {
+            try {
+                return Carbon::parse($value);
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private function markPortalScheduleFulfilled(Project $project): void
+    {
+        $now = now();
+        Project::query()
+            ->whereKey($project->id)
+            ->update(['portal_last_scheduled_success_at' => $now]);
+
+        $project->forceFill(['portal_last_scheduled_success_at' => $now]);
+        $project->syncOriginalAttribute('portal_last_scheduled_success_at');
     }
 
     private function markShortContentAsPartial(string $url, string $canonicalUrl, int $projectId, string $content, string $title, string $sourceType = 'google_news'): void

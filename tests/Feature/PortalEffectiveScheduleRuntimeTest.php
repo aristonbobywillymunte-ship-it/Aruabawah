@@ -29,7 +29,7 @@ class PortalEffectiveScheduleRuntimeTest extends TestCase
                 'news_interval_minutes' => 999,
             ]);
 
-            Cache::put('news_last_scrape_at:' . $project->id, Carbon::now()->subHours(2)->toDateTimeString());
+            $project->forceFill(['portal_last_scheduled_success_at' => Carbon::now()->subHours(2)])->save();
             $this->fakePortalResponses();
 
             $exit = Artisan::call('scraping:run-news', [
@@ -60,7 +60,7 @@ class PortalEffectiveScheduleRuntimeTest extends TestCase
                 'news_interval_minutes' => 999,
             ]);
 
-            Cache::put('news_last_scrape_at:' . $project->id, Carbon::now()->subHours(2)->toDateTimeString());
+            $project->forceFill(['portal_last_scheduled_success_at' => Carbon::now()->subHours(2)])->save();
             $this->fakePortalResponses();
 
             $exit = Artisan::call('scraping:run-news', [
@@ -177,7 +177,7 @@ class PortalEffectiveScheduleRuntimeTest extends TestCase
                 'news_run_times_override' => ['19:00', '21:00'],
             ]);
 
-            Cache::put('news_last_scrape_at:' . $project->id, Carbon::now()->subMinutes(10)->toDateTimeString());
+            $project->forceFill(['portal_last_scheduled_success_at' => Carbon::now()->subMinutes(10)])->save();
             $this->fakePortalResponses();
 
             $exit = Artisan::call('scraping:run-news', [

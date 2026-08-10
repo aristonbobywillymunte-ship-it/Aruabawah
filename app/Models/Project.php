@@ -26,6 +26,7 @@ class Project extends Model
         'ai_insight_updated_at',
         'is_active',
         'package_id',
+        'portal_last_scheduled_success_at',
         'news_run_times_override',
         'social_run_times_override',
     ];
@@ -41,6 +42,7 @@ class Project extends Model
         'is_active' => 'boolean',
         'first_news_scrape_attempt_at' => 'datetime',
         'news_last_scraped_at' => 'datetime',
+        'portal_last_scheduled_success_at' => 'datetime',
         'news_run_times_override' => 'array',
         'social_run_times_override' => 'array',
     ];
