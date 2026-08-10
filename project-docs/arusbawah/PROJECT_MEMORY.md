@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur EFFECTIVE-SCHEDULE-RESOLVER-5A
+- **Alasan**: Perhitungan schedule efektif Project perlu sumber tunggal agar precedence override Project versus default Package bisa dibaca konsisten di langkah lanjutan.
+- **Solusi**: Menambahkan `ProjectScheduleResolver` untuk mengembalikan schedule Portal dan Sosial efektif beserta `source` dan `reason` yang kecil, deterministik, dan mudah diuji.
+- **Batasan**: Tidak ada perubahan pada `RunNewsPortalScraping`, `RunApifyScraping`, `routes/console.php`, atau job runtime lain pada task ini.
+- **Fallback / Legacy**: Override Project yang kosong penuh tetap berarti memakai schedule Package.
+
 ## Konteks Fitur PROJECT-SCHEDULE-OVERRIDE-4B-UI
 - **Alasan**: Project membutuhkan UI create/edit untuk override jadwal harian opsional agar user bisa memilih ikut jadwal paket atau mengatur jam sendiri per project.
 - **Solusi**: Menambahkan state Livewire dan input `type="time"` dinamis di Project Create/Edit yang mengikuti `runs_per_day` paket, lalu menyimpan override sebagai array normalized atau `null` jika seluruh slot dikosongkan.

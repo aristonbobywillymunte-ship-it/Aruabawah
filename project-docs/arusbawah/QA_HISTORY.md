@@ -1,5 +1,25 @@
 # QA History
 
+## EFFECTIVE-SCHEDULE-RESOLVER-5A
+**Tanggal**: 2026-08-10
+**Area**: Shared schedule resolution service for Project
+
+### Skenario yang Diuji & Hasil:
+1. **Portal Override Priority**: Project override lengkap dan valid dipakai untuk Portal.
+2. **Portal Package Fallback**: Jika override Portal kosong penuh, resolver memakai schedule Package.
+3. **Portal Invalid Override**: Override Portal parsial/malformed/duplikat ditolak tanpa fallback diam-diam.
+4. **Portal Disabled / Missing Package**: Resolver mengembalikan `feature_disabled` atau `package_missing` sesuai kondisi.
+5. **Social Override Priority**: Project override lengkap dan valid dipakai untuk Sosial.
+6. **Package Invalid / Unconfigured**: Schedule default Package yang rusak atau kosong dilaporkan dengan reason yang sesuai.
+7. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+8. **Targeted Test Run**: `php artisan test --filter=ProjectScheduleResolverTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser/runtime QA tidak relevan untuk perubahan ini.
+- Runtime scraping sengaja tidak dijalankan pada task ini.
+
+**Status Akhir**: PASS
+
 ## PROJECT-SCHEDULE-OVERRIDE-4B-UI
 **Tanggal**: 2026-08-10
 **Area**: Project Create/Edit UI, optional schedule overrides

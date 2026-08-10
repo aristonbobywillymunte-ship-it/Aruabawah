@@ -1,5 +1,39 @@
 # Milestone: Global Scraping Switches 2B Closure
 
+## Tambahan Milestone: EFFECTIVE-SCHEDULE-RESOLVER-5A
+
+## Apa yang Diubah
+Menambahkan shared resolver tunggal untuk menghitung schedule Portal dan Sosial yang efektif per Project, dengan precedence Project override lalu Package default.
+
+## Behavior Final
+- Resolver dapat mengembalikan schedule efektif Portal dan Sosial dalam bentuk struktur kecil dan deterministik.
+- Project override yang lengkap dan valid dipakai sebagai sumber utama.
+- Jika override kosong penuh, resolver jatuh ke schedule Package.
+- Override parsial, duplikat, atau malformed dianggap invalid dan tidak diam-diam fallback ke Package.
+- Jika Package atau fitur terkait tidak tersedia, resolver mengembalikan source `none` beserta reason yang sesuai.
+- Runtime scraper belum menggunakan resolver ini pada task 5A.
+
+## Komponen Kunci
+- `app/Services/Scraping/ProjectScheduleResolver.php`
+- `tests/Feature/ProjectScheduleResolverTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: NO
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Services/Scraping/ProjectScheduleResolver.php`: PASS
+- `php -l tests/Feature/ProjectScheduleResolverTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=ProjectScheduleResolverTest`: PASS pada SQLite temp test harness
+
+## Commit SHA Terkait
+- `f9e4a34c4d25632eb62611f78113382deb2b2e51`
+
 ## Tambahan Milestone: PROJECT-SCHEDULE-OVERRIDE-4B-UI
 
 ## Apa yang Diubah
