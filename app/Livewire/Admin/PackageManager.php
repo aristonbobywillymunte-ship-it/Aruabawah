@@ -695,15 +695,33 @@ class PackageManager extends Component
         $this->news_run_times = $this->normalizeScheduleTimes($this->news_run_times, false, 'news_run_times');
         $this->social_run_times = $this->normalizeScheduleTimes($this->social_run_times, false, 'social_run_times');
 
-        if ($this->news_runs_per_day !== null && count($this->news_run_times) !== (int) $this->news_runs_per_day) {
+        if ($this->isPortalScheduleRequired() && blank($this->news_runs_per_day)) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'news_run_times' => 'Jumlah jam portal harus sama dengan jumlah run per hari.',
+                'news_runs_per_day' => 'Atur jumlah run Portal dan lengkapi seluruh jadwal Portal.',
             ]);
         }
 
-        if ($this->social_runs_per_day !== null && count($this->social_run_times) !== (int) $this->social_runs_per_day) {
+        if ($this->isPortalScheduleRequired() && count($this->news_run_times) !== (int) $this->news_runs_per_day) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'social_run_times' => 'Jumlah jam sosmed harus sama dengan jumlah run per hari.',
+                'news_run_times' => sprintf(
+                    'Lengkapi seluruh %d jadwal Portal.',
+                    (int) $this->news_runs_per_day
+                ),
+            ]);
+        }
+
+        if ($this->isSocialScheduleRequired() && blank($this->social_runs_per_day)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'social_runs_per_day' => 'Atur jumlah run Sosmed dan lengkapi seluruh jadwal Sosmed.',
+            ]);
+        }
+
+        if ($this->isSocialScheduleRequired() && count($this->social_run_times) !== (int) $this->social_runs_per_day) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'social_run_times' => sprintf(
+                    'Lengkapi seluruh %d jadwal Sosmed.',
+                    (int) $this->social_runs_per_day
+                ),
             ]);
         }
     }
@@ -791,6 +809,22 @@ class PackageManager extends Component
         sort($normalized);
 
         return $normalized;
+    }
+
+    protected function isPortalScheduleRequired(): bool
+    {
+        return (bool) $this->use_portal;
+    }
+
+    protected function isSocialScheduleRequired(): bool
+    {
+        foreach ($this->actorConfig as $config) {
+            if (boolval($config['is_enabled'] ?? false)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function scheduleSummary(?int $runsPerDay, array $times, string $legacyLabel): string

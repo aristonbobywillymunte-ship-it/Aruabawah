@@ -6,11 +6,15 @@ use App\Console\Commands\RunApifyScraping;
 use App\Console\Commands\RunNewsPortalScraping;
 use App\Livewire\Admin\PackageManager;
 use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use ReflectionClass;
 use Tests\TestCase;
 
 class PackageDailyScheduleSupportTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_package_manager_normalizes_and_sorts_schedule_times(): void
     {
         $component = new PackageManager();
@@ -102,6 +106,58 @@ class PackageDailyScheduleSupportTest extends TestCase
             false,
             'social_run_times',
         ]);
+    }
+
+    public function test_package_manager_requires_portal_schedule_when_portal_is_active(): void
+    {
+        Livewire::test(PackageManager::class)
+            ->set('name', 'Portal Strict Package')
+            ->set('price', '100000')
+            ->set('use_portal', true)
+            ->set('news_interval_minutes', 5)
+            ->set('social_interval_minutes', 10)
+            ->set('news_runs_per_day', null)
+            ->set('news_run_times', [])
+            ->call('savePackage')
+            ->assertHasErrors(['news_runs_per_day']);
+    }
+
+    public function test_package_manager_requires_social_schedule_when_social_actor_is_enabled(): void
+    {
+        Livewire::test(PackageManager::class)
+            ->set('name', 'Social Strict Package')
+            ->set('price', '100000')
+            ->set('use_portal', false)
+            ->set('news_interval_minutes', 5)
+            ->set('social_interval_minutes', 10)
+            ->set('social_runs_per_day', null)
+            ->set('social_run_times', [])
+            ->set('actorConfig', [
+                1 => [
+                    'is_enabled' => true,
+                    'cost_per_run_usd' => '0.10',
+                    'default_limit' => '10',
+                    'memory_limit' => '256',
+                ],
+            ])
+            ->call('savePackage')
+            ->assertHasErrors(['social_runs_per_day']);
+    }
+
+    public function test_package_manager_allows_disabled_schedules_to_remain_unset(): void
+    {
+        Livewire::test(PackageManager::class)
+            ->set('name', 'Legacy Interval Package')
+            ->set('price', '100000')
+            ->set('use_portal', false)
+            ->set('news_interval_minutes', 5)
+            ->set('social_interval_minutes', 10)
+            ->set('news_runs_per_day', null)
+            ->set('news_run_times', [])
+            ->set('social_runs_per_day', null)
+            ->set('social_run_times', [])
+            ->call('savePackage')
+            ->assertHasNoErrors();
     }
 
     public function test_scheduler_helper_detects_due_schedule_slot(): void
