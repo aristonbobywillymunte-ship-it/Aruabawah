@@ -1,3 +1,42 @@
+# Milestone: Global Scraping Switches 2B Closure
+
+## Tambahan Milestone: SCRAPING-GLOBAL-SWITCHES-2B
+
+## Apa yang Diubah
+Mewiring switch global engine yang persisten ke scheduler otomatis di `routes/console.php` tanpa mengubah command manual, package, project, actor, atau recovery logic.
+
+## Behavior Final
+- `scraping_settings.is_active` tetap menjadi master switch untuk scheduler otomatis.
+- News scheduler sekarang mengikuti matrix `google_news_enabled` + `manual_portal_enabled`:
+  - ON / ON -> `--discovery-mode=auto`
+  - ON / OFF -> `--discovery-mode=google_news_only`
+  - OFF / ON -> `--discovery-mode=manual_only`
+  - OFF / OFF -> tidak ada schedule otomatis News
+- Apify scheduler sekarang mensyaratkan `apify_enabled` selain master switch, config safety flag, dan readiness check yang sudah ada.
+- Command manual tetap tidak diblokir oleh switch engine DB pada task ini.
+- Legacy interval dan seluruh logika scheduling package/project/actor tetap tidak diubah.
+
+## Komponen Kunci
+- `routes/console.php`
+- `tests/Feature/GlobalScrapingSwitchesSchedulerTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: YES
+- **Runtime scheduler berubah**: YES, hanya pada gating engine otomatis
+- **Package / Project / Actor scheduling berubah**: NO
+- **Legacy intervals berubah**: NO
+
+## Verifikasi
+- `php -l routes/console.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=GlobalScrapingSwitchesSchedulerTest`: PASS
+
+## Commit SHA Terkait
+- Pending
+
 # Milestone: Global Scraping Switches 2A Closure
 
 ## Tambahan Milestone: SCRAPING-GLOBAL-SWITCHES-2A

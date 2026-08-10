@@ -54,6 +54,9 @@ $newsInterval = $settings?->google_news_interval ?? 5;
 $apifyInterval = $settings?->portal_crawling_interval ?? 1;
 $limitPerRun = max(1, (int) ($settings?->limit_per_run ?? 1));
 $isActive = $settings?->is_active ?? 1;
+$googleNewsEnabled = (bool) ($settings?->google_news_enabled ?? true);
+$manualPortalEnabled = (bool) ($settings?->manual_portal_enabled ?? true);
+$apifyEnabled = (bool) ($settings?->apify_enabled ?? true);
 $apifyReady = $apifySetting?->isReadyForScraping() ?? false;
 $newsSchedulerEnabled = (bool) config('services.news.scheduler_enabled', true);
 $apifySchedulerEnabled = (bool) config('services.apify.scheduler_enabled', true);
@@ -69,11 +72,11 @@ if ($isActive) {
     };
 
     // Run Apify / Portal scraping
-    if ($apifySchedulerEnabled && $apifyInterval > 0 && $apifyReady) {
+    if ($apifySchedulerEnabled && $apifyEnabled && $apifyInterval > 0 && $apifyReady) {
         Schedule::command('scraping:run-apify --limit=' . $limitPerRun)
             ->cron($minutesToCron($apifyInterval))
-            ->when(function () use ($apifySchedulerEnabled, $settings, $apifySetting) {
-                if (! $apifySchedulerEnabled || ! (bool) ($settings?->is_active ?? false) || ! (bool) ($apifySetting?->isReadyForScraping() ?? false)) {
+            ->when(function () use ($apifySchedulerEnabled, $settings, $apifySetting, $apifyEnabled) {
+                if (! $apifySchedulerEnabled || ! $apifyEnabled || ! (bool) ($settings?->is_active ?? false) || ! (bool) ($apifySetting?->isReadyForScraping() ?? false)) {
                     return false;
                 }
 
@@ -93,11 +96,18 @@ if ($isActive) {
     }
 
     // Run News Portal scraping
-    if ($newsSchedulerEnabled && $newsInterval > 0) {
-        Schedule::command('scraping:run-news --limit=' . $limitPerRun)
+    $newsDiscoveryMode = match ([$googleNewsEnabled, $manualPortalEnabled]) {
+        [true, true] => 'auto',
+        [true, false] => 'google_news_only',
+        [false, true] => 'manual_only',
+        default => null,
+    };
+
+    if ($newsSchedulerEnabled && $newsDiscoveryMode !== null && $newsInterval > 0) {
+        Schedule::command('scraping:run-news --limit=' . $limitPerRun . ' --discovery-mode=' . $newsDiscoveryMode)
             ->cron($minutesToCron($newsInterval))
-            ->when(function () use ($newsSchedulerEnabled, $settings) {
-                if (! $newsSchedulerEnabled || ! (bool) ($settings?->is_active ?? false)) {
+            ->when(function () use ($newsSchedulerEnabled, $settings, $googleNewsEnabled, $manualPortalEnabled) {
+                if (! $newsSchedulerEnabled || ! (bool) ($settings?->is_active ?? false) || (! $googleNewsEnabled && ! $manualPortalEnabled)) {
                     return false;
                 }
 

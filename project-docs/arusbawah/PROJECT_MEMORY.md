@@ -1,5 +1,11 @@
 # Project Memory
 
+# Konteks Fitur SCRAPING-GLOBAL-SWITCHES-2B
+- **Alasan**: Switch global engine yang disimpan di DB perlu benar-benar mengontrol scheduler otomatis, sementara command manual dan runtime schedule lain tetap aman.
+- **Solusi**: `routes/console.php` sekarang memilih mode discovery News dari kombinasi `google_news_enabled` dan `manual_portal_enabled`, serta menahan scheduling Apify otomatis saat `apify_enabled` nonaktif.
+- **Batasan**: Tidak ada perubahan pada package schedule, project schedule, actor interval, recovery, daily schedule, atau command manual semantics.
+- **QA**: Test scheduler matrix membangun app SQLite temp sendiri, memuat ulang scheduler, dan memverifikasi command otomatis yang terdaftar.
+
 # Konteks Fitur SCRAPING-GLOBAL-SWITCHES-2A
 - **Alasan**: Sistem membutuhkan switch global persisten per engine agar Google News, Portal Manual, dan Apify/Sosial Media bisa dikontrol terpisah tanpa mengubah runtime scheduler dulu.
 - **Solusi**: Menambahkan field `google_news_enabled`, `manual_portal_enabled`, dan `apify_enabled` ke `scraping_settings`, lalu memuat dan menyimpan semuanya dari Livewire Scraping Settings.

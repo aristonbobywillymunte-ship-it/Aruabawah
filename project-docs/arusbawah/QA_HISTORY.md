@@ -1,5 +1,25 @@
 # QA History
 
+# SCRAPING-GLOBAL-SWITCHES-2B
+**Tanggal**: 2026-08-10
+**Area**: `routes/console.php`, automatic scheduler gating
+
+### Skenario yang Diuji & Hasil:
+1. **Master OFF**: News otomatis tidak terdaftar dan Apify otomatis tidak terdaftar.
+2. **Master ON + News ON/ON**: News otomatis terdaftar dengan `--discovery-mode=auto`.
+3. **Google News ON + Manual OFF**: News otomatis terdaftar dengan `--discovery-mode=google_news_only`.
+4. **Google News OFF + Manual ON**: News otomatis terdaftar dengan `--discovery-mode=manual_only`.
+5. **Google News OFF + Manual OFF**: News otomatis tidak terdaftar.
+6. **Apify OFF**: Apify otomatis tidak terdaftar.
+7. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+8. **Targeted Test Run**: `php artisan test --filter=GlobalScrapingSwitchesSchedulerTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser QA tidak relevan untuk perubahan ini.
+- Command manual sengaja tidak diuji ulang karena scope task hanya automatic scheduler gating.
+
+**Status Akhir**: PASS
+
 # SCRAPING-GLOBAL-SWITCHES-2A
 **Tanggal**: 2026-08-10
 **Area**: Admin Scraping Settings, global engine switches
