@@ -1,5 +1,18 @@
 # QA Checklist
 
+## ACTOR-INTERVAL-REMOVAL-7B-RUNTIME
+- [x] `php -l config/services.php`
+- [x] `php -l app/Console/Commands/RunApifyScraping.php`
+- [x] `php -l app/Jobs/ApifyScrapingJob.php`
+- [x] `php -l tests/Feature/ApifyActorIntervalRuntimeRemovalTest.php`
+- [x] `php artisan route:list`
+- [x] `php artisan schedule:list`
+- [x] `php artisan view:clear`
+- [x] `git diff --check`
+- [x] `php artisan test --filter=ApifyActorIntervalRuntimeRemovalTest`
+- [ ] Real scraping run
+- [ ] Production migration
+
 ## ACTOR-INTERVAL-REMOVAL-7A-UI
 - [x] `php -l app/Livewire/Admin/ApifyConfiguration.php`
 - [x] `php -l app/Models/ApifyActor.php`

@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur ACTOR-INTERVAL-REMOVAL-7B-RUNTIME
+- **Alasan**: Interval Actor harus berhenti memengaruhi keputusan runtime, karena scheduling Sosial kini sementara bergantung pada jadwal harian Paket dan cooldown operasional harus terpisah dari konfigurasi Actor.
+- **Solusi**: `RunApifyScraping` dan `ApifyScrapingJob` tidak lagi membaca `actor.interval_minutes` untuk due-check atau cooldown; runtime memakai jadwal harian Paket yang valid dan cooldown operasional dari `services.apify.schedule_retry_cooldown_minutes`.
+- **Batasan**: Tidak ada wiring `ProjectScheduleResolver::resolveSocial()` pada task ini, tidak ada perubahan pada Portal, dan DB legacy `interval_minutes` tetap dipertahankan.
+- **Fallback / Legacy**: Jika jadwal harian Paket tidak valid atau kosong, otomatis Sosial di-skip aman. `packages.social_interval_minutes` tetap ada di DB tetapi tidak dipakai sebagai fallback runtime.
+
 ## Konteks Fitur ACTOR-INTERVAL-REMOVAL-7A-UI
 - **Alasan**: Interval Actor tidak boleh lagi menjadi pengaturan yang bisa diedit di admin surface karena scheduling kini ditentukan oleh Package/Project, sementara Actor hanya menjelaskan bagaimana scraping berjalan.
 - **Solusi**: Menghapus field `interval_minutes` dari form, state, validasi, dan payload save/update di `ApifyConfiguration`, serta mengganti judul section menjadi `Konfigurasi Performa`.

@@ -1,3 +1,48 @@
+# Milestone: Actor Interval Removal 7B Runtime
+
+## Apa yang Diubah
+Menghapus semua ketergantungan runtime pada `ApifyActor.interval_minutes` untuk scheduling dan cooldown Apify, sambil mempertahankan jadwal harian Sosial dari Paket sebagai sumber runtime sementara.
+
+## Behavior Final
+- Interval Actor tidak lagi memengaruhi kapan scraping otomatis berjalan.
+- Interval Actor tidak lagi memengaruhi retry/cooldown runtime.
+- Scheduler otomatis Sosial hanya memakai jadwal harian Paket yang valid.
+- Jika jadwal harian Paket tidak valid atau kosong, otomatis Sosial aman di-skip.
+- Fallback ke `actor.interval_minutes` dan `package.social_interval_minutes` di runtime tidak dipakai lagi.
+- Kolom DB legacy `apify_actors.interval_minutes` dan `packages.social_interval_minutes` tetap dipertahankan.
+- Project Social override belum di-wiring pada task ini.
+- Perilaku comment scraper tetap dipertahankan.
+
+## Komponen Kunci
+- `config/services.php`
+- `app/Console/Commands/RunApifyScraping.php`
+- `app/Jobs/ApifyScrapingJob.php`
+- `tests/Feature/ApifyActorIntervalRuntimeRemovalTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: YES, tapi hanya untuk menghapus ketergantungan interval actor
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l config/services.php`: PASS
+- `php -l app/Console/Commands/RunApifyScraping.php`: PASS
+- `php -l app/Jobs/ApifyScrapingJob.php`: PASS
+- `php -l tests/Feature/ApifyActorIntervalRuntimeRemovalTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan schedule:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=ApifyActorIntervalRuntimeRemovalTest`: PASS pada SQLite temp test harness
+
+## Catatan QA
+- Browser QA belum diverifikasi.
+- Runtime scraping tidak dijalankan.
+
+## Commit SHA Terkait
+- `e0ce528755d4f58a2e6f7c8b5c9fdc8ad2f7f95f`
+
 # Milestone: Actor Interval Removal 7A UI
 
 ## Apa yang Diubah

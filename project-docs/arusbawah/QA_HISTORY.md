@@ -1,5 +1,23 @@
 # QA History
 
+# ACTOR-INTERVAL-REMOVAL-7B-RUNTIME
+**Tanggal**: 2026-08-10
+**Area**: `RunApifyScraping`, `ApifyScrapingJob`, runtime social scheduling/cooldown
+
+### Skenario yang Diuji & Hasil:
+1. **Dispatch Independence**: `dispatchSafely()` tidak lagi bergantung pada nilai `interval_minutes` Actor.
+2. **Invalid Daily Schedule**: Jadwal harian Sosial yang invalid tidak jatuh ke fallback interval legacy.
+3. **Cooldown Independence**: Retry/cooldown runtime menghasilkan waktu pemulihan yang sama meski `interval_minutes` Actor berbeda.
+4. **Legacy Columns Preserved**: Kolom DB legacy `apify_actors.interval_minutes` dan `packages.social_interval_minutes` tetap dipertahankan.
+5. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan schedule:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+6. **Targeted Test Run**: `php artisan test --filter=ApifyActorIntervalRuntimeRemovalTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser QA belum diverifikasi.
+- Runtime scraping tidak dijalankan.
+
+**Status Akhir**: PASS
+
 # ACTOR-INTERVAL-REMOVAL-7A-UI
 **Tanggal**: 2026-08-10
 **Area**: Admin Apify Configuration, actor performance surface
