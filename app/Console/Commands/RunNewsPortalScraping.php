@@ -14,6 +14,7 @@ use App\Services\News\GoogleNewsUrlDecoderService;
 use App\Services\AiAnalysisDispatchStateService;
 use App\Services\ReachScoringService;
 use App\Services\SchedulerQueueGuard;
+use App\Services\Scraping\ProjectScheduleResolver;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +53,7 @@ class RunNewsPortalScraping extends Command
         private readonly NewsProjectScrapePriorityService $projectScrapePriorityService,
         private readonly AiAnalysisDispatchStateService $aiAnalysisDispatchStateService,
         private readonly SchedulerQueueGuard $schedulerQueueGuard,
+        private readonly ProjectScheduleResolver $projectScheduleResolver,
     )
     {
         parent::__construct();
@@ -99,6 +101,7 @@ class RunNewsPortalScraping extends Command
                     'created_at', 'updated_at', 'deleted_at',
                     'first_news_scrape_attempt_at', 'news_last_scraped_at',
                     'topics', 'context_keywords', 'exclude_keywords', 'sources',
+                    'news_run_times_override', 'social_run_times_override',
                 ])
                 ->orderBy('created_at')
                 ->orderBy('id')
@@ -162,15 +165,31 @@ class RunNewsPortalScraping extends Command
                     continue;
                 }
 
-                // Check news interval defined in package
-                $newsSchedule = $this->normalizeDailyRunTimes(
-                    $project->package->news_runs_per_day ?? null,
-                    $project->package->news_run_times ?? []
-                );
                 $lastNewsScrapedAt = Cache::get('news_last_scrape_at:' . $project->id);
                 $lastScrapedTime = $lastNewsScrapedAt ? \Carbon\Carbon::parse($lastNewsScrapedAt) : null;
 
-                if ($newsSchedule !== [] && !$filterProjectId) {
+                if (! $filterProjectId) {
+                    $effectiveNewsSchedule = $this->projectScheduleResolver->resolvePortal($project);
+
+                    if (($effectiveNewsSchedule['times'] ?? []) === []) {
+                        $this->line("Skipping project [{$project->name}] — effective portal schedule unavailable.");
+                        $portalLog->info('[Portal] Project skipped: effective schedule unavailable.', [
+                            'project_id' => $project->id,
+                            'project_name' => $project->name,
+                            'schedule_reason' => $effectiveNewsSchedule['reason'] ?? 'unknown',
+                        ]);
+                        continue;
+                    }
+
+                    $newsSchedule = $effectiveNewsSchedule['times'];
+
+                    $portalLog->info('[Portal] Effective schedule evaluated.', [
+                        'project_id' => $project->id,
+                        'project_name' => $project->name,
+                        'schedule_source' => $effectiveNewsSchedule['source'] ?? 'none',
+                        'schedule' => $newsSchedule,
+                    ]);
+
                     if (! $this->isWithinDailyRunWindow($lastScrapedTime, $newsSchedule)) {
                         $this->line("Skipping project [{$project->name}] — news schedule not due.");
                         $portalLog->info('[Portal] Project skipped: news daily schedule not due.', [
@@ -178,23 +197,9 @@ class RunNewsPortalScraping extends Command
                             'project_name' => $project->name,
                             'last_run_at' => optional($lastScrapedTime)?->toDateTimeString(),
                             'schedule' => $newsSchedule,
+                            'schedule_source' => $effectiveNewsSchedule['source'] ?? 'none',
                         ]);
                         continue;
-                    }
-                } elseif ( (int) ($project->package->news_interval_minutes ?? 5) > 0 && !$filterProjectId ) {
-                    $newsInterval = (int) ($project->package->news_interval_minutes ?? 5);
-                    if ($lastScrapedTime) {
-                        $nextNewsRunAt = $lastScrapedTime->copy()->addMinutes($newsInterval);
-                        if (now()->lessThan($nextNewsRunAt)) {
-                            $this->line("Skipping project [{$project->name}] — news interval not met. Next run at {$nextNewsRunAt->format('H:i')}");
-                            $portalLog->info('[Portal] Project skipped: news interval not met.', [
-                                'project_id' => $project->id,
-                                'project_name' => $project->name,
-                                'last_run_at' => $lastScrapedTime->toDateTimeString(),
-                                'next_run_at' => $nextNewsRunAt->toDateTimeString(),
-                            ]);
-                            continue;
-                        }
                     }
                 }
             } else {
