@@ -234,50 +234,38 @@ class RunApifyScraping extends Command
                 }
 
                 // Comment scraper must keep checking the queue every scheduler tick.
-                // Do not block it behind the long actor interval when the queue is empty.
+                // Do not block it behind actor interval timing when the queue is empty.
                 $package = $project->package;
                 $socialSchedule = $package
                     ? $this->normalizeDailyRunTimes($package->social_runs_per_day ?? null, $package->social_run_times ?? [])
                     : [];
 
                 if (! $isCommentScraper && ! $forceDispatch) {
-                    if ($socialSchedule !== []) {
-                        if (! $this->isWithinDailyRunWindow($lastProjectActorRunAt, $socialSchedule)) {
-                            $this->line("Skipping {$actor->platform} — social schedule not due.");
-                            $socialLog->info('[Social] Actor skipped: daily schedule not due.', [
-                                'project_id' => $project->id,
-                                'project_name' => $project->name,
-                                'platform' => $actor->platform,
-                                'actor_id' => $actor->id,
-                                'last_project_run_at' => optional($lastProjectActorRunAt)?->toDateTimeString(),
-                                'schedule' => $socialSchedule,
-                            ]);
-                            $skipStats['interval_not_due']++;
-                            continue;
-                        }
-                    } elseif ($lastProjectActorRunAt && !$hasQueue) {
-                        $socialInterval = $actor->interval_minutes;
-                        if ($project->package && isset($project->package->social_interval_minutes)) {
-                            $socialInterval = (int) $project->package->social_interval_minutes;
-                        }
+                    if ($socialSchedule === []) {
+                        $this->line("Skipping {$actor->platform} — social schedule not configured.");
+                        $socialLog->info('[Social] Actor skipped: no valid daily schedule.', [
+                            'project_id' => $project->id,
+                            'project_name' => $project->name,
+                            'platform' => $actor->platform,
+                            'actor_id' => $actor->id,
+                            'last_project_run_at' => optional($lastProjectActorRunAt)?->toDateTimeString(),
+                        ]);
+                        $skipStats['interval_not_due']++;
+                        continue;
+                    }
 
-                        if ($socialInterval) {
-                            $nextRunAt = $lastProjectActorRunAt->copy()->addMinutes($socialInterval);
-                            if (now()->lessThan($nextRunAt) && !$filterPlatform) {
-                                $this->line("Skipping {$actor->platform} — next run at {$nextRunAt->format('H:i')}");
-                                $socialLog->info('[Social] Actor skipped: interval not due.', [
-                                    'project_id' => $project->id,
-                                    'project_name' => $project->name,
-                                    'platform' => $actor->platform,
-                                    'actor_id' => $actor->id,
-                                    'last_project_run_at' => $lastProjectActorRunAt->toDateTimeString(),
-                                    'next_run_at' => $nextRunAt->toDateTimeString(),
-                                    'effective_interval' => $socialInterval,
-                                ]);
-                                $skipStats['interval_not_due']++;
-                                continue;
-                            }
-                        }
+                    if (! $this->isWithinDailyRunWindow($lastProjectActorRunAt, $socialSchedule)) {
+                        $this->line("Skipping {$actor->platform} — social schedule not due.");
+                        $socialLog->info('[Social] Actor skipped: daily schedule not due.', [
+                            'project_id' => $project->id,
+                            'project_name' => $project->name,
+                            'platform' => $actor->platform,
+                            'actor_id' => $actor->id,
+                            'last_project_run_at' => optional($lastProjectActorRunAt)?->toDateTimeString(),
+                            'schedule' => $socialSchedule,
+                        ]);
+                        $skipStats['interval_not_due']++;
+                        continue;
                     }
                 }
 
@@ -607,9 +595,14 @@ class RunApifyScraping extends Command
             return null;
         }
 
-        $cooldownMinutes = $this->actorCooldownMinutes($actor->last_run_message, (int) ($actor->interval_minutes ?? 20));
+        $cooldownMinutes = $this->actorCooldownMinutes($actor->last_run_message, $this->apifyScheduleRetryCooldownMinutes());
 
         return $actor->last_run_at->copy()->addMinutes($cooldownMinutes);
+    }
+
+    protected function apifyScheduleRetryCooldownMinutes(): int
+    {
+        return max(1, (int) config('services.apify.schedule_retry_cooldown_minutes', 10));
     }
 
     /**

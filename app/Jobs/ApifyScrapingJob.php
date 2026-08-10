@@ -180,15 +180,10 @@ class ApifyScrapingJob implements ShouldQueue
 
         $normalizedKeyword = strtolower(trim(implode('|', $keywords ?: [$keyword])));
         $now = now();
-        
-        // Dynamic window based on the actor's actual interval_minutes configuration
-        $intervalMinutes = 30; // fallback default
+        $dispatchWindowMinutes = self::apifyDispatchWindowMinutes();
+
         if ($actorId) {
             $actor = \App\Models\ApifyActor::find($actorId);
-            if ($actor && $actor->interval_minutes) {
-                $intervalMinutes = max(1, (int) $actor->interval_minutes);
-            }
-            
             $isCommentScraper = $actor && (strtolower((string) $actor->function_type) === 'comment scraper');
             if ($isCommentScraper) {
                 $platformLower = strtolower($platform);
@@ -221,10 +216,10 @@ class ApifyScrapingJob implements ShouldQueue
             }
         }
 
-        // Calculate the start of the current interval window to allow execution once per interval period
-        $currentIntervalBlock = (int) floor($now->timestamp / ($intervalMinutes * 60));
-        $windowStart = $currentIntervalBlock * $intervalMinutes * 60;
-        $windowEnd = ($currentIntervalBlock + 1) * $intervalMinutes * 60;
+        // Calculate a fixed operational window to prevent duplicate dispatches.
+        $currentIntervalBlock = (int) floor($now->timestamp / ($dispatchWindowMinutes * 60));
+        $windowStart = $currentIntervalBlock * $dispatchWindowMinutes * 60;
+        $windowEnd = ($currentIntervalBlock + 1) * $dispatchWindowMinutes * 60;
 
         $isSocialPlatform = in_array($platform, ['Facebook', 'Instagram', 'TikTok'], true);
         $dispatchKeyParts = [
@@ -235,7 +230,7 @@ class ApifyScrapingJob implements ShouldQueue
             $windowEnd,
         ];
 
-        // Social actors should only be dispatched once per project per interval window.
+        // Social actors should only be dispatched once per project per operational window.
         // Keywords are still sent to Apify in the payload, but they no longer create
         // separate queue/state entries for the same project and interval block,
         // EXCEPT for Facebook which has a strict 100 character query limit and needs chunking.
@@ -682,7 +677,7 @@ class ApifyScrapingJob implements ShouldQueue
                     Log::warning("[Apify] Token limit/error terdeteksi pada {$tokenLabel}. Mencoba failover ke token berikutnya.");
                     continue; // Coba token eligible berikutnya tanpa redispatch
                 } else {
-                    $cooldownMinutes = $this->apifyCooldownMinutes($msg, (int) ($actor->interval_minutes ?? 20));
+                    $cooldownMinutes = $this->apifyCooldownMinutes($msg, $this->apifyScheduleRetryCooldownMinutes());
                     $retryAt = now()->addMinutes($cooldownMinutes);
                     
                     $actor->update([
@@ -847,7 +842,7 @@ class ApifyScrapingJob implements ShouldQueue
                 'status_message' => $statusMessage,
             ]);
 
-            $cooldownMinutes = $this->apifyCooldownMinutes($msg, (int) ($actor->interval_minutes ?? 20));
+            $cooldownMinutes = $this->apifyCooldownMinutes($msg, $this->apifyScheduleRetryCooldownMinutes());
             $retryAt = now()->addMinutes($cooldownMinutes);
             Cache::put("apify_actor_retry_at:{$actor->id}", $retryAt->toDateTimeString(), $retryAt);
             $actor->update([
@@ -877,7 +872,7 @@ class ApifyScrapingJob implements ShouldQueue
                 'status_message' => $statusMessage,
             ]);
             $actor->update(['last_run_at' => now(), 'last_run_status' => 'failed', 'last_run_message' => $msg]);
-            $cooldownMinutes = $this->apifyCooldownMinutes($msg, (int) ($actor->interval_minutes ?? 20));
+            $cooldownMinutes = $this->apifyCooldownMinutes($msg, $this->apifyScheduleRetryCooldownMinutes());
             $retryAt = now()->addMinutes($cooldownMinutes);
             Cache::put("apify_actor_retry_at:{$actor->id}", $retryAt->toDateTimeString(), $retryAt);
             if ($state) {
@@ -927,7 +922,7 @@ class ApifyScrapingJob implements ShouldQueue
         if (!$datasetResp->successful()) {
             Log::error("[Apify] Failed to fetch dataset | {$contextStr} | error: " . $datasetResp->body());
             $actor->update(['last_run_at' => now(), 'last_run_status' => 'failed', 'last_run_message' => 'Dataset fetch failed']);
-            $cooldownMinutes = $this->apifyCooldownMinutes('Dataset fetch failed', (int) ($actor->interval_minutes ?? 20));
+            $cooldownMinutes = $this->apifyCooldownMinutes('Dataset fetch failed', $this->apifyScheduleRetryCooldownMinutes());
             $retryAt = now()->addMinutes($cooldownMinutes);
             Cache::put("apify_actor_retry_at:{$actor->id}", $retryAt->toDateTimeString(), $retryAt);
             if ($state) {
@@ -1795,16 +1790,25 @@ class ApifyScrapingJob implements ShouldQueue
     {
         $message = strtolower((string) $message);
 
-        // Jika limit kuota habis atau token mati, sistem disetel untuk cooldown selama 10 menit saja
         if (str_contains($message, 'monthly usage hard limit exceeded') || str_contains($message, 'platform-feature-disabled')) {
-            return 10;
+            return max(10, $baseMinutes);
         }
 
         if (str_contains($message, 'timeout') || str_contains($message, 'connection') || str_contains($message, 'could not')) {
-            return 10;
+            return max(10, $baseMinutes);
         }
 
-        return 10;
+        return max(10, $baseMinutes);
+    }
+
+    protected static function apifyDispatchWindowMinutes(): int
+    {
+        return 30;
+    }
+
+    protected function apifyScheduleRetryCooldownMinutes(): int
+    {
+        return max(1, (int) config('services.apify.schedule_retry_cooldown_minutes', 10));
     }
 
     protected function isPlaceholderOrNoiseContent(?string $content): bool

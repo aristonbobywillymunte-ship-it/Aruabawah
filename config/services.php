@@ -37,6 +37,7 @@ return [
 
     'apify' => [
         'scheduler_enabled' => env('APIFY_SCHEDULER_ENABLED', true),
+        'schedule_retry_cooldown_minutes' => env('APIFY_SCHEDULE_RETRY_COOLDOWN_MINUTES', 10),
     ],
 
     'news' => [
