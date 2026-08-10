@@ -18,6 +18,8 @@ class ProjectCreate extends Component
     public $contextKeywords = '';
     public $excludeKeywords = '';
     public $telegramChatId = '';
+    public array $news_run_times_override = [];
+    public array $social_run_times_override = [];
     
     public $createStep = 1;
     public $packageId = null;
@@ -40,6 +42,96 @@ class ProjectCreate extends Component
         $items = array_filter($items);
 
         return array_values(array_unique($items));
+    }
+
+    protected function selectedPackage(): ?Package
+    {
+        if (! $this->packageId) {
+            return null;
+        }
+
+        return Package::query()->where('is_active', true)->find($this->packageId);
+    }
+
+    protected function resizeOverrideSlots(array $values, ?int $count): array
+    {
+        $count = blank($count) ? 0 : min(24, max(0, (int) $count));
+        $values = array_values($values);
+
+        if ($count <= 0) {
+            return [];
+        }
+
+        if (count($values) > $count) {
+            return array_slice($values, 0, $count);
+        }
+
+        while (count($values) < $count) {
+            $values[] = '';
+        }
+
+        return $values;
+    }
+
+    protected function normalizeOverrideGroup(array $values, string $field): ?array
+    {
+        $trimmed = array_map(static fn ($value) => is_string($value) ? trim($value) : '', $values);
+        $filled = array_values(array_filter($trimmed, static fn ($value) => $value !== ''));
+
+        if ($filled === []) {
+            return null;
+        }
+
+        if (count($filled) !== count($trimmed)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                $field => $field === 'news_run_times_override'
+                    ? 'Lengkapi seluruh jadwal Portal Proyek atau kosongkan semuanya untuk mengikuti Paket.'
+                    : 'Lengkapi seluruh jadwal Sosial Proyek atau kosongkan semuanya untuk mengikuti Paket.',
+            ]);
+        }
+
+        $normalized = [];
+        $seen = [];
+
+        foreach ($filled as $time) {
+            if (! preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $time)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $field => 'Gunakan format jam 24 jam HH:MM.',
+                ]);
+            }
+
+            if (isset($seen[$time])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $field => 'Jam yang sama tidak boleh dipakai dua kali.',
+                ]);
+            }
+
+            $seen[$time] = true;
+            $normalized[] = $time;
+        }
+
+        sort($normalized);
+
+        return $normalized;
+    }
+
+    protected function syncOverrideSlotsFromPackage(?Package $package): void
+    {
+        $this->news_run_times_override = $this->resizeOverrideSlots(
+            $this->news_run_times_override,
+            $package?->news_runs_per_day
+        );
+
+        $this->social_run_times_override = $this->resizeOverrideSlots(
+            $this->social_run_times_override,
+            $package?->social_runs_per_day
+        );
+    }
+
+    public function updatedPackageId($value): void
+    {
+        $package = $this->selectedPackage();
+        $this->syncOverrideSlotsFromPackage($package);
     }
 
     public function createProject()
@@ -123,12 +215,17 @@ class ProjectCreate extends Component
             }
         }
 
+        $this->news_run_times_override = $this->normalizeOverrideGroup($this->news_run_times_override, 'news_run_times_override') ?? [];
+        $this->social_run_times_override = $this->normalizeOverrideGroup($this->social_run_times_override, 'social_run_times_override') ?? [];
+
         $project = Project::create([
             'name' => $this->name,
             'topics' => array_values($topics),
             'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
             'package_id' => $package->id,
+            'news_run_times_override' => $this->news_run_times_override ?: null,
+            'social_run_times_override' => $this->social_run_times_override ?: null,
         ]);
 
         // Save telegram recipients without minus (-) sign (supporting multi chat ids)
@@ -173,7 +270,7 @@ class ProjectCreate extends Component
 
         return view('livewire.project-create', [
             'packages' => $packages,
-            'selectedPackage' => $this->packageId ? Package::find($this->packageId) : null,
+            'selectedPackage' => $this->selectedPackage(),
         ]);
     }
 }

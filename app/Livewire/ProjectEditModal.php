@@ -20,6 +20,8 @@ class ProjectEditModal extends Component
     public $excludeKeywords = '';
     public $packageId = null;
     public $telegramChatId = '';
+    public array $news_run_times_override = [];
+    public array $social_run_times_override = [];
     
     public $projectPackage = null;
 
@@ -37,6 +39,14 @@ class ProjectEditModal extends Component
         
         // Eager load only needed package for display
         $this->projectPackage = $project->package_id ? Package::find($project->package_id) : null;
+        $this->news_run_times_override = $this->resizeOverrideSlots(
+            $project->news_run_times_override ?? [],
+            $this->projectPackage?->news_runs_per_day
+        );
+        $this->social_run_times_override = $this->resizeOverrideSlots(
+            $project->social_run_times_override ?? [],
+            $this->projectPackage?->social_runs_per_day
+        );
         
         $recipients = DB::table('project_telegram_recipients')
             ->where('project_id', $project->id)
@@ -67,6 +77,68 @@ class ProjectEditModal extends Component
         $items = array_filter($items);
 
         return array_values(array_unique($items));
+    }
+
+    protected function resizeOverrideSlots(array $values, ?int $count): array
+    {
+        $count = blank($count) ? 0 : min(24, max(0, (int) $count));
+        $values = array_values($values);
+
+        if ($count <= 0) {
+            return [];
+        }
+
+        if (count($values) > $count) {
+            return array_slice($values, 0, $count);
+        }
+
+        while (count($values) < $count) {
+            $values[] = '';
+        }
+
+        return $values;
+    }
+
+    protected function normalizeOverrideGroup(array $values, string $field): ?array
+    {
+        $trimmed = array_map(static fn ($value) => is_string($value) ? trim($value) : '', $values);
+        $filled = array_values(array_filter($trimmed, static fn ($value) => $value !== ''));
+
+        if ($filled === []) {
+            return null;
+        }
+
+        if (count($filled) !== count($trimmed)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                $field => $field === 'news_run_times_override'
+                    ? 'Lengkapi seluruh jadwal Portal Proyek atau kosongkan semuanya untuk mengikuti Paket.'
+                    : 'Lengkapi seluruh jadwal Sosial Proyek atau kosongkan semuanya untuk mengikuti Paket.',
+            ]);
+        }
+
+        $normalized = [];
+        $seen = [];
+
+        foreach ($filled as $time) {
+            if (! preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $time)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $field => 'Gunakan format jam 24 jam HH:MM.',
+                ]);
+            }
+
+            if (isset($seen[$time])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $field => 'Jam yang sama tidak boleh dipakai dua kali.',
+                ]);
+            }
+
+            $seen[$time] = true;
+            $normalized[] = $time;
+        }
+
+        sort($normalized);
+
+        return $normalized;
     }
 
     public function updateProject()
@@ -128,6 +200,8 @@ class ProjectEditModal extends Component
             'topics' => $topics,
             'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
+            'news_run_times_override' => $this->normalizeOverrideGroup($this->news_run_times_override, 'news_run_times_override'),
+            'social_run_times_override' => $this->normalizeOverrideGroup($this->social_run_times_override, 'social_run_times_override'),
         ]);
 
         DB::table('project_telegram_recipients')->where('project_id', $project->id)->delete();

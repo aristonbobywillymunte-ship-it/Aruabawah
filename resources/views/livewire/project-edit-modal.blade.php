@@ -40,6 +40,68 @@
                             </div>
                             @error('packageId') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
                         </div>
+
+                        @php
+                            $portalSlots = min(24, (int) ($projectPackage->news_runs_per_day ?? 0));
+                            $socialSlots = min(24, (int) ($projectPackage->social_runs_per_day ?? 0));
+                        @endphp
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div class="space-y-3 rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-violet-500">Portal Paket</p>
+                                        <p class="text-sm font-extrabold text-slate-800">{{ $projectPackage->news_runs_per_day ? $projectPackage->news_runs_per_day . 'x / hari' : 'Interval lama' }}</p>
+                                    </div>
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-white border border-violet-100 text-violet-500">Jadwal Paket</span>
+                                </div>
+                                <p class="text-xs text-slate-500 leading-relaxed">{{ $projectPackage->news_run_times ? implode(' · ', $projectPackage->news_run_times) : 'Belum ada jadwal paket.' }}</p>
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800 block">Override Jadwal Portal Proyek</label>
+                                        <span class="px-2 py-0.5 text-[10px] font-bold bg-violet-50 text-violet-500 border border-violet-100 rounded-full">Opsional</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500">Kosongkan seluruh jam untuk mengikuti jadwal Paket.</p>
+                                    <div class="grid gap-2">
+                                        @for($i = 0; $i < $portalSlots; $i++)
+                                            <input
+                                                wire:model.live="news_run_times_override.{{ $i }}"
+                                                type="time"
+                                                class="w-full bg-[#F8F9FA] border border-violet-100 focus:border-violet-400 focus:ring-1 focus:ring-violet-200 rounded-custom px-4 py-3 text-sm text-slate-855 transition"
+                                            >
+                                        @endfor
+                                    </div>
+                                    @error('news_run_times_override') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <div class="space-y-3 rounded-2xl border border-sky-100 bg-sky-50/50 p-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-sky-500">Sosial Paket</p>
+                                        <p class="text-sm font-extrabold text-slate-800">{{ $projectPackage->social_runs_per_day ? $projectPackage->social_runs_per_day . 'x / hari' : 'Interval lama' }}</p>
+                                    </div>
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-white border border-sky-100 text-sky-500">Jadwal Paket</span>
+                                </div>
+                                <p class="text-xs text-slate-500 leading-relaxed">{{ $projectPackage->social_run_times ? implode(' · ', $projectPackage->social_run_times) : 'Belum ada jadwal paket.' }}</p>
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800 block">Override Jadwal Sosial Proyek</label>
+                                        <span class="px-2 py-0.5 text-[10px] font-bold bg-sky-50 text-sky-500 border border-sky-100 rounded-full">Opsional</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500">Kosongkan seluruh jam untuk mengikuti jadwal Paket.</p>
+                                    <div class="grid gap-2">
+                                        @for($i = 0; $i < $socialSlots; $i++)
+                                            <input
+                                                wire:model.live="social_run_times_override.{{ $i }}"
+                                                type="time"
+                                                class="w-full bg-[#F8F9FA] border border-sky-100 focus:border-sky-400 focus:ring-1 focus:ring-sky-200 rounded-custom px-4 py-3 text-sm text-slate-855 transition"
+                                            >
+                                        @endfor
+                                    </div>
+                                    @error('social_run_times_override') <span class="text-red-500 text-xs font-medium block mt-1">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                        </div>
                         @endif
 
                         <!-- Project Name Field -->
