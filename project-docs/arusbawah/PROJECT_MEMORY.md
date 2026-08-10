@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur PORTAL-SLOT-RECOVERY-6C
+- **Alasan**: Portal otomatis perlu recovery bounded agar slot yang terlewat atau gagal dapat dikejar sekali tanpa replay backlog atau retry setiap menit.
+- **Solusi**: Menambahkan latest-due-slot evaluation dan cooldown retry per Project+slot di `RunNewsPortalScraping`, dengan cooldown duration kecil dari `config/services.php`.
+- **Batasan**: Tidak ada perubahan pada ProjectScheduleResolver precedence, project/package UI, Apify/social runtime, global switches, atau pemisahan fulfillment 6B.
+- **Catatan Implementasi**: Manual `--project-id` tetap terpisah; retry cooldown hanya menunda slot yang gagal, bukan menandainya fulfilled.
+
 ## Konteks Fitur PORTAL-SLOT-FULFILLMENT-6B
 - **Alasan**: Portal otomatis membutuhkan penanda fulfillment yang terpisah dari attempt/prioritas supaya slot harian hanya dianggap terpakai setelah eksekusi otomatis sukses.
 - **Solusi**: Menambahkan `portal_last_scheduled_success_at` pada Project, membaca marker itu untuk due-check portal otomatis, dan menulisnya hanya setelah eksekusi otomatis selesai sukses.

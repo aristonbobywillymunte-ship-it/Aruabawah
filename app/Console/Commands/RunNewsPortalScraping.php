@@ -180,17 +180,20 @@ class RunNewsPortalScraping extends Command
                     }
 
                     $newsSchedule = $effectiveNewsSchedule['times'];
+                    $latestDueSlotAt = $this->latestDueSlotAt($newsSchedule);
                     $lastSuccessfulScheduledRunAt = $this->portalScheduleFulfillmentAt($project);
+                    $cooldownKey = $latestDueSlotAt ? $this->portalRecoveryCooldownKey($project->id, $latestDueSlotAt) : null;
 
                     $portalLog->info('[Portal] Effective schedule evaluated.', [
                         'project_id' => $project->id,
                         'project_name' => $project->name,
                         'schedule_source' => $effectiveNewsSchedule['source'] ?? 'none',
                         'schedule' => $newsSchedule,
+                        'latest_due_slot_at' => optional($latestDueSlotAt)?->toDateTimeString(),
                         'last_successful_scheduled_run_at' => optional($lastSuccessfulScheduledRunAt)?->toDateTimeString(),
                     ]);
 
-                    if (! $this->isWithinDailyRunWindow($lastSuccessfulScheduledRunAt, $newsSchedule)) {
+                    if (! $latestDueSlotAt || $this->isSlotFulfilled($lastSuccessfulScheduledRunAt, $latestDueSlotAt)) {
                         $this->line("Skipping project [{$project->name}] — news schedule not due.");
                         $portalLog->info('[Portal] Project skipped: news daily schedule not due.', [
                             'project_id' => $project->id,
@@ -198,6 +201,18 @@ class RunNewsPortalScraping extends Command
                             'last_successful_scheduled_run_at' => optional($lastSuccessfulScheduledRunAt)?->toDateTimeString(),
                             'schedule' => $newsSchedule,
                             'schedule_source' => $effectiveNewsSchedule['source'] ?? 'none',
+                            'latest_due_slot_at' => optional($latestDueSlotAt)?->toDateTimeString(),
+                        ]);
+                        continue;
+                    }
+
+                    if ($cooldownKey && $this->isPortalRecoveryCooldownActive($cooldownKey)) {
+                        $this->line("Skipping project [{$project->name}] — portal recovery cooldown active.");
+                        $portalLog->info('[Portal] Project skipped: recovery cooldown active.', [
+                            'project_id' => $project->id,
+                            'project_name' => $project->name,
+                            'cooldown_key' => $cooldownKey,
+                            'latest_due_slot_at' => optional($latestDueSlotAt)?->toDateTimeString(),
                         ]);
                         continue;
                     }
@@ -264,17 +279,17 @@ class RunNewsPortalScraping extends Command
                     ]);
                     $totalInserted += (int) ($outcome['newly_inserted'] ?? 0);
                     $totalReused += (int) ($outcome['reused_existing'] ?? 0);
-                    $projectSuccessful = $projectSuccessful || (
-                        ((int) ($outcome['newly_inserted'] ?? 0))
-                        + ((int) ($outcome['reused_existing'] ?? 0))
-                        + ((int) ($outcome['rejected'] ?? 0))
-                        + ((int) ($outcome['partial'] ?? 0))
-                    ) > 0;
+                    $projectSuccessful = $projectSuccessful || (bool) ($outcome['successful'] ?? false);
                 }
                 // Catat ke DB agar prioritisasi proyek berikutnya akurat (round-robin berbasis DB)
                 $this->projectScrapePriorityService->recordLastScraped($project);
                 if (! $filterProjectId && $projectSuccessful) {
                     $this->markPortalScheduleFulfilled($project);
+                    if ($cooldownKey) {
+                        $this->clearPortalRecoveryCooldown($cooldownKey);
+                    }
+                } elseif (! $filterProjectId && $cooldownKey) {
+                    $this->markPortalRecoveryCooldown($cooldownKey);
                 }
             } catch (\Throwable $e) {
                 $this->error("Error scraping project [{$project->name}]: " . $e->getMessage());
@@ -283,6 +298,9 @@ class RunNewsPortalScraping extends Command
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
                 ]);
+                if (! $filterProjectId && $cooldownKey) {
+                    $this->markPortalRecoveryCooldown($cooldownKey);
+                }
             } finally {
                 $projectLock->release();
             }
@@ -1472,6 +1490,79 @@ class RunNewsPortalScraping extends Command
         }
 
         return null;
+    }
+
+    private function latestDueSlotAt(array $runTimes, ?Carbon $now = null): ?Carbon
+    {
+        $now ??= now();
+        $times = array_values(array_filter($runTimes, fn ($time) => is_string($time) && trim($time) !== ''));
+
+        if ($times === []) {
+            return null;
+        }
+
+        $dueSlots = [];
+        foreach ($times as $time) {
+            try {
+                $dueSlots[] = Carbon::createFromFormat('Y-m-d H:i', $now->format('Y-m-d') . ' ' . trim($time), $now->timezone);
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        if ($dueSlots === []) {
+            return null;
+        }
+
+        usort($dueSlots, fn (Carbon $a, Carbon $b) => $a->timestamp <=> $b->timestamp);
+
+        $latestDueSlot = null;
+        foreach ($dueSlots as $slot) {
+            if ($slot->lessThanOrEqualTo($now)) {
+                $latestDueSlot = $slot;
+            }
+        }
+
+        if ($latestDueSlot) {
+            return $latestDueSlot;
+        }
+
+        return Carbon::createFromFormat(
+            'Y-m-d H:i',
+            $now->copy()->subDay()->format('Y-m-d') . ' ' . end($dueSlots)->format('H:i'),
+            $now->timezone
+        );
+    }
+
+    private function isSlotFulfilled(?Carbon $lastSuccessfulScheduledRunAt, Carbon $latestDueSlotAt): bool
+    {
+        return $lastSuccessfulScheduledRunAt !== null
+            && $lastSuccessfulScheduledRunAt->greaterThanOrEqualTo($latestDueSlotAt);
+    }
+
+    private function portalRecoveryCooldownMinutes(): int
+    {
+        return max(1, (int) config('services.news.portal_schedule_retry_cooldown_minutes', 10));
+    }
+
+    private function portalRecoveryCooldownKey(int $projectId, Carbon $slotAt): string
+    {
+        return sprintf('portal:recovery-cooldown:%d:%s', $projectId, $slotAt->timestamp);
+    }
+
+    private function isPortalRecoveryCooldownActive(string $cooldownKey): bool
+    {
+        return Cache::has($cooldownKey);
+    }
+
+    private function markPortalRecoveryCooldown(string $cooldownKey): void
+    {
+        Cache::put($cooldownKey, now()->toDateTimeString(), now()->addMinutes($this->portalRecoveryCooldownMinutes()));
+    }
+
+    private function clearPortalRecoveryCooldown(string $cooldownKey): void
+    {
+        Cache::forget($cooldownKey);
     }
 
     private function markPortalScheduleFulfilled(Project $project): void

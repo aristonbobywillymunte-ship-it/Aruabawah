@@ -1,5 +1,28 @@
 # QA History
 
+## PORTAL-SLOT-RECOVERY-6C
+**Tanggal**: 2026-08-10
+**Area**: `RunNewsPortalScraping`, bounded portal recovery
+
+### Skenario yang Diuji & Hasil:
+1. **Latest Due Slot**: Evaluasi portal memakai latest due slot yang efektif.
+2. **Pre-First-Slot Recovery**: Jika belum masuk slot pertama hari ini, slot terakhir hari sebelumnya yang dipakai.
+3. **One-Slot Catch-up**: Slot yang terlewat hanya dikejar satu kali.
+4. **No Burst Replay**: Beberapa slot terlewat tetap collapse ke slot latest due, bukan replay semua slot.
+5. **Failure Stays Unfulfilled**: Run gagal tidak mengubah fulfillment marker.
+6. **Cooldown Retry**: Retry gagal dibatasi cooldown per Project+slot.
+7. **Cooldown Isolation**: Cooldown satu Project tidak memblokir Project lain.
+8. **Manual Separation**: `--project-id` tetap tidak memengaruhi fulfillment otomatis.
+9. **Zero-New-Article Success**: Run sukses tanpa artikel baru tetap memenuhi slot.
+10. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan schedule:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+11. **Targeted Test Run**: `php artisan test --filter=PortalScheduleRecoveryTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+
+**Status Akhir**: PASS
+
 ## PORTAL-SLOT-FULFILLMENT-6B
 **Tanggal**: 2026-08-10
 **Area**: `RunNewsPortalScraping`, portal automatic slot fulfillment

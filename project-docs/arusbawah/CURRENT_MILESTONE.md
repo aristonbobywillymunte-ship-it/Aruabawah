@@ -1,5 +1,49 @@
 # Milestone: Global Scraping Switches 2B Closure
 
+## Tambahan Milestone: PORTAL-SLOT-RECOVERY-6C
+
+## Apa yang Diubah
+Menambahkan recovery bounded untuk slot Portal otomatis yang terlewat atau gagal, dengan evaluasi latest-due-slot, one-slot catch-up, dan cooldown retry gagal per Project+slot.
+
+## Behavior Final
+- Slot due sekarang dihitung dari latest due slot yang efektif.
+- Jika beberapa slot terlewat, hanya slot terbaru yang dieksekusi sekali.
+- Jika slot sebelumnya sudah fulfilled, slot yang lebih lama tidak di-replay.
+- Run gagal tidak menulis fulfillment dan tetap bisa dicoba lagi setelah cooldown.
+- Manual `--project-id` tetap terpisah dan tidak memengaruhi fulfillment otomatis.
+- Zero-new-article success semantics dari 6B tetap dipertahankan.
+
+## Komponen Kunci
+- `config/services.php`
+- `app/Console/Commands/RunNewsPortalScraping.php`
+- `tests/Feature/PortalScheduleRecoveryTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: YES, tetapi hanya recovery bounded portal otomatis
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l config/services.php`: PASS
+- `php -l app/Console/Commands/RunNewsPortalScraping.php`: PASS
+- `php -l tests/Feature/PortalScheduleRecoveryTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan schedule:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=PortalScheduleRecoveryTest`: PASS pada SQLite temp test harness
+- `php artisan test --filter=PortalScheduleFulfillmentTest`: PASS pada SQLite temp test harness
+- `php artisan test --filter=PortalEffectiveScheduleRuntimeTest`: PASS pada SQLite temp test harness
+- `php artisan test --filter=ProjectScheduleResolverTest`: PASS pada SQLite temp test harness
+
+## Catatan QA
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+
+## Commit SHA Terkait
+- pending
+
 ## Tambahan Milestone: PORTAL-SLOT-FULFILLMENT-6B
 
 ## Apa yang Diubah

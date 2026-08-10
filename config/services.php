@@ -41,6 +41,7 @@ return [
 
     'news' => [
         'scheduler_enabled' => env('NEWS_SCHEDULER_ENABLED', true),
+        'portal_schedule_retry_cooldown_minutes' => env('NEWS_PORTAL_SCHEDULE_RETRY_COOLDOWN_MINUTES', 10),
     ],
 
 ];
