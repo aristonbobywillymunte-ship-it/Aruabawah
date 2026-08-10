@@ -39,7 +39,7 @@ class ApifyActorIntervalRuntimeRemovalTest extends TestCase
 
     public function test_invalid_social_daily_schedule_does_not_fall_back_to_legacy_interval(): void
     {
-        $command = new RunApifyScraping(app(\App\Services\SchedulerQueueGuard::class), app(\App\Services\SocialProjectScrapePriorityService::class));
+        $command = app(RunApifyScraping::class);
 
         $invalidDailySchedule = $this->invokeProtected($command, 'normalizeDailyRunTimes', [null, ['19:00', '']]);
 
@@ -51,7 +51,7 @@ class ApifyActorIntervalRuntimeRemovalTest extends TestCase
 
     public function test_failure_retry_cooldown_ignores_actor_interval_minutes(): void
     {
-        $command = new RunApifyScraping(app(\App\Services\SchedulerQueueGuard::class), app(\App\Services\SocialProjectScrapePriorityService::class));
+        $command = app(RunApifyScraping::class);
 
         $actorShort = $this->createActor('scrapeflow/facebook-posts-search-scraper-short-failure', 5, [
             'last_run_at' => now()->subMinutes(2),

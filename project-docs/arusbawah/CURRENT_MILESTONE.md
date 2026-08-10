@@ -1,3 +1,46 @@
+# Milestone: APIFY Effective Schedule 8A
+
+## Apa yang Diubah
+`RunApifyScraping` untuk jalur otomatis Sosial sekarang memakai `ProjectScheduleResolver::resolveSocial()` sebagai sumber schedule efektif Project, tanpa mengubah runtime scheduler lain.
+
+## Behavior Final
+- Override Project Sosial yang valid dipakai dulu.
+- Override Project Sosial yang kosong penuh tetap mewarisi jadwal Package.
+- Override Project Sosial parsial atau malformed dianggap invalid dan aman di-skip.
+- `scraping_settings.is_active` tetap tidak disentuh pada task ini.
+- `--force-dispatch`, `--project-id`, dan perilaku comment scraper tetap dipertahankan.
+- Fallback legacy ke `packages.social_interval_minutes` tidak dipakai.
+- Slot fulfillment Portal, recovery, dan wiring Portal tidak berubah.
+- `latestProjectActorRunAt()` belum diubah.
+
+## Komponen Kunci
+- `app/Console/Commands/RunApifyScraping.php`
+- `tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`
+- `app/Services/Scraping/ProjectScheduleResolver.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: YES, hanya untuk wiring effective schedule Sosial
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Console/Commands/RunApifyScraping.php`: PASS
+- `php -l app/Services/Scraping/ProjectScheduleResolver.php`: PASS
+- `php -l tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan schedule:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest`: PASS pada SQLite temp test harness
+
+## Catatan QA
+- Browser QA belum diverifikasi.
+- Runtime scraping tidak dijalankan.
+
+## Commit SHA Terkait
+- pending
+
 # Milestone: Actor Interval Removal 7B Runtime
 
 ## Apa yang Diubah

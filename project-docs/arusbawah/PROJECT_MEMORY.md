@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur APIFY-EFFECTIVE-SCHEDULE-8A
+- **Alasan**: Jalur otomatis Sosial Apify perlu schedule efektif Project dari resolver yang sama supaya override Project yang valid benar-benar mengalahkan jadwal Package.
+- **Solusi**: `RunApifyScraping` sekarang memakai `ProjectScheduleResolver::resolveSocial()` untuk mode otomatis, lalu aman skip saat resolver tidak menghasilkan schedule yang layak dipakai.
+- **Batasan**: Tidak ada perubahan pada Portal, `latestProjectActorRunAt()`, `--force-dispatch`, `--project-id`, comment scraper, atau slot fulfillment/recovery.
+- **Fallback / Legacy**: `packages.social_interval_minutes` dan fallback legacy lain tidak dipakai; jika schedule efektif tidak tersedia, automatic social dispatch berhenti aman.
+
 ## Konteks Fitur ACTOR-INTERVAL-REMOVAL-7B-RUNTIME
 - **Alasan**: Interval Actor harus berhenti memengaruhi keputusan runtime, karena scheduling Sosial kini sementara bergantung pada jadwal harian Paket dan cooldown operasional harus terpisah dari konfigurasi Actor.
 - **Solusi**: `RunApifyScraping` dan `ApifyScrapingJob` tidak lagi membaca `actor.interval_minutes` untuk due-check atau cooldown; runtime memakai jadwal harian Paket yang valid dan cooldown operasional dari `services.apify.schedule_retry_cooldown_minutes`.

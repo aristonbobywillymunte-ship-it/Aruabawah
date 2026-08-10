@@ -1,5 +1,17 @@
 # QA Checklist
 
+## APIFY-EFFECTIVE-SCHEDULE-8A
+- [x] `php -l app/Console/Commands/RunApifyScraping.php`
+- [x] `php -l app/Services/Scraping/ProjectScheduleResolver.php`
+- [x] `php -l tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`
+- [x] `php artisan route:list`
+- [x] `php artisan schedule:list`
+- [x] `php artisan view:clear`
+- [x] `git diff --check`
+- [x] `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest`
+- [ ] Real scraping run
+- [ ] Production migration
+
 ## ACTOR-INTERVAL-REMOVAL-7B-RUNTIME
 - [x] `php -l config/services.php`
 - [x] `php -l app/Console/Commands/RunApifyScraping.php`

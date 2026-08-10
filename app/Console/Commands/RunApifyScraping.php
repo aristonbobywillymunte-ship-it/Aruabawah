@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\ScrapingSetting;
 use App\Models\ApifyActor as ApifyActorModel;
 use App\Services\ApifyActorRegistry;
+use App\Services\Scraping\ProjectScheduleResolver;
 use App\Services\SchedulerQueueGuard;
 use App\Services\SocialProjectScrapePriorityService;
 use Illuminate\Console\Command;
@@ -40,6 +41,7 @@ class RunApifyScraping extends Command
     public function __construct(
         private readonly SchedulerQueueGuard $schedulerQueueGuard,
         private readonly SocialProjectScrapePriorityService $socialProjectScrapePriorityService,
+        private readonly ProjectScheduleResolver $projectScheduleResolver,
     )
     {
         parent::__construct();
@@ -235,10 +237,10 @@ class RunApifyScraping extends Command
 
                 // Comment scraper must keep checking the queue every scheduler tick.
                 // Do not block it behind actor interval timing when the queue is empty.
-                $package = $project->package;
-                $socialSchedule = $package
-                    ? $this->normalizeDailyRunTimes($package->social_runs_per_day ?? null, $package->social_run_times ?? [])
-                    : [];
+                $socialScheduleResult = $this->projectScheduleResolver->resolveSocial($project);
+                $socialSchedule = $socialScheduleResult['times'] ?? [];
+                $socialScheduleSource = $socialScheduleResult['source'] ?? 'none';
+                $socialScheduleReason = $socialScheduleResult['reason'] ?? null;
 
                 if (! $isCommentScraper && ! $forceDispatch) {
                     if ($socialSchedule === []) {
@@ -249,6 +251,8 @@ class RunApifyScraping extends Command
                             'platform' => $actor->platform,
                             'actor_id' => $actor->id,
                             'last_project_run_at' => optional($lastProjectActorRunAt)?->toDateTimeString(),
+                            'schedule_source' => $socialScheduleSource,
+                            'schedule_reason' => $socialScheduleReason,
                         ]);
                         $skipStats['interval_not_due']++;
                         continue;
@@ -263,6 +267,7 @@ class RunApifyScraping extends Command
                             'actor_id' => $actor->id,
                             'last_project_run_at' => optional($lastProjectActorRunAt)?->toDateTimeString(),
                             'schedule' => $socialSchedule,
+                            'schedule_source' => $socialScheduleSource,
                         ]);
                         $skipStats['interval_not_due']++;
                         continue;
@@ -570,7 +575,7 @@ class RunApifyScraping extends Command
             'status' => $dispatched > 0 ? 'some_jobs_dispatched' : 'no_jobs_dispatched',
             'message' => $dispatched > 0
                 ? 'Ada job yang dikirim ke antrean.'
-                : 'Tidak ada job yang dikirim. Cek project aktif, keyword, interval actor, cooldown, atau duplikasi antrean.',
+                : 'Tidak ada job yang dikirim. Cek project aktif, keyword, schedule harian, cooldown, atau duplikasi antrean.',
         ]);
     }
 

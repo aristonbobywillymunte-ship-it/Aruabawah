@@ -1,5 +1,26 @@
 # QA History
 
+# APIFY-EFFECTIVE-SCHEDULE-8A
+**Tanggal**: 2026-08-10
+**Area**: `RunApifyScraping`, automatic Apify social scheduling
+
+### Skenario yang Diuji & Hasil:
+1. **Project Override Priority**: Override Sosial Project yang valid dipakai untuk automatic dispatch.
+2. **Package Fallback**: Override Sosial kosong penuh tetap memakai jadwal Package.
+3. **Invalid Override Skip**: Override parsial atau malformed dianggap invalid dan aman di-skip tanpa fallback diam-diam.
+4. **Missing Package Skip**: Project tanpa Package tidak memicu automatic social dispatch.
+5. **Legacy Interval Ignored**: `packages.social_interval_minutes` tidak dipakai sebagai fallback runtime.
+6. **Manual Bypass Preserved**: `--project-id` dan `--force-dispatch` tetap bekerja seperti semula.
+7. **Comment Scraper Preserved**: Jalur comment scraper tetap aktif meski schedule Sosial invalid.
+8. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan schedule:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+9. **Targeted Test Run**: `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser QA tidak relevan untuk perubahan ini.
+- Runtime scraping tidak dijalankan.
+
+**Status Akhir**: PASS
+
 # ACTOR-INTERVAL-REMOVAL-7B-RUNTIME
 **Tanggal**: 2026-08-10
 **Area**: `RunApifyScraping`, `ApifyScrapingJob`, runtime social scheduling/cooldown
