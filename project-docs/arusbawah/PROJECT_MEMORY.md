@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur PORTAL-EFFECTIVE-SCHEDULE-6A
+- **Alasan**: Jalur otomatis portal perlu memakai schedule efektif Project agar override per project benar-benar mengalahkan default Package saat menentukan kapan scraping berjalan.
+- **Solusi**: `RunNewsPortalScraping` sekarang memanggil `ProjectScheduleResolver::resolvePortal()` pada mode otomatis dan memakai hasilnya untuk gate timing portal.
+- **Batasan**: Tidak ada perubahan pada Apify/social runtime, global switches, package schedule UI, project override data/UI, atau semantics `--project-id` manual.
+- **Catatan Implementasi**: Query project otomatis harus membawa kolom `news_run_times_override` dan `social_run_times_override`, kalau tidak override Project tidak akan terbaca.
+
 ## Konteks Fitur EFFECTIVE-SCHEDULE-RESOLVER-5A
 - **Alasan**: Perhitungan schedule efektif Project perlu sumber tunggal agar precedence override Project versus default Package bisa dibaca konsisten di langkah lanjutan.
 - **Solusi**: Menambahkan `ProjectScheduleResolver` untuk mengembalikan schedule Portal dan Sosial efektif beserta `source` dan `reason` yang kecil, deterministik, dan mudah diuji.

@@ -1,5 +1,43 @@
 # Milestone: Global Scraping Switches 2B Closure
 
+## Tambahan Milestone: PORTAL-EFFECTIVE-SCHEDULE-6A
+
+## Apa yang Diubah
+Menghubungkan `ProjectScheduleResolver` ke `RunNewsPortalScraping` pada jalur otomatis portal, sehingga schedule efektif Project benar-benar dipakai saat menentukan kapan portal news dijalankan.
+
+## Behavior Final
+- Portal otomatis sekarang memakai schedule efektif Project dari resolver.
+- Override Project yang valid menang atas schedule Package.
+- Override Project tetap bisa kosong penuh dan jatuh ke Package.
+- Jalur `--project-id` manual tetap mempertahankan semantik bypass timing yang lama.
+- `google_news_enabled`, `manual_portal_enabled`, dan `apify_enabled` tidak diubah.
+
+## Komponen Kunci
+- `app/Console/Commands/RunNewsPortalScraping.php`
+- `app/Services/Scraping/ProjectScheduleResolver.php`
+- `tests/Feature/PortalEffectiveScheduleRuntimeTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: YES, hanya portal otomatis memakai resolver schedule efektif
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Console/Commands/RunNewsPortalScraping.php`: PASS
+- `php -l tests/Feature/PortalEffectiveScheduleRuntimeTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=PortalEffectiveScheduleRuntimeTest`: PASS pada SQLite temp test harness
+
+## Catatan QA
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+
+## Commit SHA Terkait
+- pending
+
 ## Tambahan Milestone: EFFECTIVE-SCHEDULE-RESOLVER-5A
 
 ## Apa yang Diubah

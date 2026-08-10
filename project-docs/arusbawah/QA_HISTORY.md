@@ -1,5 +1,25 @@
 # QA History
 
+## PORTAL-EFFECTIVE-SCHEDULE-6A
+**Tanggal**: 2026-08-10
+**Area**: `RunNewsPortalScraping`, portal automatic scheduling
+
+### Skenario yang Diuji & Hasil:
+1. **Package Fallback**: Portal otomatis memakai schedule Package saat override Project kosong penuh.
+2. **Project Override Priority**: Override Project yang valid dipakai saat schedule Package tidak due.
+3. **Invalid Override Skip**: Override Project parsial/malformed tetap ditolak tanpa fallback diam-diam.
+4. **No Effective Schedule Skip**: Jika tidak ada schedule efektif, portal otomatis tidak jalan meski interval legacy diisi.
+5. **Manual Bypass**: Jalur `--project-id` tetap bypass gate timing otomatis.
+6. **Portal Disabled Skip**: Project dengan portal dimatikan tetap dilewati.
+7. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+8. **Targeted Test Run**: `php artisan test --filter=PortalEffectiveScheduleRuntimeTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+
+**Status Akhir**: PASS
+
 ## EFFECTIVE-SCHEDULE-RESOLVER-5A
 **Tanggal**: 2026-08-10
 **Area**: Shared schedule resolution service for Project
