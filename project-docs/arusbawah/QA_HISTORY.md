@@ -1,5 +1,24 @@
 # QA History
 
+## PACKAGE-SCHEDULE-STRICT-3A
+**Tanggal**: 2026-08-10
+**Area**: Admin Package Manager, daily schedules
+
+### Skenario yang Diuji & Hasil:
+1. **Portal Aktif Wajib Jadwal Lengkap**: `news_runs_per_day` harus diisi saat `use_portal = true`, dan jumlah slot portal harus cocok dengan jumlah run per hari.
+2. **Sosial Aktif Wajib Jadwal Lengkap**: Saat ada actor sosial yang diaktifkan lewat konfigurasi paket, `social_runs_per_day` harus diisi dan jumlah slot sosmed harus cocok dengan jumlah run per hari.
+3. **Disabled Feature Tidak Dipaksa**: Jika portal atau sosial benar-benar tidak aktif, jadwalnya tidak diwajibkan.
+4. **Duplicate Slot Rejection**: Duplikasi jam pada kategori yang sama tetap ditolak.
+5. **Slot Clamp & Preservation**: Resize slot tetap aman sampai maksimal 24 dan mempertahankan nilai yang sudah ada.
+6. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+7. **Targeted Test Run**: `php artisan test --filter=PackageDailyScheduleSupportTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser/runtime QA tidak relevan untuk perubahan ini.
+- Environment PostgreSQL lokal bawaan repo masih tidak tersedia, jadi verifikasi test dilakukan lewat SQLite temp harness.
+
+**Status Akhir**: PASS
+
 # SCRAPING-GLOBAL-SWITCHES-2B
 **Tanggal**: 2026-08-10
 **Area**: `routes/console.php`, automatic scheduler gating

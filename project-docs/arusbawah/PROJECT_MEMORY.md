@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur PACKAGE-SCHEDULE-STRICT-3A
+- **Alasan**: Jadwal harian paket perlu bersifat tegas agar portal dan sosial tidak bisa disimpan dengan jumlah run yang tidak lengkap atau ambigu.
+- **Solusi**: `PackageManager` sekarang mewajibkan `news_runs_per_day` beserta seluruh `news_run_times` saat portal aktif, dan mewajibkan `social_runs_per_day` beserta seluruh `social_run_times` saat sosial benar-benar aktif menurut semantik paket yang sudah ada.
+- **Batasan**: Tidak ada perubahan pada schedule runtime, `RunNewsPortalScraping`, `RunApifyScraping`, `routes/console.php`, Apify actor interval, failed-slot recovery, global scraping switches, AI/matching/notifications, atau package quotas/client limits.
+- **Fallback / Legacy**: `news_interval_minutes` dan `social_interval_minutes` tetap dipertahankan untuk paket lama, dan slot jam dinamis tetap dibatasi maksimal 24.
+
 # Konteks Fitur SCRAPING-GLOBAL-SWITCHES-2B
 - **Alasan**: Switch global engine yang disimpan di DB perlu benar-benar mengontrol scheduler otomatis, sementara command manual dan runtime schedule lain tetap aman.
 - **Solusi**: `routes/console.php` sekarang memilih mode discovery News dari kombinasi `google_news_enabled` dan `manual_portal_enabled`, serta menahan scheduling Apify otomatis saat `apify_enabled` nonaktif.

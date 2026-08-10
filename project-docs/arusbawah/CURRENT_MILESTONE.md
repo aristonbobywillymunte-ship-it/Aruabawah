@@ -1,5 +1,43 @@
 # Milestone: Global Scraping Switches 2B Closure
 
+## Tambahan Milestone: PACKAGE-SCHEDULE-STRICT-3A
+
+## Apa yang Diubah
+Mengunci jadwal harian paket agar portal dan sosial bersifat strict, eksplisit, dan tidak ambigu saat fitur terkait memang aktif.
+
+## Behavior Final
+- Jika portal aktif (`use_portal = true`), `news_runs_per_day` wajib diisi dan `news_run_times` harus berisi tepat jumlah slot yang diminta.
+- Jika sosial aktif menurut semantik paket yang sudah ada, `social_runs_per_day` wajib diisi dan `social_run_times` harus berisi tepat jumlah slot yang diminta.
+- Jadwal portal dan sosial tetap independen.
+- Input jam tetap memakai slot dinamis yang dibatasi maksimal 24.
+- Duplikasi jam di kategori yang sama tetap ditolak.
+- Jika fitur terkait benar-benar tidak aktif, jadwalnya tidak dipaksa.
+- Legacy interval `news_interval_minutes` dan `social_interval_minutes` tetap dipertahankan.
+
+## Komponen Kunci
+- `app/Livewire/Admin/PackageManager.php`
+- `tests/Feature/PackageDailyScheduleSupportTest.php`
+- `resources/views/livewire/admin/package-manager.blade.php`
+- `app/Models/Package.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: NO
+- **Package / Project / Actor scheduling berubah**: NO
+- **Legacy intervals berubah**: NO
+
+## Verifikasi
+- `php -l app/Livewire/Admin/PackageManager.php`: PASS
+- `php -l tests/Feature/PackageDailyScheduleSupportTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=PackageDailyScheduleSupportTest`: PASS pada SQLite temp test harness
+
+## Commit SHA Terkait
+- `f342ccbfca7efc8c8e7986757df57be36cb4547d`
+
 ## Tambahan Milestone: SCRAPING-GLOBAL-SWITCHES-2B
 
 ## Apa yang Diubah
