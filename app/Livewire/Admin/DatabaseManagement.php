@@ -63,7 +63,7 @@ class DatabaseManagement extends Component
                     }
 
                     if (! app(DatabaseManagementService::class)->hasPostgresDumpSignature($realPath)) {
-                        $fail('File harus berupa backup PostgreSQL plain-text (.sql) yang valid.');
+                        $fail('File harus berupa backup PostgreSQL plain-text (.sql) yang dikenali.');
                     }
                 },
             ],

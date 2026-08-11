@@ -989,3 +989,19 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - `AdminDatabaseManagementTest` lulus pada SQLite temp test harness.
 - `php -l` pada file yang diubah lulus.
 - `php artisan view:clear`, `php artisan route:list`, dan `git diff --check` lulus.
+
+---
+
+# Milestone: DATABASE-MANAGEMENT-AUDIT-GAPS
+
+## Apa yang Diubah
+- Bug `tempnam(...).'.sql'` pada backup dan restore sudah dihapus sehingga tidak ada orphan temp file.
+- Restore PostgreSQL kini memakai `psql -X --single-transaction -v ON_ERROR_STOP=1`.
+- Service-level regression tests ditambahkan untuk memastikan hanya ada satu proses restore, script restore atomik, dan cleanup berjalan pada sukses maupun gagal.
+- Wording validasi file disesuaikan agar tidak mengklaim parser SQL penuh.
+
+## Behavior Final
+- Tidak ada proses `DROP SCHEMA` terpisah sebelum restore.
+- Restore script temp dibersihkan di jalur sukses dan gagal.
+- Tidak ada real database restore dijalankan.
+- Perubahan ini lokal saja dan tidak menyentuh production/server.

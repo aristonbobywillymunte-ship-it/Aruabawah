@@ -521,3 +521,23 @@
 - PHP Lint: PASS untuk file yang diubah
 
 **Status Akhir**: PASS (Local only)
+
+## DATABASE-MANAGEMENT-AUDIT-GAPS
+**Tanggal**: 2026-08-11
+**Area**: Admin Database Management service + Livewire wrapper
+
+### Skenario yang Diuji & Hasil:
+1. **Temp File Hygiene**: Backup dan restore memakai satu path temp yang sama, tanpa orphan file dari `tempnam(...).'.sql'`.
+2. **Restore Flags**: Restore command memakai `psql -X --single-transaction -v ON_ERROR_STOP=1`.
+3. **Atomic Restore Script**: Script restore berisi `DROP SCHEMA IF EXISTS public CASCADE;`, `CREATE SCHEMA public AUTHORIZATION CURRENT_USER;`, dan `SET search_path TO public, pg_catalog;` sebelum dump content.
+4. **Failure Safety**: Gagal restore melempar `RuntimeException`, command restore hanya sekali, dan script temp dibersihkan.
+5. **Cleanup Safety**: Export sukses, export gagal, dan export kosong semua membersihkan temp file yang dibuat.
+6. **Validation Wording**: Wording validasi file dipendekkan agar tidak overclaim parser SQL.
+7. **Local-Only Verification**: Tidak ada real restore, tidak ada akses produksi, dan tidak ada deployment.
+
+### Test Coverage:
+- `tests/Unit/Services/Admin/DatabaseManagementServiceTest.php` (regresi service-level)
+- `tests/Feature/AdminDatabaseManagementTest.php` (regresi existing tetap lulus pada harness SQLite temp)
+- PHP lint dan checks lokal: PASS
+
+**Status Akhir**: PASS (Local only)
