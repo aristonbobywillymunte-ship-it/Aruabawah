@@ -1,4 +1,6 @@
-# SCHEDULING-PHASE-CLOSEOUT
+# QA History
+
+## SCHEDULING-PHASE-CLOSEOUT
 **Tanggal**: 2026-08-11
 **Area**: Production scheduling baseline closure
 
@@ -20,8 +22,6 @@
 - `public/._build` tetap dipreservasi.
 
 **Status Akhir**: PASS
-
-# QA History
 
 # APIFY-SLOT-RECOVERY-8C
 **Tanggal**: 2026-08-11

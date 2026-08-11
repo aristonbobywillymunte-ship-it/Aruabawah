@@ -1,4 +1,6 @@
-# Konteks Penutup Scheduling Phase
+# Project Memory
+
+## Konteks Penutup Scheduling Phase
 - Scheduling is no longer an open development phase.
 - Future scheduling work harus tetap mempertahankan hierarchy `Global -> Package -> Project -> Resolver`.
 - Fulfillment tetap success-only.
@@ -8,8 +10,6 @@
 - Actor interval bukan business scheduling authority.
 - Production migration baseline harus dipertahankan.
 - Arsitektur ini tidak boleh didesain ulang kecuali diminta secara eksplisit.
-
-# Project Memory
 
 ## Konteks Fitur APIFY-SLOT-RECOVERY-8C
 - **Alasan**: Social/Apify otomatis perlu bounded recovery agar slot yang terlewat atau gagal mengejar latest-due-slot sekali saja tanpa replay backlog.
