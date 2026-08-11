@@ -522,6 +522,34 @@
 
 **Status Akhir**: PASS (Local only)
 
+## NEWS-SOURCES-WRITE-TRANSACTION-SAFETY-2
+**Tanggal**: 2026-08-11
+**Area**: `/admin/news-sources` - write atomicity
+
+### Skenario yang Diuji & Hasil:
+1. **Create Atomic Rollback**: Saat pembuatan draft suggestion gagal setelah source dibuat, transaction rollback mencegah orphan `news_sources` row.
+2. **Update Scope**: Update source tetap satu write utama; tidak ada transaction yang dibuka tanpa kebutuhan terkait.
+3. **External Calls**: Tidak ada AI/manual call yang dibungkus transaction.
+4. **Local-Only Verification**: Hanya harness SQLite lokal yang dipakai; production tetap tidak disentuh.
+
+### Test Coverage:
+- `tests/Feature/AdminNewsSourcesTest.php` ditambah regresi rollback create atomic
+- Semua test News Sources yang relevan lulus di harness SQLite temp lokal
+
+## NEWS-SOURCES-ERROR-SAFETY-1
+**Tanggal**: 2026-08-11
+**Area**: `/admin/news-sources` - browser-visible exception safety
+
+### Skenario yang Diuji & Hasil:
+1. **Save Error Safety**: Kegagalan create/update kini memakai pesan UI generik bahasa Indonesia, tanpa menampilkan exception mentah ke browser.
+2. **AI Error Safety**: Kegagalan generator AI/provider sekarang tetap aman di toast dan state Livewire, tanpa bocor token/host/path internal.
+3. **Manual Test Error Safety**: Kegagalan pengujian manual URL juga memakai pesan generik dan tidak memunculkan detail secret-like.
+4. **Local-Only Verification**: Tidak ada real AI call, tidak ada real scraping, dan production tetap tidak disentuh.
+
+### Test Coverage:
+- `tests/Feature/AdminNewsSourcesTest.php` diperluas dengan regresi save, AI, dan manual-test error safety
+- Semua test News Sources lulus pada SQLite temp harness lokal
+
 ## DATABASE-MANAGEMENT-AUDIT-GAPS
 **Tanggal**: 2026-08-11
 **Area**: Admin Database Management service + Livewire wrapper

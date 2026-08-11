@@ -1045,7 +1045,21 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - Tidak ada migration, deploy, atau akses production yang dilakukan dalam task ini.
 - Dirty file lama tetap dipertahankan.
 
+## News Sources Write Atomicity
+- Aksi create News Sources kini mengikat `news_sources` dan draft suggestion otomatis dalam satu transaction agar tidak ada partial write/orphan source.
+- Update source tetap satu write utama dan tidak ditransaksikan tanpa kebutuhan logis tambahan.
+- Transaction hanya dibuka untuk write database, bukan untuk call AI/manual test.
+- Regression coverage menutup rollback create saat write suggestion gagal.
+- Perubahan ini lokal saja; stale testing state dan confirmation flow tidak diubah.
+
+## News Sources Error Safety
+- Browser-visible raw exception leakage pada `/admin/news-sources` sudah ditutup.
+- Save/update failure dan AI/manual-test failure kini memakai pesan UI generik bahasa Indonesia.
+- Detail exception tetap aman di-log server-side dengan konteks operasional yang ringkas.
+- Perubahan ini lokal saja; production dan perilaku delete/restore/stale state belum disentuh.
+
 ## Verifikasi
 - PHP lint pada file yang diubah lulus.
 - Targeted unit/feature tests menutup collision Redis, error snapshot, partial clear, admin guard, dan exception boundary.
 - `php artisan view:clear`, `php artisan route:list`, dan `git diff --check` dijalankan sebagai QA lokal.
+- Regression News Sources error-safety juga ditambahkan di SQLite temp harness.

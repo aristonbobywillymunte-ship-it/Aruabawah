@@ -6,9 +6,11 @@ use App\Models\NewsSource;
 use App\Models\AiPromptTemplate;
 use App\Services\AiProviderClient;
 use App\Services\NewsSourceIconResolver;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 
@@ -338,9 +340,11 @@ class NewsSources extends Component
                 $source->update($data);
                 $this->notify('success', 'Portal berita berhasil diperbarui.');
             } else {
-                $data = $this->syncIconUrl($data);
-                $source = NewsSource::create($data);
-                $this->ensureDraftSuggestionForSource($source);
+                DB::transaction(function () use (&$data, &$source): void {
+                    $data = $this->syncIconUrl($data);
+                    $source = NewsSource::create($data);
+                    $this->ensureDraftSuggestionForSource($source);
+                });
                 $this->notify('success', 'Portal berita baru berhasil ditambahkan.');
             }
 
@@ -350,7 +354,12 @@ class NewsSources extends Component
         } catch (\Throwable $e) {
             $this->confirmingSave = false;
             $this->showFormModal = true;
-            $this->notify('error', 'Gagal menyimpan portal: ' . $e->getMessage());
+            $this->reportException('save source', $e, [
+                'source_id' => $this->selected_id,
+                'is_editing' => $this->isEditing,
+                'admin_user_id' => auth()->id(),
+            ]);
+            $this->notify('error', 'Gagal menyimpan sumber berita. Silakan coba lagi.');
             return;
         }
     }
@@ -464,6 +473,14 @@ class NewsSources extends Component
         }
 
         $this->dispatch('admin-toast', payload: $payload);
+    }
+
+    private function reportException(string $action, \Throwable $e, array $context = []): void
+    {
+        Log::error('[News Sources] ' . $action . ' failed.', array_merge($context, [
+            'exception' => $e::class,
+            'message' => $e->getMessage(),
+        ]));
     }
 
     // AI Suggestion & Testing Methods
@@ -637,7 +654,11 @@ class NewsSources extends Component
             $this->notify('success', 'Saran AI berhasil dibuat.');
             return $suggestion;
         } catch (\Throwable $e) {
-            $this->notify('error', 'Gagal memanggil AI: ' . $e->getMessage());
+            $this->reportException('generate ai suggestion', $e, [
+                'source_id' => $sourceId,
+                'admin_user_id' => auth()->id(),
+            ]);
+            $this->notify('error', 'Proses AI gagal. Silakan coba lagi.');
             return null;
         }
     }
@@ -997,6 +1018,12 @@ class NewsSources extends Component
 
             $flashType = $nextStatus === 'lolos' ? 'success' : 'failed';
             $this->notify($flashType, 'Pengujian manual URL selesai dengan status: ' . strtoupper($nextStatus));
+        } catch (\Throwable $e) {
+            $this->reportException('test manual url', $e, [
+                'suggestion_id' => $id,
+                'admin_user_id' => auth()->id(),
+            ]);
+            $this->notify('error', 'Pengujian gagal dijalankan. Silakan coba lagi.');
         } finally {
             $this->testingSuggestionId = null;
         }
