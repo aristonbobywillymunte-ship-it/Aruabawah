@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur APIFY-SLOT-RECOVERY-8C
+- **Alasan**: Social/Apify otomatis perlu bounded recovery agar slot yang terlewat atau gagal mengejar latest-due-slot sekali saja tanpa replay backlog.
+- **Solusi**: `RunApifyScraping` sekarang menghitung latest due slot yang efektif, membatasi recovery ke satu slot terbaru, dan tetap memakai cooldown operasional yang sudah ada.
+- **Batasan**: Tidak ada perubahan pada resolver, slot fulfillment 8B, comment scraping, package/project UI, atau arsitektur job.
+- **Fallback / Legacy**: Banyak slot yang terlewat tetap collapse ke satu latest due slot; legacy ambiguous success rows tidak dipakai untuk fulfillment.
+
 ## Konteks Fitur APIFY-SLOT-FULFILLMENT-8B
 - **Alasan**: Fulfillment slot Sosial/Apify harus bergantung hanya pada sukses scheduled MAIN Actor yang sah, bukan pada success komentar, force-dispatch, atau timestamp attempt.
 - **Solusi**: Menambahkan marker persisten `is_scheduled_execution`, menyempitkan lookup fulfillment ke `project_id` + `actor_id` + status `success`, lalu memakai `completed_at` saja sebagai timestamp fulfillment.

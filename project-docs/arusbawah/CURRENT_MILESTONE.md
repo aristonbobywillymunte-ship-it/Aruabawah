@@ -1,3 +1,45 @@
+# Milestone: APIFY Slot Recovery 8C
+
+## Apa yang Diubah
+Recovery otomatis Sosial/Apify sekarang memakai latest-due-slot yang efektif, one-slot catch-up, dan cooldown retry bounded yang sudah ada, tanpa mengubah arsitektur job atau UI.
+
+## Behavior Final
+- Latest due slot bisa mundur ke hari sebelumnya sebelum slot pertama hari ini.
+- Satu actor hanya mengejar latest due slot, bukan semua slot yang terlewat.
+- Multiple missed slots collapse ke satu latest due slot.
+- Hanya sukses scheduled MAIN Actor yang memenuhi slot; failed/queued/processing/retry_wait tetap tidak memenuhi.
+- Bounded retry tetap memakai cooldown operasional yang sudah ada.
+
+## Komponen Kunci
+- `app/Console/Commands/RunApifyScraping.php`
+- `tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`
+- `app/Jobs/ApifyScrapingJob.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: YES, terbatas pada bounded social recovery
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Console/Commands/RunApifyScraping.php`: PASS
+- `php -l app/Jobs/ApifyScrapingJob.php`: PASS
+- `php -l app/Models/ApifyDispatchState.php`: PASS
+- `php -l tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan schedule:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest`: PASS pada SQLite temp test harness
+
+## Catatan QA
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+- Legacy ambiguous success rows tetap tidak dipercaya untuk fulfillment; slot yang betul-betul due bisa mengeksekusi sekali lagi setelah deploy.
+
+## Commit SHA Terkait
+- `94f7498e3999f3a16d54c48a7feba0dc4f93a3a7`
+
 # Milestone: APIFY Slot Fulfillment 8B
 
 ## Apa yang Diubah

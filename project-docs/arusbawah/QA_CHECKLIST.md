@@ -1,5 +1,18 @@
 # QA Checklist
 
+## APIFY-SLOT-RECOVERY-8C
+- [x] `php -l app/Console/Commands/RunApifyScraping.php`
+- [x] `php -l app/Jobs/ApifyScrapingJob.php`
+- [x] `php -l app/Models/ApifyDispatchState.php`
+- [x] `php -l tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`
+- [x] `git diff --check`
+- [x] `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest`
+- [x] `php artisan route:list`
+- [x] `php artisan schedule:list`
+- [x] `php artisan view:clear`
+- [ ] Real scraping run
+- [ ] Production migration
+
 ## APIFY-SLOT-FULFILLMENT-8B
 - [x] `php -l app/Models/ApifyDispatchState.php`
 - [x] `php -l app/Console/Commands/RunApifyScraping.php`

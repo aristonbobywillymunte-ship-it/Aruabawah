@@ -1,5 +1,25 @@
 # QA History
 
+# APIFY-SLOT-RECOVERY-8C
+**Tanggal**: 2026-08-11
+**Area**: `RunApifyScraping`, bounded social recovery
+
+### Skenario yang Diuji & Hasil:
+1. **Pre-First-Slot Recovery**: Sebelum slot pertama hari ini, slot terakhir hari sebelumnya bisa jadi latest due slot.
+2. **One-Slot Catch-up**: Latest due slot yang missed dieksekusi sekali, bukan semua slot yang terlewat.
+3. **No Burst Replay**: Beberapa slot yang terlewat collapse ke latest due slot yang sama.
+4. **Failed Slot Stays Due**: Failed state tidak dianggap fulfilled.
+5. **Cooldown Bounded**: Bounded retry tetap mengikuti cooldown operasional yang sudah ada.
+6. **Actor Isolation**: Fulfillment dan recovery tetap actor-specific.
+7. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan schedule:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+8. **Targeted Test Run**: `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser QA tidak relevan untuk perubahan ini.
+- Runtime scraping tidak dijalankan.
+
+**Status Akhir**: PASS
+
 # APIFY-SLOT-FULFILLMENT-8B
 **Tanggal**: 2026-08-11
 **Area**: `RunApifyScraping`, `ApifyScrapingJob`, Apify fulfillment lookup
