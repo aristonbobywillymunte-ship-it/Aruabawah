@@ -2,59 +2,33 @@
 
 namespace App\Livewire\Admin;
 
+use App\Services\Admin\DatabaseManagementService;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class DatabaseManagement extends Component
 {
     use WithFileUploads;
 
     public $databaseFile;
+    public string $restoreConfirmation = '';
+
+    public function mount(): void
+    {
+        $this->ensureAdminAccess();
+    }
 
     public function download()
     {
-        $host = config('database.connections.pgsql.host');
-        $port = config('database.connections.pgsql.port');
-        $db = config('database.connections.pgsql.database');
-        $user = config('database.connections.pgsql.username');
-        $password = config('database.connections.pgsql.password');
+        $this->ensureAdminAccess();
 
-        $tempFile = tempnam(sys_get_temp_dir(), 'backup_') . '.sql';
-
-        $cmd = "pg_dump -h " . escapeshellarg($host) . " -p " . escapeshellarg($port) . " -U " . escapeshellarg($user) . " -F p -b -v -f " . escapeshellarg($tempFile) . " " . escapeshellarg($db);
-
-        $descriptorspec = [
-            1 => ['pipe', 'w'], // stdout
-            2 => ['pipe', 'w'], // stderr
-        ];
-
-        $env = array_merge(getenv(), ['PGPASSWORD' => $password]);
-        $process = proc_open($cmd, $descriptorspec, $pipes, null, $env);
-
-        if (is_resource($process)) {
-            $stdout = stream_get_contents($pipes[1]);
-            $stderr = stream_get_contents($pipes[2]);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            $status = proc_close($process);
-
-            if ($status !== 0) {
-                Log::error('[Database] pg_dump failed: ' . $stderr);
-                $this->dispatch('toast', message: 'Gagal mencadangkan database: ' . trim($stderr), type: 'danger');
-                if (file_exists($tempFile)) {
-                    unlink($tempFile);
-                }
-                return;
-            }
-        } else {
-            $this->dispatch('toast', message: 'Gagal menjalankan perintah pg_dump.', type: 'danger');
-            return;
-        }
-
-        if (!file_exists($tempFile) || filesize($tempFile) === 0) {
-            $this->dispatch('toast', message: 'File backup kosong atau tidak berhasil dibuat.', type: 'danger');
+        try {
+            $tempFile = app(DatabaseManagementService::class)->exportBackup();
+        } catch (RuntimeException $exception) {
+            Log::error('[Database] pg_dump failed: ' . $this->redactSecrets($exception->getMessage()));
+            $this->dispatch('toast', message: 'Gagal membuat cadangan database. Periksa log sistem.', type: 'danger');
             return;
         }
 
@@ -63,19 +37,44 @@ class DatabaseManagement extends Component
 
     public function import()
     {
+        $this->ensureAdminAccess();
+
         $this->validate([
-            'databaseFile' => 'required|file|max:51200', // max 50MB
+            'databaseFile' => [
+                'required',
+                'file',
+                'max:51200',
+                function ($attribute, $value, $fail) {
+                    if (strtolower((string) $value->getClientOriginalExtension()) !== 'sql') {
+                        $fail('File harus berformat .sql.');
+                        return;
+                    }
+
+                    $realPath = $value->getRealPath();
+
+                    if (! $realPath || ! is_readable($realPath)) {
+                        $fail('File unggahan tidak dapat dibaca.');
+                        return;
+                    }
+
+                    if (filesize($realPath) <= 0) {
+                        $fail('File SQL tidak boleh kosong.');
+                        return;
+                    }
+
+                    if (! app(DatabaseManagementService::class)->hasPostgresDumpSignature($realPath)) {
+                        $fail('File harus berupa backup PostgreSQL plain-text (.sql) yang valid.');
+                    }
+                },
+            ],
+            'restoreConfirmation' => ['required', 'in:PULIHKAN DATABASE'],
         ], [
             'databaseFile.required' => 'Pilih file database SQL terlebih dahulu.',
             'databaseFile.file' => 'File tidak valid.',
             'databaseFile.max' => 'Ukuran file maksimal adalah 50MB.',
+            'restoreConfirmation.required' => 'Ketik PULIHKAN DATABASE untuk melanjutkan.',
+            'restoreConfirmation.in' => 'Konfirmasi restore belum sesuai.',
         ]);
-
-        $host = config('database.connections.pgsql.host');
-        $port = config('database.connections.pgsql.port');
-        $db = config('database.connections.pgsql.database');
-        $user = config('database.connections.pgsql.username');
-        $password = config('database.connections.pgsql.password');
 
         $filePath = $this->databaseFile->getRealPath();
 
@@ -84,59 +83,39 @@ class DatabaseManagement extends Component
             return;
         }
 
-        $descriptorspec = [
-            1 => ['pipe', 'w'], // stdout
-            2 => ['pipe', 'w'], // stderr
-        ];
-
-        $env = array_merge(getenv(), ['PGPASSWORD' => $password]);
-
-        // Step 1: Clean/Drop existing tables
-        $cmdClean = "psql -h " . escapeshellarg($host) . " -p " . escapeshellarg($port) . " -U " . escapeshellarg($user) . " -d " . escapeshellarg($db) . " -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO public;'";
-        $processClean = proc_open($cmdClean, $descriptorspec, $pipes, null, $env);
-
-        if (is_resource($processClean)) {
-            $stderr = stream_get_contents($pipes[2]);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            $status = proc_close($processClean);
-
-            if ($status !== 0) {
-                Log::error('[Database] Drop schema failed: ' . $stderr);
-                $this->dispatch('toast', message: 'Gagal mengosongkan database lama: ' . trim($stderr), type: 'danger');
-                return;
-            }
-        } else {
-            $this->dispatch('toast', message: 'Gagal menjalankan perintah pengosongan database.', type: 'danger');
-            return;
-        }
-
-        // Step 2: Import new SQL structure and data
-        $cmdImport = "psql -h " . escapeshellarg($host) . " -p " . escapeshellarg($port) . " -U " . escapeshellarg($user) . " -d " . escapeshellarg($db) . " -f " . escapeshellarg($filePath);
-        $processImport = proc_open($cmdImport, $descriptorspec, $pipes, null, $env);
-
-        if (is_resource($processImport)) {
-            $stderr = stream_get_contents($pipes[2]);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            $status = proc_close($processImport);
-
-            if ($status !== 0) {
-                Log::error('[Database] psql import failed: ' . $stderr);
-                $this->dispatch('toast', message: 'Gagal mengimpor database baru: ' . trim($stderr), type: 'danger');
-                return;
-            }
-        } else {
-            $this->dispatch('toast', message: 'Gagal menjalankan perintah psql import.', type: 'danger');
+        try {
+            app(DatabaseManagementService::class)->restoreBackup($filePath);
+        } catch (RuntimeException $exception) {
+            Log::error('[Database] psql restore failed: ' . $this->redactSecrets($exception->getMessage()));
+            $this->dispatch('toast', message: 'Pemulihan database gagal. Data lama tetap dipertahankan.', type: 'danger');
             return;
         }
 
         $this->reset('databaseFile');
+        $this->restoreConfirmation = '';
         $this->dispatch('toast', message: 'Database berhasil dipulihkan!', type: 'success');
     }
 
     public function render()
     {
         return view('livewire.admin.database-management');
+    }
+
+    private function ensureAdminAccess(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->isAdmin(), 403, 'Akses ditolak. Hanya admin yang dapat mengelola database.');
+    }
+
+    private function redactSecrets(string $message): string
+    {
+        $patterns = [
+            '/PGPASSWORD\s*=\s*[^ \n\r\t;]+/i' => 'PGPASSWORD=[redacted]',
+            '/password\s*[:=]\s*[^ \n\r\t;]+/i' => 'password=[redacted]',
+            '/Bearer\s+[A-Za-z0-9\-\._~\+\/]+=*/i' => 'Bearer [redacted]',
+            '/Authorization:\s*[^\n\r]+/i' => 'Authorization: [redacted]',
+            '/api[_-]?token\s*[:=]\s*[^ \n\r\t;]+/i' => 'api_token=[redacted]',
+        ];
+
+        return preg_replace(array_keys($patterns), array_values($patterns), $message) ?? '[redacted]';
     }
 }

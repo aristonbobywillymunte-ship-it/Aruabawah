@@ -11,12 +11,12 @@
                     </div>
                     <div>
                         <h2 class="text-lg font-bold text-slate-900">Unduh Database (Export)</h2>
-                        <p class="text-xs text-slate-400">Salin skema struktur & data records ke berkas SQL</p>
+                        <p class="text-xs text-slate-400">Cadangan PostgreSQL plain-text berformat SQL</p>
                     </div>
                 </div>
 
                 <p class="text-sm leading-relaxed text-slate-600">
-                    Menghasilkan file salinan database lengkap berformat SQL. Proses ini aman dijalankan kapan saja dan tidak akan mengganggu aktivitas pengguna atau perayapan data yang sedang berjalan.
+                    Menghasilkan salinan read-only dari database PostgreSQL ke berkas SQL untuk arsip atau pemulihan terkontrol.
                 </p>
 
                 <div class="space-y-2 rounded-2xl bg-slate-50 p-4 border border-slate-100">
@@ -53,7 +53,7 @@
                     </div>
                     <div>
                         <h2 class="text-lg font-bold text-slate-900">Pulihkan Database (Import)</h2>
-                        <p class="text-xs text-slate-400">Unggah berkas SQL untuk memulihkan keadaan data</p>
+                        <p class="text-xs text-slate-400">Berkas SQL akan mengganti data aktif secara atomik</p>
                     </div>
                 </div>
 
@@ -64,7 +64,7 @@
                         <span>Peringatan Penghapusan Data</span>
                     </div>
                     <p class="leading-relaxed text-red-700/90">
-                        Proses ini akan **menghapus seluruh tabel dan data aktif saat ini (CASCADE)** sebelum memulihkan data dari berkas SQL baru.
+                        Proses ini akan menghapus seluruh tabel dan data aktif saat ini dengan CASCADE sebelum memulihkan data dari berkas SQL baru. Jika pemulihan gagal, perubahan schema akan dibatalkan.
                     </p>
                 </div>
 
@@ -94,6 +94,26 @@
                         </div> 
                     @enderror
                 </div>
+
+                <div class="space-y-2 rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
+                    <label for="restore-confirmation" class="block text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Konfirmasi Restore</label>
+                    <input
+                        id="restore-confirmation"
+                        type="text"
+                        wire:model.live="restoreConfirmation"
+                        placeholder="Ketik PULIHKAN DATABASE"
+                        class="w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                    />
+                    <p class="text-xs leading-relaxed text-amber-800/80">
+                        Tindakan ini wajib dikonfirmasi manual untuk mencegah pemulihan database secara tidak sengaja.
+                    </p>
+                    @error('restoreConfirmation')
+                        <div class="text-xs text-red-500 mt-1 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[14px]">error</span>
+                            <span>{{ $message }}</span>
+                        </div>
+                    @enderror
+                </div>
             </div>
 
             <!-- Import Action Button -->
@@ -109,9 +129,8 @@
                 <button 
                     wire:click="import" 
                     wire:loading.attr="disabled"
-                    @if(!$databaseFile) disabled @endif
-                    class="w-full flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-semibold text-white transition-all duration-250 shadow-md @if($databaseFile) bg-amber-600 shadow-amber-600/10 hover:bg-amber-700 active:scale-[0.98] @else bg-slate-200 text-slate-400 cursor-not-allowed shadow-none @endif"
-                    onclick="return confirm('Apakah Anda yakin ingin memulihkan database dari berkas ini? Seluruh data aktif di web saat ini akan dihapus permanen.') || event.stopImmediatePropagation()"
+                    @if(!$databaseFile || trim($restoreConfirmation) !== 'PULIHKAN DATABASE') disabled @endif
+                    class="w-full flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-semibold text-white transition-all duration-250 shadow-md @if($databaseFile && trim($restoreConfirmation) === 'PULIHKAN DATABASE') bg-amber-600 shadow-amber-600/10 hover:bg-amber-700 active:scale-[0.98] @else bg-slate-200 text-slate-400 cursor-not-allowed shadow-none @endif"
                 >
                     <span wire:loading.remove wire:target="import" class="material-symbols-outlined text-[20px]">upload</span>
                     <span wire:loading wire:target="import" class="animate-spin material-symbols-outlined text-[20px]">sync</span>

@@ -501,3 +501,23 @@
 - PHP Lint: PASS untuk semua file yang diubah
 
 **Status Akhir**: PASS (Deployed di server `main`)
+
+## DATABASE-MANAGEMENT-SAFETY-LOCAL
+**Tanggal**: 2026-08-11
+**Area**: `/admin/database` - Admin Database Management
+
+### Skenario yang Diuji & Hasil:
+1. **Access Control**: Admin dapat membuka halaman, non-admin ditolak 403, dan akses Livewire sensitif juga ditolak untuk non-admin.
+2. **Atomic Restore**: Restore database sekarang memakai satu proses `psql` dengan `--single-transaction` dan `ON_ERROR_STOP=1`, sehingga schema reset tidak berdiri sendiri sebelum import.
+3. **Safe Schema Recreation**: Schema `public` direcreate dengan ownership yang aman via `CREATE SCHEMA public AUTHORIZATION CURRENT_USER`.
+4. **Restore Validation**: File wajib ada, maksimal 50 MB, berekstensi `.sql`, bisa dibaca, tidak kosong, dan harus terlihat seperti backup PostgreSQL plain-text.
+5. **Destructive Confirmation**: Restore hanya aktif setelah admin mengetik persis `PULIHKAN DATABASE`.
+6. **Error Safety**: Pesan untuk user tetap singkat dan aman; raw stderr serta secret tidak dirender ke UI.
+7. **Temp File Cleanup**: Jalur backup/restore membersihkan file temp pada sukses dan gagal.
+8. **Local-Only Verification**: Tidak ada akses server produksi, tidak ada deploy, dan tidak ada real database restore.
+
+### Test Coverage:
+- `tests/Feature/AdminDatabaseManagementTest.php` (4 test cases baru, lulus pada SQLite temp test harness)
+- PHP Lint: PASS untuk file yang diubah
+
+**Status Akhir**: PASS (Local only)

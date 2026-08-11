@@ -966,3 +966,26 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 
 ## Verifikasi
 - `ProjectCreatePageTest` lulus pada SQLite temp test harness.
+
+---
+
+# Milestone: DATABASE-MANAGEMENT-SAFETY-LOCAL
+
+## Apa yang Diubah
+- Halaman `/admin/database` yang sebelumnya menjalankan `DROP SCHEMA public CASCADE` lalu import di proses terpisah kini memakai restore atomik dalam satu eksekusi `psql`.
+- Validasi file restore kini memeriksa ekstensi `.sql`, file terbaca, tidak kosong, dan memiliki signature backup PostgreSQL plain-text.
+- Restore wajib dikonfirmasi dengan teks persis `PULIHKAN DATABASE`.
+- Akses admin ditegakkan langsung di komponen Livewire selain middleware route.
+- Pesan error ke user dibuat singkat dan aman, tanpa raw stderr.
+- Temp file backup/restore dibersihkan pada jalur sukses maupun gagal.
+
+## Behavior Final
+- Restore schema reset + import berjalan atomik dan rollback-safe.
+- `CREATE SCHEMA public AUTHORIZATION CURRENT_USER` dipakai untuk recreate schema yang aman.
+- Tidak ada real restore database yang dijalankan saat audit ini.
+- Tidak ada migration, deploy, atau perubahan produksi.
+
+## Verifikasi
+- `AdminDatabaseManagementTest` lulus pada SQLite temp test harness.
+- `php -l` pada file yang diubah lulus.
+- `php artisan view:clear`, `php artisan route:list`, dan `git diff --check` lulus.
