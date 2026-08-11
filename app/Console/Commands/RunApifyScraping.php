@@ -258,7 +258,9 @@ class RunApifyScraping extends Command
                         continue;
                     }
 
-                    if (! $this->isWithinDailyRunWindow($lastProjectActorRunAt, $socialSchedule)) {
+                    $latestDueSlotAt = $this->latestDueSlotAt($socialSchedule);
+
+                    if (! $latestDueSlotAt || $this->isSlotFulfilled($lastProjectActorRunAt, $latestDueSlotAt)) {
                         $this->line("Skipping {$actor->platform} — social schedule not due.");
                         $socialLog->info('[Social] Actor skipped: daily schedule not due.', [
                             'project_id' => $project->id,
@@ -268,6 +270,7 @@ class RunApifyScraping extends Command
                             'last_project_run_at' => optional($lastProjectActorRunAt)?->toDateTimeString(),
                             'schedule' => $socialSchedule,
                             'schedule_source' => $socialScheduleSource,
+                            'latest_due_slot_at' => optional($latestDueSlotAt)?->toDateTimeString(),
                         ]);
                         $skipStats['interval_not_due']++;
                         continue;
@@ -672,7 +675,7 @@ class RunApifyScraping extends Command
         return count($normalized) === $count ? $normalized : [];
     }
 
-    protected function isWithinDailyRunWindow(?Carbon $lastRunAt, array $runTimes, ?Carbon $now = null): bool
+    protected function latestDueSlotAt(array $runTimes, ?Carbon $now = null): ?Carbon
     {
         $now ??= now();
 
@@ -686,7 +689,7 @@ class RunApifyScraping extends Command
         }
 
         if ($dueSlots === []) {
-            return false;
+            return null;
         }
 
         usort($dueSlots, fn (Carbon $a, Carbon $b) => $a->timestamp <=> $b->timestamp);
@@ -699,9 +702,18 @@ class RunApifyScraping extends Command
         }
 
         if (! $latestDueSlot) {
-            return false;
+            return Carbon::createFromFormat(
+                'Y-m-d H:i',
+                $now->copy()->subDay()->format('Y-m-d') . ' ' . end($dueSlots)->format('H:i'),
+                $now->timezone
+            );
         }
 
-        return ! $lastRunAt || $lastRunAt->lessThan($latestDueSlot);
+        return $latestDueSlot;
+    }
+
+    protected function isSlotFulfilled(?Carbon $lastRunAt, Carbon $latestDueSlotAt): bool
+    {
+        return $lastRunAt !== null && $lastRunAt->greaterThanOrEqualTo($latestDueSlotAt);
     }
 }

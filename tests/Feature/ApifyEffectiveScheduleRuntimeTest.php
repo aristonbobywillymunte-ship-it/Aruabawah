@@ -44,6 +44,106 @@ class ApifyEffectiveScheduleRuntimeTest extends TestCase
         }
     }
 
+    public function test_pre_first_slot_recovers_previous_day_last_slot_when_unfulfilled(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 8, 11, 7, 0, 0, 'Asia/Makassar'));
+
+        try {
+            $this->bindNoopPriorityService();
+            [$project, $actor] = $this->createSocialProjectAndActor([
+                'social_runs_per_day' => 2,
+                'social_run_times' => ['09:00', '21:00'],
+                'social_run_times_override' => null,
+            ]);
+
+            $this->markLastRunAt($project, $actor, Carbon::create(2026, 8, 10, 20, 30, 0, 'Asia/Makassar'));
+
+            Queue::fake();
+
+            $this->artisan('scraping:run-apify', ['--no-telegram' => true])
+                ->assertExitCode(0);
+
+            Queue::assertPushed(ApifyScrapingJob::class, 1);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_pre_first_slot_skips_when_previous_day_last_slot_is_already_fulfilled(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 8, 11, 7, 0, 0, 'Asia/Makassar'));
+
+        try {
+            $this->bindNoopPriorityService();
+            [$project, $actor] = $this->createSocialProjectAndActor([
+                'social_runs_per_day' => 2,
+                'social_run_times' => ['09:00', '21:00'],
+                'social_run_times_override' => null,
+            ]);
+
+            $this->markLastRunAt($project, $actor, Carbon::create(2026, 8, 10, 21, 0, 0, 'Asia/Makassar'));
+
+            Queue::fake();
+
+            $this->artisan('scraping:run-apify', ['--no-telegram' => true])
+                ->assertExitCode(0);
+
+            Queue::assertNothingPushed();
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_multiple_missed_slots_collapse_to_latest_due_slot(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 8, 11, 22, 0, 0, 'Asia/Makassar'));
+
+        try {
+            $this->bindNoopPriorityService();
+            [$project, $actor] = $this->createSocialProjectAndActor([
+                'social_runs_per_day' => 2,
+                'social_run_times' => ['09:00', '21:00'],
+                'social_run_times_override' => null,
+            ]);
+
+            $this->markLastRunAt($project, $actor, Carbon::create(2026, 8, 10, 20, 30, 0, 'Asia/Makassar'));
+
+            Queue::fake();
+
+            $this->artisan('scraping:run-apify', ['--no-telegram' => true])
+                ->assertExitCode(0);
+
+            Queue::assertPushed(ApifyScrapingJob::class, 1);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_failed_scheduled_state_remains_due_for_next_tick(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 8, 10, 21, 30, 0, 'Asia/Makassar'));
+
+        try {
+            $this->bindNoopPriorityService();
+            [$project, $actor] = $this->createSocialProjectAndActor([
+                'social_runs_per_day' => 2,
+                'social_run_times' => ['09:00', '21:00'],
+                'social_run_times_override' => null,
+            ]);
+
+            $this->seedDispatchState($project, $actor, Carbon::create(2026, 8, 10, 9, 0, 0, 'Asia/Makassar'), 'failed');
+
+            Queue::fake();
+
+            $this->artisan('scraping:run-apify', ['--no-telegram' => true])
+                ->assertExitCode(0);
+
+            Queue::assertPushed(ApifyScrapingJob::class, 1);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_project_override_takes_precedence_over_package_schedule(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 8, 10, 21, 30, 0, 'Asia/Makassar'));
@@ -502,22 +602,37 @@ class ApifyEffectiveScheduleRuntimeTest extends TestCase
 
     protected function markLastRun(Project $project, ApifyActor $actor, string $time, bool $scheduledExecution = true): void
     {
+        $completedAt = Carbon::create(2026, 8, 10, (int) substr($time, 0, 2), (int) substr($time, 3, 2), 0, 'Asia/Makassar');
+        $this->seedDispatchState($project, $actor, $completedAt, 'success', $scheduledExecution);
+    }
+
+    protected function markLastRunAt(Project $project, ApifyActor $actor, Carbon $completedAt, bool $scheduledExecution = true): void
+    {
+        $this->seedDispatchState($project, $actor, $completedAt, 'success', $scheduledExecution);
+    }
+
+    protected function seedDispatchState(Project $project, ApifyActor $actor, Carbon $completedAt, string $status, bool $scheduledExecution = true): void
+    {
+        $queuedAt = $completedAt->copy()->subHour();
         \DB::table('apify_dispatch_states')->insert([
-            'dispatch_key' => 'seed-' . $project->id . '-' . $actor->id . '-' . $time,
+            'dispatch_key' => 'seed-' . $project->id . '-' . $actor->id . '-' . $completedAt->timestamp . '-' . $status . '-' . ($scheduledExecution ? 'scheduled' : 'unscheduled'),
             'project_id' => $project->id,
             'actor_id' => $actor->id,
             'platform' => $actor->platform,
             'keyword' => 'seno aji',
             'normalized_keyword' => 'seno aji',
-            'window_start' => now()->startOfDay(),
-            'window_end' => now()->endOfDay(),
-            'status' => 'success',
-            'queued_at' => now()->subHour(),
-            'started_at' => now()->subHour(),
-            'completed_at' => Carbon::create(2026, 8, 10, (int) substr($time, 0, 2), (int) substr($time, 3, 2), 0, 'Asia/Makassar'),
+            'window_start' => $completedAt->copy()->startOfDay(),
+            'window_end' => $completedAt->copy()->endOfDay(),
+            'status' => $status,
+            'queued_at' => $queuedAt,
+            'started_at' => $status === 'queued' ? null : $queuedAt,
+            'completed_at' => $status === 'success' ? $completedAt : null,
+            'next_retry_at' => null,
+            'last_error_code' => null,
+            'last_error_message' => null,
             'is_scheduled_execution' => $scheduledExecution,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'created_at' => $completedAt,
+            'updated_at' => $completedAt,
         ]);
     }
 
