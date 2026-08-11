@@ -1084,6 +1084,14 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - Approve atomicity ditutup tanpa menyentuh delete/restore/testing state.
 - Production tetap tidak tersentuh.
 
+## News Sources Confirmation Safety
+- Soft delete, restore, dan force delete sekarang butuh state konfirmasi yang aktif di server.
+- Direct Livewire call tanpa request/confirm awal menjadi no-op yang aman.
+- Cancel/close membersihkan ID konfirmasi agar stale state tidak bisa dipakai ulang.
+- Behaviour visual tetap sama; hanya guard backend dan reset state yang diperketat.
+- Stale testing state masih di luar scope.
+- Production tetap tidak tersentuh.
+
 ## Verifikasi
 - PHP lint pada file yang diubah lulus.
 - Targeted unit/feature tests menutup collision Redis, error snapshot, partial clear, admin guard, dan exception boundary.

@@ -214,6 +214,102 @@ class AdminNewsSourcesTest extends TestCase
         ]);
     }
 
+    public function test_delete_confirmed_without_request_delete_does_not_mutate(): void
+    {
+        $source = NewsSource::create([
+            'name' => 'Direct Delete Block',
+            'domain' => 'direct-delete-block.test',
+            'crawling_type' => 'html',
+            'is_active' => true,
+        ]);
+
+        Livewire::actingAs($this->adminUser)
+            ->test(\App\Livewire\Admin\NewsSources::class)
+            ->call('deleteConfirmed')
+            ->assertSet('confirmingDelete', false)
+            ->assertSet('selected_id', null)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('news_sources', [
+            'id' => $source->id,
+            'domain' => 'direct-delete-block.test',
+        ]);
+    }
+
+    public function test_delete_cancel_clears_selected_id_and_only_new_request_is_used(): void
+    {
+        $sourceA = NewsSource::create([
+            'name' => 'Delete A',
+            'domain' => 'delete-a.test',
+            'crawling_type' => 'html',
+            'is_active' => true,
+        ]);
+
+        $sourceB = NewsSource::create([
+            'name' => 'Delete B',
+            'domain' => 'delete-b.test',
+            'crawling_type' => 'html',
+            'is_active' => true,
+        ]);
+
+        Livewire::actingAs($this->adminUser)
+            ->test(\App\Livewire\Admin\NewsSources::class)
+            ->call('requestDelete', $sourceA->id)
+            ->assertSet('confirmingDelete', true)
+            ->assertSet('selected_id', $sourceA->id)
+            ->call('cancelDelete')
+            ->assertSet('confirmingDelete', false)
+            ->assertSet('selected_id', null)
+            ->call('requestDelete', $sourceB->id)
+            ->assertSet('confirmingDelete', true)
+            ->assertSet('selected_id', $sourceB->id)
+            ->call('deleteConfirmed')
+            ->assertHasNoErrors();
+
+        $this->assertSoftDeleted('news_sources', [
+            'id' => $sourceB->id,
+        ]);
+
+        $this->assertDatabaseHas('news_sources', [
+            'id' => $sourceA->id,
+        ]);
+    }
+
+    public function test_restore_and_force_delete_require_active_confirmation_state(): void
+    {
+        $trashedSource = NewsSource::create([
+            'name' => 'Trash Guard',
+            'domain' => 'trash-guard.test',
+            'crawling_type' => 'html',
+            'is_active' => true,
+        ]);
+        $trashedSource->delete();
+
+        $forceDeletedSource = NewsSource::create([
+            'name' => 'Force Trash Guard',
+            'domain' => 'force-trash-guard.test',
+            'crawling_type' => 'html',
+            'is_active' => true,
+        ]);
+        $forceDeletedSource->delete();
+
+        Livewire::actingAs($this->adminUser)
+            ->test(\App\Livewire\Admin\NewsSources::class)
+            ->call('restoreSourceConfirmed')
+            ->assertSet('confirmingRestoreSourceId', null)
+            ->call('forceDeleteSourceConfirmed')
+            ->assertSet('confirmingForceDeleteSourceId', null)
+            ->assertHasNoErrors();
+
+        $this->assertSoftDeleted('news_sources', [
+            'id' => $trashedSource->id,
+        ]);
+
+        $this->assertSoftDeleted('news_sources', [
+            'id' => $forceDeletedSource->id,
+        ]);
+    }
+
     public function test_save_errors_use_generic_browser_message_without_leaking_secret_text(): void
     {
         Event::listen('eloquent.saving: ' . NewsSource::class, function () {

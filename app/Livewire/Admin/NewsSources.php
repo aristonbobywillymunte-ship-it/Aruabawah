@@ -381,17 +381,36 @@ class NewsSources extends Component
         $this->confirmingDelete = true;
     }
 
+    public function cancelDelete(): void
+    {
+        $this->confirmingDelete = false;
+        $this->selected_id = null;
+    }
+
     public function deleteConfirmed(): void
     {
         $this->adminOnly();
-        if ($this->selected_id) {
-            $source = NewsSource::findOrFail($this->selected_id);
-            $source->delete();
-            $this->notify('success', 'Portal berita berhasil dihapus.');
+        if (! $this->confirmingDelete || ! $this->selected_id) {
+            $this->confirmingDelete = false;
+            $this->selected_id = null;
+            return;
         }
+
+        $source = NewsSource::find($this->selected_id);
+
+        if (! $source) {
+            $this->notify('error', 'Portal berita tidak ditemukan. Silakan muat ulang data.');
+            $this->confirmingDelete = false;
+            $this->selected_id = null;
+            return;
+        }
+
+        $source->delete();
+        $this->notify('success', 'Portal berita berhasil dihapus.');
+
         $this->flushSuggestionUiCache();
         $this->confirmingDelete = false;
-        $this->resetForm();
+        $this->selected_id = null;
     }
 
     public function openTrashModal(): void
@@ -403,6 +422,8 @@ class NewsSources extends Component
     public function closeTrashModal(): void
     {
         $this->showTrashModal = false;
+        $this->confirmingRestoreSourceId = null;
+        $this->confirmingForceDeleteSourceId = null;
     }
 
     public function confirmRestoreSource(int $id): void
@@ -419,11 +440,20 @@ class NewsSources extends Component
     public function restoreSourceConfirmed(): void
     {
         $this->adminOnly();
-        if ($this->confirmingRestoreSourceId) {
-            $source = NewsSource::onlyTrashed()->findOrFail($this->confirmingRestoreSourceId);
-            $source->restore();
-            $this->notify('success', 'Portal berita berhasil dikembalikan.');
+        if (! $this->confirmingRestoreSourceId) {
+            return;
         }
+
+        $source = NewsSource::onlyTrashed()->find($this->confirmingRestoreSourceId);
+        if (! $source) {
+            $this->notify('error', 'Portal berita terhapus tidak ditemukan. Silakan muat ulang data.');
+            $this->confirmingRestoreSourceId = null;
+            return;
+        }
+
+        $source->restore();
+        $this->notify('success', 'Portal berita berhasil dikembalikan.');
+
         $this->flushSuggestionUiCache();
         $this->confirmingRestoreSourceId = null;
     }
@@ -442,11 +472,20 @@ class NewsSources extends Component
     public function forceDeleteSourceConfirmed(): void
     {
         $this->adminOnly();
-        if ($this->confirmingForceDeleteSourceId) {
-            $source = NewsSource::onlyTrashed()->findOrFail($this->confirmingForceDeleteSourceId);
-            $source->forceDelete();
-            $this->notify('success', 'Portal berita berhasil dihapus secara permanen.');
+        if (! $this->confirmingForceDeleteSourceId) {
+            return;
         }
+
+        $source = NewsSource::onlyTrashed()->find($this->confirmingForceDeleteSourceId);
+        if (! $source) {
+            $this->notify('error', 'Portal berita terhapus tidak ditemukan. Silakan muat ulang data.');
+            $this->confirmingForceDeleteSourceId = null;
+            return;
+        }
+
+        $source->forceDelete();
+        $this->notify('success', 'Portal berita berhasil dihapus secara permanen.');
+
         $this->flushSuggestionUiCache();
         $this->confirmingForceDeleteSourceId = null;
     }

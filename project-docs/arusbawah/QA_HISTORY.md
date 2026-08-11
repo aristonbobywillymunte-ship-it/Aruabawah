@@ -596,6 +596,21 @@
 - Semua test News Sources lulus pada SQLite temp harness lokal
 - Preparasi approve yang gagal kini divalidasi lewat browser error generik dan log secret-safety tanpa write DB
 
+## NEWS-SOURCES-CONFIRMATION-SAFETY
+**Tanggal**: 2026-08-11
+**Area**: `/admin/news-sources` - destructive confirmation guards
+
+### Skenario yang Diuji & Hasil:
+1. **Direct Delete Blocked**: `deleteConfirmed()` tanpa `requestDelete()` tidak menghapus data.
+2. **Cancel Resets Delete State**: cancel delete membersihkan `confirmingDelete` dan `selected_id`.
+3. **Stale Delete Target Safety**: request delete ulang hanya memakai target terbaru.
+4. **Restore/Force Delete Guards**: `restoreSourceConfirmed()` dan `forceDeleteSourceConfirmed()` tanpa state aktif tidak memodifikasi data.
+5. **Local-Only Verification**: Tidak ada production access, scraping, atau AI/provider call nyata.
+
+### Test Coverage:
+- `tests/Feature/AdminNewsSourcesTest.php` diperluas dengan regresi direct-call dan stale-state destructive safety
+- Semua test News Sources lulus pada SQLite temp harness lokal
+
 ## DATABASE-MANAGEMENT-AUDIT-GAPS
 **Tanggal**: 2026-08-11
 **Area**: Admin Database Management service + Livewire wrapper

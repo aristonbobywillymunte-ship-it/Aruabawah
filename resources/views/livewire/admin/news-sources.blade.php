@@ -480,7 +480,7 @@
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">Aksi ini bersifat permanen. Portal terpilih tidak akan dirayap kembali di masa mendatang.</p>
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button wire:click="$set('confirmingDelete', false)" wire:loading.attr="disabled" wire:target="deleteConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
+                    <button wire:click="cancelDelete" wire:loading.attr="disabled" wire:target="deleteConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
                     <button wire:click="deleteConfirmed" wire:loading.attr="disabled" wire:target="deleteConfirmed" class="h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">Ya, Hapus</button>
                 </div>
             </div>
