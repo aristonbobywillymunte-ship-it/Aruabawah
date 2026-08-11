@@ -15,33 +15,20 @@ class SystemMaintenanceService
 
     private const CONFIRMATION_PHRASE = 'HAPUS ANTREAN';
 
-    /**
-     * Queue targets are grouped by the underlying Redis connection name.
-     * If the two Laravel queue connections point to the same Redis backend,
-     * duplicates are removed before any action is executed.
-     */
     public function queueTargets(): array
     {
-        $redisConnection = (string) config('queue.connections.redis.connection', 'default');
-        $redisAiConnection = (string) config('queue.connections.redis-ai.connection', $redisConnection);
-
-        $targets = [
-            $redisConnection => ['default', 'news', 'scraping', 'apify', 'notification'],
-            $redisAiConnection => ['ai-analysis', 'ai-backfill', 'apify'],
+        return [
+            [
+                'queue_connection' => 'redis',
+                'redis_connection' => (string) config('queue.connections.redis.connection', 'default'),
+                'queue_names' => ['default', 'news', 'apify', 'notification'],
+            ],
+            [
+                'queue_connection' => 'redis-ai',
+                'redis_connection' => (string) config('queue.connections.redis-ai.connection', config('queue.connections.redis.connection', 'default')),
+                'queue_names' => ['ai-analysis', 'ai-backfill'],
+            ],
         ];
-
-        $normalized = [];
-
-        foreach ($targets as $connection => $queues) {
-            foreach ($queues as $queue) {
-                $normalized[$connection . '|' . $queue] = [
-                    'connection' => $connection,
-                    'queue' => $queue,
-                ];
-            }
-        }
-
-        return array_values($normalized);
     }
 
     public function requiredConfirmationPhrase(): string
@@ -53,8 +40,10 @@ class SystemMaintenanceService
     {
         $snapshot = [];
 
-        foreach ($this->queueTargets() as $target) {
-            $snapshot[] = array_merge($target, $this->queueCounts($target['connection'], $target['queue']));
+        foreach ($this->queueTargets() as $group) {
+            foreach ($group['queue_names'] as $queue) {
+                $snapshot[] = $this->queueCounts($group['queue_connection'], $group['redis_connection'], $queue);
+            }
         }
 
         return $snapshot;
@@ -62,87 +51,223 @@ class SystemMaintenanceService
 
     public function clearPendingQueues(): array
     {
+        $results = [];
         $deletedJobs = 0;
-        $clearedQueues = [];
+        $succeededQueues = 0;
+        $failedQueues = 0;
 
-        foreach ($this->queueTargets() as $target) {
-            $counts = $this->queueCounts($target['connection'], $target['queue']);
-            $pending = $counts['pending'];
-            $delayed = $counts['delayed'];
+        foreach ($this->queueTargets() as $group) {
+            foreach ($group['queue_names'] as $queue) {
+                $target = [
+                    'queue_connection' => $group['queue_connection'],
+                    'redis_connection' => $group['redis_connection'],
+                    'queue' => $queue,
+                ];
 
-            if ($pending === 0 && $delayed === 0) {
-                continue;
+                try {
+                    $counts = $this->queueCounts($group['queue_connection'], $group['redis_connection'], $queue);
+
+                    if ($counts['status'] === 'error') {
+                        $results[] = $this->queueClearResult($target, 'failed', 0, 0, null, $counts['error']);
+                        $failedQueues++;
+                        continue;
+                    }
+
+                    if ($counts['pending'] === 0 && $counts['delayed'] === 0) {
+                        $results[] = $this->queueClearResult($target, 'empty', 0, 0, null, null);
+                        $succeededQueues++;
+                        continue;
+                    }
+
+                    $redis = Redis::connection($group['redis_connection']);
+                    $pendingRemoved = 0;
+                    $delayedRemoved = 0;
+
+                    if ($counts['pending'] > 0) {
+                        $pendingRemoved = (int) $redis->del($this->queueKey($queue));
+                    }
+
+                    if ($counts['delayed'] > 0) {
+                        $redis->zremrangebyrank($this->queueKey($queue) . ':delayed', 0, -1);
+                        $delayedRemoved = $counts['delayed'];
+                    }
+
+                    $deletedJobs += $counts['pending'] + $counts['delayed'];
+                    $succeededQueues++;
+                    $results[] = $this->queueClearResult($target, 'cleared', $pendingRemoved, $delayedRemoved, $counts, null);
+                } catch (Throwable $e) {
+                    $failedQueues++;
+                    $results[] = $this->queueClearResult(
+                        $target,
+                        'failed',
+                        0,
+                        0,
+                        null,
+                        $this->safeErrorMessage($e, 'Gagal membaca atau membersihkan antrean Redis.')
+                    );
+                }
             }
-
-            $redis = Redis::connection($target['connection']);
-            $queueKey = $this->queueKey($target['queue']);
-
-            if ($pending > 0) {
-                $redis->del($queueKey);
-            }
-
-            if ($delayed > 0) {
-                $redis->zremrangebyrank($queueKey . ':delayed', 0, -1);
-            }
-
-            $deletedJobs += $pending + $delayed;
-            $clearedQueues[] = array_merge($target, $counts);
         }
 
         return [
             'deleted_jobs' => $deletedJobs,
-            'queues' => $clearedQueues,
+            'succeeded_queues' => $succeededQueues,
+            'failed_queues' => $failedQueues,
+            'partial_failure' => $failedQueues > 0,
+            'queues' => $results,
         ];
     }
 
-    public function restartWorkers(): int
+    public function restartWorkers(): array
     {
-        return Artisan::call('queue:restart');
-    }
-
-    public function requestSchedulerRestart(): void
-    {
-        Cache::put(
-            self::SCHEDULER_RESTART_CACHE_KEY,
-            true,
-            now()->addMinutes(self::SCHEDULER_RESTART_TTL_MINUTES)
-        );
-    }
-
-    public function clearApplicationCache(): int
-    {
-        return Artisan::call('optimize:clear');
-    }
-
-    public function queueCounts(string $redisConnection, string $queue): array
-    {
-        $redis = Redis::connection($redisConnection);
-        $queueKey = $this->queueKey($queue);
-
         try {
+            $exitCode = Artisan::call('queue:restart');
+
+            if ((int) $exitCode !== 0) {
+                return [
+                    'status' => 'error',
+                    'exit_code' => $exitCode,
+                    'error' => 'Signal restart worker Laravel gagal dikirim.',
+                ];
+            }
+
+            return [
+                'status' => 'ok',
+                'exit_code' => $exitCode,
+            ];
+        } catch (Throwable $e) {
+            return [
+                'status' => 'error',
+                'error' => $this->safeErrorMessage($e, 'Gagal mengirim signal restart worker.'),
+            ];
+        }
+    }
+
+    public function requestSchedulerRestart(): array
+    {
+        try {
+            Cache::put(
+                self::SCHEDULER_RESTART_CACHE_KEY,
+                true,
+                now()->addMinutes(self::SCHEDULER_RESTART_TTL_MINUTES)
+            );
+
+            return [
+                'status' => 'ok',
+            ];
+        } catch (Throwable $e) {
+            return [
+                'status' => 'error',
+                'error' => $this->safeErrorMessage($e, 'Gagal mengirim signal restart scheduler.'),
+            ];
+        }
+    }
+
+    public function clearApplicationCache(): array
+    {
+        try {
+            $exitCode = Artisan::call('optimize:clear');
+
+            if ((int) $exitCode !== 0) {
+                return [
+                    'status' => 'error',
+                    'exit_code' => $exitCode,
+                    'error' => 'Pembersihan cache Laravel gagal.',
+                ];
+            }
+
+            return [
+                'status' => 'ok',
+                'exit_code' => $exitCode,
+            ];
+        } catch (Throwable $e) {
+            return [
+                'status' => 'error',
+                'error' => $this->safeErrorMessage($e, 'Gagal membersihkan cache aplikasi.'),
+            ];
+        }
+    }
+
+    public function queueCounts(string $queueConnection, string $redisConnection, string $queue): array
+    {
+        try {
+            $redis = Redis::connection($redisConnection);
+            $queueKey = $this->queueKey($queue);
+
             $pending = (int) $redis->llen($queueKey);
-        } catch (Throwable) {
-            $pending = 0;
-        }
-
-        try {
             $delayed = (int) $redis->zcard($queueKey . ':delayed');
-        } catch (Throwable) {
-            $delayed = 0;
-        }
-
-        try {
             $reserved = (int) $redis->zcard($queueKey . ':reserved');
-        } catch (Throwable) {
-            $reserved = 0;
+
+            return [
+                'queue_connection' => $queueConnection,
+                'redis_connection' => $redisConnection,
+                'queue' => $queue,
+                'status' => 'ok',
+                'pending' => $pending,
+                'delayed' => $delayed,
+                'reserved' => $reserved,
+                'total' => $pending + $delayed + $reserved,
+                'error' => null,
+            ];
+        } catch (Throwable $e) {
+            return [
+                'queue_connection' => $queueConnection,
+                'redis_connection' => $redisConnection,
+                'queue' => $queue,
+                'status' => 'error',
+                'pending' => null,
+                'delayed' => null,
+                'reserved' => null,
+                'total' => null,
+                'error' => $this->safeErrorMessage($e, 'Status antrean Redis tidak tersedia.'),
+            ];
+        }
+    }
+
+    public function schedulerRestartSignalConsumerCount(): int
+    {
+        return 1;
+    }
+
+    public function schedulerRestartSignalKey(): string
+    {
+        return self::SCHEDULER_RESTART_CACHE_KEY;
+    }
+
+    private function queueClearResult(
+        array $target,
+        string $status,
+        int $pendingRemoved,
+        int $delayedRemoved,
+        ?array $counts,
+        ?string $error
+    ): array {
+        return [
+            'queue_connection' => $target['queue_connection'],
+            'redis_connection' => $target['redis_connection'],
+            'queue' => $target['queue'],
+            'status' => $status,
+            'pending_removed' => $pendingRemoved,
+            'delayed_removed' => $delayedRemoved,
+            'pending_before' => $counts['pending'] ?? null,
+            'delayed_before' => $counts['delayed'] ?? null,
+            'reserved_before' => $counts['reserved'] ?? null,
+            'safe_error' => $error,
+        ];
+    }
+
+    private function safeErrorMessage(Throwable $e, string $fallback): string
+    {
+        $message = trim($e->getMessage());
+        if ($message === '') {
+            return $fallback;
         }
 
-        return [
-            'pending' => $pending,
-            'delayed' => $delayed,
-            'reserved' => $reserved,
-            'total' => $pending + $delayed + $reserved,
-        ];
+        $message = preg_replace('/(redis|pgsql|mysql|mongodb|sqlsrv):\/\/[^\\s]+/i', '[redacted]', $message) ?? $message;
+        $message = preg_replace('/(?:password|passwd|token|secret)=\\S+/i', '$1=[redacted]', $message) ?? $message;
+        $message = preg_replace('/[A-Za-z0-9_\\-]+\\.(?:local|internal|internal\\.local|svc|service)(?::\\d+)?/i', '[redacted-host]', $message) ?? $message;
+
+        return mb_strimwidth($message, 0, 180, '...');
     }
 
     private function queueKey(string $queue): string

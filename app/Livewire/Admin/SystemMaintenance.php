@@ -33,6 +33,7 @@ class SystemMaintenance extends Component
 
     public function cancelClearRedisQueue(): void
     {
+        $this->adminOnly();
         $this->showConfirmModal = false;
         $this->clearConfirmation = '';
     }
@@ -47,27 +48,45 @@ class SystemMaintenance extends Component
             return;
         }
 
-        $result = $service->clearPendingQueues();
-        $this->showConfirmModal = false;
-        $this->clearConfirmation = '';
+        try {
+            $result = $service->clearPendingQueues();
+            $this->showConfirmModal = false;
+            $this->clearConfirmation = '';
 
-        Log::info('[System Maintenance] Cleared pending Redis queues', [
-            'deleted_jobs' => $result['deleted_jobs'],
-            'queues' => collect($result['queues'])->map(fn ($queue) => [
-                'connection' => $queue['connection'],
-                'queue' => $queue['queue'],
-                'pending' => $queue['pending'],
-                'delayed' => $queue['delayed'],
-            ])->values()->all(),
-            'triggered_by' => auth()->user()?->email,
-        ]);
+            Log::info('[System Maintenance] Cleared pending Redis queues', [
+                'deleted_jobs' => $result['deleted_jobs'],
+                'succeeded_queues' => $result['succeeded_queues'],
+                'failed_queues' => $result['failed_queues'],
+                'partial_failure' => $result['partial_failure'],
+                'triggered_by' => auth()->user()?->email,
+            ]);
 
-        $this->maintenanceSummary = [
-            'title' => 'Redis Queue Dibersihkan',
-            'detail' => "{$result['deleted_jobs']} job menunggu berhasil dihapus dari antrean Redis tanpa menyentuh job yang sedang berjalan.",
-        ];
+            $detail = $result['partial_failure']
+                ? 'Sebagian antrean berhasil dibersihkan, namun ada antrean yang gagal diperiksa atau dibersihkan.'
+                : 'Antrean Redis yang menunggu berhasil dibersihkan tanpa menyentuh job yang sedang berjalan.';
 
-        $this->notify('success', 'Antrean Redis yang menunggu berhasil dibersihkan.');
+            $this->maintenanceSummary = [
+                'title' => $result['partial_failure'] ? 'Redis Queue Dibersihkan Sebagian' : 'Redis Queue Dibersihkan',
+                'detail' => $detail,
+            ];
+
+            $message = $result['partial_failure']
+                ? 'Sebagian antrean Redis berhasil dibersihkan.'
+                : 'Antrean Redis yang menunggu berhasil dibersihkan.';
+
+            $this->notify($result['partial_failure'] ? 'warning' : 'success', $message);
+        } catch (\Throwable $e) {
+            $this->showConfirmModal = false;
+            $this->clearConfirmation = '';
+            Log::warning('[System Maintenance] Failed to clear Redis queues', [
+                'triggered_by' => auth()->user()?->email,
+            ]);
+            $this->maintenanceSummary = [
+                'title' => 'Redis Queue Tidak Dapat Diperiksa',
+                'detail' => 'Status antrean Redis tidak tersedia saat ini. Silakan coba lagi nanti.',
+            ];
+            $this->notify('error', 'Status antrean Redis sedang tidak tersedia.');
+        }
     }
 
     public function restartWorkers(): void
@@ -75,14 +94,24 @@ class SystemMaintenance extends Component
         $this->adminOnly();
         $service = app(SystemMaintenanceService::class);
 
-        $exitCode = $service->restartWorkers();
-        if ($exitCode !== 0) {
+        try {
+            $result = $service->restartWorkers();
+            if (($result['status'] ?? 'error') !== 'ok' || (int) ($result['exit_code'] ?? 1) !== 0) {
+                Log::warning('[System Maintenance] Queue worker restart failed', [
+                    'error' => $result['error'] ?? null,
+                    'triggered_by' => auth()->user()?->email,
+                ]);
+
+                $this->notify('error', 'Signal restart worker gagal dikirim.');
+                return;
+            }
+        } catch (\Throwable $e) {
             Log::warning('[System Maintenance] Queue worker restart failed', [
-                'exit_code' => $exitCode,
+                'error' => 'exception',
                 'triggered_by' => auth()->user()?->email,
             ]);
 
-            $this->notify('error', 'Restart worker gagal dikirim.');
+            $this->notify('error', 'Signal restart worker gagal dikirim.');
             return;
         }
 
@@ -91,11 +120,11 @@ class SystemMaintenance extends Component
         ]);
 
         $this->maintenanceSummary = [
-            'title' => 'Worker Direstart',
-            'detail' => 'Signal restart worker Laravel berhasil dikirim.',
+            'title' => 'Signal Restart Worker Dikirim',
+            'detail' => 'Signal restart worker Laravel berhasil dikirim. Worker akan berhenti setelah menyelesaikan job yang sedang berjalan lalu lanjut loop normal berikutnya.',
         ];
 
-        $this->notify('success', 'Worker Laravel berhasil direstart.');
+        $this->notify('success', 'Sinyal restart worker Laravel berhasil dikirim.');
     }
 
     public function restartScheduler(): void
@@ -103,7 +132,26 @@ class SystemMaintenance extends Component
         $this->adminOnly();
         $service = app(SystemMaintenanceService::class);
 
-        $service->requestSchedulerRestart();
+        try {
+            $result = $service->requestSchedulerRestart();
+            if (($result['status'] ?? 'error') !== 'ok') {
+                Log::warning('[System Maintenance] Scheduler restart failed', [
+                    'error' => $result['error'] ?? null,
+                    'triggered_by' => auth()->user()?->email,
+                ]);
+
+                $this->notify('error', 'Signal restart scheduler gagal dikirim.');
+                return;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[System Maintenance] Scheduler restart failed', [
+                'error' => 'exception',
+                'triggered_by' => auth()->user()?->email,
+            ]);
+
+            $this->notify('error', 'Signal restart scheduler gagal dikirim.');
+            return;
+        }
 
         Log::info('[System Maintenance] Scheduler restart requested', [
             'triggered_by' => auth()->user()?->email,
@@ -122,10 +170,20 @@ class SystemMaintenance extends Component
         $this->adminOnly();
         $service = app(SystemMaintenanceService::class);
 
-        $exitCode = $service->clearApplicationCache();
-        if ($exitCode !== 0) {
+        try {
+            $result = $service->clearApplicationCache();
+            if (($result['status'] ?? 'error') !== 'ok' || (int) ($result['exit_code'] ?? 1) !== 0) {
+                Log::warning('[System Maintenance] Laravel optimize clear failed', [
+                    'error' => $result['error'] ?? null,
+                    'triggered_by' => auth()->user()?->email,
+                ]);
+
+                $this->notify('error', 'Bersihkan cache Laravel gagal.');
+                return;
+            }
+        } catch (\Throwable $e) {
             Log::warning('[System Maintenance] Laravel optimize clear failed', [
-                'exit_code' => $exitCode,
+                'error' => 'exception',
                 'triggered_by' => auth()->user()?->email,
             ]);
 
@@ -166,9 +224,27 @@ class SystemMaintenance extends Component
     {
         $this->adminOnly();
         $service = app(SystemMaintenanceService::class);
+        try {
+            $queueSnapshot = $service->queueSnapshot();
+        } catch (\Throwable $e) {
+            Log::warning('[System Maintenance] Queue snapshot unavailable', [
+                'triggered_by' => auth()->user()?->email,
+            ]);
+            $queueSnapshot = [[
+                'queue_connection' => 'maintenance',
+                'redis_connection' => null,
+                'queue' => 'maintenance',
+                'status' => 'error',
+                'pending' => null,
+                'delayed' => null,
+                'reserved' => null,
+                'total' => null,
+                'error' => 'Status antrean Redis tidak tersedia.',
+            ]];
+        }
 
         return view('livewire.admin.system-maintenance', [
-            'queueSnapshot' => $service->queueSnapshot(),
+            'queueSnapshot' => $queueSnapshot,
             'requiredConfirmationPhrase' => $service->requiredConfirmationPhrase(),
         ]);
     }

@@ -564,14 +564,15 @@
 **Area**: `/admin/maintenance` - System Maintenance panel
 
 ### Skenario yang Diuji & Hasil:
-1. **Admin Access**: Halaman maintenance hanya dibuka oleh admin, user biasa ditolak 403.
-2. **Queue Snapshot**: Panel menampilkan ringkasan queue/pending/delayed/reserved untuk connection Redis yang dipakai aplikasi.
-3. **Exact Confirmation**: Clear Redis hanya berjalan setelah admin mengetik persis `HAPUS ANTREAN`.
-4. **Safe Queue Clear**: Hanya job pending dan delayed yang dihapus; reserved/running tetap dipertahankan.
-5. **Restart Worker**: Aksi restart worker dicek hasil eksekusinya sebelum sukses dikirim ke UI.
-6. **Restart Scheduler**: Signal restart scheduler ditulis konsisten lewat cache dan tidak lagi memakai cek ganda yang saling balapan.
-7. **Clear Cache**: `optimize:clear` juga dicek exit code-nya sebelum dinyatakan sukses.
-8. **Local-Only Verification**: Tidak ada production access, tidak ada deploy, dan tidak ada runtime scraping.
+1. **Admin Access**: Halaman maintenance hanya dibuka oleh admin, user biasa ditolak 403, dan aksi publik juga ditutup dengan guard admin.
+2. **Queue Target Collision**: Collision saat `redis` dan `redis-ai` memakai koneksi Redis fisik yang sama tidak lagi menghapus grup antrean lain.
+3. **Queue Snapshot**: Panel menampilkan status `OK` atau `Tidak tersedia` sehingga 0 job tidak disamakan dengan Redis read failure.
+4. **Exact Confirmation**: Clear Redis hanya berjalan setelah admin mengetik persis `HAPUS ANTREAN`.
+5. **Safe Queue Clear**: Hanya job pending dan delayed yang dihapus; reserved/running tetap dipertahankan; partial failure dilaporkan jujur.
+6. **Restart Worker**: Aksi restart worker menampilkan wording signal, bukan klaim worker sudah selesai restart.
+7. **Restart Scheduler**: Scheduler restart signal kini hanya dikonsumsi oleh guard awal `routes/console.php`; heartbeat tidak lagi mengambil key itu.
+8. **Clear Cache**: `optimize:clear` dan cache write juga diperlakukan aman saat exit code non-zero atau exception.
+9. **Local-Only Verification**: Tidak ada production access, tidak ada deploy, dan tidak ada runtime scraping.
 
 ### Test Coverage:
 - `tests/Unit/SystemMaintenanceServiceTest.php`

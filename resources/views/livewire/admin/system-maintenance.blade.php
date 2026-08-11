@@ -102,6 +102,7 @@
                     <tr>
                         <th class="px-4 py-3 font-bold text-slate-700">Connection</th>
                         <th class="px-4 py-3 font-bold text-slate-700">Queue</th>
+                        <th class="px-4 py-3 font-bold text-slate-700">Status</th>
                         <th class="px-4 py-3 font-bold text-slate-700">Pending</th>
                         <th class="px-4 py-3 font-bold text-slate-700">Delayed</th>
                         <th class="px-4 py-3 font-bold text-slate-700">Reserved</th>
@@ -111,16 +112,30 @@
                 <tbody class="divide-y divide-slate-100 bg-white">
                     @forelse($queueSnapshot as $queue)
                         <tr>
-                            <td class="px-4 py-3 font-semibold text-slate-700">{{ $queue['connection'] }}</td>
+                            <td class="px-4 py-3 font-semibold text-slate-700">{{ $queue['queue_connection'] }}</td>
                             <td class="px-4 py-3 text-slate-600">{{ $queue['queue'] }}</td>
-                            <td class="px-4 py-3 text-slate-600">{{ $queue['pending'] }}</td>
-                            <td class="px-4 py-3 text-slate-600">{{ $queue['delayed'] }}</td>
-                            <td class="px-4 py-3 text-slate-600">{{ $queue['reserved'] }}</td>
-                            <td class="px-4 py-3 font-bold text-slate-900">{{ $queue['total'] }}</td>
+                            <td class="px-4 py-3">
+                                @if(($queue['status'] ?? 'ok') === 'ok')
+                                    <span class="inline-flex rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700">OK</span>
+                                @else
+                                    <span class="inline-flex rounded-full bg-rose-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-rose-700">Tidak tersedia</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-slate-600">{{ $queue['status'] === 'ok' ? $queue['pending'] : '—' }}</td>
+                            <td class="px-4 py-3 text-slate-600">{{ $queue['status'] === 'ok' ? $queue['delayed'] : '—' }}</td>
+                            <td class="px-4 py-3 text-slate-600">{{ $queue['status'] === 'ok' ? $queue['reserved'] : '—' }}</td>
+                            <td class="px-4 py-3 font-bold text-slate-900">{{ $queue['status'] === 'ok' ? $queue['total'] : '—' }}</td>
                         </tr>
+                        @if(($queue['status'] ?? 'ok') !== 'ok' && ! empty($queue['error']))
+                            <tr class="bg-rose-50/40">
+                                <td colspan="7" class="px-4 py-2 text-[11px] text-rose-700">
+                                    {{ $queue['error'] }}
+                                </td>
+                            </tr>
+                        @endif
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-6 text-center text-slate-500">Tidak ada antrean yang terdaftar.</td>
+                            <td colspan="7" class="px-4 py-6 text-center text-slate-500">Tidak ada antrean yang terdaftar.</td>
                         </tr>
                     @endforelse
                 </tbody>

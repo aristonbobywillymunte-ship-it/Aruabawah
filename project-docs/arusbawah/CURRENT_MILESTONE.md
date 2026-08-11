@@ -1026,19 +1026,22 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 # Milestone: SYSTEM-MAINTENANCE-STABILIZATION-LOCAL
 
 ## Apa yang Diubah
-- Panel `/admin/maintenance` kini memakai service terpisah untuk membaca snapshot antrean dan menjalankan aksi maintenance.
-- Aksi clear Redis sekarang memakai konfirmasi teks eksplisit `HAPUS ANTREAN` dan hanya menghapus job pending/delayed, bukan job yang sedang berjalan.
-- Restart worker, restart scheduler, dan clear cache Laravel kini dicek hasil eksekusinya sebelum UI mengirim status sukses.
-- Signal restart scheduler disatukan ke satu konsumsi cache yang aman, sehingga tidak ada cek ganda yang saling balapan.
-- Tampilan maintenance menampilkan ringkasan antrean yang dipantau panel agar operator tahu queue mana yang terdampak.
+- Panel `/admin/maintenance` memakai service terpisah untuk snapshot antrean dan aksi maintenance.
+- Target antrean memakai koneksi Laravel `redis` dan `redis-ai` secara eksplisit, sehingga collision koneksi Redis fisik tidak menghapus grup antrean lain.
+- Aksi clear Redis memakai konfirmasi teks `HAPUS ANTREAN` dan hanya membersihkan pending/delayed.
+- Redis read failure, partial clear failure, dan error Artisan sekarang dilaporkan secara jujur tanpa zero palsu.
+- Scheduler restart kini hanya punya satu consumer restart key di guard awal `routes/console.php`; heartbeat tidak lagi mengonsumsi key itu.
+- Tampilan maintenance menampilkan status antrean `OK` atau `Tidak tersedia` secara ringkas.
 
 ## Behavior Final
 - Queue reserved/running tetap dipertahankan.
-- Scheduler restart tetap berbasis cache signal, tetapi konsumsi sinyalnya sekarang konsisten.
+- Tidak ada queue `scraping` yang dipakai sebagai target maintenance.
+- `apify` hanya diperlakukan sebagai queue pada koneksi Laravel `redis`, bukan queue AI.
+- Scheduler restart signal TTL tetap bounded sekitar 3 menit.
 - Tidak ada migration, deploy, atau akses production yang dilakukan dalam task ini.
 - Dirty file lama tetap dipertahankan.
 
 ## Verifikasi
 - PHP lint pada file yang diubah lulus.
-- Targeted Livewire/service test ditambahkan untuk mengunci konfirmasi, restart, dan clear queue yang aman.
-- `php artisan view:clear`, `php artisan route:list`, dan `git diff --check` dijalankan sebagai langkah QA lokal.
+- Targeted unit/feature tests menutup collision Redis, error snapshot, partial clear, admin guard, dan exception boundary.
+- `php artisan view:clear`, `php artisan route:list`, dan `git diff --check` dijalankan sebagai QA lokal.

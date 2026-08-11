@@ -247,12 +247,6 @@ Schedule::call(function () {
     event(new \App\Events\RealtimeNotificationEvent('scheduler', 'Heartbeat', 'Scheduler heartbeat updated.', [
         'heartbeat' => $heartbeat
     ]));
-    
-    // Check if restart is requested via maintenance panel
-    if (\Illuminate\Support\Facades\Cache::pull('scheduler_should_restart')) {
-        \Illuminate\Support\Facades\Log::info('[Scheduler] Exit requested by admin maintenance. Restarting container.');
-        exit(0);
-    }
 })->everyMinute();
 
 // Sinkronisasi otomatis data Apify setiap jam
