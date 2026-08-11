@@ -1155,7 +1155,6 @@ class NewsSources extends Component
         $data['sitemap_url'] = $suggestion->sitemap_url ?: $suggestion->newsSource?->sitemap_url;
         $data['search_result_selector'] = $suggestion->search_result_selector ?: $suggestion->newsSource?->search_result_selector;
         $data['article_link_selector'] = $suggestion->article_link_selector ?: $suggestion->newsSource?->article_link_selector;
-        $data = $this->syncIconUrl($data, $suggestion->newsSource);
 
         $source = null;
         if ($suggestion->news_source_id) {
@@ -1180,6 +1179,8 @@ class NewsSources extends Component
         }
 
         try {
+            $data = $this->syncIconUrl($data, $suggestion->newsSource);
+
             DB::transaction(function () use ($suggestion, $data, $testMode, $normalizedDomain, $source): void {
                 if ($source) {
                     if ($this->hasExistingActiveSource($normalizedDomain, $source->id)) {

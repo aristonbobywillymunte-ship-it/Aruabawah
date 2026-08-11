@@ -716,6 +716,75 @@ class AdminNewsSourcesTest extends TestCase
         ]);
     }
 
+    public function test_approve_suggestion_icon_resolution_failure_is_caught_and_logged_safely(): void
+    {
+        Log::spy();
+
+        $suggestion = NewsSourceSuggestion::create([
+            'source_name' => 'Resolver Failure Source',
+            'domain' => 'resolver-failure.test',
+            'base_url' => 'https://resolver-failure.test',
+            'search_url' => 'https://resolver-failure.test/search?q={query}',
+            'article_content_selector' => '.content',
+            'article_author_selector' => '.author',
+            'article_date_selector' => 'time',
+            'article_noise_selector' => '.noise',
+            'confidence' => 0.9,
+            'status' => 'verified',
+            'test_result_json' => ['mode' => 'discovery', 'status' => 'verified'],
+        ]);
+
+        $iconResolver = Mockery::mock(NewsSourceIconResolver::class);
+        $iconResolver->shouldReceive('resolve')
+            ->once()
+            ->andReturnUsing(function () {
+                $this->assertSame(0, DB::transactionLevel());
+                throw new \RuntimeException('redis://user:password@internal-host:6379?token=super-secret-token');
+            });
+        $this->app->instance(NewsSourceIconResolver::class, $iconResolver);
+
+        try {
+            Livewire::actingAs($this->adminUser)
+                ->test(NewsSources::class)
+                ->call('testSuggestion', $suggestion->id)
+                ->call('approveSuggestion', $suggestion->id)
+                ->assertSet('flashType', 'error')
+                ->assertSet('flashMessage', 'Gagal menerapkan saran sumber berita. Silakan coba lagi.')
+                ->assertSet('showTestModal', true)
+                ->assertDontSee('super-secret-token')
+                ->assertDontSee('internal-host')
+                ->assertDontSee('password');
+        } finally {
+            //
+        }
+
+        $this->assertDatabaseMissing('news_sources', [
+            'domain' => 'resolver-failure.test',
+        ]);
+
+        $this->assertDatabaseHas('news_source_suggestions', [
+            'id' => $suggestion->id,
+            'status' => 'verified',
+            'approved_by' => null,
+        ]);
+
+        Log::shouldHaveReceived('error')
+            ->once()
+            ->withArgs(function (string $message, array $context): bool {
+                $payload = json_encode([$message, $context], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+                $this->assertStringContainsString('[News Sources] approve suggestion failed.', $message);
+                $this->assertArrayHasKey('exception', $context);
+                $this->assertArrayHasKey('suggestion_id', $context);
+                $this->assertArrayHasKey('admin_user_id', $context);
+                $this->assertStringNotContainsString('super-secret-token', $payload);
+                $this->assertStringNotContainsString('internal-host', $payload);
+                $this->assertStringNotContainsString('password', $payload);
+
+                return true;
+            });
+    }
+
     public function test_modal_view_contains_wire_confirm_and_loading_on_modal_buttons()
     {
         // Buka modal dengan suggestion aktif agar blok @if($showTestModal) di-render

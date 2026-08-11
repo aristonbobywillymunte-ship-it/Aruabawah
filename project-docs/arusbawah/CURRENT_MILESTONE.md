@@ -1078,6 +1078,7 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 ## News Sources Approve Atomicity
 - `approveSuggestion()` sekarang memakai boundary DB yang sempit untuk existing-source update maupun new-source create.
 - Resolusi icon tetap dilakukan sebelum transaction.
+- Preparasi approve sekarang berada di dalam exception boundary yang sama, sehingga kegagalan resolver tetap aman.
 - Jika save suggestion gagal, source write ikut rollback dan tidak ada orphan source baru.
 - Log/browser safety tetap aman.
 - Approve atomicity ditutup tanpa menyentuh delete/restore/testing state.

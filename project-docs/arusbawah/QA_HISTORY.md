@@ -594,7 +594,7 @@
 ### Test Coverage:
 - `tests/Feature/AdminNewsSourcesTest.php` diperluas dengan regresi atomicity approveSuggestion
 - Semua test News Sources lulus pada SQLite temp harness lokal
-- Observability transaksi di harness SQLite dianggap bantu saja; verifikasi final memakai rollback behavior yang stabil di harness lokal
+- Preparasi approve yang gagal kini divalidasi lewat browser error generik dan log secret-safety tanpa write DB
 
 ## DATABASE-MANAGEMENT-AUDIT-GAPS
 **Tanggal**: 2026-08-11
