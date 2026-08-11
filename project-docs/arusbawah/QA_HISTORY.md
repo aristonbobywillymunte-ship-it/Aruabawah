@@ -550,6 +550,21 @@
 - `tests/Feature/AdminNewsSourcesTest.php` diperluas dengan regresi save, AI, dan manual-test error safety
 - Semua test News Sources lulus pada SQLite temp harness lokal
 
+## NEWS-SOURCES-LOG-SECRET-SAFETY-CORRECTION
+**Tanggal**: 2026-08-11
+**Area**: `/admin/news-sources` - server log secret safety
+
+### Skenario yang Diuji & Hasil:
+1. **Save Log Safety**: Kegagalan save News Sources sekarang hanya mencatat context operasional aman dan class exception.
+2. **Secret Redaction**: String rahasia seperti token, password, host internal, dan DSN provider tidak muncul di log.
+3. **Browser Safety Preserved**: Pesan browser generik tetap dipakai dan tidak berubah.
+4. **Create Atomicity Preserved**: Transaction create + draft suggestion rollback tetap tidak disentuh.
+5. **Local-Only Verification**: Tidak ada akses production, tidak ada scraping, dan tidak ada AI call nyata.
+
+### Test Coverage:
+- `tests/Feature/AdminNewsSourcesTest.php` diperluas dengan regresi log-safety berbasis exception secret-like
+- Semua test News Sources lulus pada SQLite temp harness lokal
+
 ## DATABASE-MANAGEMENT-AUDIT-GAPS
 **Tanggal**: 2026-08-11
 **Area**: Admin Database Management service + Livewire wrapper

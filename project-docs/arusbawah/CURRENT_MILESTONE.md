@@ -1058,6 +1058,14 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - Detail exception tetap aman di-log server-side dengan konteks operasional yang ringkas.
 - Perubahan ini lokal saja; production dan perilaku delete/restore/stale state belum disentuh.
 
+## News Sources Log Secret Safety Correction
+- Logging News Sources tidak lagi menyimpan raw exception message ke server log.
+- Context operasional aman tetap dipertahankan, termasuk action, class exception, dan identifier yang sudah aman.
+- Regression test menegaskan string rahasia seperti token, password, dan host internal tidak ikut masuk log.
+- Browser safety dan create atomicity tetap tidak berubah.
+- Stale `testing` state masih di luar scope pada koreksi ini.
+- Production tetap tidak tersentuh.
+
 ## Verifikasi
 - PHP lint pada file yang diubah lulus.
 - Targeted unit/feature tests menutup collision Redis, error snapshot, partial clear, admin guard, dan exception boundary.

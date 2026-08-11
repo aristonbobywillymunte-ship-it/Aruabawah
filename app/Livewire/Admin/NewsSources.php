@@ -479,7 +479,6 @@ class NewsSources extends Component
     {
         Log::error('[News Sources] ' . $action . ' failed.', array_merge($context, [
             'exception' => $e::class,
-            'message' => $e->getMessage(),
         ]));
     }
 

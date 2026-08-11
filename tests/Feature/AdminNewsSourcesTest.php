@@ -12,6 +12,7 @@ use App\Services\AiProviderClient;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Livewire\Livewire;
 use Mockery;
 use Tests\TestCase;
@@ -246,6 +247,53 @@ class AdminNewsSourcesTest extends TestCase
         $this->assertDatabaseMissing('news_sources', [
             'domain' => 'unsafe-save.test',
         ]);
+    }
+
+    public function test_save_error_logs_do_not_include_raw_exception_messages_or_secrets(): void
+    {
+        Log::spy();
+
+        Event::listen('eloquent.saving: ' . NewsSource::class, function () {
+            throw new \RuntimeException('redis://user:password@internal-host:6379?token=super-secret-token');
+        });
+
+        try {
+            Livewire::actingAs($this->adminUser)
+                ->test(NewsSources::class)
+                ->call('create')
+                ->set('name', 'Log Safety Portal')
+                ->set('domain', 'log-safety.test')
+                ->set('base_url', 'https://log-safety.test')
+                ->set('search_url', 'https://log-safety.test/search?q={keyword}')
+                ->set('search_result_selector', 'article a[href]')
+                ->set('article_link_selector', 'article a[href]')
+                ->set('article_content_selector', 'article .content')
+                ->set('article_author_selector', '.author')
+                ->set('article_date_selector', 'time')
+                ->call('saveConfirmed')
+                ->assertSet('flashType', 'error')
+                ->assertSet('flashMessage', 'Gagal menyimpan sumber berita. Silakan coba lagi.');
+        } finally {
+            Event::forget('eloquent.saving: ' . NewsSource::class);
+        }
+
+        Log::shouldHaveReceived('error')
+            ->once()
+            ->withArgs(function (string $message, array $context): bool {
+                $payload = json_encode([$message, $context], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+                $this->assertStringContainsString('[News Sources] save source failed.', $message);
+                $this->assertArrayHasKey('exception', $context);
+                $this->assertArrayHasKey('source_id', $context);
+                $this->assertArrayHasKey('admin_user_id', $context);
+                $this->assertArrayNotHasKey('message', $context);
+                $this->assertStringNotContainsString('super-secret-token', $payload);
+                $this->assertStringNotContainsString('password', $payload);
+                $this->assertStringNotContainsString('internal-host', $payload);
+                $this->assertStringNotContainsString('redis://user:password@internal-host:6379', $payload);
+
+                return true;
+            });
     }
 
     public function test_create_rolls_back_source_when_related_suggestion_write_fails(): void
