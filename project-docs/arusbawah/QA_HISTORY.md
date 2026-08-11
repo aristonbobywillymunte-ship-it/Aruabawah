@@ -444,6 +444,26 @@
 
 **Status Akhir**: PASS (Deployed di server `main`)
 
+## PROJECT-CREATE-SCHEDULE-DISPLAY-CLEANUP
+**Tanggal**: 2026-08-11
+**Area**: `/projects/create`, package schedule display
+
+### Skenario yang Diuji & Hasil:
+1. **Legacy Minute Display Removed**: Label interval menit legacy tidak lagi dipakai pada card paket aktif.
+2. **Daily Count Display**: Portal menampilkan `news_runs_per_day` sebagai `Nx / hari`.
+3. **Social Daily Count Display**: Sosial menampilkan `social_runs_per_day` sebagai `Nx / hari`.
+4. **Safe Empty State**: Nilai null / nol memakai wording aman `Tidak dijadwalkan`.
+5. **Tooltip Times**: Tooltip opsional memakai jam dari `news_run_times` dan `social_run_times`.
+6. **Runtime Unchanged**: Runtime scheduling tidak berubah.
+7. **Static Verification**: `php -l`, `php artisan view:clear`, `php artisan route:list`, dan `git diff --check` berhasil.
+8. **Targeted Test Run**: `php artisan test --filter=ProjectCreatePageTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Legacy interval DB fields tetap dipertahankan hanya untuk kompatibilitas.
+- Browser QA tidak relevan untuk perubahan ini.
+
+**Status Akhir**: PASS
+
 ## Project Card UI Sync Removal
 **Tanggal**: 2026-08-09
 **Area**: Halaman Daftar Proyek (Komponen `⚡projects-list.blade.php`)

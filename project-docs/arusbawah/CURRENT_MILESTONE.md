@@ -947,3 +947,22 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - **Scraping / AI / Route berubah**: NO
 - **Source Article/Social preservation**: YES
 - **Stale Volt class di blade**: DOCUMENTED (dijadikan catatan cleanup terpisah)
+
+---
+
+# Milestone: PROJECT-CREATE-SCHEDULE-DISPLAY-CLEANUP
+
+## Apa yang Diubah
+- `/projects/create` yang sebelumnya masih menampilkan interval menit legacy sekarang memakai hitungan run harian.
+- Tooltip opsional memakai jam yang dikonfigurasi di `news_run_times` dan `social_run_times`.
+
+## Behavior Final
+- Portal menampilkan `news_runs_per_day` sebagai `Nx / hari`.
+- Sosial menampilkan `social_runs_per_day` sebagai `Nx / hari`.
+- Nilai null / nol memakai wording aman `Tidak dijadwalkan`.
+- Runtime scheduling tidak diubah.
+- Field interval legacy tetap ada hanya untuk kompatibilitas.
+- Tidak ada migration baru.
+
+## Verifikasi
+- `ProjectCreatePageTest` lulus pada SQLite temp test harness.

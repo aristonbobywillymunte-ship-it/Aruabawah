@@ -94,6 +94,13 @@
                                 </div>
                                 <p class="text-slate-400 text-[11px] leading-relaxed">{{ $p->description ?: 'Solusi monitoring otomatis untuk bisnis Anda.' }}</p>
                                 
+                                @php
+                                    $newsRunsPerDay = (int) ($p->news_runs_per_day ?? 0);
+                                    $socialRunsPerDay = (int) ($p->social_runs_per_day ?? 0);
+                                    $newsRunTimes = collect($p->news_run_times ?? [])->filter()->implode(', ');
+                                    $socialRunTimes = collect($p->social_run_times ?? [])->filter()->implode(', ');
+                                @endphp
+
                                 {{-- Scraping Intervals & Limits Information --}}
                                 <div class="mt-3 grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-2.5 border border-slate-100 text-[10px] text-slate-500 font-semibold">
                                     <div class="flex items-center gap-1.5" title="Batas maksimal proyek">
@@ -106,11 +113,11 @@
                                     </div>
                                     <div class="flex items-center gap-1.5 mt-1 pt-1 border-t border-slate-200">
                                         <span class="material-symbols-outlined text-[14px] text-violet-500">newspaper</span>
-                                        <span>Berita: {{ $p->news_interval_minutes ?? 5 }}m</span>
+                                        <span title="{{ $newsRunTimes !== '' ? $newsRunTimes : '' }}">Berita: {{ $newsRunsPerDay > 0 ? $newsRunsPerDay . 'x / hari' : 'Tidak dijadwalkan' }}</span>
                                     </div>
                                     <div class="flex items-center gap-1.5 mt-1 pt-1 border-t border-slate-200">
                                         <span class="material-symbols-outlined text-[14px] text-sky-500">share</span>
-                                        <span>Sosmed: {{ $p->social_interval_minutes ?? 10 }}m</span>
+                                        <span title="{{ $socialRunTimes !== '' ? $socialRunTimes : '' }}">Sosmed: {{ $socialRunsPerDay > 0 ? $socialRunsPerDay . 'x / hari' : 'Tidak dijadwalkan' }}</span>
                                     </div>
                                 </div>
                             </div>

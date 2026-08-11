@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use App\Jobs\BootstrapNewProjectScrapingJob;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Tests\TestCase;
 
 class ProjectCreatePageTest extends TestCase
@@ -65,7 +66,13 @@ class ProjectCreatePageTest extends TestCase
     public function test_validation_fails_when_package_is_inactive()
     {
         $user = User::factory()->create();
-        $inactivePackage = Package::where('is_active', false)->first();
+        $inactivePackage = Package::create([
+            'name' => 'Inactive Package For Validation Test',
+            'is_active' => false,
+            'price' => 50000,
+        ]);
+
+        $this->expectException(ModelNotFoundException::class);
 
         Livewire::actingAs($user)
             ->test(ProjectCreate::class)
@@ -73,8 +80,7 @@ class ProjectCreatePageTest extends TestCase
             ->set('topicsString', 'Keyword 1, Keyword 2')
             ->set('telegramChatId', '123456789')
             ->set('packageId', $inactivePackage->id)
-            ->call('createProject')
-            ->assertStatus(404); // findOrFail on is_active=true will throw ModelNotFoundException -> 404
+            ->call('createProject');
     }
 
     public function test_project_can_be_created_successfully()
@@ -129,5 +135,52 @@ class ProjectCreatePageTest extends TestCase
             ->set('packageId', $activePackage->id)
             ->call('createProject')
             ->assertHasErrors(['topicsString' => 'Format JSON tidak diperbolehkan. Gunakan kata kunci yang dipisahkan koma.']);
+    }
+
+    public function test_project_create_shows_daily_schedule_counts_instead_of_legacy_intervals()
+    {
+        $package = Package::create([
+            'name' => 'Daily Schedule Package',
+            'is_active' => true,
+            'price' => 250000,
+            'news_runs_per_day' => 3,
+            'news_run_times' => ['09:00', '13:00', '18:00'],
+            'social_runs_per_day' => 2,
+            'social_run_times' => ['08:00', '20:00'],
+            'news_interval_minutes' => 15,
+            'social_interval_minutes' => 720,
+        ]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('projects.create'))
+            ->assertStatus(200)
+            ->assertSee('Berita: 3x / hari')
+            ->assertSee('Sosmed: 2x / hari')
+            ->assertDontSee('Berita: 15m')
+            ->assertDontSee('Sosmed: 720m')
+            ->assertSee('09:00, 13:00, 18:00')
+            ->assertSee('08:00, 20:00');
+    }
+
+    public function test_project_create_handles_missing_daily_schedule_counts_safely()
+    {
+        $package = Package::create([
+            'name' => 'No Schedule Package',
+            'is_active' => true,
+            'price' => 150000,
+            'news_runs_per_day' => null,
+            'news_run_times' => null,
+            'social_runs_per_day' => 0,
+            'social_run_times' => [],
+        ]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('projects.create'))
+            ->assertStatus(200)
+            ->assertSee('Tidak dijadwalkan');
     }
 }
