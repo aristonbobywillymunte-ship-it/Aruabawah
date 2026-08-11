@@ -1,3 +1,14 @@
+# Konteks Penutup Scheduling Phase
+- Scheduling is no longer an open development phase.
+- Future scheduling work harus tetap mempertahankan hierarchy `Global -> Package -> Project -> Resolver`.
+- Fulfillment tetap success-only.
+- Recovery tetap latest-due bounded recovery.
+- Manual/force execution tetap terisolasi dari fulfillment otomatis.
+- Comment Scraper tetap terisolasi dari MAIN Actor fulfillment.
+- Actor interval bukan business scheduling authority.
+- Production migration baseline harus dipertahankan.
+- Arsitektur ini tidak boleh didesain ulang kecuali diminta secara eksplisit.
+
 # Project Memory
 
 ## Konteks Fitur APIFY-SLOT-RECOVERY-8C

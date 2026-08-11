@@ -1,3 +1,26 @@
+# SCHEDULING-PHASE-CLOSEOUT
+**Tanggal**: 2026-08-11
+**Area**: Production scheduling baseline closure
+
+### Skenario yang Diuji & Hasil:
+1. **Source Deployed**: Baseline produksi berada di `21723daf5e8d402bcc6d34d6ec0463838f097349`.
+2. **Four Migrations Ran**: Empat migration scheduling berhasil `Ran`.
+3. **Scheduler Refreshed**: Scheduler production direfresh setelah deployment.
+4. **Worker Refresh**: Empat queue worker direfresh secara graceful dengan `php artisan queue:restart`.
+5. **Worker Reloaded**: PID/process worker berubah dan reload terkonfirmasi.
+6. **Post-Refresh Logs Healthy**: Log worker setelah refresh bersih dari error restart atau crash loop.
+7. **Failed Jobs Stable**: `failed_jobs` tetap `21 -> 21`.
+8. **All Services UP**: app, scheduler, main worker, Apify worker, notification worker, AI worker, PostgreSQL, dan Redis tetap UP.
+9. **No Runtime Scrape**: Tidak ada scraping runtime manual saat QA deployment.
+10. **No Schema Errors**: Tidak ada SQLSTATE / undefined column / scheduling schema error baru setelah deployment.
+
+### Catatan QA:
+- Scheduling phase dinyatakan closed / production ready.
+- Historical `failed_jobs = 21` tidak diubah dan tetap merupakan failure lama.
+- `public/._build` tetap dipreservasi.
+
+**Status Akhir**: PASS
+
 # QA History
 
 # APIFY-SLOT-RECOVERY-8C

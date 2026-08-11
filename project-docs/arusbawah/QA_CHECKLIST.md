@@ -1,5 +1,25 @@
 # QA Checklist
 
+## SCHEDULING-PHASE-CLOSEOUT
+- [x] latest scheduling source deployed
+- [x] global engine switch migration Ran
+- [x] Project override migration Ran
+- [x] Portal fulfillment migration Ran
+- [x] Apify scheduled-execution migration Ran
+- [x] scheduler refreshed
+- [x] main worker refreshed
+- [x] Apify worker refreshed
+- [x] notification worker refreshed
+- [x] AI worker refreshed
+- [x] Portal command registered
+- [x] Apify command registered
+- [x] post-refresh worker logs healthy
+- [x] failed_jobs did not increase
+- [x] no new scheduling/schema failure
+- [x] all core production services UP
+- [x] no manual production scrape used for deployment QA
+- [x] scheduling production ready
+
 ## APIFY-SLOT-RECOVERY-8C
 - [x] `php -l app/Console/Commands/RunApifyScraping.php`
 - [x] `php -l app/Jobs/ApifyScrapingJob.php`

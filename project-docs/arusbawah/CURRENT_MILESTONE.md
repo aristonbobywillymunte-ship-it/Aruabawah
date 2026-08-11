@@ -1,3 +1,99 @@
+# Milestone: SCHEDULING-PHASE-CLOSEOUT
+
+## SCHEDULING PHASE
+**CLOSED / PRODUCTION READY**
+
+## Final Architecture
+
+### GLOBAL
+- `scraping_settings.is_active` adalah master automatic scraping switch.
+- `google_news_enabled` mengontrol eksekusi otomatis Google News.
+- `manual_portal_enabled` mengontrol eksekusi otomatis Portal Manual.
+- `apify_enabled` mengontrol eksekusi otomatis Social/Apify.
+- Global hanya menentukan engine mana yang boleh berjalan.
+
+### PACKAGE
+- Package menentukan jumlah run otomatis dan jam default.
+- Portal memakai `news_runs_per_day` dan `news_run_times`.
+- Social memakai `social_runs_per_day` dan `social_run_times`.
+- Maksimum slot harian yang didukung adalah 24.
+- Jadwal harian Package adalah default yang authoritative.
+
+### PROJECT
+- Project hanya boleh meng-override waktu, bukan jumlah run.
+- Portal memakai `news_run_times_override`.
+- Social memakai `social_run_times_override`.
+- Override kosong mewarisi Package.
+- Override lengkap dan valid menggantikan waktu Package.
+- Override malformed, partial, duplicate, atau count-mismatch memblokir automatic execution dengan aman.
+
+### RESOLVER
+- `ProjectScheduleResolver` adalah authority efektif schedule bersama.
+- Entry point: `resolvePortal()` dan `resolveSocial()`.
+- Precedence: valid Project override > Package schedule > safe no-schedule state.
+
+### PORTAL
+- `RunNewsPortalScraping` memakai effective Portal schedule.
+- Fulfillment bersifat success-only.
+- `portal_last_scheduled_success_at` adalah marker fulfillment persisten.
+- Failed automatic run tetap due.
+- Latest-due-slot recovery aktif.
+- Sebelum slot pertama hari ini, slot final hari sebelumnya bisa direcover.
+- Beberapa missed slot collapse ke satu latest due slot.
+- Tidak ada burst replay.
+- Operational cooldown mencegah hot-loop retry.
+- Eksekusi explicit/manual Project tidak memakan slot otomatis.
+
+### SOCIAL / APIFY
+- `RunApifyScraping` memakai effective Social schedule.
+- Fulfillment bersifat actor-specific dengan `project_id + actor_id`.
+- Fulfillment membutuhkan `status = success`, `is_scheduled_execution = true`, dan `completed_at IS NOT NULL`.
+- `queued_at` dan `started_at` bukan fulfillment.
+- `queued`, `processing`, `retry_wait`, dan `failed` tidak fulfill slot.
+- `--force-dispatch` tidak fulfill slot.
+- Comment Scraper tidak memenuhi schedule MAIN Actor.
+- Actor lain pada platform yang sama tidak memenuhi Actor lain.
+- Latest-due recovery aktif.
+- Pre-first-slot previous-day recovery aktif.
+- Multiple missed slots collapse ke latest due.
+- Tidak ada backlog burst replay.
+- Operational cooldown tetap terpisah dari fulfillment.
+
+### ACTOR
+- Actor mengontrol bagaimana scraping bekerja.
+- Actor boleh mengontrol payload, limits, memory, timeout, build, priority, dan konfigurasi platform-specific.
+- Actor interval bukan authority business scheduling otomatis.
+- `interval_minutes` legacy boleh tetap ada untuk kompatibilitas saja.
+- `social_interval_minutes` dan `news_interval_minutes` legacy bukan final business timing authority.
+
+### SCHEDULER
+- Laravel scheduler hanya technical poller.
+- Business timing ditentukan oleh effective schedule logic.
+- `scraping:run-news` tetap terdaftar.
+- `scraping:run-apify` tetap terdaftar.
+
+## Production Baseline
+- Production code baseline pulled: `21723daf5e8d402bcc6d34d6ec0463838f097349`
+- Scheduling migrations applied successfully:
+  - `2026_08_10_000000_add_global_engine_switches_to_scraping_settings_table`
+  - `2026_08_10_000001_add_schedule_run_times_overrides_to_projects_table`
+  - `2026_08_11_000000_add_portal_last_scheduled_success_at_to_projects_table`
+  - `2026_08_11_000001_add_is_scheduled_execution_to_apify_dispatch_states_table`
+- Scheduler: running, refreshed after deployment
+- Laravel workers: gracefully refreshed using `php artisan queue:restart`
+- Worker refresh result: PASS
+- Refreshed workers: main, Apify, notification, AI
+- All production services verified UP: app, scheduler, main worker, Apify worker, notification worker, AI worker, PostgreSQL, Redis
+- Post-refresh worker log check: PASS
+- New scheduling/schema failures: NO
+- Runtime scraping manually executed during deployment QA: NO
+- Production code modified during migration/runtime execution: NO
+- Unrelated server dirty file preserved: `public/._build`
+
+## Phase Status
+- Scheduling phase: CLOSED / PRODUCTION READY
+- Remaining scheduling blockers: NONE
+
 # Milestone: APIFY Slot Recovery 8C
 
 ## Apa yang Diubah
