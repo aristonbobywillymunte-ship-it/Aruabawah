@@ -1066,6 +1066,15 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - Stale `testing` state masih di luar scope pada koreksi ini.
 - Production tetap tidak tersentuh.
 
+## News Sources Transaction HTTP Boundary
+- Pada create News Sources, resolusi icon/HTTP sekarang berjalan sebelum `DB::transaction()`.
+- Transaction create hanya berisi `news_sources` create dan draft suggestion yang wajib.
+- Jika icon resolution gagal, tidak ada transaksi yang sempat berjalan dan tidak ada row baru yang terlanjur tersimpan.
+- Browser safety, log safety, dan rollback draft suggestion tetap tidak berubah.
+- Approve suggestion atomicity masih sengaja open.
+- Stale `testing` state masih open.
+- Production tetap tidak tersentuh.
+
 ## Verifikasi
 - PHP lint pada file yang diubah lulus.
 - Targeted unit/feature tests menutup collision Redis, error snapshot, partial clear, admin guard, dan exception boundary.

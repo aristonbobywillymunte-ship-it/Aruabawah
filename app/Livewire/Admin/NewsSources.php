@@ -340,8 +340,8 @@ class NewsSources extends Component
                 $source->update($data);
                 $this->notify('success', 'Portal berita berhasil diperbarui.');
             } else {
+                $data = $this->syncIconUrl($data);
                 DB::transaction(function () use (&$data, &$source): void {
-                    $data = $this->syncIconUrl($data);
                     $source = NewsSource::create($data);
                     $this->ensureDraftSuggestionForSource($source);
                 });

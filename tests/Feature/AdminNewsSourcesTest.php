@@ -9,9 +9,11 @@ use App\Models\AiPromptTemplate;
 use App\Models\AiProvider;
 use App\Livewire\Admin\NewsSources;
 use App\Services\AiProviderClient;
+use App\Services\NewsSourceIconResolver;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Livewire;
 use Mockery;
@@ -294,6 +296,46 @@ class AdminNewsSourcesTest extends TestCase
 
                 return true;
             });
+    }
+
+    public function test_icon_resolution_runs_before_create_transaction_and_prevents_persisted_writes_on_failure(): void
+    {
+        $iconResolver = Mockery::mock(NewsSourceIconResolver::class);
+        $iconResolver->shouldReceive('resolve')
+            ->once()
+            ->with('https://icon-boundary.test', 'icon-boundary.test', 'Boundary Portal')
+            ->andReturnUsing(function () {
+                $this->assertSame(0, DB::transactionLevel(), 'Icon resolution must run outside the create transaction.');
+                throw new \RuntimeException('icon resolver failed before transaction started');
+            });
+        $this->app->instance(NewsSourceIconResolver::class, $iconResolver);
+
+        Livewire::actingAs($this->adminUser)
+            ->test(NewsSources::class)
+            ->call('create')
+            ->set('name', 'Boundary Portal')
+            ->set('domain', 'icon-boundary.test')
+            ->set('base_url', 'https://icon-boundary.test')
+            ->set('search_url', 'https://icon-boundary.test/search?q={keyword}')
+            ->set('search_result_selector', 'article a[href]')
+            ->set('article_link_selector', 'article a[href]')
+            ->set('article_content_selector', 'article .content')
+            ->set('article_author_selector', '.author')
+            ->set('article_date_selector', 'time')
+            ->call('saveConfirmed')
+            ->assertSet('flashType', 'error')
+            ->assertSet('flashMessage', 'Gagal menyimpan sumber berita. Silakan coba lagi.')
+            ->assertSet('showFormModal', true)
+            ->assertSet('confirmingSave', false)
+            ->assertDontSee('icon resolver failed before transaction started');
+
+        $this->assertDatabaseMissing('news_sources', [
+            'domain' => 'icon-boundary.test',
+        ]);
+
+        $this->assertDatabaseMissing('news_source_suggestions', [
+            'domain' => 'icon-boundary.test',
+        ]);
     }
 
     public function test_create_rolls_back_source_when_related_suggestion_write_fails(): void

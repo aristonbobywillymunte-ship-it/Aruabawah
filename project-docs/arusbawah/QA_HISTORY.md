@@ -565,6 +565,21 @@
 - `tests/Feature/AdminNewsSourcesTest.php` diperluas dengan regresi log-safety berbasis exception secret-like
 - Semua test News Sources lulus pada SQLite temp harness lokal
 
+## NEWS-SOURCES-TRANSACTION-HTTP-BOUNDARY-FIX
+**Tanggal**: 2026-08-11
+**Area**: `/admin/news-sources` - create transaction boundary
+
+### Skenario yang Diuji & Hasil:
+1. **HTTP Outside Transaction**: `syncIconUrl()` / `NewsSourceIconResolver::resolve()` sekarang dieksekusi sebelum `DB::transaction()`.
+2. **Transaction Scope Narrowed**: Transaction create hanya memegang `NewsSource::create()` dan draft suggestion wajib.
+3. **Failure Before Transaction**: Jika resolver icon gagal, tidak ada transaksi create yang berjalan dan tidak ada row tersimpan.
+4. **Rollback Coverage Preserved**: Regression rollback saat draft suggestion gagal tetap dipertahankan.
+5. **Local-Only Verification**: Tidak ada production access, scraping, atau AI/provider call nyata.
+
+### Test Coverage:
+- `tests/Feature/AdminNewsSourcesTest.php` diperluas dengan regresi boundary resolver/transaction
+- Semua test News Sources lulus pada SQLite temp harness lokal
+
 ## DATABASE-MANAGEMENT-AUDIT-GAPS
 **Tanggal**: 2026-08-11
 **Area**: Admin Database Management service + Livewire wrapper
