@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur EFFECTIVE-SCHEDULE-RESOLVER-5B-INVALID-STATE-HOTFIX
+- **Alasan**: Resolver schedule efektif harus membedakan override kosong dari override invalid, supaya inherit Package tidak tercampur dengan state proyek yang rusak.
+- **Solusi**: `ProjectScheduleResolver` sekarang mengembalikan `package_schedule_not_configured` hanya untuk schedule Package yang benar-benar kosong, dan `invalid_package_schedule` untuk schedule Package yang terisi tapi malformed.
+- **Batasan**: Tidak ada perubahan pada Portal command, `RunApifyScraping`, slot fulfillment, recovery, actor behavior, package/project UI, atau migrasi.
+- **Fallback / Legacy**: Override Project kosong penuh tetap inherit Package; override non-empty yang invalid tidak pernah fallback diam-diam.
+
 ## Konteks Fitur APIFY-EFFECTIVE-SCHEDULE-8A
 - **Alasan**: Jalur otomatis Sosial Apify perlu schedule efektif Project dari resolver yang sama supaya override Project yang valid benar-benar mengalahkan jadwal Package.
 - **Solusi**: `RunApifyScraping` sekarang memakai `ProjectScheduleResolver::resolveSocial()` untuk mode otomatis, lalu aman skip saat resolver tidak menghasilkan schedule yang layak dipakai.

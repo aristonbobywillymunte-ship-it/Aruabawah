@@ -1,5 +1,13 @@
 # QA Checklist
 
+## EFFECTIVE-SCHEDULE-RESOLVER-5B-INVALID-STATE-HOTFIX
+- [x] `php -l app/Services/Scraping/ProjectScheduleResolver.php`
+- [x] `php -l tests/Feature/ProjectScheduleResolverTest.php`
+- [x] `git diff --check`
+- [x] `php artisan test --filter=ProjectScheduleResolverTest`
+- [ ] Real scraping run
+- [ ] Production migration
+
 ## APIFY-EFFECTIVE-SCHEDULE-8A
 - [x] `php -l app/Console/Commands/RunApifyScraping.php`
 - [x] `php -l app/Services/Scraping/ProjectScheduleResolver.php`

@@ -1,3 +1,38 @@
+# Milestone: EFFECTIVE Schedule Resolver 5B Invalid State Hotfix
+
+## Apa yang Diubah
+`ProjectScheduleResolver` sekarang membedakan override Project yang kosong penuh dari override non-empty yang invalid, dan juga membedakan schedule Package yang belum dikonfigurasi dari schedule Package yang rusak.
+
+## Behavior Final
+- Override Project kosong penuh tetap inherit Package.
+- Override Project non-empty yang invalid selalu menghasilkan `invalid_project_override`.
+- Package kosong/blank penuh menghasilkan `package_schedule_not_configured`.
+- Package yang punya isi tapi tidak valid menghasilkan `invalid_package_schedule`.
+- Valid override Project tetap menang bila jumlah dan format slot sesuai.
+
+## Komponen Kunci
+- `app/Services/Scraping/ProjectScheduleResolver.php`
+- `tests/Feature/ProjectScheduleResolverTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: NO
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Services/Scraping/ProjectScheduleResolver.php`: PASS
+- `php -l tests/Feature/ProjectScheduleResolverTest.php`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=ProjectScheduleResolverTest`: PASS pada SQLite temp test harness
+
+## Catatan QA
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+
+## Commit SHA Terkait
+- pending
+
 # Milestone: APIFY Effective Schedule 8A
 
 ## Apa yang Diubah

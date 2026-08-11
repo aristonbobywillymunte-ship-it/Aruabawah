@@ -43,12 +43,42 @@ class ProjectScheduleResolverTest extends TestCase
         $this->assertNull($result['reason']);
     }
 
+    public function test_it_treats_blank_portal_override_as_empty_inherit_package(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'news_runs_per_day' => 2,
+            'news_run_times' => ['08:00', '20:00'],
+            'news_run_times_override' => ['', ''],
+        ]);
+
+        $result = app(ProjectScheduleResolver::class)->resolvePortal($project);
+
+        $this->assertSame(['08:00', '20:00'], $result['times']);
+        $this->assertSame('package', $result['source']);
+        $this->assertNull($result['reason']);
+    }
+
     public function test_it_rejects_invalid_portal_override_without_falling_back_to_package(): void
     {
         $project = $this->createProjectWithPackage([
             'news_runs_per_day' => 2,
             'news_run_times' => ['08:00', '20:00'],
             'news_run_times_override' => ['07:00'],
+        ]);
+
+        $result = app(ProjectScheduleResolver::class)->resolvePortal($project);
+
+        $this->assertSame([], $result['times']);
+        $this->assertSame('none', $result['source']);
+        $this->assertSame('invalid_project_override', $result['reason']);
+    }
+
+    public function test_it_rejects_duplicate_portal_override_without_falling_back_to_package(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'news_runs_per_day' => 2,
+            'news_run_times' => ['08:00', '20:00'],
+            'news_run_times_override' => ['07:00', '07:00'],
         ]);
 
         $result = app(ProjectScheduleResolver::class)->resolvePortal($project);
@@ -127,6 +157,34 @@ class ProjectScheduleResolverTest extends TestCase
         $this->assertSame([], $result['times']);
         $this->assertSame('none', $result['source']);
         $this->assertSame('package_schedule_not_configured', $result['reason']);
+    }
+
+    public function test_it_reports_invalid_package_schedule_when_default_times_are_partially_configured(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'social_runs_per_day' => 3,
+            'social_run_times' => ['09:00', '15:00'],
+        ], withSocialActor: true);
+
+        $result = app(ProjectScheduleResolver::class)->resolveSocial($project);
+
+        $this->assertSame([], $result['times']);
+        $this->assertSame('none', $result['source']);
+        $this->assertSame('invalid_package_schedule', $result['reason']);
+    }
+
+    public function test_it_reports_invalid_package_schedule_when_default_times_contain_bad_values(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'social_runs_per_day' => 2,
+            'social_run_times' => ['09:00', 'bad'],
+        ], withSocialActor: true);
+
+        $result = app(ProjectScheduleResolver::class)->resolveSocial($project);
+
+        $this->assertSame([], $result['times']);
+        $this->assertSame('none', $result['source']);
+        $this->assertSame('invalid_package_schedule', $result['reason']);
     }
 
     protected function createProjectWithPackage(array $packageOverrides, bool $withSocialActor = false): Project

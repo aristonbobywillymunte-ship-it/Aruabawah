@@ -1,5 +1,25 @@
 # QA History
 
+# EFFECTIVE-SCHEDULE-RESOLVER-5B-INVALID-STATE-HOTFIX
+**Tanggal**: 2026-08-10
+**Area**: `ProjectScheduleResolver`, resolver state correctness
+
+### Skenario yang Diuji & Hasil:
+1. **Empty Override Inherits Package**: Override Project kosong penuh tetap memakai Package.
+2. **Blank Override Inherits Package**: Array blank penuh tetap dianggap empty/inherit.
+3. **Invalid Project Override**: Override non-empty yang kurang slot, duplikat, atau berisi nilai buruk menghasilkan `invalid_project_override`.
+4. **Package Not Configured**: Schedule Package yang kosong/blank penuh menghasilkan `package_schedule_not_configured`.
+5. **Invalid Package Schedule**: Package yang punya slot tapi tidak lengkap atau rusak menghasilkan `invalid_package_schedule`.
+6. **Valid Override Priority**: Override Project lengkap dan valid tetap menang.
+7. **Static Verification**: `php -l` dan `git diff --check` berhasil.
+8. **Targeted Test Run**: `php artisan test --filter=ProjectScheduleResolverTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser QA tidak relevan untuk perubahan ini.
+- Runtime scraping tidak dijalankan.
+
+**Status Akhir**: PASS
+
 # APIFY-EFFECTIVE-SCHEDULE-8A
 **Tanggal**: 2026-08-10
 **Area**: `RunApifyScraping`, automatic Apify social scheduling
