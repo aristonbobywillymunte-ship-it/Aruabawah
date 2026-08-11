@@ -2,14 +2,14 @@
 
 namespace App\Livewire\Admin;
 
+use App\Services\Admin\SystemMaintenanceService;
 use Livewire\Component;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Artisan;
 
 class SystemMaintenance extends Component
 {
     public bool $showConfirmModal = false;
+    public string $clearConfirmation = '';
     public ?array $maintenanceSummary = null;
     public ?string $flashMessage = null;
     public string $flashType = 'success';
@@ -28,50 +28,65 @@ class SystemMaintenance extends Component
     {
         $this->adminOnly();
         $this->showConfirmModal = true;
+        $this->clearConfirmation = '';
     }
 
     public function cancelClearRedisQueue(): void
     {
         $this->showConfirmModal = false;
+        $this->clearConfirmation = '';
     }
 
     public function clearRedisQueue(): void
     {
         $this->adminOnly();
-        $this->showConfirmModal = false;
+        $service = app(SystemMaintenanceService::class);
 
-        $redis = \Illuminate\Support\Facades\Redis::connection();
-        $queues = ['queues:default', 'queues:apify', 'queues:ai-analysis', 'queues:notification'];
-        
-        $totalDeleted = 0;
-        foreach ($queues as $queueKey) {
-            $count = (int) $redis->llen($queueKey);
-            if ($count > 0) {
-                $redis->del($queueKey);
-                $totalDeleted += $count;
-            }
+        if ($this->clearConfirmation !== $service->requiredConfirmationPhrase()) {
+            $this->notify('error', 'Ketik HAPUS ANTREAN untuk melanjutkan.');
+            return;
         }
 
-        Log::info('[System Maintenance] Cleared Redis queue', [
-            'deleted_jobs' => $totalDeleted,
+        $result = $service->clearPendingQueues();
+        $this->showConfirmModal = false;
+        $this->clearConfirmation = '';
+
+        Log::info('[System Maintenance] Cleared pending Redis queues', [
+            'deleted_jobs' => $result['deleted_jobs'],
+            'queues' => collect($result['queues'])->map(fn ($queue) => [
+                'connection' => $queue['connection'],
+                'queue' => $queue['queue'],
+                'pending' => $queue['pending'],
+                'delayed' => $queue['delayed'],
+            ])->values()->all(),
             'triggered_by' => auth()->user()?->email,
         ]);
 
         $this->maintenanceSummary = [
             'title' => 'Redis Queue Dibersihkan',
-            'detail' => "{$totalDeleted} job berhasil dihapus dari antrean Redis.",
+            'detail' => "{$result['deleted_jobs']} job menunggu berhasil dihapus dari antrean Redis tanpa menyentuh job yang sedang berjalan.",
         ];
 
-        $this->notify('success', 'Antrean Redis berhasil dibersihkan.');
+        $this->notify('success', 'Antrean Redis yang menunggu berhasil dibersihkan.');
     }
 
     public function restartWorkers(): void
     {
         $this->adminOnly();
+        $service = app(SystemMaintenanceService::class);
 
-        Artisan::call('queue:restart');
+        $exitCode = $service->restartWorkers();
+        if ($exitCode !== 0) {
+            Log::warning('[System Maintenance] Queue worker restart failed', [
+                'exit_code' => $exitCode,
+                'triggered_by' => auth()->user()?->email,
+            ]);
 
-        Log::info('[Apify Maintenance] Queue worker restart requested', [
+            $this->notify('error', 'Restart worker gagal dikirim.');
+            return;
+        }
+
+        Log::info('[System Maintenance] Queue worker restart requested', [
             'triggered_by' => auth()->user()?->email,
         ]);
 
@@ -86,17 +101,17 @@ class SystemMaintenance extends Component
     public function restartScheduler(): void
     {
         $this->adminOnly();
+        $service = app(SystemMaintenanceService::class);
 
-        // Signal scheduler container to exit. It will restart automatically due to restart:always
-        \Illuminate\Support\Facades\Cache::put('scheduler_should_restart', true, 60);
+        $service->requestSchedulerRestart();
 
-        Log::info('[Apify Maintenance] Scheduler restart requested', [
+        Log::info('[System Maintenance] Scheduler restart requested', [
             'triggered_by' => auth()->user()?->email,
         ]);
 
         $this->maintenanceSummary = [
             'title' => 'Signal Restart Scheduler Dikirim',
-            'detail' => 'Signal restart scheduler kontainer telah dikirim. Kontainer scheduler akan melakukan restart dalam waktu maksimal 60 detik pada detak berikutnya.',
+            'detail' => 'Signal restart scheduler kontainer telah dikirim. Kontainer scheduler akan berhenti pada heartbeat berikutnya lalu dihidupkan ulang oleh Docker Compose.',
         ];
 
         $this->notify('success', 'Sinyal restart scheduler berhasil dikirim.');
@@ -105,10 +120,20 @@ class SystemMaintenance extends Component
     public function clearMaintenanceCache(): void
     {
         $this->adminOnly();
+        $service = app(SystemMaintenanceService::class);
 
-        Artisan::call('optimize:clear');
+        $exitCode = $service->clearApplicationCache();
+        if ($exitCode !== 0) {
+            Log::warning('[System Maintenance] Laravel optimize clear failed', [
+                'exit_code' => $exitCode,
+                'triggered_by' => auth()->user()?->email,
+            ]);
 
-        Log::info('[Apify Maintenance] Laravel optimize cleared', [
+            $this->notify('error', 'Bersihkan cache Laravel gagal.');
+            return;
+        }
+
+        Log::info('[System Maintenance] Laravel optimize cleared', [
             'triggered_by' => auth()->user()?->email,
         ]);
 
@@ -140,7 +165,11 @@ class SystemMaintenance extends Component
     public function render()
     {
         $this->adminOnly();
+        $service = app(SystemMaintenanceService::class);
 
-        return view('livewire.admin.system-maintenance');
+        return view('livewire.admin.system-maintenance', [
+            'queueSnapshot' => $service->queueSnapshot(),
+            'requiredConfirmationPhrase' => $service->requiredConfirmationPhrase(),
+        ]);
     }
 }

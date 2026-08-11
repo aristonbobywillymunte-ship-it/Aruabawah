@@ -9,7 +9,7 @@
                     <span>System Maintenance Panel</span>
                 </h2>
                 <p class="mt-2 text-xs text-slate-500 leading-relaxed">
-                    Gunakan panel ini untuk mengelola performa dan kebersihan data sistem secara berkala. Aksi di bawah ini berjalan secara *real-time* dan aktivitasnya akan dicatat otomatis ke Log Sistem untuk kebutuhan audit.
+                    Gunakan panel ini untuk mengelola antrean background, restart worker, dan pembersihan cache aplikasi. Setiap aksi dicatat ke Log Sistem untuk kebutuhan audit.
                 </p>
             </div>
             
@@ -18,6 +18,7 @@
                 <button
                     wire:click="confirmClearRedisQueue"
                     wire:loading.attr="disabled"
+                    wire:target="confirmClearRedisQueue, clearRedisQueue"
                     class="inline-flex h-11 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-5 text-xs font-bold text-slate-700 transition hover:border-rose-500 hover:bg-rose-50 hover:text-rose-600 cursor-pointer disabled:opacity-50"
                 >
                     <span wire:loading.remove wire:target="confirmClearRedisQueue, clearRedisQueue" class="material-symbols-outlined text-[18px]">delete_sweep</span>
@@ -32,6 +33,7 @@
                 <button
                     wire:click="restartWorkers"
                     wire:loading.attr="disabled"
+                    wire:target="restartWorkers"
                     class="inline-flex h-11 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-5 text-xs font-bold text-slate-700 transition hover:border-[#1fa387] hover:bg-[#1fa387]/5 hover:text-[#1fa387] cursor-pointer disabled:opacity-50"
                 >
                     <span wire:loading.remove wire:target="restartWorkers" class="material-symbols-outlined text-[18px]">restart_alt</span>
@@ -46,6 +48,7 @@
                 <button
                     wire:click="restartScheduler"
                     wire:loading.attr="disabled"
+                    wire:target="restartScheduler"
                     class="inline-flex h-11 items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-5 text-xs font-bold text-slate-700 transition hover:border-[#1fa387] hover:bg-[#1fa387]/5 hover:text-[#1fa387] cursor-pointer disabled:opacity-50"
                 >
                     <span wire:loading.remove wire:target="restartScheduler" class="material-symbols-outlined text-[18px]">schedule</span>
@@ -60,6 +63,7 @@
                 <button
                     wire:click="clearMaintenanceCache"
                     wire:loading.attr="disabled"
+                    wire:target="clearMaintenanceCache"
                     class="inline-flex h-11 items-center gap-2.5 rounded-2xl bg-[#1fa387] px-5 text-xs font-bold text-white transition hover:bg-[#1a8b73] cursor-pointer shadow-sm disabled:opacity-50"
                 >
                     <span wire:loading.remove wire:target="clearMaintenanceCache" class="material-symbols-outlined text-[18px]">cleaning_services</span>
@@ -83,6 +87,47 @@
         @endif
     </div>
 
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between gap-3">
+            <div>
+                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Queue Snapshot</p>
+                <h3 class="mt-1 text-sm font-black text-slate-900">Ringkasan antrean yang dilindungi panel maintenance</h3>
+            </div>
+            <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Pending + Delayed + Reserved</span>
+        </div>
+
+        <div class="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+            <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-4 py-3 font-bold text-slate-700">Connection</th>
+                        <th class="px-4 py-3 font-bold text-slate-700">Queue</th>
+                        <th class="px-4 py-3 font-bold text-slate-700">Pending</th>
+                        <th class="px-4 py-3 font-bold text-slate-700">Delayed</th>
+                        <th class="px-4 py-3 font-bold text-slate-700">Reserved</th>
+                        <th class="px-4 py-3 font-bold text-slate-700">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+                    @forelse($queueSnapshot as $queue)
+                        <tr>
+                            <td class="px-4 py-3 font-semibold text-slate-700">{{ $queue['connection'] }}</td>
+                            <td class="px-4 py-3 text-slate-600">{{ $queue['queue'] }}</td>
+                            <td class="px-4 py-3 text-slate-600">{{ $queue['pending'] }}</td>
+                            <td class="px-4 py-3 text-slate-600">{{ $queue['delayed'] }}</td>
+                            <td class="px-4 py-3 text-slate-600">{{ $queue['reserved'] }}</td>
+                            <td class="px-4 py-3 font-bold text-slate-900">{{ $queue['total'] }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-center text-slate-500">Tidak ada antrean yang terdaftar.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Confirmation Modal -->
     @if($showConfirmModal)
         <div 
@@ -100,8 +145,19 @@
                 </div>
 
                 <p class="text-xs text-slate-500 leading-relaxed">
-                    Apakah Anda yakin ingin menghapus seluruh antrean kerja aktif (scraping, analisis, notifikasi) di Redis? Tindakan ini tidak dapat dibatalkan.
+                    Aksi ini hanya menghapus job yang masih menunggu dan delayed di Redis. Job yang sedang berjalan tetap dibiarkan. Untuk melanjutkan, ketik <strong>{{ $requiredConfirmationPhrase }}</strong> di bawah ini.
                 </p>
+
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Konfirmasi Tertulis</label>
+                    <input
+                        type="text"
+                        wire:model.live="clearConfirmation"
+                        placeholder="Ketik {{ $requiredConfirmationPhrase }}"
+                        class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                    >
+                    <p class="text-[11px] text-slate-400">Aksi tidak akan berjalan sampai teks cocok persis.</p>
+                </div>
 
                 <div class="flex justify-end gap-3">
                     <button
@@ -112,13 +168,16 @@
                     </button>
                     <button
                         wire:click="clearRedisQueue"
-                        class="px-4 py-2 text-xs font-bold text-white bg-rose-600 rounded-xl hover:bg-rose-700 transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+                        wire:loading.attr="disabled"
+                        wire:target="clearRedisQueue"
+                        @disabled($clearConfirmation !== $requiredConfirmationPhrase)
+                        class="px-4 py-2 text-xs font-bold text-white bg-rose-600 rounded-xl hover:bg-rose-700 transition cursor-pointer flex items-center gap-1.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <svg wire:loading wire:target="clearRedisQueue" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                         </svg>
-                        <span>Ya, Hapus Semua</span>
+                        <span>Ya, Bersihkan Antrean</span>
                     </button>
                 </div>
             </div>

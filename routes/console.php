@@ -15,8 +15,7 @@ try {
         $cacheTableReady = \Illuminate\Support\Facades\Schema::hasTable('cache');
     }
 
-    if ($cacheTableReady && \Illuminate\Support\Facades\Cache::get('scheduler_should_restart')) {
-        \Illuminate\Support\Facades\Cache::forget('scheduler_should_restart');
+    if ($cacheTableReady && \Illuminate\Support\Facades\Cache::pull('scheduler_should_restart')) {
         \Illuminate\Support\Facades\Log::info('[Scheduler] Exit signal received. Terminating scheduler process.');
 
         $ppid = function_exists('posix_getppid') ? posix_getppid() : null;

@@ -558,3 +558,24 @@
 - Semua service tests tetap lulus pada harness SQLite temp
 
 **Status Akhir**: PASS (Local only)
+
+## SYSTEM-MAINTENANCE-STABILIZATION-LOCAL
+**Tanggal**: 2026-08-11
+**Area**: `/admin/maintenance` - System Maintenance panel
+
+### Skenario yang Diuji & Hasil:
+1. **Admin Access**: Halaman maintenance hanya dibuka oleh admin, user biasa ditolak 403.
+2. **Queue Snapshot**: Panel menampilkan ringkasan queue/pending/delayed/reserved untuk connection Redis yang dipakai aplikasi.
+3. **Exact Confirmation**: Clear Redis hanya berjalan setelah admin mengetik persis `HAPUS ANTREAN`.
+4. **Safe Queue Clear**: Hanya job pending dan delayed yang dihapus; reserved/running tetap dipertahankan.
+5. **Restart Worker**: Aksi restart worker dicek hasil eksekusinya sebelum sukses dikirim ke UI.
+6. **Restart Scheduler**: Signal restart scheduler ditulis konsisten lewat cache dan tidak lagi memakai cek ganda yang saling balapan.
+7. **Clear Cache**: `optimize:clear` juga dicek exit code-nya sebelum dinyatakan sukses.
+8. **Local-Only Verification**: Tidak ada production access, tidak ada deploy, dan tidak ada runtime scraping.
+
+### Test Coverage:
+- `tests/Unit/SystemMaintenanceServiceTest.php`
+- `tests/Feature/SystemMaintenanceStabilizationTest.php`
+- PHP lint pada file yang diubah
+
+**Status Akhir**: PASS (Local only)

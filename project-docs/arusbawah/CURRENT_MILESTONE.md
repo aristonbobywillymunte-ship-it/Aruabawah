@@ -1020,3 +1020,25 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - Tidak ada real restore database dijalankan.
 - Pekerjaan ini lokal saja.
 - Production/server tetap tidak disentuh.
+
+---
+
+# Milestone: SYSTEM-MAINTENANCE-STABILIZATION-LOCAL
+
+## Apa yang Diubah
+- Panel `/admin/maintenance` kini memakai service terpisah untuk membaca snapshot antrean dan menjalankan aksi maintenance.
+- Aksi clear Redis sekarang memakai konfirmasi teks eksplisit `HAPUS ANTREAN` dan hanya menghapus job pending/delayed, bukan job yang sedang berjalan.
+- Restart worker, restart scheduler, dan clear cache Laravel kini dicek hasil eksekusinya sebelum UI mengirim status sukses.
+- Signal restart scheduler disatukan ke satu konsumsi cache yang aman, sehingga tidak ada cek ganda yang saling balapan.
+- Tampilan maintenance menampilkan ringkasan antrean yang dipantau panel agar operator tahu queue mana yang terdampak.
+
+## Behavior Final
+- Queue reserved/running tetap dipertahankan.
+- Scheduler restart tetap berbasis cache signal, tetapi konsumsi sinyalnya sekarang konsisten.
+- Tidak ada migration, deploy, atau akses production yang dilakukan dalam task ini.
+- Dirty file lama tetap dipertahankan.
+
+## Verifikasi
+- PHP lint pada file yang diubah lulus.
+- Targeted Livewire/service test ditambahkan untuk mengunci konfirmasi, restart, dan clear queue yang aman.
+- `php artisan view:clear`, `php artisan route:list`, dan `git diff --check` dijalankan sebagai langkah QA lokal.
