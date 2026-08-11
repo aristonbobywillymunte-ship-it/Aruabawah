@@ -1,5 +1,24 @@
 # QA History
 
+# EFFECTIVE-SCHEDULE-RESOLVER-5B-CLOSURE
+**Tanggal**: 2026-08-11
+**Area**: `ProjectScheduleResolver`, `RunApifyScraping`, QA/doc closure
+
+### Skenario yang Diuji & Hasil:
+1. **Empty Override Inherits Package**: Override Project kosong tetap mewarisi Package.
+2. **Invalid Override Does Not Inherit**: Override malformed, duplicate, dan non-string non-empty menghasilkan `invalid_project_override`.
+3. **Package Invalid State**: Package duplicate atau non-string non-empty menghasilkan `invalid_package_schedule`.
+4. **Social Runtime Safety**: Override Sosial invalid tidak memicu job Apify otomatis.
+5. **SHA Correction**: SHA milestone 5B dan 8A dikoreksi di dokumen.
+6. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan schedule:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+7. **Targeted Test Run**: `php artisan test --filter=ProjectScheduleResolverTest`, `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest`, `php artisan test --filter=PortalEffectiveScheduleRuntimeTest`, `php artisan test --filter=PortalScheduleFulfillmentTest`, dan `php artisan test --filter=PortalScheduleRecoveryTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser QA tidak relevan untuk perubahan ini.
+- Runtime scraping tidak dijalankan.
+
+**Status Akhir**: PASS
+
 # EFFECTIVE-SCHEDULE-RESOLVER-5B-INVALID-STATE-HOTFIX
 **Tanggal**: 2026-08-10
 **Area**: `ProjectScheduleResolver`, resolver state correctness

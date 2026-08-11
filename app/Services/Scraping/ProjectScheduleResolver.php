@@ -94,7 +94,25 @@ class ProjectScheduleResolver
         $invalid = false;
 
         foreach ($times as $time) {
-            $time = is_string($time) ? trim($time) : '';
+            $rawTime = $time;
+
+            if (! is_string($rawTime)) {
+                if ($rawTime === null || $rawTime === '') {
+                    if ($allowBlankEntries) {
+                        continue;
+                    }
+
+                    $hasNonEmpty = true;
+                    $invalid = true;
+                    break;
+                }
+
+                $hasNonEmpty = true;
+                $invalid = true;
+                break;
+            }
+
+            $time = trim($rawTime);
 
             if ($time === '') {
                 if ($allowBlankEntries) {

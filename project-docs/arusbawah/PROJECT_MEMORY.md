@@ -12,6 +12,12 @@
 - **Batasan**: Tidak ada perubahan pada Portal, `latestProjectActorRunAt()`, `--force-dispatch`, `--project-id`, comment scraper, atau slot fulfillment/recovery.
 - **Fallback / Legacy**: `packages.social_interval_minutes` dan fallback legacy lain tidak dipakai; jika schedule efektif tidak tersedia, automatic social dispatch berhenti aman.
 
+## Konteks Fitur EFFECTIVE-SCHEDULE-RESOLVER-5B-CLOSURE
+- **Alasan**: Gaps QA/doc pada hotfix 5B perlu ditutup agar state empty versus invalid tetap konsisten di resolver, runtime social, dan dokumen milestone.
+- **Solusi**: Menambahkan coverage untuk non-string/duplicate/malformed schedule override dan package invalid state, lalu mengoreksi SHA milestone yang sebelumnya salah tercatat.
+- **Batasan**: Tidak ada perubahan pada arsitektur scheduling, Portal command, slot fulfillment, recovery, actor behavior, atau migrasi.
+- **Fallback / Legacy**: Override kosong tetap inherit Package; non-string/duplicate/malformed tidak pernah inherit diam-diam.
+
 ## Konteks Fitur ACTOR-INTERVAL-REMOVAL-7B-RUNTIME
 - **Alasan**: Interval Actor harus berhenti memengaruhi keputusan runtime, karena scheduling Sosial kini sementara bergantung pada jadwal harian Paket dan cooldown operasional harus terpisah dari konfigurasi Actor.
 - **Solusi**: `RunApifyScraping` dan `ApifyScrapingJob` tidak lagi membaca `actor.interval_minutes` untuk due-check atau cooldown; runtime memakai jadwal harian Paket yang valid dan cooldown operasional dari `services.apify.schedule_retry_cooldown_minutes`.

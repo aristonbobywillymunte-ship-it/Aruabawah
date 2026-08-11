@@ -131,6 +131,81 @@ class ProjectScheduleResolverTest extends TestCase
         $this->assertNull($result['reason']);
     }
 
+    public function test_it_treats_blank_social_override_as_empty_inherit_package(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'social_runs_per_day' => 3,
+            'social_run_times' => ['09:00', '15:00', '21:00'],
+            'social_run_times_override' => ['', '', ''],
+        ], withSocialActor: true);
+
+        $result = app(ProjectScheduleResolver::class)->resolveSocial($project);
+
+        $this->assertSame(['09:00', '15:00', '21:00'], $result['times']);
+        $this->assertSame('package', $result['source']);
+        $this->assertNull($result['reason']);
+    }
+
+    public function test_it_rejects_partial_social_override_without_falling_back_to_package(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'social_runs_per_day' => 3,
+            'social_run_times' => ['09:00', '15:00', '21:00'],
+            'social_run_times_override' => ['10:00', '16:00'],
+        ], withSocialActor: true);
+
+        $result = app(ProjectScheduleResolver::class)->resolveSocial($project);
+
+        $this->assertSame([], $result['times']);
+        $this->assertSame('none', $result['source']);
+        $this->assertSame('invalid_project_override', $result['reason']);
+    }
+
+    public function test_it_rejects_malformed_string_social_override_without_falling_back_to_package(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'social_runs_per_day' => 3,
+            'social_run_times' => ['09:00', '15:00', '21:00'],
+            'social_run_times_override' => ['10:00', 'bad', '22:00'],
+        ], withSocialActor: true);
+
+        $result = app(ProjectScheduleResolver::class)->resolveSocial($project);
+
+        $this->assertSame([], $result['times']);
+        $this->assertSame('none', $result['source']);
+        $this->assertSame('invalid_project_override', $result['reason']);
+    }
+
+    public function test_it_rejects_duplicate_social_override_without_falling_back_to_package(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'social_runs_per_day' => 3,
+            'social_run_times' => ['09:00', '15:00', '21:00'],
+            'social_run_times_override' => ['10:00', '16:00', '16:00'],
+        ], withSocialActor: true);
+
+        $result = app(ProjectScheduleResolver::class)->resolveSocial($project);
+
+        $this->assertSame([], $result['times']);
+        $this->assertSame('none', $result['source']);
+        $this->assertSame('invalid_project_override', $result['reason']);
+    }
+
+    public function test_it_rejects_non_string_social_override_without_falling_back_to_package(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'social_runs_per_day' => 2,
+            'social_run_times' => ['09:00', '15:00'],
+            'social_run_times_override' => [123, '22:00'],
+        ], withSocialActor: true);
+
+        $result = app(ProjectScheduleResolver::class)->resolveSocial($project);
+
+        $this->assertSame([], $result['times']);
+        $this->assertSame('none', $result['source']);
+        $this->assertSame('invalid_project_override', $result['reason']);
+    }
+
     public function test_it_reports_invalid_package_schedule_when_default_times_do_not_match_run_count(): void
     {
         $project = $this->createProjectWithPackage([
@@ -178,6 +253,34 @@ class ProjectScheduleResolverTest extends TestCase
         $project = $this->createProjectWithPackage([
             'social_runs_per_day' => 2,
             'social_run_times' => ['09:00', 'bad'],
+        ], withSocialActor: true);
+
+        $result = app(ProjectScheduleResolver::class)->resolveSocial($project);
+
+        $this->assertSame([], $result['times']);
+        $this->assertSame('none', $result['source']);
+        $this->assertSame('invalid_package_schedule', $result['reason']);
+    }
+
+    public function test_it_reports_invalid_package_schedule_when_default_times_are_duplicate(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'social_runs_per_day' => 3,
+            'social_run_times' => ['09:00', '15:00', '15:00'],
+        ], withSocialActor: true);
+
+        $result = app(ProjectScheduleResolver::class)->resolveSocial($project);
+
+        $this->assertSame([], $result['times']);
+        $this->assertSame('none', $result['source']);
+        $this->assertSame('invalid_package_schedule', $result['reason']);
+    }
+
+    public function test_it_reports_invalid_package_schedule_when_default_times_contain_non_string_values(): void
+    {
+        $project = $this->createProjectWithPackage([
+            'social_runs_per_day' => 2,
+            'social_run_times' => [123, '22:00'],
         ], withSocialActor: true);
 
         $result = app(ProjectScheduleResolver::class)->resolveSocial($project);

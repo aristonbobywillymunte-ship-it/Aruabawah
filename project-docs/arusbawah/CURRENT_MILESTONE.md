@@ -31,7 +31,7 @@
 - Runtime scraping tidak dijalankan.
 
 ## Commit SHA Terkait
-- pending
+- `9c5b0db6b9febbc38034f63a3ff15673ba71b299`
 
 # Milestone: APIFY Effective Schedule 8A
 
@@ -74,7 +74,7 @@
 - Runtime scraping tidak dijalankan.
 
 ## Commit SHA Terkait
-- `3ae13940e2f3a0c7e1f0b16e0b5f0e9d9d8bcf7e`
+- `3ae1394d2e12fab9494709c1f3304b286f073c44`
 
 # Milestone: Actor Interval Removal 7B Runtime
 

@@ -94,6 +94,81 @@ class ApifyEffectiveScheduleRuntimeTest extends TestCase
         }
     }
 
+    public function test_non_string_project_override_safely_skips_automatic_social_dispatch(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 8, 10, 21, 30, 0, 'Asia/Makassar'));
+
+        try {
+            $this->bindNoopPriorityService();
+            [$project, $actor] = $this->createSocialProjectAndActor([
+                'social_runs_per_day' => 2,
+                'social_run_times' => ['09:00', '21:00'],
+                'social_run_times_override' => [123, '22:00'],
+            ]);
+
+            $this->markLastRun($project, $actor, '20:30');
+
+            Queue::fake();
+
+            $this->artisan('scraping:run-apify', ['--no-telegram' => true])
+                ->assertExitCode(0);
+
+            Queue::assertNothingPushed();
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_duplicate_project_override_safely_skips_automatic_social_dispatch(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 8, 10, 21, 30, 0, 'Asia/Makassar'));
+
+        try {
+            $this->bindNoopPriorityService();
+            [$project, $actor] = $this->createSocialProjectAndActor([
+                'social_runs_per_day' => 2,
+                'social_run_times' => ['09:00', '21:00'],
+                'social_run_times_override' => ['10:00', '10:00'],
+            ]);
+
+            $this->markLastRun($project, $actor, '20:30');
+
+            Queue::fake();
+
+            $this->artisan('scraping:run-apify', ['--no-telegram' => true])
+                ->assertExitCode(0);
+
+            Queue::assertNothingPushed();
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_malformed_project_override_safely_skips_automatic_social_dispatch(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 8, 10, 21, 30, 0, 'Asia/Makassar'));
+
+        try {
+            $this->bindNoopPriorityService();
+            [$project, $actor] = $this->createSocialProjectAndActor([
+                'social_runs_per_day' => 2,
+                'social_run_times' => ['09:00', '21:00'],
+                'social_run_times_override' => ['10:00', 'bad'],
+            ]);
+
+            $this->markLastRun($project, $actor, '20:30');
+
+            Queue::fake();
+
+            $this->artisan('scraping:run-apify', ['--no-telegram' => true])
+                ->assertExitCode(0);
+
+            Queue::assertNothingPushed();
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_invalid_package_schedule_safely_skips_automatic_social_dispatch(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 8, 10, 21, 30, 0, 'Asia/Makassar'));

@@ -1,5 +1,21 @@
 # QA Checklist
 
+## EFFECTIVE-SCHEDULE-RESOLVER-5B-CLOSURE
+- [x] `php -l app/Services/Scraping/ProjectScheduleResolver.php`
+- [x] `php -l tests/Feature/ProjectScheduleResolverTest.php`
+- [x] `php -l tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`
+- [x] `php artisan route:list`
+- [x] `php artisan schedule:list`
+- [x] `php artisan view:clear`
+- [x] `git diff --check`
+- [x] `php artisan test --filter=ProjectScheduleResolverTest`
+- [x] `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest`
+- [x] `php artisan test --filter=PortalEffectiveScheduleRuntimeTest`
+- [x] `php artisan test --filter=PortalScheduleFulfillmentTest`
+- [x] `php artisan test --filter=PortalScheduleRecoveryTest`
+- [ ] Real scraping run
+- [ ] Production migration
+
 ## EFFECTIVE-SCHEDULE-RESOLVER-5B-INVALID-STATE-HOTFIX
 - [x] `php -l app/Services/Scraping/ProjectScheduleResolver.php`
 - [x] `php -l tests/Feature/ProjectScheduleResolverTest.php`
