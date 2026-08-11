@@ -568,7 +568,7 @@
 2. **Queue Target Collision**: Collision saat `redis` dan `redis-ai` memakai koneksi Redis fisik yang sama tidak lagi menghapus grup antrean lain.
 3. **Queue Snapshot**: Panel menampilkan status `OK` atau `Tidak tersedia` sehingga 0 job tidak disamakan dengan Redis read failure.
 4. **Exact Confirmation**: Clear Redis hanya berjalan setelah admin mengetik persis `HAPUS ANTREAN`.
-5. **Safe Queue Clear**: Hanya job pending dan delayed yang dihapus; reserved/running tetap dipertahankan; partial failure dilaporkan jujur.
+5. **Safe Queue Clear**: Hanya job pending dan delayed yang dihapus; reserved/running tetap dipertahankan; partial failure dilaporkan jujur dengan accounting per-op.
 6. **Restart Worker**: Aksi restart worker menampilkan wording signal, bukan klaim worker sudah selesai restart.
 7. **Restart Scheduler**: Scheduler restart signal kini hanya dikonsumsi oleh guard awal `routes/console.php`; heartbeat tidak lagi mengambil key itu.
 8. **Clear Cache**: `optimize:clear` dan cache write juga diperlakukan aman saat exit code non-zero atau exception.

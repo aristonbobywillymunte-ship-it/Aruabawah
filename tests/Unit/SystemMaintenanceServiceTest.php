@@ -68,25 +68,10 @@ class SystemMaintenanceServiceTest extends TestCase
     public function test_clear_pending_queues_reports_partial_failure_honestly(): void
     {
         $redis = new FakeQueueRedisConnection([
-            'queues:default' => ['job-a', 'job-b'],
-            'queues:news' => ['job-c'],
-            'queues:apify' => ['job-d'],
-            'queues:notification' => [],
-            'queues:ai-analysis' => ['job-e'],
-            'queues:ai-backfill' => [],
+            'queues:default' => array_fill(0, 50, 'job-a'),
             'queues:default:delayed' => ['delayed-a'],
-            'queues:news:delayed' => [],
-            'queues:apify:delayed' => ['delayed-b'],
-            'queues:notification:delayed' => [],
-            'queues:ai-analysis:delayed' => ['delayed-c'],
-            'queues:ai-backfill:delayed' => [],
             'queues:default:reserved' => ['reserved-a'],
-            'queues:news:reserved' => ['reserved-b'],
-            'queues:apify:reserved' => ['reserved-c'],
-            'queues:notification:reserved' => ['reserved-d'],
-            'queues:ai-analysis:reserved' => ['reserved-e'],
-            'queues:ai-backfill:reserved' => ['reserved-f'],
-        ], throwOnReadsFor: ['queues:notification']);
+        ], throwOnTrimFor: ['queues:default:delayed']);
 
         $this->fakeRedisConnections([
             'default' => $redis,
@@ -95,17 +80,59 @@ class SystemMaintenanceServiceTest extends TestCase
         $result = app(SystemMaintenanceService::class)->clearPendingQueues();
 
         $this->assertTrue($result['partial_failure']);
-        $this->assertGreaterThan(0, $result['deleted_jobs']);
-        $this->assertGreaterThan(0, $result['succeeded_queues']);
-        $this->assertGreaterThan(0, $result['failed_queues']);
-        $this->assertContains('cleared', array_column($result['queues'], 'status'));
-        $this->assertContains('failed', array_column($result['queues'], 'status'));
+        $default = collect($result['queues'])->firstWhere('queue', 'default');
+        $this->assertSame('partial', $default['status']);
+        $this->assertSame(50, $default['pending_before']);
+        $this->assertSame(1, $default['delayed_before']);
+        $this->assertSame(50, $default['pending_removed']);
+        $this->assertSame(0, $default['delayed_removed']);
+        $this->assertSame('cleared', $default['pending_status']);
+        $this->assertSame('failed', $default['delayed_status']);
+        $this->assertSame(50, $result['deleted_jobs']);
+        $this->assertTrue($result['partial_failure']);
         $this->assertArrayHasKey('queues:default:reserved', $redis->sets);
-        $this->assertArrayHasKey('queues:news:reserved', $redis->sets);
-        $this->assertArrayHasKey('queues:apify:reserved', $redis->sets);
-        $this->assertArrayHasKey('queues:notification:reserved', $redis->sets);
-        $this->assertArrayHasKey('queues:ai-analysis:reserved', $redis->sets);
-        $this->assertArrayHasKey('queues:ai-backfill:reserved', $redis->sets);
+        $this->assertContains('queues:default', $redis->deletedKeys);
+        $this->assertNotContains('queues:default:delayed', $redis->trimmedKeys);
+    }
+
+    public function test_pending_remove_count_uses_snapshot_not_del_return_value(): void
+    {
+        $redis = new FakeQueueRedisConnection([
+            'queues:default' => array_fill(0, 50, 'job-a'),
+            'queues:default:delayed' => [],
+            'queues:default:reserved' => ['reserved-a'],
+        ], deleteReturn: 1);
+
+        $this->fakeRedisConnections(['default' => $redis]);
+
+        $result = app(SystemMaintenanceService::class)->clearPendingQueues();
+        $default = collect($result['queues'])->firstWhere('queue', 'default');
+
+        $this->assertSame('cleared', $default['status']);
+        $this->assertSame(50, $default['pending_removed']);
+        $this->assertSame(50, $result['deleted_jobs']);
+    }
+
+    public function test_pending_failure_can_still_allow_delayed_clear_to_be_reported_independently(): void
+    {
+        $redis = new FakeQueueRedisConnection([
+            'queues:default' => ['job-a', 'job-b'],
+            'queues:default:delayed' => ['delayed-a'],
+            'queues:default:reserved' => ['reserved-a'],
+        ], throwOnDeleteFor: ['queues:default']);
+
+        $this->fakeRedisConnections(['default' => $redis]);
+
+        $result = app(SystemMaintenanceService::class)->clearPendingQueues();
+        $default = collect($result['queues'])->firstWhere('queue', 'default');
+
+        $this->assertSame('partial', $default['status']);
+        $this->assertSame('failed', $default['pending_status']);
+        $this->assertSame('cleared', $default['delayed_status']);
+        $this->assertSame(0, $default['pending_removed']);
+        $this->assertSame(1, $default['delayed_removed']);
+        $this->assertSame(1, $result['deleted_jobs']);
+        $this->assertTrue($result['partial_failure']);
     }
 
     public function test_reserved_sorted_sets_and_unrelated_keys_remain_untouched(): void
@@ -232,7 +259,13 @@ class FakeQueueRedisConnection
 
     public array $untouchedLists = [];
 
-    public function __construct(array $entries, private array $throwOnReadsFor = [])
+    public function __construct(
+        array $entries,
+        private array $throwOnReadsFor = [],
+        private array $throwOnDeleteFor = [],
+        private array $throwOnTrimFor = [],
+        private int $deleteReturn = 1,
+    )
     {
         foreach ($entries as $key => $values) {
             if (str_ends_with($key, ':delayed') || str_ends_with($key, ':reserved')) {
@@ -262,14 +295,16 @@ class FakeQueueRedisConnection
 
     public function del(string $key): int
     {
+        $this->maybeThrowDelete($key);
         $this->deletedKeys[] = $key;
         unset($this->lists[$key]);
 
-        return 1;
+        return $this->deleteReturn;
     }
 
     public function zremrangebyrank(string $key, int $start, int $end): int
     {
+        $this->maybeThrowTrim($key);
         $this->trimmedKeys[] = $key;
         unset($this->sets[$key]);
 
@@ -280,6 +315,20 @@ class FakeQueueRedisConnection
     {
         if (in_array($key, $this->throwOnReadsFor, true)) {
             throw new \RuntimeException('Redis connection failure for ' . $key);
+        }
+    }
+
+    private function maybeThrowDelete(string $key): void
+    {
+        if (in_array($key, $this->throwOnDeleteFor, true)) {
+            throw new \RuntimeException('Redis DEL failure for ' . $key);
+        }
+    }
+
+    private function maybeThrowTrim(string $key): void
+    {
+        if (in_array($key, $this->throwOnTrimFor, true)) {
+            throw new \RuntimeException('Redis ZREMRANGEBYRANK failure for ' . $key);
         }
     }
 }

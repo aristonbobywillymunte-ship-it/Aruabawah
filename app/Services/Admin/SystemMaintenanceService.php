@@ -55,6 +55,7 @@ class SystemMaintenanceService
         $deletedJobs = 0;
         $succeededQueues = 0;
         $failedQueues = 0;
+        $partialQueues = 0;
 
         foreach ($this->queueTargets() as $group) {
             foreach ($group['queue_names'] as $queue) {
@@ -68,13 +69,13 @@ class SystemMaintenanceService
                     $counts = $this->queueCounts($group['queue_connection'], $group['redis_connection'], $queue);
 
                     if ($counts['status'] === 'error') {
-                        $results[] = $this->queueClearResult($target, 'failed', 0, 0, null, $counts['error']);
+                        $results[] = $this->queueClearResult($target, 'failed', $counts, 0, 0, 'read', 'failed', $counts['error'], false);
                         $failedQueues++;
                         continue;
                     }
 
                     if ($counts['pending'] === 0 && $counts['delayed'] === 0) {
-                        $results[] = $this->queueClearResult($target, 'empty', 0, 0, null, null);
+                        $results[] = $this->queueClearResult($target, 'empty', $counts, 0, 0, 'none', 'none', null, false);
                         $succeededQueues++;
                         continue;
                     }
@@ -82,29 +83,69 @@ class SystemMaintenanceService
                     $redis = Redis::connection($group['redis_connection']);
                     $pendingRemoved = 0;
                     $delayedRemoved = 0;
+                    $pendingStatus = 'skipped';
+                    $delayedStatus = 'skipped';
+                    $queueStatus = 'empty';
+                    $queueFailed = false;
 
                     if ($counts['pending'] > 0) {
-                        $pendingRemoved = (int) $redis->del($this->queueKey($queue));
+                        try {
+                            $redis->del($this->queueKey($queue));
+                            $pendingRemoved = (int) $counts['pending'];
+                            $pendingStatus = 'cleared';
+                        } catch (Throwable $e) {
+                            $pendingStatus = 'failed';
+                            $queueFailed = true;
+                        }
                     }
 
                     if ($counts['delayed'] > 0) {
-                        $redis->zremrangebyrank($this->queueKey($queue) . ':delayed', 0, -1);
-                        $delayedRemoved = $counts['delayed'];
+                        try {
+                            $redis->zremrangebyrank($this->queueKey($queue) . ':delayed', 0, -1);
+                            $delayedRemoved = (int) $counts['delayed'];
+                            $delayedStatus = 'cleared';
+                        } catch (Throwable $e) {
+                            $delayedStatus = 'failed';
+                            $queueFailed = true;
+                        }
                     }
 
-                    $deletedJobs += $counts['pending'] + $counts['delayed'];
-                    $succeededQueues++;
-                    $results[] = $this->queueClearResult($target, 'cleared', $pendingRemoved, $delayedRemoved, $counts, null);
-                } catch (Throwable $e) {
-                    $failedQueues++;
+                    if ($pendingStatus === 'cleared' && $delayedStatus === 'cleared') {
+                        $queueStatus = 'cleared';
+                    } elseif (
+                        $queueFailed === false
+                        && in_array($pendingStatus, ['cleared', 'skipped'], true)
+                        && in_array($delayedStatus, ['cleared', 'skipped'], true)
+                    ) {
+                        $queueStatus = 'cleared';
+                    } elseif ($pendingStatus === 'cleared' || $delayedStatus === 'cleared') {
+                        $queueStatus = 'partial';
+                    } elseif ($queueFailed) {
+                        $queueStatus = 'failed';
+                    }
+
+                    $deletedJobs += $pendingRemoved + $delayedRemoved;
+
+                    if ($queueStatus === 'cleared' || $queueStatus === 'empty') {
+                        $succeededQueues++;
+                    } elseif ($queueStatus === 'partial') {
+                        $partialQueues++;
+                    }
+
                     $results[] = $this->queueClearResult(
                         $target,
-                        'failed',
-                        0,
-                        0,
-                        null,
-                        $this->safeErrorMessage($e, 'Gagal membaca atau membersihkan antrean Redis.')
+                        $queueStatus,
+                        $counts,
+                        $pendingRemoved,
+                        $delayedRemoved,
+                        $pendingStatus,
+                        $delayedStatus,
+                        $queueFailed ? 'Sebagian aksi antrean gagal dijalankan.' : null,
+                        $queueStatus === 'partial'
                     );
+                } catch (Throwable $e) {
+                    $failedQueues++;
+                    $results[] = $this->queueClearResult($target, 'failed', null, 0, 0, 'read', 'failed', $this->safeErrorMessage($e, 'Gagal membaca atau membersihkan antrean Redis.'), false);
                 }
             }
         }
@@ -113,7 +154,8 @@ class SystemMaintenanceService
             'deleted_jobs' => $deletedJobs,
             'succeeded_queues' => $succeededQueues,
             'failed_queues' => $failedQueues,
-            'partial_failure' => $failedQueues > 0,
+            'partial_queues' => $partialQueues,
+            'partial_failure' => $failedQueues > 0 || $partialQueues > 0,
             'queues' => $results,
         ];
     }
@@ -237,10 +279,13 @@ class SystemMaintenanceService
     private function queueClearResult(
         array $target,
         string $status,
+        ?array $counts,
         int $pendingRemoved,
         int $delayedRemoved,
-        ?array $counts,
-        ?string $error
+        string $pendingStatus,
+        string $delayedStatus,
+        ?string $error,
+        bool $partialFailure
     ): array {
         return [
             'queue_connection' => $target['queue_connection'],
@@ -252,6 +297,9 @@ class SystemMaintenanceService
             'pending_before' => $counts['pending'] ?? null,
             'delayed_before' => $counts['delayed'] ?? null,
             'reserved_before' => $counts['reserved'] ?? null,
+            'pending_status' => $pendingStatus,
+            'delayed_status' => $delayedStatus,
+            'partial_failure' => $partialFailure,
             'safe_error' => $error,
         ];
     }
