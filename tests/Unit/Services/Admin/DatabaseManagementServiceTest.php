@@ -134,6 +134,149 @@ class DatabaseManagementServiceTest extends TestCase
         $this->assertStringNotContainsString('DROP SCHEMA', implode("\n", $service->commands));
     }
 
+    public function test_restore_write_throw_cleans_temp_script_and_skips_process(): void
+    {
+        $service = new class extends DatabaseManagementService {
+            public ?string $restoreScriptPath = null;
+            public bool $runCommandCalled = false;
+
+            protected function createTempFile(string $prefix): string
+            {
+                return tempnam(sys_get_temp_dir(), $prefix);
+            }
+
+            protected function writeRestoreScript(string $restoreScript, string $sqlFilePath): void
+            {
+                $this->restoreScriptPath = $restoreScript;
+                throw new RuntimeException('gagal menyiapkan skrip');
+            }
+
+            protected function runCommand(string $command, array $env = []): array
+            {
+                $this->runCommandCalled = true;
+
+                return [
+                    'stdout' => '',
+                    'stderr' => '',
+                    'exit_code' => 0,
+                ];
+            }
+        };
+
+        $upload = $this->tempDir . '/restore.sql';
+        file_put_contents($upload, "-- PostgreSQL database dump\nCREATE TABLE demo(id int);\n");
+
+        try {
+            $service->restoreBackup($upload);
+            $this->fail('Expected RuntimeException not thrown.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('gagal menyiapkan skrip', $exception->getMessage());
+        }
+
+        $this->assertFalse($service->runCommandCalled);
+        $this->assertFileDoesNotExist($service->restoreScriptPath);
+        $this->assertFileExists($upload);
+    }
+
+    public function test_restore_process_throw_cleans_temp_script(): void
+    {
+        $service = new class extends DatabaseManagementService {
+            public array $commands = [];
+            public ?string $restoreScriptPath = null;
+
+            protected function createTempFile(string $prefix): string
+            {
+                return tempnam(sys_get_temp_dir(), $prefix);
+            }
+
+            protected function writeRestoreScript(string $restoreScript, string $sqlFilePath): void
+            {
+                $this->restoreScriptPath = $restoreScript;
+                parent::writeRestoreScript($restoreScript, $sqlFilePath);
+            }
+
+            protected function runCommand(string $command, array $env = []): array
+            {
+                $this->commands[] = $command;
+                throw new RuntimeException('proc_open gagal');
+            }
+        };
+
+        $upload = $this->tempDir . '/restore.sql';
+        file_put_contents($upload, "-- PostgreSQL database dump\nCREATE TABLE demo(id int);\n");
+
+        try {
+            $service->restoreBackup($upload);
+            $this->fail('Expected RuntimeException not thrown.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('proc_open gagal', $exception->getMessage());
+        }
+
+        $this->assertCount(1, $service->commands);
+        $this->assertFileDoesNotExist($service->restoreScriptPath);
+        $this->assertFileExists($upload);
+    }
+
+    public function test_restore_file_write_failure_is_detected(): void
+    {
+        $service = new class extends DatabaseManagementService {
+            public ?string $restoreScriptPath = null;
+
+            protected function createTempFile(string $prefix): string
+            {
+                return tempnam(sys_get_temp_dir(), $prefix);
+            }
+
+            protected function writeTempFileContents(string $path, string $contents): int|false
+            {
+                $this->restoreScriptPath = $path;
+
+                return false;
+            }
+        };
+
+        $upload = $this->tempDir . '/restore.sql';
+        file_put_contents($upload, "-- PostgreSQL database dump\nCREATE TABLE demo(id int);\n");
+
+        try {
+            $service->restoreBackup($upload);
+            $this->fail('Expected RuntimeException not thrown.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Gagal menyiapkan file pemulihan sementara.', $exception->getMessage());
+        }
+
+        $this->assertFileDoesNotExist($service->restoreScriptPath);
+        $this->assertFileExists($upload);
+    }
+
+    public function test_export_process_throw_cleans_temp_file(): void
+    {
+        $service = new class extends DatabaseManagementService {
+            public ?string $tempFile = null;
+
+            protected function createTempFile(string $prefix): string
+            {
+                $this->tempFile = tempnam(sys_get_temp_dir(), $prefix);
+
+                return $this->tempFile;
+            }
+
+            protected function runCommand(string $command, array $env = []): array
+            {
+                throw new RuntimeException('pg_dump runtime crash');
+            }
+        };
+
+        try {
+            $service->exportBackup();
+            $this->fail('Expected RuntimeException not thrown.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('pg_dump runtime crash', $exception->getMessage());
+        }
+
+        $this->assertFileDoesNotExist($service->tempFile);
+    }
+
     public function test_export_success_uses_single_temp_path_and_does_not_leave_orphan(): void
     {
         $createdTempFiles = [];

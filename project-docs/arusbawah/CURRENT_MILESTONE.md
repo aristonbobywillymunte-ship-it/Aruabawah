@@ -1005,3 +1005,18 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - Restore script temp dibersihkan di jalur sukses dan gagal.
 - Tidak ada real database restore dijalankan.
 - Perubahan ini lokal saja dan tidak menyentuh production/server.
+
+---
+
+# Milestone: DATABASE-MANAGEMENT-FINAL-TEMP-CLEANUP
+
+## Apa yang Diubah
+- Cleanup temp export kini tetap berjalan walau proses `pg_dump` melempar exception langsung.
+- Cleanup temp restore kini dimulai segera setelah file sementara dibuat, sehingga gagal tulis script tetap dibersihkan.
+- Kegagalan `file_put_contents` untuk script restore kini terdeteksi sebagai error aman.
+- Regresi service-level ditambahkan untuk path throw pada export dan restore.
+
+## Behavior Final
+- Tidak ada real restore database dijalankan.
+- Pekerjaan ini lokal saja.
+- Production/server tetap tidak disentuh.

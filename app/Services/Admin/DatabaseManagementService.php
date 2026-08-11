@@ -10,34 +10,41 @@ class DatabaseManagementService
     {
         $connection = config('database.connections.pgsql');
         $tempFile = $this->createTempFile('backup_');
+        $keepTempFile = false;
 
-        $command = $this->buildExportCommand($connection, $tempFile);
+        try {
+            $command = $this->buildExportCommand($connection, $tempFile);
 
-        $result = $this->runCommand($command, [
-            'PGPASSWORD' => (string) $connection['password'],
-        ]);
+            $result = $this->runCommand($command, [
+                'PGPASSWORD' => (string) $connection['password'],
+            ]);
 
-        if ($result['exit_code'] !== 0) {
-            $this->cleanupFile($tempFile);
-            throw new RuntimeException(trim($result['stderr']) ?: 'Gagal menjalankan pg_dump.');
+            if ($result['exit_code'] !== 0) {
+                throw new RuntimeException(trim($result['stderr']) ?: 'Gagal menjalankan pg_dump.');
+            }
+
+            if (! file_exists($tempFile) || filesize($tempFile) === 0) {
+                throw new RuntimeException('File backup kosong atau tidak berhasil dibuat.');
+            }
+
+            $keepTempFile = true;
+
+            return $tempFile;
+        } finally {
+            if (! $keepTempFile) {
+                $this->cleanupFile($tempFile);
+            }
         }
-
-        if (! file_exists($tempFile) || filesize($tempFile) === 0) {
-            $this->cleanupFile($tempFile);
-            throw new RuntimeException('File backup kosong atau tidak berhasil dibuat.');
-        }
-
-        return $tempFile;
     }
 
     public function restoreBackup(string $sqlFilePath): void
     {
         $connection = config('database.connections.pgsql');
         $restoreScript = $this->createTempFile('restore_');
-        $this->writeRestoreScript($restoreScript, $sqlFilePath);
-        $command = $this->buildRestoreCommand($connection, $restoreScript);
 
         try {
+            $this->writeRestoreScript($restoreScript, $sqlFilePath);
+            $command = $this->buildRestoreCommand($connection, $restoreScript);
             $result = $this->runCommand($command, [
                 'PGPASSWORD' => (string) $connection['password'],
             ]);
@@ -100,7 +107,22 @@ class DatabaseManagementService
             '',
         ]);
 
-        file_put_contents($restoreScript, $header . file_get_contents($sqlFilePath));
+        $sqlContents = file_get_contents($sqlFilePath);
+
+        if ($sqlContents === false) {
+            throw new RuntimeException('Gagal membaca file pemulihan sementara.');
+        }
+
+        $written = $this->writeTempFileContents($restoreScript, $header . $sqlContents);
+
+        if ($written === false) {
+            throw new RuntimeException('Gagal menyiapkan file pemulihan sementara.');
+        }
+    }
+
+    protected function writeTempFileContents(string $path, string $contents): int|false
+    {
+        return file_put_contents($path, $contents);
     }
 
     protected function createTempFile(string $prefix): string
