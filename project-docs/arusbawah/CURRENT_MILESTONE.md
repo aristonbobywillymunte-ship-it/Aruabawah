@@ -1,3 +1,47 @@
+# Milestone: EFFECTIVE Schedule Resolver 5B Closure
+
+## Apa yang Diubah
+QA/documentation 5B ditutup dengan verifikasi tambahan untuk override Social invalid, package invalid state, dan koreksi SHA milestone yang sempat salah tercatat.
+
+## Behavior Final
+- Override kosong tetap inherit Package.
+- Override malformed, duplicate, dan non-string non-empty tidak pernah inherit diam-diam.
+- Package duplicate dan non-string non-empty menghasilkan `invalid_package_schedule`.
+- Runtime Apify Sosial tetap aman skip untuk override invalid.
+- Tidak ada perubahan arsitektur scheduling atau migrasi.
+
+## Komponen Kunci
+- `app/Services/Scraping/ProjectScheduleResolver.php`
+- `tests/Feature/ProjectScheduleResolverTest.php`
+- `tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: NO
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Services/Scraping/ProjectScheduleResolver.php`: PASS
+- `php -l tests/Feature/ProjectScheduleResolverTest.php`: PASS
+- `php -l tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan schedule:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=ProjectScheduleResolverTest`: PASS pada SQLite temp test harness
+- `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest`: PASS pada SQLite temp test harness
+- `php artisan test --filter=PortalEffectiveScheduleRuntimeTest`: PASS pada SQLite temp test harness
+- `php artisan test --filter=PortalScheduleFulfillmentTest`: PASS pada SQLite temp test harness
+- `php artisan test --filter=PortalScheduleRecoveryTest`: PASS pada SQLite temp test harness
+
+## Catatan QA
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+
+## Commit SHA Terkait
+- `f4f1fa7dd9515b723883d96f980be99be88bbd77`
+
 # Milestone: EFFECTIVE Schedule Resolver 5B Invalid State Hotfix
 
 ## Apa yang Diubah
