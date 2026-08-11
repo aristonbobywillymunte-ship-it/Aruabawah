@@ -205,7 +205,7 @@ class RunApifyScraping extends Command
             $mainScraperDispatchedByPlatform = [];
 
             foreach ($orderedActors as $actor) {
-                $lastProjectActorRunAt = $this->latestProjectActorRunAt($project->id, $actor->platform);
+                $lastProjectActorRunAt = $this->latestProjectActorRunAt($project->id, $actor->id);
 
                 $isCommentScraper = (strtolower((string) $actor->function_type) === 'comment scraper');
                 $platformKey = strtolower((string) $actor->platform);
@@ -466,6 +466,7 @@ class RunApifyScraping extends Command
                             'project_id'  => $project->id,
                             'actor_id'    => $actor->id,
                             'limit'       => $limitPerRun,
+                            'scheduled_execution' => ! $isCommentScraper && ! $forceDispatch,
                             'force_dispatch' => $isCommentScraper ? true : $forceDispatch,
                             'no_telegram' => $suppressTelegram,
                         ]);
@@ -513,6 +514,7 @@ class RunApifyScraping extends Command
                         'project_id' => $project->id,
                         'actor_id'   => $actor->id,
                         'limit'      => $limitPerRun,
+                        'scheduled_execution' => false,
                         'no_telegram'=> $suppressTelegram,
                     ]);
 
@@ -619,12 +621,15 @@ class RunApifyScraping extends Command
         parent::line("{$timestamp} {$string}", $style, $verbosity);
     }
 
-    protected function latestProjectActorRunAt(int $projectId, string $platform): ?Carbon
+    protected function latestProjectActorRunAt(int $projectId, int $actorId): ?Carbon
     {
         $value = DB::table('apify_dispatch_states')
             ->where('project_id', $projectId)
-            ->whereRaw('lower(platform) = ?', [strtolower($platform)])
-            ->max(DB::raw('coalesce(completed_at, started_at, queued_at)'));
+            ->where('actor_id', $actorId)
+            ->where('status', 'success')
+            ->where('is_scheduled_execution', true)
+            ->whereNotNull('completed_at')
+            ->max('completed_at');
 
         if (! $value) {
             return null;

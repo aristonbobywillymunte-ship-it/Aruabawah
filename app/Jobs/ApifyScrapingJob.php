@@ -168,6 +168,7 @@ class ApifyScrapingJob implements ShouldQueue
         $platform = (string) ($params['platform'] ?? '');
         $keyword = (string) ($params['keyword'] ?? '');
         $forceDispatch = (bool) ($params['force_dispatch'] ?? false);
+        $scheduledExecution = (bool) ($params['scheduled_execution'] ?? false);
         $keywords = array_values(array_filter(array_map(
             static fn ($value) => trim((string) $value),
             (array) ($params['keywords'] ?? [])
@@ -299,6 +300,7 @@ class ApifyScrapingJob implements ShouldQueue
                     'window_end' => $windowEnd,
                     'status' => 'queued',
                     'queued_at' => $now,
+                    'is_scheduled_execution' => $scheduledExecution,
                 ]
             );
 
@@ -326,6 +328,7 @@ class ApifyScrapingJob implements ShouldQueue
                     'last_error_code' => null,
                     'last_error_message' => null,
                     'run_id' => null,
+                    'is_scheduled_execution' => $scheduledExecution,
                 ]);
             } elseif (! $state->wasRecentlyCreated && $forceDispatch) {
                 // Force dispatch reuses the same state key for social actors, so
@@ -339,6 +342,7 @@ class ApifyScrapingJob implements ShouldQueue
                     'last_error_code' => null,
                     'last_error_message' => null,
                     'run_id' => null,
+                    'is_scheduled_execution' => $scheduledExecution,
                 ]);
             }
 

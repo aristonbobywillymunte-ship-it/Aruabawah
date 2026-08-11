@@ -22,6 +22,7 @@ class ApifyDispatchState extends Model
         'started_at',
         'completed_at',
         'next_retry_at',
+        'is_scheduled_execution',
         'last_error_code',
         'last_error_message',
         'actual_cost_usd',
@@ -37,6 +38,7 @@ class ApifyDispatchState extends Model
         'completed_at' => 'datetime',
         'next_retry_at' => 'datetime',
         'attempts' => 'integer',
+        'is_scheduled_execution' => 'boolean',
     ];
 
     public function project()
