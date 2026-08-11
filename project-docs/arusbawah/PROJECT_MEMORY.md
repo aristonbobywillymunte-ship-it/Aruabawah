@@ -1,5 +1,11 @@
 # Project Memory
 
+## Konteks Fitur APIFY-SLOT-FULFILLMENT-8B
+- **Alasan**: Fulfillment slot Sosial/Apify harus bergantung hanya pada sukses scheduled MAIN Actor yang sah, bukan pada success komentar, force-dispatch, atau timestamp attempt.
+- **Solusi**: Menambahkan marker persisten `is_scheduled_execution`, menyempitkan lookup fulfillment ke `project_id` + `actor_id` + status `success`, lalu memakai `completed_at` saja sebagai timestamp fulfillment.
+- **Batasan**: Tidak ada perubahan pada schedule resolver, Portal command, package/project UI, comment scraping behavior, atau recovery yang lebih luas.
+- **Fallback / Legacy**: Legacy success rows yang tidak punya marker scheduled execution tidak dipercaya untuk fulfillment; ini sengaja agar data ambigu tidak salah memakan slot.
+
 ## Konteks Fitur EFFECTIVE-SCHEDULE-RESOLVER-5B-INVALID-STATE-HOTFIX
 - **Alasan**: Resolver schedule efektif harus membedakan override kosong dari override invalid, supaya inherit Package tidak tercampur dengan state proyek yang rusak.
 - **Solusi**: `ProjectScheduleResolver` sekarang mengembalikan `package_schedule_not_configured` hanya untuk schedule Package yang benar-benar kosong, dan `invalid_package_schedule` untuk schedule Package yang terisi tapi malformed.

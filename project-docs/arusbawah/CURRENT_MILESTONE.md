@@ -1,3 +1,49 @@
+# Milestone: APIFY Slot Fulfillment 8B
+
+## Apa yang Diubah
+Fulfillment slot otomatis Sosial/Apify sekarang hanya bergantung pada sukses scheduled MAIN Actor yang persisten, spesifik per `project_id` + `actor_id`, dan ditandai `is_scheduled_execution = true`.
+
+## Behavior Final
+- Hanya sukses scheduled MAIN Actor yang dapat memenuhi slot.
+- `queued`, `processing`, `retry_wait`, `failed`, dan `cancelled` tidak pernah memenuhi slot.
+- Comment Scraper success tidak memenuhi slot main actor.
+- `--force-dispatch` success tidak memenuhi slot.
+- Lookup fulfillment tidak lagi memakai `queued_at` atau `started_at`.
+- Legacy success rows yang ambigu tidak dipercaya untuk fulfillment.
+- `latestProjectActorRunAt()` sekarang sempit ke actor yang sama dan status success scheduled.
+
+## Komponen Kunci
+- `app/Models/ApifyDispatchState.php`
+- `database/migrations/2026_08_11_000001_add_is_scheduled_execution_to_apify_dispatch_states_table.php`
+- `app/Console/Commands/RunApifyScraping.php`
+- `app/Jobs/ApifyScrapingJob.php`
+- `tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: YES
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: YES, terbatas pada fulfillment lookup
+- **Package / Project / Actor scheduling berubah**: NO
+
+## Verifikasi
+- `php -l app/Models/ApifyDispatchState.php`: PASS
+- `php -l app/Console/Commands/RunApifyScraping.php`: PASS
+- `php -l app/Jobs/ApifyScrapingJob.php`: PASS
+- `php -l tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`: PASS
+- `php artisan route:list`: PASS
+- `php artisan schedule:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+- `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest`: PASS pada SQLite temp test harness
+
+## Catatan QA
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+- Setelah deploy, legacy ambiguous success rows sengaja tidak dipercaya, jadi slot yang saat ini due bisa terlihat berjalan sekali lagi.
+
+## Commit SHA Terkait
+- `88c8f834f3037590ea09257ea91947ee1a2e056c`
+
 # Milestone: EFFECTIVE Schedule Resolver 5B Closure
 
 ## Apa yang Diubah

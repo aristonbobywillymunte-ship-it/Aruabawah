@@ -1,5 +1,18 @@
 # QA Checklist
 
+## APIFY-SLOT-FULFILLMENT-8B
+- [x] `php -l app/Models/ApifyDispatchState.php`
+- [x] `php -l app/Console/Commands/RunApifyScraping.php`
+- [x] `php -l app/Jobs/ApifyScrapingJob.php`
+- [x] `php -l tests/Feature/ApifyEffectiveScheduleRuntimeTest.php`
+- [x] `git diff --check`
+- [x] `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest`
+- [x] `php artisan route:list`
+- [x] `php artisan schedule:list`
+- [x] `php artisan view:clear`
+- [ ] Real scraping run
+- [ ] Production migration
+
 ## EFFECTIVE-SCHEDULE-RESOLVER-5B-CLOSURE
 - [x] `php -l app/Services/Scraping/ProjectScheduleResolver.php`
 - [x] `php -l tests/Feature/ProjectScheduleResolverTest.php`

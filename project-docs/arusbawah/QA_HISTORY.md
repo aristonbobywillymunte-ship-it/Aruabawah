@@ -1,5 +1,25 @@
 # QA History
 
+# APIFY-SLOT-FULFILLMENT-8B
+**Tanggal**: 2026-08-11
+**Area**: `RunApifyScraping`, `ApifyScrapingJob`, Apify fulfillment lookup
+
+### Skenario yang Diuji & Hasil:
+1. **Scheduled Success Only**: Hanya sukses scheduled MAIN Actor yang dapat memenuhi slot.
+2. **Actor-Specific Fulfillment**: Success dari actor lain pada project/platform yang sama tidak memakan slot MAIN Actor.
+3. **Force Dispatch Safety**: Success dari `--force-dispatch` tidak dihitung sebagai fulfillment slot.
+4. **Comment Scraper Safety**: Success comment scraper tidak memenuhi slot main actor.
+5. **Invalid State Safety**: `queued`, `processing`, `retry_wait`, `failed`, dan `cancelled` tidak memenuhi slot.
+6. **No Timestamp Guessing**: Fulfillment tidak memakai `queued_at` atau `started_at`.
+7. **Static Verification**: `php -l` dan `git diff --check` berhasil.
+8. **Targeted Test Run**: `php artisan test --filter=ApifyEffectiveScheduleRuntimeTest` berhasil pada SQLite temp test harness.
+
+### Catatan QA:
+- Browser QA tidak relevan untuk perubahan ini.
+- Runtime scraping tidak dijalankan.
+
+**Status Akhir**: PASS
+
 # EFFECTIVE-SCHEDULE-RESOLVER-5B-CLOSURE
 **Tanggal**: 2026-08-11
 **Area**: `ProjectScheduleResolver`, `RunApifyScraping`, QA/doc closure
