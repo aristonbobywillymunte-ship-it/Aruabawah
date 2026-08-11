@@ -582,6 +582,140 @@ class AdminNewsSourcesTest extends TestCase
         $source->forceDelete();
     }
 
+    public function test_approve_suggestion_updates_existing_source_atomically_and_runs_icon_resolution_outside_transaction(): void
+    {
+        $resolverArgs = null;
+        $source = NewsSource::create([
+            'name' => 'Original Approved Source',
+            'domain' => 'approve-existing.test',
+            'base_url' => 'https://approve-existing.test',
+            'crawling_type' => 'html',
+            'is_active' => true,
+        ]);
+
+        $suggestion = NewsSourceSuggestion::create([
+            'news_source_id' => $source->id,
+            'source_name' => 'Updated Approved Source',
+            'domain' => 'approve-existing.test',
+            'base_url' => 'https://approve-existing.test',
+            'search_url' => 'https://approve-existing.test/search?q={query}',
+            'article_content_selector' => '.content',
+            'article_author_selector' => '.author',
+            'article_date_selector' => 'time',
+            'article_noise_selector' => '.noise',
+            'confidence' => 0.9,
+            'status' => 'lolos',
+            'test_result_json' => ['mode' => 'discovery', 'status' => 'verified'],
+        ]);
+
+        $iconResolver = Mockery::mock(NewsSourceIconResolver::class);
+        $iconResolver->shouldReceive('resolve')
+            ->once()
+            ->andReturnUsing(function ($baseUrl, $domain, $name) use (&$resolverArgs) {
+                $resolverArgs = [$baseUrl, $domain, $name];
+                return null;
+            });
+        $this->app->instance(NewsSourceIconResolver::class, $iconResolver);
+
+        Event::listen('eloquent.saving: ' . NewsSourceSuggestion::class, function (NewsSourceSuggestion $suggestion) {
+            if ($suggestion->status === 'verified' && $suggestion->approved_by !== null) {
+                throw new \RuntimeException('approve existing suggestion write failed with redis://user:password@internal-host:6379?token=super-secret-token');
+            }
+        });
+
+        try {
+            Livewire::actingAs($this->adminUser)
+                ->test(NewsSources::class)
+                ->call('testSuggestion', $suggestion->id)
+                ->call('approveSuggestion', $suggestion->id)
+                ->assertSet('flashType', 'error')
+                ->assertSet('flashMessage', 'Gagal menerapkan saran sumber berita. Silakan coba lagi.')
+                ->assertSet('showTestModal', true)
+                ->assertDontSee('super-secret-token');
+        } finally {
+            Event::forget('eloquent.saving: ' . NewsSourceSuggestion::class);
+        }
+
+        $this->assertSame([
+            'https://approve-existing.test',
+            'approve-existing.test',
+            'Updated Approved Source',
+        ], $resolverArgs);
+
+        $this->assertDatabaseHas('news_sources', [
+            'id' => $source->id,
+            'name' => 'Original Approved Source',
+        ]);
+
+        $this->assertDatabaseHas('news_source_suggestions', [
+            'id' => $suggestion->id,
+            'status' => 'lolos',
+            'approved_by' => null,
+        ]);
+    }
+
+    public function test_approve_suggestion_creates_source_atomically_when_new_source_write_fails(): void
+    {
+        $resolverArgs = null;
+        $suggestion = NewsSourceSuggestion::create([
+            'source_name' => 'New Approved Source',
+            'domain' => 'approve-new.test',
+            'base_url' => 'https://approve-new.test',
+            'search_url' => 'https://approve-new.test/search?q={query}',
+            'article_content_selector' => '.content',
+            'article_author_selector' => '.author',
+            'article_date_selector' => 'time',
+            'article_noise_selector' => '.noise',
+            'confidence' => 0.9,
+            'status' => 'verified',
+            'test_result_json' => ['mode' => 'discovery', 'status' => 'verified'],
+        ]);
+
+        $iconResolver = Mockery::mock(NewsSourceIconResolver::class);
+        $iconResolver->shouldReceive('resolve')
+            ->once()
+            ->andReturnUsing(function ($baseUrl, $domain, $name) use (&$resolverArgs) {
+                $resolverArgs = [$baseUrl, $domain, $name];
+                return null;
+            });
+        $this->app->instance(NewsSourceIconResolver::class, $iconResolver);
+
+        Event::listen('eloquent.saving: ' . NewsSourceSuggestion::class, function (NewsSourceSuggestion $suggestion) {
+            if ($suggestion->status === 'verified' && $suggestion->approved_by !== null) {
+                throw new \RuntimeException('approve new suggestion write failed with redis://user:password@internal-host:6379?token=super-secret-token');
+            }
+        });
+
+        try {
+            Livewire::actingAs($this->adminUser)
+                ->test(NewsSources::class)
+                ->call('testSuggestion', $suggestion->id)
+                ->call('approveSuggestion', $suggestion->id)
+                ->assertSet('flashType', 'error')
+                ->assertSet('flashMessage', 'Gagal menerapkan saran sumber berita. Silakan coba lagi.')
+                ->assertSet('showTestModal', true)
+                ->assertDontSee('super-secret-token');
+        } finally {
+            Event::forget('eloquent.saving: ' . NewsSourceSuggestion::class);
+        }
+
+        $this->assertSame([
+            'https://approve-new.test',
+            'approve-new.test',
+            'New Approved Source',
+        ], $resolverArgs);
+
+        $this->assertDatabaseMissing('news_sources', [
+            'domain' => 'approve-new.test',
+        ]);
+
+        $this->assertDatabaseHas('news_source_suggestions', [
+            'id' => $suggestion->id,
+            'status' => 'verified',
+            'approved_by' => null,
+        ]);
+    }
+
     public function test_modal_view_contains_wire_confirm_and_loading_on_modal_buttons()
     {
         // Buka modal dengan suggestion aktif agar blok @if($showTestModal) di-render

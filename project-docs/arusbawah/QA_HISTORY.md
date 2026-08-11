@@ -580,6 +580,22 @@
 - `tests/Feature/AdminNewsSourcesTest.php` diperluas dengan regresi boundary resolver/transaction
 - Semua test News Sources lulus pada SQLite temp harness lokal
 
+## NEWS-SOURCES-APPROVE-SUGGESTION-ATOMICITY
+**Tanggal**: 2026-08-11
+**Area**: `/admin/news-sources` - approveSuggestion database atomicity
+
+### Skenario yang Diuji & Hasil:
+1. **Existing Source Rollback**: Update source dan save suggestion dibungkus atomik; jika suggestion save gagal, source tetap rollback.
+2. **New Source Rollback**: Create source baru dan save suggestion dibungkus atomik; jika suggestion save gagal, tidak ada orphan source.
+3. **Icon Boundary Preserved**: Resolusi icon tetap dieksekusi sebelum transaksi; verifikasi final memakai rollback behavior yang stabil di harness lokal.
+4. **Browser/Log Safety Preserved**: Pesan browser generik tetap dipakai dan tidak ada secret-like leakage.
+5. **Local-Only Verification**: Tidak ada production access, scraping, atau AI/provider call nyata.
+
+### Test Coverage:
+- `tests/Feature/AdminNewsSourcesTest.php` diperluas dengan regresi atomicity approveSuggestion
+- Semua test News Sources lulus pada SQLite temp harness lokal
+- Observability transaksi di harness SQLite dianggap bantu saja; verifikasi final memakai rollback behavior yang stabil di harness lokal
+
 ## DATABASE-MANAGEMENT-AUDIT-GAPS
 **Tanggal**: 2026-08-11
 **Area**: Admin Database Management service + Livewire wrapper

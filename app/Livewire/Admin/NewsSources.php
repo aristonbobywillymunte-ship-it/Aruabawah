@@ -1150,14 +1150,14 @@ class NewsSources extends Component
             'article_date_selector' => $suggestion->article_date_selector ?: $suggestion->newsSource?->article_date_selector,
             'article_noise_selector' => $suggestion->article_noise_selector ?: $suggestion->newsSource?->article_noise_selector,
         ];
-        $data = $this->syncIconUrl($data, $suggestion->newsSource);
-
         $data['feed_url'] = $suggestion->feed_url ?: $suggestion->newsSource?->feed_url;
         $data['search_url'] = $suggestion->search_url ?: $suggestion->newsSource?->search_url;
         $data['sitemap_url'] = $suggestion->sitemap_url ?: $suggestion->newsSource?->sitemap_url;
         $data['search_result_selector'] = $suggestion->search_result_selector ?: $suggestion->newsSource?->search_result_selector;
         $data['article_link_selector'] = $suggestion->article_link_selector ?: $suggestion->newsSource?->article_link_selector;
+        $data = $this->syncIconUrl($data, $suggestion->newsSource);
 
+        $source = null;
         if ($suggestion->news_source_id) {
             // Gunakan withTrashed() agar tidak throw ModelNotFoundException
             // jika source sudah soft-deleted sebelum suggestion di-approve.
@@ -1174,33 +1174,58 @@ class NewsSources extends Component
                 $this->notify('error', 'News Source terkait sudah dihapus. Pulihkan source atau buat source baru sebelum approve.');
                 return;
             }
-
-            if ($this->hasExistingActiveSource($normalizedDomain, $source->id)) {
-                $this->notify('info', 'Saran tersedia.');
-                return;
-            }
-
-            $source->update($data);
-        } else {
-            if ($this->hasExistingActiveSource($normalizedDomain, null)) {
-                $this->notify('info', 'Saran tersedia.');
-                return;
-            }
-
-            $source = NewsSource::create(array_merge($data, [
-                'crawling_type' => 'html',
-                'is_active' => true,
-                'is_search_enabled' => $testMode !== 'manual_url' ? false : false,
-                'is_feed_enabled' => false,
-                'is_sitemap_enabled' => false,
-            ]));
-            $suggestion->news_source_id = $source->id;
+        } elseif ($this->hasExistingActiveSource($normalizedDomain, null)) {
+            $this->notify('info', 'Saran tersedia.');
+            return;
         }
 
-        $suggestion->status = 'verified';
-        $suggestion->approved_by = auth()->id();
-        $suggestion->approved_at = now();
-        $suggestion->save();
+        try {
+            DB::transaction(function () use ($suggestion, $data, $testMode, $normalizedDomain, $source): void {
+                if ($source) {
+                    if ($this->hasExistingActiveSource($normalizedDomain, $source->id)) {
+                        throw new \RuntimeException('Saran tersedia.');
+                    }
+
+                    $source->update($data);
+                } else {
+                    $source = NewsSource::create(array_merge($data, [
+                        'crawling_type' => 'html',
+                        'is_active' => true,
+                        'is_search_enabled' => $testMode !== 'manual_url' ? false : false,
+                        'is_feed_enabled' => false,
+                        'is_sitemap_enabled' => false,
+                    ]));
+                    $suggestion->news_source_id = $source->id;
+                }
+
+                $suggestion->status = 'verified';
+                $suggestion->approved_by = auth()->id();
+                $suggestion->approved_at = now();
+                $suggestion->save();
+            });
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'Saran tersedia.') {
+                $this->notify('info', 'Saran tersedia.');
+                return;
+            }
+
+            $this->reportException('approve suggestion', $e, [
+                'suggestion_id' => $id,
+                'source_id' => $suggestion->news_source_id,
+                'admin_user_id' => auth()->id(),
+            ]);
+            $this->notify('error', 'Gagal menerapkan saran sumber berita. Silakan coba lagi.');
+            return;
+        } catch (\Throwable $e) {
+            $this->reportException('approve suggestion', $e, [
+                'suggestion_id' => $id,
+                'source_id' => $suggestion->news_source_id,
+                'admin_user_id' => auth()->id(),
+            ]);
+            $this->notify('error', 'Gagal menerapkan saran sumber berita. Silakan coba lagi.');
+            return;
+        }
+
         $this->flushSuggestionUiCache();
 
         $this->showTestModal = false;

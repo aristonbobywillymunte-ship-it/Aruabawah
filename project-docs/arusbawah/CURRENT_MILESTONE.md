@@ -1075,6 +1075,14 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - Stale `testing` state masih open.
 - Production tetap tidak tersentuh.
 
+## News Sources Approve Atomicity
+- `approveSuggestion()` sekarang memakai boundary DB yang sempit untuk existing-source update maupun new-source create.
+- Resolusi icon tetap dilakukan sebelum transaction.
+- Jika save suggestion gagal, source write ikut rollback dan tidak ada orphan source baru.
+- Log/browser safety tetap aman.
+- Approve atomicity ditutup tanpa menyentuh delete/restore/testing state.
+- Production tetap tidak tersentuh.
+
 ## Verifikasi
 - PHP lint pada file yang diubah lulus.
 - Targeted unit/feature tests menutup collision Redis, error snapshot, partial clear, admin guard, dan exception boundary.
