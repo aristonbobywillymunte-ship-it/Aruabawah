@@ -130,6 +130,8 @@ class SystemMaintenanceService
                         $succeededQueues++;
                     } elseif ($queueStatus === 'partial') {
                         $partialQueues++;
+                    } elseif ($queueStatus === 'failed') {
+                        $failedQueues++;
                     }
 
                     $results[] = $this->queueClearResult(

@@ -135,6 +135,31 @@ class SystemMaintenanceServiceTest extends TestCase
         $this->assertTrue($result['partial_failure']);
     }
 
+    public function test_pending_and_delayed_fail_count_as_failed_queue_not_partial_or_success(): void
+    {
+        $redis = new FakeQueueRedisConnection([
+            'queues:default' => ['job-a', 'job-b'],
+            'queues:default:delayed' => ['delayed-a'],
+            'queues:default:reserved' => ['reserved-a'],
+        ], throwOnDeleteFor: ['queues:default'], throwOnTrimFor: ['queues:default:delayed']);
+
+        $this->fakeRedisConnections(['default' => $redis]);
+
+        $result = app(SystemMaintenanceService::class)->clearPendingQueues();
+        $default = collect($result['queues'])->firstWhere('queue', 'default');
+
+        $this->assertSame('failed', $default['status']);
+        $this->assertSame('failed', $default['pending_status']);
+        $this->assertSame('failed', $default['delayed_status']);
+        $this->assertSame(0, $default['pending_removed']);
+        $this->assertSame(0, $default['delayed_removed']);
+        $this->assertSame(0, $result['deleted_jobs']);
+        $this->assertSame(1, $result['failed_queues']);
+        $this->assertSame(0, $result['partial_queues']);
+        $this->assertTrue($result['partial_failure']);
+        $this->assertArrayHasKey('queues:default:reserved', $redis->sets);
+    }
+
     public function test_reserved_sorted_sets_and_unrelated_keys_remain_untouched(): void
     {
         $redis = new FakeQueueRedisConnection([

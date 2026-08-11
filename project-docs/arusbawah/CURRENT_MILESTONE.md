@@ -1031,6 +1031,7 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - Aksi clear Redis memakai konfirmasi teks `HAPUS ANTREAN` dan hanya membersihkan pending/delayed.
 - Redis DEL tidak lagi dipakai sebagai sumber hitungan job; `pending_removed` dan `delayed_removed` memakai accounting dari snapshot awal.
 - Redis read failure, partial clear failure, dan error Artisan sekarang dilaporkan secara jujur tanpa zero palsu.
+- Full queue failure sekarang menaikkan `failed_queues` dengan benar.
 - Scheduler restart kini hanya punya satu consumer restart key di guard awal `routes/console.php`; heartbeat tidak lagi mengonsumsi key itu.
 - Tampilan maintenance menampilkan status antrean `OK` atau `Tidak tersedia` secara ringkas.
 
@@ -1039,6 +1040,7 @@ Memperkuat otorisasi aksi Deactivate, Restore, dan Force Delete proyek agar Clie
 - Tidak ada queue `scraping` yang dipakai sebagai target maintenance.
 - `apify` hanya diperlakukan sebagai queue pada koneksi Laravel `redis`, bukan queue AI.
 - Accounting partial dalam satu queue menandai `pending_status` dan `delayed_status` secara terpisah.
+- Queue yang pending dan delayed keduanya gagal kini dicatat sebagai `failed`, bukan `partial`.
 - Scheduler restart signal TTL tetap bounded sekitar 3 menit.
 - Tidak ada migration, deploy, atau akses production yang dilakukan dalam task ini.
 - Dirty file lama tetap dipertahankan.
