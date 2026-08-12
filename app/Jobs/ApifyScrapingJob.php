@@ -1227,7 +1227,11 @@ class ApifyScrapingJob implements ShouldQueue
             // Jika ada: tunda dispatch ke AI, simpan dengan comments_checked = false
             // Jika tidak ada: langsung dispatch ke AI dan set comments_checked = true
             $platformNeedsCommentCheck = in_array($platform, ['Instagram', 'TikTok', 'Facebook'], true)
-                && app(SocialCommentScraperDispatcher::class)->hasActiveCommentScraper((int) $projectId, $platform);
+                && $projectId
+                && app(SocialCommentScraperDispatcher::class)->hasEnabledCommentScraperActor(
+                    Project::findOrFail($projectId),
+                    $platform
+                );
 
             $targetPostUrl = $postUrl ?? ('apify-' . md5($content . $platform));
             $existingRecord = SocialMediaItem::where('post_url', $targetPostUrl)->first();

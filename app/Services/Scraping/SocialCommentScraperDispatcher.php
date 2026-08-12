@@ -78,6 +78,11 @@ class SocialCommentScraperDispatcher
         return $this->result(true, null, count($queuedUrls), $actor->id);
     }
 
+    public function hasEnabledCommentScraperActor(Project $project, string $platform): bool
+    {
+        return $this->resolveCommentScraperActor($project, $platform) !== null;
+    }
+
     public function resolveCandidateUrls(Project $project, string $platform): Collection
     {
         $platform = $this->normalizePlatform($platform) ?? $platform;
@@ -129,21 +134,32 @@ class SocialCommentScraperDispatcher
 
     public function resolveCommentScraperActor(Project $project, string $platform): ?ApifyActor
     {
-        $query = ApifyActor::query()
-            ->where('function_type', 'Comment Scraper')
-            ->where('platform', $platform)
-            ->where('status', 'active');
-
-        if ($project->package_id && $project->package) {
-            $packageActorIds = $project->package->enabledActors()->pluck('apify_actors.id')->toArray();
-            if ($packageActorIds === []) {
-                return null;
-            }
-
-            $query->whereIn('id', $packageActorIds);
+        if (! $project->package_id) {
+            return null;
         }
 
-        return $query->first();
+        $project = $project->fresh(['package']);
+        if (! $project?->package) {
+            return null;
+        }
+
+        $packageActorIds = $project->package->enabledActors()
+            ->where('function_type', 'Comment Scraper')
+            ->where('platform', $platform)
+            ->where('status', 'active')
+            ->pluck('apify_actors.id')
+            ->all();
+
+        if ($packageActorIds === []) {
+            return null;
+        }
+
+        return ApifyActor::query()
+            ->whereIn('id', $packageActorIds)
+            ->where('function_type', 'Comment Scraper')
+            ->where('platform', $platform)
+            ->where('status', 'active')
+            ->first();
     }
 
     public function hasActiveCommentScraper(int $projectId, string $platform): bool

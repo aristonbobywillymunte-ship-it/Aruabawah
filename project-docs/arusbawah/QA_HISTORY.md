@@ -599,3 +599,21 @@
 - PHP lint pada dispatcher, command, job, dan test
 
 **Status Akhir**: PASS (Local only)
+
+## SOCIAL-COMMENT-ELIGIBILITY-CORRECTION
+**Tanggal**: 2026-08-12
+**Area**: Social comment eligibility semantics
+
+### Skenario yang Diuji & Hasil:
+1. **Eligibility Semantics**: method availability now checks package-enabled Comment Scraper actors, while active dispatch-state remains a separate concurrency guard.
+2. **No Global Fallback**: projects without package authority cannot fall back to a global Comment Scraper actor.
+3. **Post-Import Trigger Ordering**: trigger order remains after persistence and project association, outside DB transaction.
+4. **Regression Coverage**: `tests/Feature/SocialCommentScraperDispatchTest.php` covers availability vs active-state distinction and no-package authority.
+5. **Apify Differential**: current `ApifyDispatchTest` failures remain identical to baseline/environment-only set; no new regression introduced.
+
+### Test Coverage:
+- `tests/Feature/SocialCommentScraperDispatchTest.php`
+- `tests/Feature/ApifyDispatchTest.php` current vs baseline differential
+- PHP lint on changed social comment files
+
+**Status Akhir**: PASS (Local only)

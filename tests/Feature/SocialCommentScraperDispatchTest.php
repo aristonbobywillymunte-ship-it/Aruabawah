@@ -42,10 +42,31 @@ class SocialCommentScraperDispatchTest extends TestCase
         Cache::flush();
         ApifyDispatchState::truncate();
 
+        $package = Package::create([
+            'name' => 'Fallback Package',
+            'description' => 'Test package',
+            'price' => 0,
+            'social_media_features' => [],
+            'news_portal_features' => [],
+            'advantages' => [],
+            'is_active' => true,
+            'use_portal' => true,
+            'news_interval_minutes' => 15,
+            'social_interval_minutes' => 15,
+            'news_runs_per_day' => 1,
+            'news_run_times' => ['08:00'],
+            'social_runs_per_day' => 1,
+            'social_run_times' => ['08:00'],
+            'is_popular' => false,
+            'max_projects' => 5,
+            'max_keywords_per_project' => 5,
+        ]);
+
         $project = Project::create([
             'name' => 'Wagub Kaltim',
             'topics' => ['Wagub Kaltim'],
             'is_active' => true,
+            'package_id' => $package->id,
         ]);
 
         $actor = ApifyActor::create([
@@ -59,6 +80,12 @@ class SocialCommentScraperDispatchTest extends TestCase
             'interval_minutes' => 30,
             'memory_limit' => 1024,
             'range_mode' => '7d',
+        ]);
+        $package->actors()->attach($actor->id, [
+            'is_enabled' => true,
+            'cost_per_run_usd' => 0.25,
+            'default_limit' => 10,
+            'memory_limit' => 1024,
         ]);
 
         $post = SocialMediaItem::create([
@@ -78,6 +105,34 @@ class SocialCommentScraperDispatchTest extends TestCase
         $this->assertTrue($result['dispatched']);
         $this->assertSame($actor->id, $result['actor_id']);
         Queue::assertPushed(ApifyScrapingJob::class, 1);
+    }
+
+    public function test_project_without_package_cannot_use_global_comment_actor(): void
+    {
+        $project = Project::create([
+            'name' => 'No Package Project',
+            'topics' => ['Wagub Kaltim'],
+            'is_active' => true,
+        ]);
+
+        ApifyActor::create([
+            'platform' => 'Instagram',
+            'actor_name' => 'Global Instagram Comment Scraper',
+            'actor_slug' => 'test/global-instagram-comment-scraper',
+            'function_type' => 'Comment Scraper',
+            'status' => 'active',
+            'priority' => 1,
+            'default_limit' => 10,
+            'interval_minutes' => 30,
+            'memory_limit' => 1024,
+            'range_mode' => '7d',
+        ]);
+
+        $dispatcher = app(SocialCommentScraperDispatcher::class);
+
+        $this->assertFalse($dispatcher->hasEnabledCommentScraperActor($project, 'Instagram'));
+        $this->assertNull($dispatcher->resolveCommentScraperActor($project, 'Instagram'));
+        $this->assertSame('comment_actor_missing', $dispatcher->dispatchEligible($project, 'Instagram')['reason']);
     }
 
     protected function runMainSocialImportDispatchScenario(string $platform, string $postUrl): void
@@ -135,9 +190,11 @@ class SocialCommentScraperDispatchTest extends TestCase
         ]);
 
         $dispatcher = Mockery::mock(SocialCommentScraperDispatcher::class);
-        $dispatcher->shouldReceive('hasActiveCommentScraper')
+        $dispatcher->shouldReceive('hasEnabledCommentScraperActor')
             ->once()
-            ->with($project->id, $platform)
+            ->withArgs(function (Project $boundProject, string $boundPlatform) use ($project, $platform) {
+                return $boundProject->id === $project->id && $boundPlatform === $platform;
+            })
             ->andReturn(true);
         $dispatcher->shouldReceive('dispatchEligible')
             ->once()
@@ -192,6 +249,12 @@ class SocialCommentScraperDispatchTest extends TestCase
                 ->exists(),
             'Social item must be linked to the project before comment dispatch verification completes.'
         );
+        $this->assertDatabaseHas('social_media_items', [
+            'post_url' => $postUrl,
+            'project_id' => $project->id,
+            'platform' => $platform,
+            'comments_checked' => false,
+        ]);
 
         Cache::flush();
     }

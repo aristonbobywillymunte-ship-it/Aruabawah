@@ -61,6 +61,8 @@
 - Confirmed async comment-dispatch race: scheduler scan bisa mendahului social post import, jadi komentar belum terlihat saat scan awal.
 - Post-import trigger sudah dipusatkan ke shared dispatcher agar comment dispatch berjalan setelah `SocialMediaItem` tersimpan dan project association ada.
 - Scheduler fallback tetap dipertahankan lewat shared dispatcher yang sama.
+- GitHub audit menemukan bug semantik: eligibility actor dan active dispatch-state tidak boleh memakai nama check yang sama.
+- `comments_checked` sekarang mengikuti actor-enabled package authority, bukan state queued/processing aktif.
 
 ### ACTOR
 - Actor mengontrol bagaimana scraping bekerja.
