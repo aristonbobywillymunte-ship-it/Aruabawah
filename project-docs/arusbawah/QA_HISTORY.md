@@ -673,6 +673,7 @@
 6. **Regression Coverage**: test tambahan memastikan payload yang dibangun dari candidate dispatcher tetap non-empty untuk Facebook, Instagram, dan TikTok.
 7. **Baseline Differential**: `ApifyDispatchTest` dan `TikTok` filtered run masih menampilkan failure baseline lama yang sama seperti SHA dasar; tidak ada regresi baru.
 8. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+9. **Isolated Test DB**: semua suite dijalankan pada PostgreSQL lokal `media_intelligent_testing`, bukan production.
 
 ### Catatan QA:
 - Bug root cause ada di dispatcher layer, bukan semata normalizer TikTok.

@@ -150,9 +150,9 @@
 - `php -l app/Services/Scraping/SocialCommentScraperDispatcher.php`: PASS
 - `php -l tests/Feature/SocialCommentScraperDispatchTest.php`: PASS
 - `php -l tests/Feature/ApifyDispatchTest.php`: PASS
-- `php artisan test --filter=SocialCommentScraperDispatchTest`: PASS pada SQLite temp test harness
-- `php artisan test --filter=ApifyDispatchTest`: FAIL dengan failure baseline yang sama seperti branch audit dasar
-- `php artisan test --filter=TikTok`: FAIL dengan failure baseline yang sama seperti branch audit dasar
+- `php artisan test --filter=SocialCommentScraperDispatchTest`: PASS pada PostgreSQL isolated local test DB `media_intelligent_testing`
+- `php artisan test --filter=ApifyDispatchTest`: FAIL dengan failure baseline yang sama seperti branch audit dasar pada PostgreSQL isolated local test DB `media_intelligent_testing`
+- `php artisan test --filter=TikTok`: FAIL dengan failure baseline yang sama seperti branch audit dasar pada PostgreSQL isolated local test DB `media_intelligent_testing`
 - `php artisan route:list`: PASS
 - `php artisan view:clear`: PASS
 - `git diff --check`: PASS
