@@ -108,9 +108,12 @@ class SocialCommentScraperDispatcher
 
         $doneCount = 0;
         $inProgressCount = 0;
+
         return $query->get(['post_url'])
-            ->filter(function ($item) use (&$doneCount, &$inProgressCount) {
-                $url = trim((string) $item->post_url);
+            ->map(function ($item) {
+                return trim((string) $item->post_url);
+            })
+            ->filter(function (string $url) use (&$doneCount, &$inProgressCount) {
                 if ($url === '') {
                     return false;
                 }

@@ -107,6 +107,119 @@ class SocialCommentScraperDispatchTest extends TestCase
         Queue::assertPushed(ApifyScrapingJob::class, 1);
     }
 
+    public function test_resolve_candidate_urls_returns_plain_strings_for_all_supported_platforms(): void
+    {
+        Cache::flush();
+
+        $package = Package::create([
+            'name' => 'String Candidate Package',
+            'description' => 'Test package',
+            'price' => 0,
+            'social_media_features' => [],
+            'news_portal_features' => [],
+            'advantages' => [],
+            'is_active' => true,
+            'use_portal' => true,
+            'news_interval_minutes' => 15,
+            'social_interval_minutes' => 15,
+            'news_runs_per_day' => 1,
+            'news_run_times' => ['08:00'],
+            'social_runs_per_day' => 1,
+            'social_run_times' => ['08:00'],
+            'is_popular' => false,
+            'max_projects' => 5,
+            'max_keywords_per_project' => 5,
+        ]);
+
+        $project = Project::create([
+            'name' => 'String Candidate Project',
+            'topics' => ['Wagub Kaltim'],
+            'is_active' => true,
+            'package_id' => $package->id,
+        ]);
+
+        $facebookActor = ApifyActor::create([
+            'platform' => 'Facebook',
+            'actor_name' => 'Facebook Comment Scraper',
+            'actor_slug' => 'test/facebook-comment-scraper-string',
+            'function_type' => 'Comment Scraper',
+            'status' => 'active',
+            'priority' => 1,
+            'default_limit' => 10,
+            'interval_minutes' => 30,
+            'memory_limit' => 1024,
+            'range_mode' => '7d',
+        ]);
+        $instagramActor = ApifyActor::create([
+            'platform' => 'Instagram',
+            'actor_name' => 'Instagram Comment Scraper',
+            'actor_slug' => 'test/instagram-comment-scraper-string',
+            'function_type' => 'Comment Scraper',
+            'status' => 'active',
+            'priority' => 1,
+            'default_limit' => 10,
+            'interval_minutes' => 30,
+            'memory_limit' => 1024,
+            'range_mode' => '7d',
+        ]);
+        $tiktokActor = ApifyActor::create([
+            'platform' => 'TikTok',
+            'actor_name' => 'TikTok Comment Scraper',
+            'actor_slug' => 'test/tiktok-comment-scraper-string',
+            'function_type' => 'Comment Scraper',
+            'status' => 'active',
+            'priority' => 1,
+            'default_limit' => 10,
+            'interval_minutes' => 30,
+            'memory_limit' => 1024,
+            'range_mode' => '7d',
+        ]);
+
+        foreach ([$facebookActor, $instagramActor, $tiktokActor] as $actor) {
+            $package->actors()->attach($actor->id, [
+                'is_enabled' => true,
+                'cost_per_run_usd' => 0.25,
+                'default_limit' => 10,
+                'memory_limit' => 1024,
+            ]);
+        }
+
+        foreach ([
+            'Facebook' => 'https://www.facebook.com/example/posts/123',
+            'Instagram' => 'https://www.instagram.com/p/example123/',
+            'TikTok' => 'https://www.tiktok.com/@example/video/123',
+        ] as $platform => $url) {
+            $item = SocialMediaItem::create([
+                'project_id' => $project->id,
+                'platform' => $platform,
+                'post_url' => $url,
+                'author_name' => 'Example Author',
+                'content' => 'Example content',
+                'posted_at' => now(),
+                'comments_checked' => false,
+            ]);
+            $item->projects()->attach($project->id);
+        }
+
+        $dispatcher = app(SocialCommentScraperDispatcher::class);
+
+        $facebookCandidates = $dispatcher->resolveCandidateUrls($project, 'Facebook');
+        $instagramCandidates = $dispatcher->resolveCandidateUrls($project, 'Instagram');
+        $tiktokCandidates = $dispatcher->resolveCandidateUrls($project, 'TikTok');
+
+        $this->assertNotEmpty($facebookCandidates);
+        $this->assertNotEmpty($instagramCandidates);
+        $this->assertNotEmpty($tiktokCandidates);
+
+        $this->assertTrue($facebookCandidates->every(fn ($candidate) => is_string($candidate)));
+        $this->assertTrue($instagramCandidates->every(fn ($candidate) => is_string($candidate)));
+        $this->assertTrue($tiktokCandidates->every(fn ($candidate) => is_string($candidate)));
+
+        $this->assertSame('https://www.facebook.com/example/posts/123', $facebookCandidates->first());
+        $this->assertSame('https://www.instagram.com/p/example123/', $instagramCandidates->first());
+        $this->assertSame('https://www.tiktok.com/@example/video/123', $tiktokCandidates->first());
+    }
+
     public function test_active_comment_scraper_blocks_duplicate_dispatch_for_same_project_and_platform(): void
     {
         Queue::fake();
@@ -192,6 +305,129 @@ class SocialCommentScraperDispatchTest extends TestCase
         $this->assertFalse($result['dispatched']);
         $this->assertSame('active_comment_scraper', $result['reason']);
         Queue::assertNothingPushed();
+    }
+
+    public function test_comment_payloads_use_resolved_string_urls_without_json_wrapping(): void
+    {
+        Cache::flush();
+
+        $package = Package::create([
+            'name' => 'Payload String Package',
+            'description' => 'Test package',
+            'price' => 0,
+            'social_media_features' => [],
+            'news_portal_features' => [],
+            'advantages' => [],
+            'is_active' => true,
+            'use_portal' => true,
+            'news_interval_minutes' => 15,
+            'social_interval_minutes' => 15,
+            'news_runs_per_day' => 1,
+            'news_run_times' => ['08:00'],
+            'social_runs_per_day' => 1,
+            'social_run_times' => ['08:00'],
+            'is_popular' => false,
+            'max_projects' => 5,
+            'max_keywords_per_project' => 5,
+        ]);
+
+        $project = Project::create([
+            'name' => 'Payload String Project',
+            'topics' => ['Wagub Kaltim'],
+            'is_active' => true,
+            'package_id' => $package->id,
+        ]);
+
+        $actor = ApifyActor::create([
+            'platform' => 'Facebook',
+            'actor_name' => 'Facebook Comment Scraper',
+            'actor_slug' => 'test/facebook-comment-scraper-payload',
+            'function_type' => 'Comment Scraper',
+            'status' => 'active',
+            'priority' => 1,
+            'default_limit' => 10,
+            'interval_minutes' => 30,
+            'memory_limit' => 1024,
+            'range_mode' => '7d',
+        ]);
+        $package->actors()->attach($actor->id, [
+            'is_enabled' => true,
+            'cost_per_run_usd' => 0.25,
+            'default_limit' => 10,
+            'memory_limit' => 1024,
+        ]);
+
+        $facebook = SocialMediaItem::create([
+            'project_id' => $project->id,
+            'platform' => 'Facebook',
+            'post_url' => 'https://www.facebook.com/example/posts/123',
+            'author_name' => 'Example Author',
+            'content' => 'Example content',
+            'posted_at' => now(),
+            'comments_checked' => false,
+        ]);
+        $facebook->projects()->attach($project->id);
+
+        $instagram = SocialMediaItem::create([
+            'project_id' => $project->id,
+            'platform' => 'Instagram',
+            'post_url' => 'https://www.instagram.com/p/example123/',
+            'author_name' => 'Example Author',
+            'content' => 'Example content',
+            'posted_at' => now(),
+            'comments_checked' => false,
+        ]);
+        $instagram->projects()->attach($project->id);
+
+        $tiktok = SocialMediaItem::create([
+            'project_id' => $project->id,
+            'platform' => 'TikTok',
+            'post_url' => 'https://www.tiktok.com/@example/video/123',
+            'author_name' => 'Example Author',
+            'content' => 'Example content',
+            'posted_at' => now(),
+            'comments_checked' => false,
+        ]);
+        $tiktok->projects()->attach($project->id);
+
+        $dispatcher = app(SocialCommentScraperDispatcher::class);
+        $candidates = $dispatcher->resolveCandidateUrls($project, 'Facebook');
+        $this->assertTrue($candidates->every(fn ($candidate) => is_string($candidate)));
+
+        $resolved = $candidates->values()->all();
+
+        $facebookPayload = (new ApifyActor([
+            'platform' => 'Facebook',
+            'actor_name' => 'Facebook Comment Scraper',
+            'actor_slug' => 'test/facebook-comment-scraper-payload',
+            'function_type' => 'Comment Scraper',
+            'default_limit' => 10,
+            'range_mode' => '7d',
+        ]))->buildInputPayload($resolved[0], 10, null, null, $resolved);
+
+        $instagramCandidates = $dispatcher->resolveCandidateUrls($project, 'Instagram');
+        $instagramPayload = (new ApifyActor([
+            'platform' => 'Instagram',
+            'actor_name' => 'Instagram Comment Scraper',
+            'actor_slug' => 'test/instagram-comment-scraper-payload',
+            'function_type' => 'Comment Scraper',
+            'default_limit' => 10,
+            'range_mode' => '7d',
+        ]))->buildInputPayload($instagramCandidates->first(), 10, null, null, $instagramCandidates->values()->all());
+
+        $tiktokCandidates = $dispatcher->resolveCandidateUrls($project, 'TikTok');
+        $tiktokPayload = (new ApifyActor([
+            'platform' => 'TikTok',
+            'actor_name' => 'TikTok Comment Scraper',
+            'actor_slug' => 'test/tiktok-comment-scraper-payload',
+            'function_type' => 'Comment Scraper',
+            'default_limit' => 10,
+            'range_mode' => '7d',
+        ]))->buildInputPayload($tiktokCandidates->first(), 10, null, null, $tiktokCandidates->values()->all());
+
+        $this->assertNotEmpty($facebookPayload['startUrls'] ?? []);
+        $this->assertNotEmpty($instagramPayload['directUrls'] ?? []);
+        $this->assertNotEmpty($tiktokPayload['postURLs'] ?? []);
     }
 
     public function test_project_without_package_cannot_use_global_comment_actor(): void

@@ -128,6 +128,40 @@
 - Runtime scraping tidak dijalankan.
 - Production tidak berubah.
 
+# Milestone: SOCIAL-COMMENT-DISPATCHER-URL-STRINGS
+
+## Apa yang Diubah
+- Root cause Facebook dan Instagram comment payload berasal dari `SocialMediaItem` model objects, bukan string URL murni.
+- `SocialCommentScraperDispatcher::resolveCandidateUrls()` sekarang mengembalikan `Collection<string>`.
+- TikTok defensive JSON parsing tetap dipertahankan untuk kompatibilitas backward.
+
+## Behavior Final
+- Dispatcher hanya menyerahkan string URL yang sudah trim dan lolos cache guard.
+- Facebook/Instagram payload kini menerima URL string langsung sebelum dibangun menjadi `startUrls`/`directUrls`.
+- TikTok tetap menerima URL string dan tetap aman jika ada JSON `post_url` historis.
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: NO
+- **Production berubah**: NO
+
+## Verifikasi
+- `php -l app/Services/Scraping/SocialCommentScraperDispatcher.php`: PASS
+- `php -l tests/Feature/SocialCommentScraperDispatchTest.php`: PASS
+- `php -l tests/Feature/ApifyDispatchTest.php`: PASS
+- `php artisan test --filter=SocialCommentScraperDispatchTest`: PASS pada SQLite temp test harness
+- `php artisan test --filter=ApifyDispatchTest`: FAIL dengan failure baseline yang sama seperti branch audit dasar
+- `php artisan test --filter=TikTok`: FAIL dengan failure baseline yang sama seperti branch audit dasar
+- `php artisan route:list`: PASS
+- `php artisan view:clear`: PASS
+- `git diff --check`: PASS
+
+## Catatan QA
+- Facebook dan Instagram sama-sama terpengaruh oleh bug payload model-object.
+- TikTok tetap aman karena defensive JSON normalization lama masih aktif.
+- GitHub audit diperlukan sebelum merge/deploy.
+
 ## Verifikasi
 - `php -l app/Models/ApifyActor.php`: PASS
 - `php -l tests/Feature/ApifyDispatchTest.php`: PASS

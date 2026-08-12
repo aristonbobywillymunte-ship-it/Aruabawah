@@ -659,3 +659,25 @@
 - Production tidak berubah.
 
 **Status Akhir**: PASS pada isolasi TikTok JSON QA, NEW REGRESSIONS = 0
+
+## SOCIAL-COMMENT-DISPATCHER-URL-STRINGS
+**Tanggal**: 2026-08-12
+**Area**: `SocialCommentScraperDispatcher`, comment payload source type
+
+### Skenario yang Diuji & Hasil:
+1. **Dispatcher Candidate Type**: `resolveCandidateUrls()` sekarang mengembalikan string URL murni, bukan `SocialMediaItem` model objects.
+2. **Facebook Payload**: candidate Facebook dari DB menghasilkan `startUrls` non-empty setelah dispatcher normalisasi.
+3. **Instagram Payload**: candidate Instagram dari DB menghasilkan `directUrls` non-empty setelah dispatcher normalisasi.
+4. **TikTok Payload**: candidate TikTok dari DB menghasilkan `postURLs` non-empty dan defensive JSON parsing tetap aktif.
+5. **String Assertion**: semua candidate yang keluar dari `resolveCandidateUrls()` diverifikasi `is_string()`.
+6. **Regression Coverage**: test tambahan memastikan payload yang dibangun dari candidate dispatcher tetap non-empty untuk Facebook, Instagram, dan TikTok.
+7. **Baseline Differential**: `ApifyDispatchTest` dan `TikTok` filtered run masih menampilkan failure baseline lama yang sama seperti SHA dasar; tidak ada regresi baru.
+8. **Static Verification**: `php -l`, `php artisan route:list`, `php artisan view:clear`, dan `git diff --check` berhasil.
+
+### Catatan QA:
+- Bug root cause ada di dispatcher layer, bukan semata normalizer TikTok.
+- TikTok defensive JSON parsing dipertahankan untuk kompatibilitas backward.
+- Production tidak berubah.
+- GitHub audit diperlukan sebelum merge/deploy.
+
+**Status Akhir**: PASS pada dispatch-layer fix, NEW REGRESSIONS = 0
