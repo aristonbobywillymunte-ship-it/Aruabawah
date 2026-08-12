@@ -428,8 +428,8 @@ class ApifyActor extends Model
 
         if (str_starts_with($value, '{') && str_ends_with($value, '}')) {
             $decoded = json_decode($value, true);
-            if (is_array($decoded) && isset($decoded['post_url'])) {
-                $value = trim((string) $decoded['post_url']);
+            if (is_array($decoded) && isset($decoded['post_url']) && is_string($decoded['post_url'])) {
+                $value = trim($decoded['post_url']);
                 $value = trim($value, " \t\n\r\0\x0B\"'`");
             }
         }
