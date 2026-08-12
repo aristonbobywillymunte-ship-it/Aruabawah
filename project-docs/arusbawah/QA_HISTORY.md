@@ -638,3 +638,24 @@
 - PHP lint on changed social comment files
 
 **Status Akhir**: PASS (Local only)
+
+## TIKTOK-COMMENT-FINAL-ISOLATED-QA
+**Tanggal**: 2026-08-12
+**Area**: TikTok comment JSON URL normalization
+
+### Skenario yang Diuji & Hasil:
+1. **Direct TikTok URL**: URL TikTok langsung tetap valid.
+2. **JSON Wrapped URL**: JSON string dengan `post_url` string tetap valid.
+3. **Malformed post_url Types**: `{"post_url":123}`, `null`, `[]`, dan `{}` ditolak aman tanpa warning.
+4. **No False Positive**: JSON tanpa `post_url`, non-TikTok URL, keyword proyek, dan input kosong tetap ditolak.
+5. **Isolated Test DB**: Laravel QA memakai PostgreSQL testing lokal `media_intelligent_testing`, bukan production.
+6. **Baseline Comparison**: `ApifyDispatchTest` current vs baseline memiliki 18 failure yang sama, jadi tidak ada regresi baru.
+7. **Static Verification**: `php -l app/Models/ApifyActor.php`, `php -l tests/Feature/ApifyDispatchTest.php`, dan `git diff --check` berhasil.
+
+### Catatan QA:
+- `php artisan test --filter=ApifyDispatchTest` tetap menampilkan failure baseline lama yang tidak terkait TikTok, tetapi kasus TikTok yang ditambah lulus.
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+- Production tidak berubah.
+
+**Status Akhir**: PASS pada isolasi TikTok JSON QA, NEW REGRESSIONS = 0

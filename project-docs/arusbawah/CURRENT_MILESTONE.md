@@ -118,6 +118,16 @@
 - **Runtime scheduler berubah**: NO
 - **Production berubah**: NO
 
+## Final Isolated QA
+- JSON `post_url` TikTok kini hanya diterima bila bertipe string.
+- Payload historis dengan `{"post_url":123}`, `null`, `[]`, dan `{}` ditolak aman tanpa warning.
+- Direct TikTok URL dan JSON `post_url` string tetap valid.
+- QA Laravel dijalankan terhadap database testing lokal terpisah `media_intelligent_testing`, bukan production.
+- `ApifyDispatchTest` masih punya 18 failure baseline yang sama di branch dan base SHA, jadi `NEW REGRESSIONS = 0`.
+- Browser QA tidak relevan.
+- Runtime scraping tidak dijalankan.
+- Production tidak berubah.
+
 ## Verifikasi
 - `php -l app/Models/ApifyActor.php`: PASS
 - `php -l tests/Feature/ApifyDispatchTest.php`: PASS

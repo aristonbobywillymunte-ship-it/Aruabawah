@@ -431,10 +431,7 @@ class ApifyDispatchTest extends TestCase
         $this->assertTrue($payload['proxyConfiguration']['useApifyProxy']);
     }
 
-    /**
-     * @dataProvider tikTokCommentUrlNormalizationCases
-     */
-    public function test_tiktok_comment_url_normalization_cases(string $input, string $expected): void
+    public function test_tiktok_comment_url_normalization_cases(): void
     {
         $actor = new ApifyActor([
             'platform' => 'TikTok',
@@ -447,12 +444,8 @@ class ApifyDispatchTest extends TestCase
 
         $ref = new \ReflectionClass($actor);
         $method = $ref->getMethod('normalizeTikTokCommentUrl');
-        $this->assertSame($expected, $method->invoke($actor, $input));
-    }
 
-    public static function tikTokCommentUrlNormalizationCases(): array
-    {
-        return [
+        $cases = [
             'direct url' => ['https://www.tiktok.com/@example/video/123', 'https://www.tiktok.com/@example/video/123'],
             'json wrapped url' => ['{"post_url":"https://www.tiktok.com/@example/video/123"}', 'https://www.tiktok.com/@example/video/123'],
             'invalid json' => ['{"foo":"bar"}', ''],
@@ -465,6 +458,10 @@ class ApifyDispatchTest extends TestCase
             'plain keyword' => ['Wagub Kaltim', ''],
             'empty' => ['', ''],
         ];
+
+        foreach ($cases as $label => [$input, $expected]) {
+            $this->assertSame($expected, $method->invoke($actor, $input), $label);
+        }
     }
 
     public function test_apify_social_search_results_are_trusted_without_caption_keyword_match()
