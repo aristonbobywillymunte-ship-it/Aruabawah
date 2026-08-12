@@ -7,17 +7,17 @@ use App\Models\Project;
 
 class ProjectsList extends \App\Http\Livewire\ProjectsList
 {
-    public function runScraping($projectId)
+    public function runScraping($id)
     {
-        $project = Project::accessibleBy(auth()->user())->findOrFail($projectId);
+        $project = Project::accessibleBy(auth()->user())->findOrFail($id);
 
         BootstrapNewProjectScrapingJob::dispatch($project->id);
 
-        $message = "Scraping untuk proyek '{$project->name}' sudah masuk antrean. Proses portal berita dan media sosial berjalan di latar belakang.";
-
+        $message = "Proyek '{$project->name}' telah didaftarkan ke antrean scraping langsung!";
         session()->flash('message', $message);
-        $this->notifyProjectAction($message, 'success');
+        $this->notifyProjectAction("Proyek '{$project->name}' sedang berjalan di background.", 'success');
 
-        return redirect()->to(request()->header('Referer') ?? '/');
+        $this->forgetProjectsCache();
+        $this->redirect(request()->header('Referer') ?: '/');
     }
 }
