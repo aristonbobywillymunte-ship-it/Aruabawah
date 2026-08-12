@@ -82,6 +82,27 @@
 
 **Status Akhir**: PASS
 
+# TIKTOK-COMMENT-PAYLOAD-FIX
+**Tanggal**: 2026-08-12
+**Area**: `ApifyActor::normalizeTikTokCommentUrl`, TikTok comment payload normalization
+
+### Skenario yang Diuji & Hasil:
+1. **Direct TikTok URL**: URL TikTok normal tetap lolos tanpa perubahan.
+2. **JSON post_url Extraction**: String JSON yang memuat `post_url` berhasil diekstrak menjadi URL TikTok valid.
+3. **Invalid JSON Safety**: JSON tanpa `post_url` tetap ditolak aman.
+4. **Non-TikTok Safety**: URL non-TikTok tetap ditolak.
+5. **Plain Keyword Safety**: Keyword proyek tidak masuk ke `postURLs`.
+6. **Historical Payload Proof**: Tiga nilai JSON historis menghasilkan `postURLs` count = 3.
+7. **Static Verification**: `php -l app/Models/ApifyActor.php` dan `php -l tests/Feature/ApifyDispatchTest.php` berhasil.
+8. **Pure PHP Proof**: Payload builder menghasilkan `postURLs` non-empty untuk input historis.
+
+### Catatan QA:
+- Laravel test harness lokal terblokir oleh autentikasi PostgreSQL testing yang gagal.
+- Runtime scraping tidak dijalankan.
+- Production tidak berubah.
+
+**Status Akhir**: PASS pada proof pure-PHP, BLOCKED untuk Laravel suite lokal
+
 # EFFECTIVE-SCHEDULE-RESOLVER-5B-INVALID-STATE-HOTFIX
 **Tanggal**: 2026-08-10
 **Area**: `ProjectScheduleResolver`, resolver state correctness

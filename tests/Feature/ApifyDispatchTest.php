@@ -398,6 +398,71 @@ class ApifyDispatchTest extends TestCase
         $this->assertTrue($payload['proxyConfiguration']['useApifyProxy']);
     }
 
+    public function test_tiktok_comment_payload_preserves_json_wrapped_post_urls(): void
+    {
+        $actor = new ApifyActor([
+            'platform' => 'TikTok',
+            'actor_name' => 'TikTok Comments Scraper',
+            'actor_slug' => 'clockworks/tiktok-comments-scraper',
+            'function_type' => 'Comment Scraper',
+            'default_limit' => 10,
+            'range_mode' => '7d',
+        ]);
+
+        $keywords = [
+            '{"post_url":"https://www.tiktok.com/@sahabat.rakyat49/video/7673063002341412103"}',
+            '{"post_url":"https://www.tiktok.com/@kaktimku/video/7673055151736851730"}',
+            '{"post_url":"https://www.tiktok.com/@tio19391/video/7672354918795070728"}',
+        ];
+
+        $payload = $actor->buildInputPayload($keywords[0], 10, null, null, $keywords);
+
+        $this->assertSame(['postURLs', 'commentsPerPost', 'proxyConfiguration'], array_keys($payload));
+        $this->assertCount(3, $payload['postURLs']);
+        $this->assertSame(10, $payload['commentsPerPost']);
+        $this->assertSame(
+            [
+                'https://www.tiktok.com/@sahabat.rakyat49/video/7673063002341412103',
+                'https://www.tiktok.com/@kaktimku/video/7673055151736851730',
+                'https://www.tiktok.com/@tio19391/video/7672354918795070728',
+            ],
+            $payload['postURLs']
+        );
+        $this->assertTrue($payload['proxyConfiguration']['useApifyProxy']);
+    }
+
+    /**
+     * @dataProvider tikTokCommentUrlNormalizationCases
+     */
+    public function test_tiktok_comment_url_normalization_cases(string $input, string $expected): void
+    {
+        $actor = new ApifyActor([
+            'platform' => 'TikTok',
+            'actor_name' => 'TikTok Comments Scraper',
+            'actor_slug' => 'clockworks/tiktok-comments-scraper',
+            'function_type' => 'Comment Scraper',
+            'default_limit' => 10,
+            'range_mode' => '7d',
+        ]);
+
+        $ref = new \ReflectionClass($actor);
+        $method = $ref->getMethod('normalizeTikTokCommentUrl');
+        $this->assertSame($expected, $method->invoke($actor, $input));
+    }
+
+    public static function tikTokCommentUrlNormalizationCases(): array
+    {
+        return [
+            'direct url' => ['https://www.tiktok.com/@example/video/123', 'https://www.tiktok.com/@example/video/123'],
+            'json wrapped url' => ['{"post_url":"https://www.tiktok.com/@example/video/123"}', 'https://www.tiktok.com/@example/video/123'],
+            'invalid json' => ['{"foo":"bar"}', ''],
+            'json without post_url' => ['{"url":"https://www.tiktok.com/@example/video/123"}', ''],
+            'non tiktok url' => ['https://example.com/@example/video/123', ''],
+            'plain keyword' => ['Wagub Kaltim', ''],
+            'empty' => ['', ''],
+        ];
+    }
+
     public function test_apify_social_search_results_are_trusted_without_caption_keyword_match()
     {
         ApifySetting::create([

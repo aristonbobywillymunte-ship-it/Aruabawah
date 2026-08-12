@@ -99,6 +99,35 @@
 - Scheduling phase: CLOSED / PRODUCTION READY
 - Remaining scheduling blockers: NONE
 
+# Milestone: TIKTOK-COMMENT-PAYLOAD-FIX
+
+## Apa yang Diubah
+- Root cause TikTok comment candidate bisa datang sebagai JSON string yang memuat `post_url`.
+- `normalizeTikTokCommentUrl()` sekarang mengekstrak `post_url` dari JSON payload sebelum validasi URL.
+- Regression test ditambahkan untuk menjaga payload comment TikTok tetap menghasilkan `postURLs` non-empty.
+
+## Behavior Final
+- URL TikTok langsung tetap valid.
+- JSON string yang berisi `post_url` valid juga diterima.
+- String invalid, JSON tanpa `post_url`, non-TikTok URL, keyword proyek, dan input kosong tetap ditolak aman.
+- Fix ini hanya untuk preservasi payload komentar TikTok.
+
+## Status Migrasi / Routing / Scraping
+- **Migration berubah**: NO
+- **Route berubah**: NO
+- **Runtime scheduler berubah**: NO
+- **Production berubah**: NO
+
+## Verifikasi
+- `php -l app/Models/ApifyActor.php`: PASS
+- `php -l tests/Feature/ApifyDispatchTest.php`: PASS
+- Pure PHP normalization/payload proof: PASS
+- Laravel test harness: BLOCKED oleh koneksi PostgreSQL testing yang gagal autentikasi
+
+## Catatan QA
+- `php artisan test --filter=ApifyDispatchTest` tidak bisa diselesaikan karena environment testing lokal mengarah ke PostgreSQL `media_intelligent_testing` dan gagal autentikasi.
+- Runtime scraping tidak dijalankan.
+
 # Milestone: APIFY Slot Recovery 8C
 
 ## Apa yang Diubah
