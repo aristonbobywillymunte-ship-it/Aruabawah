@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\SocialMediaComment;
 use App\Models\SocialMediaItem;
 use App\Services\AiAnalysisDispatchStateService;
+use App\Services\Scraping\SocialCommentScraperDispatcher;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -26,7 +27,6 @@ class ApifyScrapingJob implements ShouldQueue
 
     public int $tries = 3;
     public int $timeout = 1000;
-    private const COMMENT_SCRAPER_STALE_MINUTES = 45;
 
     public array $params;
 
@@ -1227,7 +1227,7 @@ class ApifyScrapingJob implements ShouldQueue
             // Jika ada: tunda dispatch ke AI, simpan dengan comments_checked = false
             // Jika tidak ada: langsung dispatch ke AI dan set comments_checked = true
             $platformNeedsCommentCheck = in_array($platform, ['Instagram', 'TikTok', 'Facebook'], true)
-                && $this->hasActiveCommentScraperForPlatform($platform, $projectId);
+                && app(SocialCommentScraperDispatcher::class)->hasActiveCommentScraper((int) $projectId, $platform);
 
             $targetPostUrl = $postUrl ?? ('apify-' . md5($content . $platform));
             $existingRecord = SocialMediaItem::where('post_url', $targetPostUrl)->first();
@@ -1398,163 +1398,29 @@ class ApifyScrapingJob implements ShouldQueue
             ]);
         }
 
+        if ($saved > 0
+            && $projectId
+            && strtolower((string) $actor->function_type) !== 'comment scraper'
+            && in_array($platform, ['Facebook', 'Instagram', 'TikTok'], true)) {
+            app(SocialCommentScraperDispatcher::class)->dispatchEligible($project ?? Project::find($projectId), $platform);
+        }
+
         // Logic Self-Chaining: Jika ini comment scraper dan masih ada URL tersisa dalam antrean proyek aktif,
         // langsung picu run berikutnya secara instan agar proses scraping terus berjalan tanpa henti.
-        if (strtolower((string) $actor->function_type) === 'comment scraper') {
-            $hasMoreQueue = false;
-            if ($projectId) {
-                $platformLower = strtolower($platform);
+        if (strtolower((string) $actor->function_type) === 'comment scraper' && $projectId) {
+            $commentDispatch = app(SocialCommentScraperDispatcher::class)->dispatchEligible(
+                $project ?? Project::find($projectId),
+                $platform,
+                forceDispatch: true
+            );
 
-                // Ambil kandidat langsung dari social_media_items tanpa bergantung tabel articles
-                $candidateQuery = \App\Models\SocialMediaItem::whereHas('projects', function($q) use ($projectId) {
-                    $q->where('projects.id', $projectId);
-                })
-                    ->where('platform', $platform)
-                    ->whereNotNull('post_url')
-                    ->where('comments_checked', false);
-
-                if ($platformLower === 'tiktok') {
-                    $candidateQuery = $candidateQuery
-                        ->where('post_url', 'like', '%tiktok.com/@%')
-                        ->where('post_url', 'like', '%/video/%');
-                } elseif ($platformLower === 'instagram') {
-                    $candidateQuery = $candidateQuery
-                        ->where('post_url', 'like', '%instagram.com/%');
-                } elseif ($platformLower === 'facebook') {
-                    $candidateQuery = $candidateQuery
-                        ->where('post_url', 'like', '%facebook.com/%');
-                }
-
-                $candidateItems = $candidateQuery
-                    ->orderBy('posted_at', 'desc')
-                    ->orderBy('id', 'desc')
-                    ->get(['post_url']);
-
-                foreach ($candidateItems as $candidateItem) {
-                    $urlHash = md5((string) $candidateItem->post_url);
-                    $doneKey       = 'comments_scraped_for_post:' . $urlHash;
-                    $inProgressKey = 'comments_scraping_in_progress:' . $urlHash;
-
-                    if (!Cache::has($doneKey) && !Cache::has($inProgressKey)) {
-                        $hasMoreQueue = true;
-                        break;
-                    }
-                }
-            }
-
-            if ($hasMoreQueue) {
-                // PROTEKSI: Cek apakah sudah ada job comment scraper aktif pada platform yang sama
-                $activeCommentScrapersCount = \App\Models\ApifyDispatchState::whereIn('status', ['queued', 'processing'])
-                    ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')
-                        ->where('platform', $platform)
-                        ->pluck('id'))
-                    ->where(function ($query) {
-                        $staleThreshold = now()->subMinutes(self::COMMENT_SCRAPER_STALE_MINUTES);
-                        $query->where(function ($queued) use ($staleThreshold) {
-                            $queued->where('status', 'queued')
-                                ->where('queued_at', '>=', $staleThreshold);
-                        })->orWhere(function ($processing) use ($staleThreshold) {
-                            $processing->where('status', 'processing')
-                                ->where(function ($active) use ($staleThreshold) {
-                                    $active->where('started_at', '>=', $staleThreshold)
-                                        ->orWhere('updated_at', '>=', $staleThreshold);
-                                });
-                        });
-                    })
-                    ->count();
-
-                if ($activeCommentScrapersCount > 0) {
-                    Log::info("[Apify] Self-chain dilewati: masih ada comment scraper aktif.");
-                } else {
-                    // Dispatch langsung ApifyScrapingJob ke Comment Scraper saja
-                    // (TIDAK memanggil scraping:run-apify agar Posts Search tidak ikut terpicu).
-                    $commentScraperActor = \App\Models\ApifyActor::where('function_type', 'Comment Scraper')
-                        ->where('platform', $platform)
-                        ->where('status', 'active')
-                        ->first();
-
-                    if ($commentScraperActor && $projectId) {
-                        $nextUrls = $this->resolveNextCommentUrls($projectId, $platform);
-
-                        if (!empty($nextUrls)) {
-                            Log::info("[Apify] Self-chain: dispatch Comment Scraper langsung untuk " . count($nextUrls) . " URL.", [
-                                'project_id'       => $projectId,
-                                'platform'         => $platform,
-                                'comment_actor_id' => $commentScraperActor->id,
-                                'urls'             => $nextUrls,
-                            ]);
-
-                            // Tandai URL sebagai in-progress agar tidak didispatch ganda
-                            foreach ($nextUrls as $urlToMark) {
-                                Cache::put(
-                                    'comments_scraping_in_progress:' . md5((string) $urlToMark),
-                                    true,
-                                    now()->addMinutes(30)
-                                );
-                            }
-
-                            self::dispatchSafely([
-                                'platform'       => $platform,
-                                'keyword'        => $nextUrls[0],
-                                'keywords'       => $nextUrls,
-                                'project_id'     => $projectId,
-                                'actor_id'       => $commentScraperActor->id,
-                                'force_dispatch' => true,
-                                'no_telegram'    => $suppressTelegram,
-                            ]);
-                        } else {
-                            Log::info("[Apify] Self-chain selesai: tidak ada URL komentar tersisa.", [
-                                'project_id' => $projectId,
-                                'platform'   => $platform,
-                            ]);
-                        }
-                    }
-                }
+            if (! ($commentDispatch['dispatched'] ?? false)) {
+                Log::info("[Apify] Self-chain selesai atau ditunda: " . ($commentDispatch['reason'] ?? 'no eligible URLs.'), [
+                    'project_id' => $projectId,
+                    'platform' => $platform,
+                ]);
             }
         }
-    }
-
-    /**
-     * Resolve next batch of unprocessed post URLs for comment scraping.
-     * Returns up to 3 URLs that haven't been scraped or marked in-progress.
-     */
-    protected function resolveNextCommentUrls(int $projectId, string $platform): array
-    {
-        $platformLower = strtolower($platform);
-
-        // Ambil kandidat langsung dari social_media_items, tanpa bergantung tabel articles.
-        // Hanya ambil postingan yang belum dicek komentarnya (comments_checked = false).
-        $candidateQuery = \App\Models\SocialMediaItem::whereHas('projects', function($q) use ($projectId) {
-            $q->where('projects.id', $projectId);
-        })
-            ->where('platform', $platform)
-            ->whereNotNull('post_url')
-            ->where('comments_checked', false)
-            ->orderBy('posted_at', 'desc')
-            ->orderBy('id', 'desc');
-
-        if ($platformLower === 'tiktok') {
-            $candidateQuery->where('post_url', 'like', '%tiktok.com/@%')
-                ->where('post_url', 'like', '%/video/%');
-        } elseif ($platformLower === 'instagram') {
-            $candidateQuery->where('post_url', 'like', '%instagram.com/%');
-        } elseif ($platformLower === 'facebook') {
-            $candidateQuery->where('post_url', 'like', '%facebook.com/%');
-        }
-
-        $results = [];
-        foreach ($candidateQuery->get(['post_url']) as $item) {
-            $urlHash = md5((string) $item->post_url);
-            if (!Cache::has('comments_scraped_for_post:' . $urlHash)
-                && !Cache::has('comments_scraping_in_progress:' . $urlHash)) {
-                $results[] = $item->post_url;
-                if (count($results) >= 3) {
-                    break;
-                }
-            }
-        }
-
-        return $results;
     }
 
     protected function detectSocialMediaType(array $item, string $platform): string
@@ -2101,47 +1967,6 @@ class ApifyScrapingJob implements ShouldQueue
             'lihat lebih banyak',
             'lihat selengkapnya',
         ];
-    }
-
-    /**
-     * Cek apakah ada actor Comment Scraper yang aktif untuk platform tertentu.
-     *
-     * Jika proyek menggunakan paket: hanya cek actor yang termasuk dalam paket.
-     * Jika tidak menggunakan paket: cek semua actor aktif secara global.
-     *
-     * Jika tidak ada comment scraper aktif → postingan langsung dianggap sudah dicek
-     * (tidak perlu menunggu komentar sebelum tampil ke user dan dikirim ke AI).
-     */
-    protected function hasActiveCommentScraperForPlatform(string $platform, ?int $projectId): bool
-    {
-        static $cache = [];
-        $cacheKey = "{$platform}|{$projectId}";
-        if (array_key_exists($cacheKey, $cache)) {
-            return $cache[$cacheKey];
-        }
-
-        $query = ApifyActor::where('function_type', 'Comment Scraper')
-            ->where('platform', $platform)
-            ->where('status', 'active');
-
-        // Jika proyek pakai paket: cek apakah comment scraper ada di dalam paket
-        if ($projectId) {
-            $project = \App\Models\Project::find($projectId);
-            if ($project && $project->package_id && $project->package) {
-                $packageActorIds = $project->package->enabledActors()->pluck('apify_actors.id')->toArray();
-                if (! empty($packageActorIds)) {
-                    $query->whereIn('id', $packageActorIds);
-                } else {
-                    // Paket ada tapi tidak punya actor sama sekali → tidak ada comment scraper
-                    $cache[$cacheKey] = false;
-                    return false;
-                }
-            }
-        }
-
-        $result = $query->exists();
-        $cache[$cacheKey] = $result;
-        return $result;
     }
 
     /**

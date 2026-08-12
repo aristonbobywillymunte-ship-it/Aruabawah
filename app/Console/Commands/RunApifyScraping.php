@@ -10,6 +10,7 @@ use App\Models\ScrapingSetting;
 use App\Models\ApifyActor as ApifyActorModel;
 use App\Services\ApifyActorRegistry;
 use App\Services\Scraping\ProjectScheduleResolver;
+use App\Services\Scraping\SocialCommentScraperDispatcher;
 use App\Services\SchedulerQueueGuard;
 use App\Services\SocialProjectScrapePriorityService;
 use Illuminate\Console\Command;
@@ -42,6 +43,7 @@ class RunApifyScraping extends Command
         private readonly SchedulerQueueGuard $schedulerQueueGuard,
         private readonly SocialProjectScrapePriorityService $socialProjectScrapePriorityService,
         private readonly ProjectScheduleResolver $projectScheduleResolver,
+        private readonly SocialCommentScraperDispatcher $socialCommentScraperDispatcher,
     )
     {
         parent::__construct();
@@ -209,31 +211,6 @@ class RunApifyScraping extends Command
 
                 $isCommentScraper = (strtolower((string) $actor->function_type) === 'comment scraper');
                 $platformKey = strtolower((string) $actor->platform);
-                $hasQueue = false;
-                if ($isCommentScraper) {
-                    $platformLower = $platformKey;
-                    $preCheckQuery = \App\Models\SocialMediaItem::where('project_id', $project->id)
-                        ->where('platform', $actor->platform)
-                        ->whereNotNull('post_url');
-
-                    if ($platformLower === 'tiktok') {
-                        $preCheckQuery = $preCheckQuery
-                            ->where('post_url', 'like', '%tiktok.com/@%')
-                            ->where('post_url', 'like', '%/video/%');
-                    } elseif ($platformLower === 'instagram') {
-                        $preCheckQuery = $preCheckQuery
-                            ->where('post_url', 'like', '%instagram.com/%');
-                    }
-
-                    $candidateCount = $preCheckQuery
-                        ->get(['post_url'])
-                        ->filter(function ($item) {
-                            $urlHash = md5((string) $item->post_url);
-                            return !\Illuminate\Support\Facades\Cache::has('comments_scraped_for_post:' . $urlHash)
-                                && !\Illuminate\Support\Facades\Cache::has('comments_scraping_in_progress:' . $urlHash);
-                        })->count();
-                    $hasQueue = ($candidateCount > 0);
-                }
 
                 // Comment scraper must keep checking the queue every scheduler tick.
                 // Do not block it behind actor interval timing when the queue is empty.
@@ -334,123 +311,35 @@ class RunApifyScraping extends Command
 
                     // =========================================================
                     // LOGIKA KHUSUS COMMENT SCRAPER
-                    // Alur: Ambil semua URL postingan dari proyek aktif (sesuai platform) →
-                    //       urut dari terbaru → ambil maks 3 yang belum dicek →
-                    //       tandai "dalam proses" → kirim ke Apify →
-                    //       setelah selesai, tandai "selesai" (permanen).
-                    //       Jika tidak ada antrean → skip tanpa membuang run.
+                    // Alur kandidat komentar dipusatkan di service shared agar
+                    // scheduler dan post-import trigger memakai aturan yang sama.
                     // =========================================================
                     if (strtolower((string) $actor->function_type) === 'comment scraper') {
-                        $platformLower = strtolower((string) $actor->platform);
+                        $commentDispatch = $this->socialCommentScraperDispatcher->dispatchEligible($project, $actor->platform);
 
-                        // Ambil semua postingan dari proyek aktif ini yang masih perlu
-                        // diperiksa komentarnya. SocialMediaItem adalah sumber kebenaran
-                        // untuk comment scraper, jadi jangan batasi lagi ke URL artikel
-                        // dashboard karena beberapa postingan valid belum tentu tercermin
-                        // di tabel Article dengan URL yang identik.
-                        $candidateQuery = \App\Models\SocialMediaItem::whereHas('projects', function($q) use ($project) {
-                            $q->where('projects.id', $project->id);
-                        })
-                            ->where('platform', $actor->platform)
-                            ->where('comments_checked', false)
-                            ->whereNotNull('post_url');
-
-                        if ($platformLower === 'tiktok') {
-                            $candidateQuery = $candidateQuery
-                                ->where('post_url', 'like', '%tiktok.com/@%')
-                                ->where('post_url', 'like', '%/video/%');
-                        } elseif ($platformLower === 'instagram') {
-                            $candidateQuery = $candidateQuery
-                                ->where('post_url', 'like', '%instagram.com/%');
-                        }
-
-                        $candidateItems = $candidateQuery
-                            ->orderBy('posted_at', 'desc')
-                            ->orderBy('id', 'desc')
-                            ->get(['id', 'post_url', 'comments_checked']);
-
-                        // PROTEKSI: Jangan kirim ke Apify jika masih ada job comment scraper aktif
-                        // pada platform yang sama. Facebook, Instagram, dan TikTok diperlakukan
-                        // dengan aturan antrean yang sama agar tidak saling memblokir.
-                        $activeCommentScrapersCount = \App\Models\ApifyDispatchState::whereIn('status', ['queued', 'processing'])
-                            ->whereIn('actor_id', \App\Models\ApifyActor::where('function_type', 'Comment Scraper')
-                                ->where('platform', $actor->platform)
-                                ->pluck('id'))
-                            ->where(function ($query) {
-                                $staleThreshold = now()->subMinutes(self::COMMENT_SCRAPER_STALE_MINUTES);
-
-                                $query->where(function ($queued) use ($staleThreshold) {
-                                    $queued->where('status', 'queued')
-                                        ->where('queued_at', '>=', $staleThreshold);
-                                })->orWhere(function ($processing) use ($staleThreshold) {
-                                    $processing->where('status', 'processing')
-                                        ->where(function ($active) use ($staleThreshold) {
-                                            $active->where('started_at', '>=', $staleThreshold)
-                                                ->orWhere('updated_at', '>=', $staleThreshold);
-                                        });
-                                });
-                            })
-                            ->count();
-
-                        if ($activeCommentScrapersCount > 0) {
-                            $this->line("Skipping Comment Scraper: [{$actor->platform}] project={$project->name} — masih ada job comment scraper aktif pada platform yang sama.");
-                            $socialLog->info('[Social] Comment Scraper skipped: another comment scraper job is active on the same platform.', [
-                                'project_id'   => $project->id,
+                        if (! ($commentDispatch['dispatched'] ?? false)) {
+                            $this->line("Skipping Comment Scraper: [{$actor->platform}] project={$project->name} — " . ($commentDispatch['reason'] ?? 'no eligible URLs.'));
+                            $socialLog->info('[Social] Comment Scraper skipped.', [
+                                'project_id' => $project->id,
                                 'project_name' => $project->name,
-                                'platform'     => $actor->platform,
-                                'actor_id'     => $actor->id,
+                                'platform' => $actor->platform,
+                                'actor_id' => $actor->id,
+                                'reason' => $commentDispatch['reason'] ?? 'unknown',
+                                'eligible_count' => $commentDispatch['count'] ?? 0,
                             ]);
                             continue;
                         }
 
-                        // Filter: ambil URL yang belum ditandai "selesai" DAN belum "dalam proses"
-                        $unprocessedUrls = [];
-                        foreach ($candidateItems as $candidateItem) {
-                            $urlHash = md5((string) $candidateItem->post_url);
-                            $doneKey       = 'comments_scraped_for_post:' . $urlHash;
-                            $inProgressKey = 'comments_scraping_in_progress:' . $urlHash;
-
-                            if (!Cache::has($doneKey) && !Cache::has($inProgressKey)) {
-                                $unprocessedUrls[] = $candidateItem->post_url;
-                                if (count($unprocessedUrls) >= 3) {
-                                    break; // Maksimal 3 URL per run
-                                }
-                            }
-                        }
-
-                        // Jika tidak ada antrean → skip, tidak perlu kirim ke Apify
-                        if (empty($unprocessedUrls)) {
-                            $this->line("Skipping Comment Scraper: [{$actor->platform}] project={$project->name} — tidak ada URL baru yang perlu di-scrape komentarnya.");
-                            $socialLog->info('[Social] Comment Scraper skipped: no unprocessed URLs in queue.', [
-                                'project_id'   => $project->id,
-                                'project_name' => $project->name,
-                                'platform'     => $actor->platform,
-                                'actor_id'     => $actor->id,
-                                'total_candidates' => $candidateItems->count(),
-                            ]);
-                            continue;
-                        }
-
-                        // Tandai URL sebagai "dalam proses" (TTL 30 menit) SEBELUM dispatch
-                        // agar run berikutnya tidak mendispatch URL yang sama ke Apify lagi.
-                        foreach ($unprocessedUrls as $urlToMark) {
-                            Cache::put(
-                                'comments_scraping_in_progress:' . md5((string) $urlToMark),
-                                true,
-                                now()->addMinutes(30)
-                            );
-                        }
-
-                        $this->line("Comment Scraper [{$actor->platform}] project={$project->name} — antrean: " . count($unprocessedUrls) . " URL.");
+                        $this->line("Comment Scraper [{$actor->platform}] project={$project->name} — antrean siap.");
                         $socialLog->info('[Social] Comment Scraper queue ready.', [
-                            'project_id'   => $project->id,
+                            'project_id' => $project->id,
                             'project_name' => $project->name,
-                            'platform'     => $actor->platform,
-                            'actor_id'     => $actor->id,
-                            'queued_urls'  => $unprocessedUrls,
+                            'platform' => $actor->platform,
+                            'actor_id' => $actor->id,
+                            'queued_count' => $commentDispatch['count'] ?? 0,
                         ]);
 
-                        $dispatchKeywords = $unprocessedUrls;
+                        continue;
                     }
 
 

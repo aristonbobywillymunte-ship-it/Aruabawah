@@ -580,3 +580,22 @@
 - PHP lint pada file yang diubah
 
 **Status Akhir**: PASS (Local only)
+
+## SOCIAL-COMMENT-POST-IMPORT-DISPATCH
+**Tanggal**: 2026-08-12
+**Area**: Social / Apify dispatch flow
+
+### Skenario yang Diuji & Hasil:
+1. **Async Race Confirmed**: scheduler comment scan awal memang bisa berjalan sebelum social post import selesai, sehingga kandidat komentar belum tampak pada scan pertama.
+2. **Post-Import Trigger**: shared dispatcher dipicu setelah `SocialMediaItem` tersimpan dan project association ada, bukan sebelum persist.
+3. **Shared Dispatcher**: kandidat komentar dipusatkan di `SocialCommentScraperDispatcher` agar scheduler fallback dan post-import trigger memakai aturan yang sama.
+4. **Recursion Guard**: comment scraper tetap tidak memicu comment scraper lain secara rekursif.
+5. **Baseline Differential**: `ApifyDispatchTest` current vs baseline menunjukkan failure set yang sama; SQLite `ILIKE` issue terbukti environment-only, bukan regresi baru.
+6. **Targeted Regression Test**: `tests/Feature/SocialCommentScraperDispatchTest.php` PASS pada isolasi SQLite temp.
+
+### Test Coverage:
+- `tests/Feature/SocialCommentScraperDispatchTest.php`
+- `tests/Feature/ApifyDispatchTest.php` differential current vs baseline
+- PHP lint pada dispatcher, command, job, dan test
+
+**Status Akhir**: PASS (Local only)
