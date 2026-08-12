@@ -36,4 +36,4 @@ Local runtime QA completed on isolated PostgreSQL `media_intelligent_testing`.
 - Production DB used: NO.
 - Production modified: NO.
 
-GitHub source audit is required once more before merge to `main`.
+GitHub source audit completed after local QA. Branch is ready for fast-forward merge to `main`.
