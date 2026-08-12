@@ -107,6 +107,93 @@ class SocialCommentScraperDispatchTest extends TestCase
         Queue::assertPushed(ApifyScrapingJob::class, 1);
     }
 
+    public function test_active_comment_scraper_blocks_duplicate_dispatch_for_same_project_and_platform(): void
+    {
+        Queue::fake();
+        Cache::flush();
+        ApifyDispatchState::truncate();
+
+        $package = Package::create([
+            'name' => 'Duplicate Guard Package',
+            'description' => 'Test package',
+            'price' => 0,
+            'social_media_features' => [],
+            'news_portal_features' => [],
+            'advantages' => [],
+            'is_active' => true,
+            'use_portal' => true,
+            'news_interval_minutes' => 15,
+            'social_interval_minutes' => 15,
+            'news_runs_per_day' => 1,
+            'news_run_times' => ['08:00'],
+            'social_runs_per_day' => 1,
+            'social_run_times' => ['08:00'],
+            'is_popular' => false,
+            'max_projects' => 5,
+            'max_keywords_per_project' => 5,
+        ]);
+
+        $project = Project::create([
+            'name' => 'Duplicate Guard Project',
+            'topics' => ['Wagub Kaltim'],
+            'is_active' => true,
+            'package_id' => $package->id,
+        ]);
+
+        $actor = ApifyActor::create([
+            'platform' => 'Facebook',
+            'actor_name' => 'Facebook Comment Scraper',
+            'actor_slug' => 'test/facebook-comment-scraper-active',
+            'function_type' => 'Comment Scraper',
+            'status' => 'active',
+            'priority' => 1,
+            'default_limit' => 10,
+            'interval_minutes' => 30,
+            'memory_limit' => 1024,
+            'range_mode' => '7d',
+        ]);
+        $package->actors()->attach($actor->id, [
+            'is_enabled' => true,
+            'cost_per_run_usd' => 0.25,
+            'default_limit' => 10,
+            'memory_limit' => 1024,
+        ]);
+
+        $post = SocialMediaItem::create([
+            'project_id' => $project->id,
+            'platform' => 'Facebook',
+            'post_url' => 'https://www.facebook.com/duplicate-guard/posts/1001',
+            'author_name' => 'Duplicate Guard',
+            'content' => 'Duplicate guard test post.',
+            'posted_at' => now(),
+            'comments_checked' => false,
+        ]);
+        $post->projects()->attach($project->id);
+
+        ApifyDispatchState::create([
+            'project_id' => $project->id,
+            'actor_id' => $actor->id,
+            'platform' => 'Facebook',
+            'keyword' => $post->post_url,
+            'normalized_keyword' => $post->post_url,
+            'dispatch_key' => 'comment-duplicate-guard',
+            'window_start' => now()->subMinutes(5),
+            'window_end' => now()->addMinutes(25),
+            'status' => 'processing',
+            'queued_at' => now()->subMinutes(1),
+            'started_at' => now()->subMinutes(1),
+            'updated_at' => now()->subMinutes(1),
+            'created_at' => now()->subMinutes(1),
+        ]);
+
+        $service = app(SocialCommentScraperDispatcher::class);
+        $result = $service->dispatchEligible($project, 'Facebook');
+
+        $this->assertFalse($result['dispatched']);
+        $this->assertSame('active_comment_scraper', $result['reason']);
+        Queue::assertNothingPushed();
+    }
+
     public function test_project_without_package_cannot_use_global_comment_actor(): void
     {
         $project = Project::create([
