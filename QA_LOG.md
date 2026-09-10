@@ -231,3 +231,21 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Status: **PASSED (Exit Code 0, Render HTML Output: 147.725 bytes, Zero Error)**.
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+### [QA-20260910-09] Perbaikan Jarak (Spacing / Gap) Antar Card pada Tab Wawasan
+* **Tanggal & Waktu**: 10 September 2026, 19:51 WIB
+* **Konteks Masalah**:
+  Pada Tab Wawasan (`tab=wawasan`), jarak vertikal antara 4 Card KPI Grid Atas (Indeks Reputasi, Kesehatan Sentimen, Sinyal Krisis, Kondisi Viral) dengan 2-Column Cards di bawahnya (Ringkasan Eksekutif & Distribusi Kategori Isu) menempel/bentrok tanpa jeda vertikal (*zero margin/gap collapse*) akibat elemen pembungkus `wire:loading.remove` tidak memiliki class spasi vertikal.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/media-dashboard.blade.php` (baris 3327–3332)
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Target URL: `http://localhost/?project=61&tab=d2F3YXNhbg==`
+* **Parameter & Hasil Pengujian**:
+  1. **Vertical Spacing Restoration**: Menambahkan class `space-y-6` pada elemen pembungkus `wire:loading.remove` sehingga terbentuk jarak proporsional 24px (`1.5rem`) antara baris 4 Card KPI atas dengan baris card detail analitik di bawahnya.
+  2. **Visual Consistency**: Menghilangkan efek tabrakan border antar card dan mengembalikan elevasi card yang lega dan nyaman dilihat.
+  3. **Physical Runtime Render Test**:
+     - Perintah: `php artisan view:clear` dan render view `welcome` via tinker.
+     - Status: **PASSED (Exit Code 0, Render HTML Output: 147.725 bytes, Zero Error)**.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

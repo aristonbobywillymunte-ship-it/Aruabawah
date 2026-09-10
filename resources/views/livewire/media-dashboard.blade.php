@@ -3327,7 +3327,7 @@
                             </div>
                         </div>
                     @else
-                        <div wire:loading.remove wire:target="search, startDate, endDate, selectedSources, selectedSentiment, selectedCategory, sortBy, setTab, projectId">
+                        <div wire:loading.remove wire:target="search, startDate, endDate, selectedSources, selectedSentiment, selectedCategory, sortBy, setTab, projectId" class="space-y-6">
                             <!-- Top Analytics KPI Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                         <!-- Card 1: Reputation Index -->
