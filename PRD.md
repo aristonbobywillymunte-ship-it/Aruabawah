@@ -751,3 +751,7 @@ Audit UI menemukan modal masih terlalu dekoratif untuk konteks dashboard operasi
 
 ### Keputusan
 Modal dinyatakan **OPEN untuk perbaikan UI**. Arah perbaikan: panel lebih sederhana, backdrop netral tanpa blur, copy lebih konkret, satu skala radius, CTA lebih jelas, dan penutupan Escape melalui action Livewire.
+
+## Bab 7.33 — Feedback Setelah Pembaruan Wawasan AI
+
+`generateAiInsights()` sudah menghasilkan `session()->flash('message')`, tetapi feedback sebelumnya hanya dirender di tab Kata Kunci. Akibatnya pengguna tab Wawasan tidak mendapat notifikasi setelah menekan **Ya, Perbarui**. Banner status sukses sekarang dirender langsung di header tab Wawasan dengan `role="status"`.

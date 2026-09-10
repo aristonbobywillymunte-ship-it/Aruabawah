@@ -1,5 +1,11 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260910-35] Notifikasi Sukses Pembaruan Wawasan AI
+* **Konteks**: `generateAiInsights()` membuat flash message, tetapi banner hanya dirender pada tab Kata Kunci sehingga feedback tidak terlihat setelah CTA modal diklik dari tab Wawasan.
+* **Perubahan**: Menambahkan banner status sukses langsung di header tab Wawasan.
+* **QA fisik**: `view:clear` berhasil; PHP lint berhasil; render terautentikasi tab Wawasan menghasilkan `RENDER_SUCCESS=152282`; `git diff --check` bersih.
+* **Status**: PASSED untuk compile/lint/render. Browser click test belum tersedia.
+
 ### [QA-20260910-34] Pemindahan Pemicu Modal Wawasan AI ke Livewire
 * **Konteks**: `@click` Alpine tidak membuka modal pada runtime pengguna.
 * **Perubahan**: Tombol memakai `wire:click="openAiInsightConfirmModal"`; modal dirender dengan state Livewire; tombol Batal dan CTA memakai action Livewire.
