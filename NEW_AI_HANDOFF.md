@@ -1,5 +1,15 @@
 # 📖 Panduan Serah Terima (Handoff) Proyek untuk AI Baru
 
+## Handoff 2026-09-10 — Overlay Tombol Perbarui Wawasan AI
+
+- **Masalah**: Overlay loading `preparePdfReport` memakai `fixed inset-0 z-[9999]` dan dapat menangkap klik saat idle.
+- **Perubahan**: `resources/views/livewire/media-dashboard.blade.php` menambahkan class `hidden` pada overlay; `wire:loading.flex` tetap mengaktifkan overlay hanya ketika request PDF berjalan.
+- **Behavior sebelum**: Overlay dapat menutupi halaman dan membuat tombol `Perbarui Wawasan AI` tidak merespons.
+- **Behavior sesudah**: Overlay tersembunyi pada kondisi idle; tombol dapat menerima klik dan membuka modal Alpine konfirmasi.
+- **Verifikasi**: `view:clear`, PHP lint, dan render terautentikasi tab Wawasan berhasil. Browser click test belum tersedia.
+- **Issue tersisa**: Jika runtime masih gagal, bersihkan cache/deploy source commit terbaru lalu ulangi browser test.
+- **Status QA**: PASSED untuk compile/render; browser QA OPEN.
+
 Dokumen ini ditujukan bagi AI coding assistant baru untuk memahami arsitektur, modul inti, struktur data, dan penyesuaian terbaru pada proyek **Arusbawah Media Intelligence**.
 
 ---

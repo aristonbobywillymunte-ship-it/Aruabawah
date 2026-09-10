@@ -1,4 +1,14 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
+
+### [QA-20260910-33] Perbaikan Overlay Loading yang Memblokir Tombol Wawasan AI
+* **Konteks**: Overlay `preparePdfReport` berpotensi tetap menangkap pointer event saat idle.
+* **Perubahan**: Menambahkan class `hidden` sebagai guard awal pada overlay di `resources/views/livewire/media-dashboard.blade.php`; `wire:loading.flex` tetap menampilkan overlay hanya saat request PDF aktif.
+* **QA fisik**:
+  - `docker exec media_intelligent_container php artisan view:clear` → berhasil.
+  - `docker exec media_intelligent_container php -l app/Livewire/MediaDashboard.php` → `No syntax errors detected`.
+  - Render `welcome` terautentikasi dengan project 61/tab Wawasan → `RENDER_SUCCESS=154532`.
+* **Status**: PASSED untuk lint, compile, dan render. Browser click test belum dijalankan pada sesi ini.
+* **Commit lokal**: pending.
 > **PANDUAN OPERASIONAL WAJIB AI**:
 > Setiap kali AI melakukan perbaikan bug, refactor, atau penambahan fitur, AI **WAJIB** menjalankan pengujian fisik langsung (PHP linting, query execution, render simulation di container Docker `media_intelligent_container`) dan mencatatnya ke file log ini.
 > Dokumen ini merupakan buku catatan mandiri (*standalone log*) terpisah untuk melacak riwayat pengujian fungsional secara rinci dan terstruktur.

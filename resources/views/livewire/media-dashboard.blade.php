@@ -5877,7 +5877,7 @@
 
 
     <!-- Global AI PDF Report Generation Modal Overlay -->
-    <div wire:loading.flex wire:target="preparePdfReport" style="display:none;" class="fixed inset-0 z-[9999] items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+    <div wire:loading.flex wire:target="preparePdfReport" style="display:none;" class="hidden fixed inset-0 z-[9999] items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-6 text-center">
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1fa387]/10 text-[#1fa387]">
                 <svg class="h-7 w-7 animate-spin" fill="none" viewBox="0 0 24 24">
