@@ -737,3 +737,17 @@ Pemanggilan AI untuk merumuskan wawasan dan rekomendasi memakan waktu proses kom
    - Menggunakan trap roda mouse `@wheel.self.prevent` dan sentuhan `@touchmove.self.prevent`.
    - Mendukung penutupan dengan tombol Escape dan klik di luar kontainer modal.
    - Ikon Material Symbols `auto_awesome` dan tombol eksekusi *"Ya, Perbarui"* dengan ikon `check_circle`.
+
+## Bab 7.32 — Audit Anti-Slop Modal Konfirmasi Wawasan AI
+
+### Status Audit
+Audit UI menemukan modal masih terlalu dekoratif untuk konteks dashboard operasional:
+
+- Backdrop blur, `rounded-3xl`, `shadow-2xl`, dan `z-[9999]` memberi bobot visual berlebihan pada konfirmasi sederhana.
+- Ikon `auto_awesome` dalam kotak 56px bersifat dekoratif dan kurang menjelaskan aksi.
+- Copy modal terlalu abstrak dan panjang; dampak aksi terhadap ringkasan/rekomendasi belum disebut secara langsung.
+- Footer memakai divider dan tiga tingkat radius (`rounded-3xl`, `rounded-2xl`, `rounded-xl`) sehingga hierarki visual terasa tidak konsisten.
+- Handler Escape masih memakai assignment Alpine, sedangkan state modal sekarang dikelola Livewire; perilaku Escape perlu diperbaiki saat refactor visual berikutnya.
+
+### Keputusan
+Modal dinyatakan **OPEN untuk perbaikan UI**. Arah perbaikan: panel lebih sederhana, backdrop netral tanpa blur, copy lebih konkret, satu skala radius, CTA lebih jelas, dan penutupan Escape melalui action Livewire.
