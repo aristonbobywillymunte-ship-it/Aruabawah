@@ -42,16 +42,44 @@ Repositori ini telah mengintegrasikan modul skill resmi di `.ai/skills/`:
 
 ---
 
-## 5. Larangan Keras & Kewajiban Mutlak (Non-Negotiable Guardrails)
+## 5. Standar Alur Kerja Profesional AI (The 5-Stage Professional Standard)
+Setiap AI yang bekerja pada repositori ini **WAJIB MENGIKUTI ALUR KERJA 5 TAHAP SECARA BERURUTAN**:
+
+```
+[Tahap 1: Context Ingestion] -> [Tahap 2: Root Cause Analysis] -> [Tahap 3: Surgical Fix] -> [Tahap 4: Physical QA] -> [Tahap 5: Dual Logging & Local Commit]
+```
+
+1. **Tahap 1: Context Ingestion (Baca Sebelum Sentuh Kode)**
+   - Wajib membaca `AI_HANDOFF_INSTRUCTIONS.md`, `PRD.md`, dan `QA_LOG.md` sebelum menulis satu baris kode pun.
+   - Pahami batasan, model data, dan pantangan yang berlaku.
+
+2. **Tahap 2: Root Cause Analysis & Reproduction (Investigasi & Buktikan Error)**
+   - Cari file menggunakan `grep_search` / `find_by_name` / `view_file`.
+   - Buktikan error secara nyata (*reproduce*) di container Docker (`media_intelligent_container`) untuk memperoleh stack trace/bukti kegagalan konkret.
+
+3. **Tahap 3: Surgical Fix (Perbaikan Presisi / Minimal Diff)**
+   - Terapkan perbaikan terfokus (minimal diff) tanpa merusak kode lain.
+   - Pastikan sintaks PHP valid dan bersihkan cache view jika menyentuh Blade (`php artisan view:clear`).
+
+4. **Tahap 4: Physical QA & Verification (Pengujian Nyata di Container)**
+   - **DILARANG menyatakan "selesai" tanpa pengujian fisik**.
+   - Jalankan simulasi atau eksekusi nyata di dalam container (PHP CLI / Tinker / Artisan test) hingga menghasilkan *exit code 0*.
+   - Uji skenario positif (*normal case*) dan skenario batas (*edge case / empty state*).
+
+5. **Tahap 5: Dual Logging & Safe Local Commit (Dokumentasi & Commit Lokal)**
+   - Catat detail pengujian lengkap di `QA_LOG.md` (ID, file target, perintah, actual output, status PASSED).
+   - Sinkronkan ringkasan di `PRD.md` Bab 6 (Log Progress) dan Bab 7 (Laporan QA).
+   - Lakukan `git add` & `git commit` di lokal.
+   - **STOP (DILARANG GIT PUSH OTOMATIS)**: Laporkan hasil ke user dan tunggu perintah eksplisit jika ingin di-push.
+
+---
+
+## 6. Larangan Keras & Kewajiban Mutlak (Non-Negotiable Guardrails)
 1. **Dilarang Mengubah Database Schema** tanpa instruksi eksplisit user.
 2. **Dilarang Berhalusinasi**: Jangan berasumsi file ada atau tidak ada tanpa menjalankan tool `view_file` atau `grep_search`.
-3. **WAJIB MELAKUKAN QA SETELAH SETIAP PERBAIKAN**:
-   - Setiap AI yang melakukan perbaikan kode/fitur **DILARANG HANYA MENGKLAIM SELESAI**.
-   - Wajib menjalankan verifikasi fisik langsung (PHP linting `php -l`, simulasi eksekusi terminal, atau verifikasi di dalam docker container `media_intelligent_container`).
-4. **WAJIB MENCATAT HASIL QA KE PRD BAB 7 & BUKU QA MANDIRI (`QA_LOG.md`)**:
-   - Seluruh hasil pengetesan, skenario uji, parameter, dan status kelulusan (PASSED/FAILED) **wajib didokumentasikan di `PRD.md` Bab 7 (Laporan Hasil Verifikasi QA) DAN dicatat secara detail pada `QA_LOG.md`**.
-5. **WAJIB MEMPERBARUI LOG PROGRESS (BAB 6)**:
-   - Setelah QA selesai dan dicatat, AI wajib memperbarui kronologi di `PRD.md` Bagian 6 sebelum mengakhiri sesi/merespon user.
+3. **WAJIB MELAKUKAN QA FISIK SETELAH SETIAP PERBAIKAN**: Dilarang hanya mengklaim selesai tanpa bukti output eksekusi di container Docker `media_intelligent_container`.
+4. **WAJIB MENCATAT HASIL QA KE PRD BAB 7 & BUKU QA MANDIRI (`QA_LOG.md`)**: Seluruh hasil pengetesan, skenario uji, parameter, dan status kelulusan (PASSED/FAILED) wajib didokumentasikan di `PRD.md` Bab 7 dan dicatat rinci pada `QA_LOG.md`.
+5. **WAJIB MEMPERBARUI LOG PROGRESS (PRD BAB 6)**: Setelah QA selesai dan dicatat, AI wajib memperbarui kronologi di `PRD.md` Bagian 6 sebelum mengakhiri sesi.
 6. **DILARANG KERAS GIT PUSH OTOMATIS (CUKUP COMMIT LOKAL)**:
    - AI **HANYA BOLEH MELAKUKAN GIT COMMIT** di repositori lokal.
    - **DILARANG MELAKUKAN `git push` SECARA MANDIRI/OTOMATIS**.

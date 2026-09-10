@@ -181,7 +181,28 @@ Sebelum mengeksekusi perintah terminal atau mengedit kode:
   - Wajib diterapkan untuk setiap pekerjaan desain antarmuka / UI Frontend.
   - Standar *anti-slop*: Larangan gradien ungu AI klise, larangan generic glassmorphism murahan, gunakan tipografi terstruktur dan inferensi *design read/dials* sebelum merevisi Blade/CSS.
 
-### 5.3 Larangan Keras & Batasan Kerja (Non-Negotiable)
+### 5.3 Standar Alur Kerja Profesional AI (The 5-Stage Professional Standard)
+Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori ini **WAJIB MENGIKUTI ALUR KERJA 5 TAHAP SECARA BERURUTAN**:
+
+```
+[Tahap 1: Ingest & Context Read] ➡️ [Tahap 2: Root Cause Analysis] ➡️ [Tahap 3: Surgical Fix] ➡️ [Tahap 4: Physical QA in Container] ➡️ [Tahap 5: Dual Logging & Local Commit]
+```
+
+1. **Tahap 1: Context Ingestion (Baca Sebelum Sentuh Kode)**:
+   - Wajib membaca `AI_HANDOFF_INSTRUCTIONS.md`, `PRD.md`, dan `QA_LOG.md` sebelum menulis satu baris kode pun.
+2. **Tahap 2: Root Cause Analysis & Reproduction (Investigasi & Buktikan Error)**:
+   - Verifikasi fisik via `grep_search` / `view_file` dan lakukan reproduksi error nyata di container Docker (`media_intelligent_container`) untuk memperoleh stack trace/kegagalan konkret.
+3. **Tahap 3: Surgical Fix (Perbaikan Presisi / Minimal Diff)**:
+   - Terapkan perbaikan terfokus (minimal diff) tanpa merusak bagian lain, pastikan sintaks PHP valid, dan bersihkan cache view (`php artisan view:clear`).
+4. **Tahap 4: Physical QA & Verification (Pengujian Nyata di Container)**:
+   - Dilarang menyatakan selesai tanpa pengujian fisik nyata di container. Wajib lolos *exit code 0* pada skenario positif dan skenario batas (*edge case*).
+5. **Tahap 5: Dual Logging & Safe Local Commit (Dokumentasi & Commit Lokal)**:
+   - Catat detail pengujian lengkap di `QA_LOG.md` (ID, file target, perintah, actual output, status PASSED).
+   - Sinkronkan ringkasan di `PRD.md` Bab 6 dan Bab 7.
+   - Lakukan `git add` & `git commit` di lokal.
+   - **STOP (DILARANG GIT PUSH OTOMATIS)**: Laporkan hasil ke user dan tunggu perintah eksplisit jika ingin di-push.
+
+### 5.4 Larangan Keras & Batasan Kerja (Non-Negotiable)
 1. **Workspace Terkunci**: Wajib bekerja hanya di `/Users/unity/Documents/proyek baru/` (bukan folder lain atau remote server).
 2. **Dilarang Mengubah Skema Database**: Dilarang menjalankan migrasi yang merusak skema tanpa persetujuan eksplisit user.
 3. **Verifikasi Fisik Sebelum Menjawab**: Dilarang menyimpulkan file/fitur ada atau tidak ada tanpa verifikasi langsung menggunakan `view_file` atau `grep_search`.
