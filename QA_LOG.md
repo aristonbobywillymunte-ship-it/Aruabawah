@@ -249,3 +249,27 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Status: **PASSED (Exit Code 0, Render HTML Output: 147.725 bytes, Zero Error)**.
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+### [QA-20260910-10] Penyesuaian Komprehensif Skeleton Loading Placeholder di Seluruh Card Tab Analisis
+* **Tanggal & Waktu**: 10 September 2026, 19:52 WIB
+* **Konteks Masalah**:
+  Saat Tab Analisis (`tab=analisis`, Base64: `YW5hbGlzaXM=`) pertama kali dimuat via `wire:init="loadAnalysis"`, skeleton loading sebelumnya hanya memiliki 1 baris dummy sederhana yang tidak sesuai dengan struktur card analitik yang kaya.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/media-dashboard.blade.php` (blok skeleton `!$analysisLoaded`, baris 1296–1310)
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Target URL: `http://localhost/?project=61&tab=YW5hbGlzaXM=`
+* **Parameter & Hasil Pengujian**:
+  1. **Mirroring Gambaran Umum Cards**:
+     - 3 Big KPI Cards (Total Artikel, Total Jangkauan, Interaksi Medsos) lengkap dengan placeholder ikon & metrik.
+     - 4 Channel Publication Breakdown Cards (Instagram, TikTok, Facebook, Berita Online) lengkap dengan logo kotak & ringkasan interaksi.
+     - 2 Sentiment Distribution Summary Cards (Medsos & Berita) lengkap dengan 3 kotak Positif/Netral/Negatif.
+  2. **Mirroring Grafik Tren Kinerja Proyek**: Kerangka header, filter interval button, dan area kanvas kurva.
+  3. **Mirroring Row 3 Grid**: Placeholder Word Cloud (Awan Kata) dan Distribusi Kategori Isu (baris progress baris).
+  4. **Mirroring Row 4 Grid**: Placeholder Peta Jaringan Isu (peta canvas) dan Daftar Berita Populer.
+  5. **Zero Layout Shift (CLS Protection)**: Mencegah terjadinya pergeseran layout mendadak saat data riil selesai dimuat oleh browser.
+  6. **Physical Runtime Render Test**:
+     - Perintah: `php artisan view:clear` dan render view `welcome` via tinker.
+     - Status: **PASSED (Exit Code 0, Render HTML Output: 147.160 bytes, Zero Error)**.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
