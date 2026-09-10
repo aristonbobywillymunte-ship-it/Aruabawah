@@ -115,6 +115,11 @@
                         @endphp
                         @foreach($menuItems as $item)
                             @php
+                                // admin.clients hanya untuk role 'user' (bukan admin)
+                                if (auth()->user()->isAdmin() && $item['route'] === 'admin.clients') {
+                                    continue;
+                                }
+                                // Non-admin hanya boleh lihat admin.clients
                                 if (!auth()->user()->isAdmin() && $item['route'] !== 'admin.clients') {
                                     continue;
                                 }
