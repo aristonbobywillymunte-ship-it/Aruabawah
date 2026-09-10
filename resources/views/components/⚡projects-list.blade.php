@@ -717,10 +717,11 @@ new class extends Component
         $project->update(['is_active' => true]);
 
         $this->showConfirmModal = false;
+        $this->resetConfirmState();
+        $this->forgetProjectsCache();
+        $this->projects = $this->getProjects();
         session()->flash('message', 'Proyek berhasil diaktifkan kembali.');
         $this->notifyProjectAction('Proyek aktif kembali dan siap dipantau.');
-        $this->showTrashedModal = false;
-        $this->resetConfirmState();
     }
 
     public function forceDeleteProject($id)
@@ -784,8 +785,9 @@ new class extends Component
         }
 
         $this->showConfirmModal = false;
-        $this->showTrashedModal = false;
         $this->resetConfirmState();
+        $this->forgetProjectsCache();
+        $this->projects = $this->getProjects();
         session()->flash('message', 'Proyek berhasil dihapus permanen. Data artikel tetap tersimpan.');
         $this->notifyProjectAction('Proyek dihapus permanen. Data artikel tetap aman.');
     }
@@ -1319,6 +1321,7 @@ new class extends Component
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
+                    @keydown.escape.window="!$wire.showConfirmModal && $wire.closeModals()"
                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
                 >
                     <div 
@@ -1388,15 +1391,21 @@ new class extends Component
                                             <div class="flex items-center gap-3 flex-shrink-0">
                                                 <button
                                                     wire:click="confirmRestoreProject({{ $tp->id }})"
-                                                    class="px-5 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer shadow-sm active:scale-[0.98]"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="confirmRestoreProject({{ $tp->id }})"
+                                                    class="px-5 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer shadow-sm active:scale-[0.98] disabled:opacity-50 inline-flex items-center gap-1.5"
                                                 >
-                                                    Aktifkan
+                                                    <svg wire:loading wire:target="confirmRestoreProject({{ $tp->id }})" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    <span>Aktifkan</span>
                                                 </button>
                                                 <button
                                                     wire:click="confirmForceDeleteProject({{ $tp->id }})"
-                                                    class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-650 text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer active:scale-[0.98]"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="confirmForceDeleteProject({{ $tp->id }})"
+                                                    class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-650 text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer active:scale-[0.98] disabled:opacity-50 inline-flex items-center gap-1.5"
                                                 >
-                                                    Hapus
+                                                    <svg wire:loading wire:target="confirmForceDeleteProject({{ $tp->id }})" class="animate-spin h-3.5 w-3.5 text-rose-650" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    <span>Hapus</span>
                                                 </button>
                                             </div>
                                         </div>

@@ -449,6 +449,25 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
        - Simulasi referer `http://localhost/?project=61&tab=YW5hbGlzaXM=`: **BACK URL terdeteksi presisi**, HTML Render **10.115 bytes** (exit code 0, zero error).
      - **Status**: **PASSED**.
 
+### 7.16 QA Verifikasi Modal Konfirmasi & Persistence Modal Proyek Dinonaktifkan (10 September 2026)
+* **Environment Pengujian**: Runtime Docker Container Lokal (`media_intelligent_container`), PHP 8.4 CLI, Laravel 11/13.17.
+* **Target Uji**: Modal "Proyek Dinonaktifkan" dan modal konfirmasi persetujuan pada `resources/views/components/⚡projects-list.blade.php`.
+* **Skenario & Hasil Pengujian**:
+  1. **Modal Konfirmasi Persetujuan Eksplisit**:
+     - Memastikan aksi "Aktifkan" dan "Hapus" tidak mengeksekusi langsung melainkan memicu dialog konfirmasi persetujuan (`showConfirmModal = true`) pada layer `z-[60]` dengan opsi Batal dan Konfirmasi.
+  2. **Pencegahan Penutupan Modal Prematur**:
+     - Menghapus statement `$this->showTrashedModal = false;` pada method `restoreProject()` dan `forceDeleteProject()` sehingga modal trashed tetap terbuka bagi pengguna untuk melanjutkan pengelolaan proyek.
+     - Menyegarkan cache proyek secara otomatis saat proyek dipulihkan atau dihapus permanen.
+  3. **Visual Feedback & Keyboard Listener**:
+     - Menambahkan indikator spinner SVG dan `wire:loading.attr="disabled"` pada tombol "Aktifkan" dan "Hapus".
+     - Menambahkan `@keydown.escape.window="!$wire.showConfirmModal && $wire.closeModals()"` pada modal.
+  4. **Verifikasi Render Fisik Runtime**:
+     - Linter PHP: `php -l resources/views/components/⚡projects-list.blade.php` -> No syntax errors detected.
+     - Compiled View: `php artisan view:clear` -> Clear successfully.
+     - Test Render Modal Trashed Livewire: **58.878 bytes**, exit code 0.
+     - **Status**: **PASSED**.
+
+
 
 
 

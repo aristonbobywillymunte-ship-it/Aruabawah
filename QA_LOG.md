@@ -405,3 +405,34 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Simulasi referer `http://localhost/?project=61&tab=YW5hbGlzaXM=`: **BACK URL terdeteksi presisi**, HTML Render **10.115 bytes** (exit code 0, zero error).
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+---
+
+### [QA-20260910-16] Audit & Perbaikan Modal Konfirmasi Persetujuan & Persistence Modal Proyek Dinonaktifkan
+* **Tanggal & Waktu**: 10 September 2026, 20:36 WIB
+* **Konteks Masalah**:
+  Audit pada modal "Proyek Dinonaktifkan" menemukan:
+  1. Fitur "Aktifkan" (restore) dan "Hapus" (force delete) memicu modal konfirmasi persetujuan (`showConfirmModal = true`), namun ketika aksi dieksekusi, modal "Proyek Dinonaktifkan" (`showTrashedModal`) ikut tertutup otomatis karena baris `$this->showTrashedModal = false;` di dalam fungsi `restoreProject()` dan `forceDeleteProject()`. Hal ini memaksa pengguna membuka ulang modal trashed setiap kali memproses proyek.
+  2. Tombol aksi "Aktifkan" dan "Hapus" pada modal trashed belum memiliki feedback `wire:loading.attr="disabled"` dan spinner SVG indikator loading saat memicu konfirmasi.
+  3. Modal trashed belum dilengkapi listener keyboard `@keydown.escape.window` untuk menutup modal dengan aman jika modal konfirmasi di atasnya tidak sedang aktif.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/components/⚡projects-list.blade.php`
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4 CLI, Laravel Livewire 3)
+* **Parameter & Hasil Pengujian**:
+  1. **Audit Alur Konfirmasi Persetujuan**:
+     - Memastikan aksi "Aktifkan" dan "Hapus" wajib melalui modal konfirmasi (`showConfirmModal = true`) pada z-index `z-[60]` dengan tombol "Batal" dan "Konfirmasi/Aktifkan/Hapus Permanen".
+     - `confirmRestoreProject()` dan `confirmForceDeleteProject()` tervalidasi menyetel parameter konfirmasi secara presisi.
+  2. **Eliminasi Auto-Close Prematur**:
+     - Menghapus `$this->showTrashedModal = false;` dari `restoreProject()` dan `forceDeleteProject()`.
+     - Menambahkan refresh cache proyek `$this->forgetProjectsCache();` dan `$this->projects = $this->getProjects();` agar daftar trashed dan daftar proyek aktif langsung tersinkronisasi tanpa menutup modal.
+  3. **Visual Feedback & Keyboard Listener**:
+     - Menambahkan atribut `wire:loading.attr="disabled"` dan spinner SVG pada tombol "Aktifkan" dan "Hapus".
+     - Menambahkan `@keydown.escape.window="!$wire.showConfirmModal && $wire.closeModals()"` pada kontainer modal trashed.
+  4. **Physical Runtime Verification**:
+     - Syntax Check: `php -l resources/views/components/⚡projects-list.blade.php` -> **No syntax errors detected**.
+     - View Clear: `php artisan view:clear` (exit code 0).
+     - Livewire Component Init & Trashed Modal Render Test: **58.878 bytes**, exit code 0.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
