@@ -796,4 +796,19 @@ Sebelumnya pengguna harus mengklik tombol tambah berkali-kali untuk menyusun slo
 3. **Pintasan Default & Reset**:
    - Menyediakan tautan cepat *"Gunakan Jadwal Default Paket"* untuk memulihkan jam default paket dan *"Kosongkan Semua"* untuk kembali mengikuti jadwal paket secara murni.
 
+## Bab 7.38 — Kontrol Tambah & Kurang Jam Dinamis pada Modal Paket Admin
+
+### Latar Belakang
+Paket adalah acuan fundamental alokasi operasional scraping yang diturunkan ke proyek user dan klien. Di modul admin paket (`/admin/packages`), admin sebelumnya tidak memiliki tombol tambah/kurang instan untuk menentukan jam run paket, sehingga harus mengedit angka teks manual untuk menyesuaikan jumlah jadwal harian.
+
+### Perubahan
+1. **Tombol Counter Cepat**:
+   - Menyediakan tombol `[-]` dan `[+]` pada `news_runs_per_day` dan `social_runs_per_day` di `PackageManager.php` dan tampilan blade.
+2. **Tombol Tambah & Hapus Slot Jam Langsung**:
+   - Tombol *"+ Tambah Jam"* disematkan langsung di atas daftar jam portal dan sosial media.
+   - Tombol hapus disematkan pada tiap baris jam dengan auto-sync ke nilai counter run harian paket.
+3. **Integritas Acuan Sistem**:
+   - Jam default dan kuota harian yang disimpan admin menjadi acuan baku yang otomatis diturunkan ke seluruh form pembuatan/pengeditan proyek user dan klien.
+
+
 

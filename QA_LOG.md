@@ -1,5 +1,14 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-45] Kontrol Tambah & Kurang Jam Dinamis pada Pengaturan Paket Admin
+* **Konteks**: Di `/admin/packages`, modal parameter paket sebelumnya mewajibkan admin mengetik angka manual di input text untuk menambah atau mengurangi run harian tanpa ada tombol interaktif tambah/kurang atau hapus slot jam. Padahal paket adalah acuan utama jalannya scraping untuk user dan klien di seluruh sistem.
+* **Perubahan**:
+  1. **Quick Counter Buttons**: Menambahkan tombol interaktif `[-]` dan `[+]` pada `news_runs_per_day` dan `social_runs_per_day` (`incrementNewsRuns`, `decrementNewsRuns`, `incrementSocialRuns`, `decrementSocialRuns`) di `PackageManager.php` dan `package-manager.blade.php`.
+  2. **Direct Add & Remove Slot**: Menambahkan tombol *"+ Tambah Jam"* di samping header portal/sosmed serta tombol silang *Hapus Slot* di samping setiap baris input waktu (`addNewsTimeSlot`, `removeNewsTimeSlot`, `addSocialTimeSlot`, `removeSocialTimeSlot`). Aksi ini otomatis menyelaraskan nilai counter harian paket.
+  3. **Integritas Acuan Paket**: Memastikan paket yang disimpan admin menjadi acuan baku yang konsisten bagi form proyek user dan klien.
+* **QA fisik**: `php -l` lulus pada `PackageManager.php`, `docker exec media_intelligent_container php artisan view:clear` sukses.
+* **Status**: PASSED.
+
 ### [QA-20260911-44] Otomatisasi Input Kolom Jam Scraping Mengikuti Alokasi Paket Tanpa Tombol Tambah/Hapus
 * **Konteks**: User meminta agar kolom input jam scraping proyek langsung terbuat secara otomatis sesuai jumlah alokasi paket (contoh paket 4x sehari langsung menampilkan 4 kolom jam), sehingga user tidak perlu lagi repot menekan tombol tambah atau menghapus kolom secara manual.
 * **Perubahan**:

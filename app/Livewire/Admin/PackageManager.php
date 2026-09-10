@@ -726,6 +726,86 @@ class PackageManager extends Component
         }
     }
 
+    public function incrementNewsRuns(): void
+    {
+        $current = (int) ($this->news_runs_per_day ?? 0);
+        if ($current < 24) {
+            $this->news_runs_per_day = $current + 1;
+            $this->news_run_times = $this->resizeTimeSlots($this->news_run_times, $this->news_runs_per_day);
+        }
+    }
+
+    public function decrementNewsRuns(): void
+    {
+        $current = (int) ($this->news_runs_per_day ?? 0);
+        if ($current > 1) {
+            $this->news_runs_per_day = $current - 1;
+            $this->news_run_times = $this->resizeTimeSlots($this->news_run_times, $this->news_runs_per_day);
+        } elseif ($current === 1) {
+            $this->news_runs_per_day = null;
+            $this->news_run_times = [];
+        }
+    }
+
+    public function addNewsTimeSlot(): void
+    {
+        $current = (int) ($this->news_runs_per_day ?? count($this->news_run_times));
+        if ($current < 24) {
+            $this->news_runs_per_day = $current + 1;
+            $this->news_run_times[] = '';
+        }
+    }
+
+    public function removeNewsTimeSlot(int $index): void
+    {
+        if (isset($this->news_run_times[$index])) {
+            unset($this->news_run_times[$index]);
+            $this->news_run_times = array_values($this->news_run_times);
+            $newCount = count($this->news_run_times);
+            $this->news_runs_per_day = $newCount > 0 ? $newCount : null;
+        }
+    }
+
+    public function incrementSocialRuns(): void
+    {
+        $current = (int) ($this->social_runs_per_day ?? 0);
+        if ($current < 24) {
+            $this->social_runs_per_day = $current + 1;
+            $this->social_run_times = $this->resizeTimeSlots($this->social_run_times, $this->social_runs_per_day);
+        }
+    }
+
+    public function decrementSocialRuns(): void
+    {
+        $current = (int) ($this->social_runs_per_day ?? 0);
+        if ($current > 1) {
+            $this->social_runs_per_day = $current - 1;
+            $this->social_run_times = $this->resizeTimeSlots($this->social_run_times, $this->social_runs_per_day);
+        } elseif ($current === 1) {
+            $this->social_runs_per_day = null;
+            $this->social_run_times = [];
+        }
+    }
+
+    public function addSocialTimeSlot(): void
+    {
+        $current = (int) ($this->social_runs_per_day ?? count($this->social_run_times));
+        if ($current < 24) {
+            $this->social_runs_per_day = $current + 1;
+            $this->social_run_times[] = '';
+        }
+    }
+
+    public function removeSocialTimeSlot(int $index): void
+    {
+        if (isset($this->social_run_times[$index])) {
+            unset($this->social_run_times[$index]);
+            $this->social_run_times = array_values($this->social_run_times);
+            $newCount = count($this->social_run_times);
+            $this->social_runs_per_day = $newCount > 0 ? $newCount : null;
+        }
+    }
+
     public function updatedNewsRunsPerDay($value): void
     {
         $this->news_run_times = $this->resizeTimeSlots($this->news_run_times, $value);

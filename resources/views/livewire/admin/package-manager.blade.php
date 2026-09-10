@@ -558,77 +558,126 @@
                             </div>
                             <p class="text-[10px] text-slate-400 -mt-2">Kosongkan jumlah run per hari untuk menggunakan interval lama.</p>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Portal Berita per Hari</label>
-                                    <span class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Opsional</span>
-                                </div>
-                                <input wire:model.live="news_runs_per_day" type="number" min="1" max="24" placeholder="Contoh: 3"
-                                    class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('news_runs_per_day') border-rose-300 bg-rose-50/50 @enderror" />
-                                @error('news_runs_per_day') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
-                                <p class="text-[10px] text-slate-400 mt-2">Isi berapa kali portal berita boleh berjalan dalam 24 jam.</p>
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Jam Portal Berita</label>
-                                    <span class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Opsional</span>
-                                </div>
-                                <div class="space-y-2">
-                                    @forelse($news_run_times as $index => $time)
-                                        <div class="space-y-1">
-                                            <input
-                                                wire:model.live="news_run_times.{{ $index }}"
-                                                type="time"
-                                                class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('news_run_times') border-rose-300 bg-rose-50/50 @enderror"
-                                            />
-                                            @error("news_run_times.{$index}")
-                                                <p class="text-rose-500 text-[10px] font-semibold">{{ $message }}</p>
-                                            @enderror
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                {{-- Kolom Portal Berita --}}
+                                <div class="p-3.5 bg-slate-50/70 rounded-xl border border-slate-100 space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-[11px] font-bold text-slate-750 tracking-wide">Portal Berita per Hari</label>
+                                        <div class="flex items-center gap-1.5">
+                                            <button type="button" wire:click="decrementNewsRuns" title="Kurangi 1 Run"
+                                                class="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-red-500 hover:border-red-200 flex items-center justify-center text-xs font-bold transition shadow-2xs cursor-pointer">
+                                                -
+                                            </button>
+                                            <span class="w-8 text-center text-xs font-extrabold text-[#1fa387] bg-white border border-[#1fa387]/30 py-0.5 rounded-lg">
+                                                {{ (int) ($news_runs_per_day ?? 0) }}
+                                            </span>
+                                            <button type="button" wire:click="incrementNewsRuns" title="Tambah 1 Run"
+                                                class="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-[#1fa387] hover:border-[#1fa387]/40 flex items-center justify-center text-xs font-bold transition shadow-2xs cursor-pointer">
+                                                +
+                                            </button>
                                         </div>
-                                    @empty
-                                        <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-[10px] text-slate-400">
-                                            Atur jumlah run per hari untuk menampilkan slot jam portal.
+                                    </div>
+                                    <p class="text-[10px] text-slate-400">Isi berapa kali portal berita berjalan dalam 24 jam.</p>
+
+                                    <div class="pt-2 border-t border-slate-200/60 space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <label class="text-[11px] font-bold text-slate-700">Jam Portal Berita</label>
+                                            @if((int) ($news_runs_per_day ?? 0) < 24)
+                                                <button type="button" wire:click="addNewsTimeSlot"
+                                                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-violet-200 text-violet-600 hover:bg-violet-50 text-[10px] font-bold rounded-lg transition cursor-pointer shadow-2xs">
+                                                    <span class="material-symbols-outlined text-[12px]">add</span>
+                                                    <span>Tambah Jam</span>
+                                                </button>
+                                            @endif
                                         </div>
-                                    @endforelse
-                                </div>
-                                @error('news_run_times') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Sosial Media per Hari</label>
-                                    <span class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Opsional</span>
-                                </div>
-                                <input wire:model.live="social_runs_per_day" type="number" min="1" max="24" placeholder="Contoh: 6"
-                                    class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('social_runs_per_day') border-rose-300 bg-rose-50/50 @enderror" />
-                                @error('social_runs_per_day') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
-                                <p class="text-[10px] text-slate-400 mt-2">Isi berapa kali sosial media boleh berjalan dalam 24 jam.</p>
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="text-[11px] font-bold text-slate-700 tracking-wide">Jam Sosial Media</label>
-                                    <span class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Opsional</span>
-                                </div>
-                                <div class="space-y-2">
-                                    @forelse($social_run_times as $index => $time)
-                                        <div class="space-y-1">
-                                            <input
-                                                wire:model.live="social_run_times.{{ $index }}"
-                                                type="time"
-                                                class="w-full px-4 py-2.5 rounded-xl border border-[#1fa387]/20 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#1fa387]/10 focus:border-[#1fa387] transition-all bg-slate-50/60 hover:bg-white @error('social_run_times') border-rose-300 bg-rose-50/50 @enderror"
-                                            />
-                                            @error("social_run_times.{$index}")
-                                                <p class="text-rose-500 text-[10px] font-semibold">{{ $message }}</p>
-                                            @enderror
+                                        <div class="space-y-1.5">
+                                            @forelse($news_run_times as $index => $time)
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="text-[10px] font-black text-violet-500 w-12 shrink-0 text-center bg-violet-50 py-1.5 rounded-lg border border-violet-100">
+                                                        Jam {{ $index + 1 }}
+                                                    </span>
+                                                    <input
+                                                        wire:model.live="news_run_times.{{ $index }}"
+                                                        type="time"
+                                                        class="flex-1 px-3 py-1.5 rounded-lg border border-[#1fa387]/20 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387] transition-all bg-white @error("news_run_times.{$index}") border-rose-300 bg-rose-50/50 @enderror"
+                                                    />
+                                                    <button type="button" wire:click="removeNewsTimeSlot({{ $index }})" title="Hapus Slot Jam Ini"
+                                                        class="p-1 text-slate-400 hover:text-red-500 hover:bg-white rounded-lg transition-colors cursor-pointer">
+                                                        <span class="material-symbols-outlined text-[15px]">close</span>
+                                                    </button>
+                                                </div>
+                                                @error("news_run_times.{$index}")
+                                                    <p class="text-rose-500 text-[10px] font-semibold">{{ $message }}</p>
+                                                @enderror
+                                            @empty
+                                                <div class="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-2.5 text-center text-[10px] text-slate-400">
+                                                    Belum ada slot jam. Klik tombol <strong>+ Tambah Jam</strong> atau naikkan run per hari.
+                                                </div>
+                                            @endforelse
                                         </div>
-                                    @empty
-                                        <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-[10px] text-slate-400">
-                                            Atur jumlah run per hari untuk menampilkan slot jam sosmed.
-                                        </div>
-                                    @endforelse
+                                        @error('news_run_times') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
+                                    </div>
                                 </div>
-                                @error('social_run_times') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
-                            </div>
+
+                                {{-- Kolom Sosial Media --}}
+                                <div class="p-3.5 bg-slate-50/70 rounded-xl border border-slate-100 space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-[11px] font-bold text-slate-750 tracking-wide">Sosial Media per Hari</label>
+                                        <div class="flex items-center gap-1.5">
+                                            <button type="button" wire:click="decrementSocialRuns" title="Kurangi 1 Run"
+                                                class="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-red-500 hover:border-red-200 flex items-center justify-center text-xs font-bold transition shadow-2xs cursor-pointer">
+                                                -
+                                            </button>
+                                            <span class="w-8 text-center text-xs font-extrabold text-[#1fa387] bg-white border border-[#1fa387]/30 py-0.5 rounded-lg">
+                                                {{ (int) ($social_runs_per_day ?? 0) }}
+                                            </span>
+                                            <button type="button" wire:click="incrementSocialRuns" title="Tambah 1 Run"
+                                                class="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-[#1fa387] hover:border-[#1fa387]/40 flex items-center justify-center text-xs font-bold transition shadow-2xs cursor-pointer">
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400">Isi berapa kali sosial media berjalan dalam 24 jam.</p>
+
+                                    <div class="pt-2 border-t border-slate-200/60 space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <label class="text-[11px] font-bold text-slate-700">Jam Sosial Media</label>
+                                            @if((int) ($social_runs_per_day ?? 0) < 24)
+                                                <button type="button" wire:click="addSocialTimeSlot"
+                                                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-sky-200 text-sky-600 hover:bg-sky-50 text-[10px] font-bold rounded-lg transition cursor-pointer shadow-2xs">
+                                                    <span class="material-symbols-outlined text-[12px]">add</span>
+                                                    <span>Tambah Jam</span>
+                                                </button>
+                                            @endif
+                                        </div>
+                                        <div class="space-y-1.5">
+                                            @forelse($social_run_times as $index => $time)
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="text-[10px] font-black text-sky-500 w-12 shrink-0 text-center bg-sky-50 py-1.5 rounded-lg border border-sky-100">
+                                                        Jam {{ $index + 1 }}
+                                                    </span>
+                                                    <input
+                                                        wire:model.live="social_run_times.{{ $index }}"
+                                                        type="time"
+                                                        class="flex-1 px-3 py-1.5 rounded-lg border border-[#1fa387]/20 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387] transition-all bg-white @error("social_run_times.{$index}") border-rose-300 bg-rose-50/50 @enderror"
+                                                    />
+                                                    <button type="button" wire:click="removeSocialTimeSlot({{ $index }})" title="Hapus Slot Jam Ini"
+                                                        class="p-1 text-slate-400 hover:text-red-500 hover:bg-white rounded-lg transition-colors cursor-pointer">
+                                                        <span class="material-symbols-outlined text-[15px]">close</span>
+                                                    </button>
+                                                </div>
+                                                @error("social_run_times.{$index}")
+                                                    <p class="text-rose-500 text-[10px] font-semibold">{{ $message }}</p>
+                                                @enderror
+                                            @empty
+                                                <div class="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-2.5 text-center text-[10px] text-slate-400">
+                                                    Belum ada slot jam. Klik tombol <strong>+ Tambah Jam</strong> atau naikkan run per hari.
+                                                </div>
+                                            @endforelse
+                                        </div>
+                                        @error('social_run_times') <p class="text-rose-500 text-[11px] font-semibold mt-1">{{ $message }}</p> @enderror
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
