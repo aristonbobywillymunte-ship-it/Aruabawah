@@ -56,9 +56,16 @@ class LoginController extends Controller
     /**
      * Show the change password form.
      */
-    public function showChangePasswordForm()
+    public function showChangePasswordForm(Request $request)
     {
-        return view('auth.change-password');
+        $referer = $request->header('referer');
+        if ($referer && !str_contains($referer, '/change-password')) {
+            session(['change_password_back_url' => $referer]);
+        }
+
+        $backUrl = session('change_password_back_url') ?: url('/');
+
+        return view('auth.change-password', compact('backUrl'));
     }
 
     /**

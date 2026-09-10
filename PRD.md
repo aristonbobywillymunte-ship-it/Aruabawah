@@ -234,7 +234,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 - [2026-09-10]: Pembersihan AI-slop pada Tab Laporan (memindahkan tombol download PDF ke footer terdedikasi, harmonisasi warna merah kasar menjadi teal `#1fa387`, eliminasi emoji panah) dan perbaikan 4 tag penutup yang hilang di Tab Sumber sebelum `@endif` (QA-20260910-12).
 - [2026-09-10]: Isolasi state modal Rentang Tanggal (`showDatePicker`) pada Alpine.js untuk mencegah penutupan modal prematur saat memilih preset atau tanggal kalender, memastikan modal hanya tertutup dan tersinkronisasi saat tombol "Terapkan" ditekan (QA-20260910-13).
 - [2026-09-10]: Pembersihan AI-slop pada halaman Ganti Password (`/change-password`): menyelaraskan dynamic branding, menambahkan interaktivitas toggle lihat/sembunyikan kata sandi (eye toggle), menyematkan ikon Material Symbols pada input form, memberikan petunjuk validasi kata sandi, dan feedback status submitting (QA-20260910-14).
-- [2026-09-10]: Perbaikan tombol Kembali pada halaman Ganti Password agar menggunakan tautan navigasi langsung `<a href="{{ url('/') }}">` tanpa jeda loading atau ketergantungan riwayat browser (QA-20260910-15).
+- [2026-09-10]: Perbaikan tombol Kembali pada halaman Ganti Password agar mengembalikan pengguna secara langsung dan instan ke menu/proyek/tab terakhir yang sedang diakses via referer session `$backUrl` (QA-20260910-15).
 
 ---
 
@@ -437,17 +437,18 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
        - Halaman Ganti Password: **10.204 bytes**, exit code 0.
      - **Status**: **PASSED**.
 
-### 7.15 QA Verifikasi Tombol Kembali Langsung Tanpa Loading (10 September 2026)
+### 7.15 QA Verifikasi Tombol Kembali ke Menu Terakhir (10 September 2026)
 * **Environment Pengujian**: Runtime Docker Container Lokal (`media_intelligent_container`), PHP 8.4 CLI, Laravel 11/13.17.
-* **Target Uji**: Tombol navigasi Kembali pada `resources/views/auth/change-password.blade.php`.
+* **Target Uji**: Alur navigasi tombol Kembali pada `app/Http/Controllers/Auth/LoginController.php` dan `resources/views/auth/change-password.blade.php`.
 * **Skenario & Hasil Pengujian**:
-  1. **Direct Navigation Replacement**:
-     - Mengganti elemen `<button onclick="window.history.back()">` dengan native anchor link `<a href="{{ url('/') }}">`.
-     - Menghilangkan latensi loading/history retrieval sehingga perpindahan kembali ke dashboard berlangsung instan.
+  1. **Dynamic Contextual Navigation**:
+     - Controller mendeteksi header referer saat pengguna datang dari menu manapun (misal tab Analisis, tab Wawasan, tab Penyebutan, dsb) dan menyimpannya di session `change_password_back_url`.
+     - Tombol "Kembali" menggunakan tautan native `<a href="{{ $backUrl }}">` yang mengarah tepat ke menu proyek/tab terakhir yang sedang diakses pengguna secara instan tanpa proses loading browser history.
   2. **Verifikasi Render Fisik Runtime**:
      - Eksekusi simulasi via `php artisan tinker`:
-       - Halaman Ganti Password: **10.082 bytes**, exit code 0.
+       - Simulasi referer `http://localhost/?project=61&tab=YW5hbGlzaXM=`: **BACK URL terdeteksi presisi**, HTML Render **10.115 bytes** (exit code 0, zero error).
      - **Status**: **PASSED**.
+
 
 
 

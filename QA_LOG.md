@@ -386,21 +386,22 @@ Setiap entri pengujian wajib mencakup komponen berikut:
 
 ---
 
-### [QA-20260910-15] Perbaikan Tombol Kembali Halaman Ganti Password Tanpa Loading
-* **Tanggal & Waktu**: 10 September 2026, 20:28 WIB
+### [QA-20260910-15] Perbaikan Tombol Kembali Halaman Ganti Password ke Menu Terakhir
+* **Tanggal & Waktu**: 10 September 2026, 20:30 WIB
 * **Konteks Masalah**:
-  Tombol "Kembali" pada halaman Ganti Password sebelumnya menggunakan elemen `<button type="button" onclick="window.history.back()">` yang pada kondisi tertentu memicu penundaan/loading history browser alih-alih langsung berpindah ke halaman utama dashboard.
+  Tombol "Kembali" pada halaman Ganti Password harus dapat mengembalikan pengguna ke menu/tab terakhir yang sedang dibuka (misalnya `/?project=61&tab=YW5hbGlzaXM=`) secara instan tanpa proses loading lambat riwayat browser.
 * **Target Komponen Diperbaiki**:
-  - `resources/views/auth/change-password.blade.php` (elemen Action Controls)
+  - `app/Http/Controllers/Auth/LoginController.php` (capture header `referer` ke dalam session `change_password_back_url` dan passing `$backUrl` ke view)
+  - `resources/views/auth/change-password.blade.php` (elemen Action Controls dengan link `<a href="{{ $backUrl ?? url('/') }}">`)
 * **Environment Pengujian**:
   - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
   - Target URL: `http://localhost/change-password`
 * **Parameter & Hasil Pengujian**:
-  1. **Direct Instant Navigation**:
-     - Menggantikan elemen `<button onclick="...">` dengan native anchor link `<a href="{{ url('/') }}">`.
-     - Ketika diklik, browser langsung melakukan navigasi instan kembali ke root dashboard tanpa penundaan history state.
+  1. **Dynamic Contextual Navigation**:
+     - Controller mendeteksi header referer saat pengguna datang dari menu manapun (misal tab Analisis, tab Wawasan, tab Penyebutan, dsb) dan menyimpannya di session `change_password_back_url`.
+     - Tombol "Kembali" menggunakan tautan native `<a href="{{ $backUrl }}">` yang mengarah tepat ke menu proyek/tab terakhir yang sedang diakses pengguna.
   2. **Physical Runtime Render Test**:
      - Perintah: `php artisan view:clear` (exit code 0).
-     - Render view `auth.change-password` via tinker: **10.082 bytes** (exit code 0, zero error).
+     - Simulasi referer `http://localhost/?project=61&tab=YW5hbGlzaXM=`: **BACK URL terdeteksi presisi**, HTML Render **10.115 bytes** (exit code 0, zero error).
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

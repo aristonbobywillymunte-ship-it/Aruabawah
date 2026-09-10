@@ -155,7 +155,7 @@
             <!-- Action Controls -->
             <div class="flex items-center justify-between pt-4 border-t border-slate-100">
                 <a
-                    href="{{ url('/') }}"
+                    href="{{ $backUrl ?? url('/') }}"
                     class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition py-2 px-1 cursor-pointer"
                 >
                     <span class="material-symbols-outlined text-[18px]">arrow_back</span>
