@@ -1,5 +1,18 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-52] Optimasi Layout Kolom Tabel Modal Antrean AI (Pencegahan Teks Judul Menabrak Kolom Lain)
+* **Konteks**: User melaporkan judul/konten pada tabel modal antrean AI (*Sistem Kesehatan AI - Daftar Antrean Berjalan (AI Pipeline)*) menabrak kolom-kolom sebelahnya.
+* **Perubahan**:
+  1. **Ekspansi Lebar Minimal Tabel (`table-fixed min-w-[960px]`)**:
+     - Menaikkan `min-w-[800px]` menjadi `min-w-[960px]` agar seluruh kolom memiliki ruang yang cukup dan tabel dapat di-scroll horizontal secara halus tanpa meremukkan sel isi.
+  2. **Alokasi Lebar Pasti & Truncation**:
+     - Memberikan lebar definitif `w-[320px]` untuk kolom `Judul / Konten` dengan penambahan proteksi `min-w-0 max-w-[320px]` dan `truncate flex items-center` pada link judul.
+     - Mengatur lebar kolom pendukung dengan proporsional: `# (w-12)`, `Tipe (w-28)`, `Tgl Konten (w-36)`, `Proyek (w-36 max-w-[140px] truncate)`, `Status (w-28)`, `Aksi (w-16)`, dan `Dibuat (w-36)`.
+     - Memastikan seluruh teks kolom tanggal, status, dan proyek diberi `whitespace-nowrap` agar tidak patah baris atau terdesak oleh panjangnya teks judul.
+* **QA fisik**: `php -l` lulus tanpa error sintaks pada `resources/views/livewire/admin/system-health.blade.php`. Tinker render view `admin.dashboard` terbukti `OK`. `php artisan view:clear` sukses.
+* **Status**: PASSED.
+
+
 ### [QA-20260911-51] Perbaikan Slop DOM Modal, Penutupan Div Liar, dan Keselarasan Tombol/Tabel Modal
 * **Konteks**: User meminta audit menyeluruh terhadap tombol-tombol dan tampilan tabel di seluruh modal dashboard admin (`/admin`), memeriksa slop, ketidaksesuaian label/kolom, serta tag penutup modal.
 * **Perubahan**:

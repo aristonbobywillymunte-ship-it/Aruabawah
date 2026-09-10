@@ -454,17 +454,17 @@
                         @else
                             <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white mb-3">
                                 <div class="overflow-x-auto">
-                                    <table class="min-w-[800px] w-full text-left border-collapse text-[11px] table-fixed">
+                                    <table class="min-w-[960px] w-full text-left border-collapse text-[11px] table-fixed">
                                 <thead>
                                     <tr class="bg-slate-50 border-b border-slate-200">
-                                        <th class="px-3 py-2 font-bold text-slate-500 w-10 text-center">#</th>
-                                        <th class="px-3 py-2 font-bold text-slate-500 w-24">Tipe</th>
-                                        <th class="px-3 py-2 font-bold text-slate-500 w-32">Tgl Konten</th>
-                                        <th class="px-3 py-2 font-bold text-slate-500">Judul / Konten</th>
-                                        <th class="px-3 py-2 font-bold text-slate-500 w-32">Proyek</th>
-                                        <th class="px-3 py-2 font-bold text-slate-500 w-24">Status</th>
-                                        <th class="px-3 py-2 font-bold text-slate-500 w-16 text-center">Aksi</th>
-                                        <th class="px-3 py-2 font-bold text-slate-500 w-32">Dibuat</th>
+                                        <th class="px-3 py-2.5 font-bold text-slate-500 w-12 text-center">#</th>
+                                        <th class="px-3 py-2.5 font-bold text-slate-500 w-28">Tipe</th>
+                                        <th class="px-3 py-2.5 font-bold text-slate-500 w-36">Tgl Konten</th>
+                                        <th class="px-3 py-2.5 font-bold text-slate-500 w-[320px]">Judul / Konten</th>
+                                        <th class="px-3 py-2.5 font-bold text-slate-500 w-36">Proyek</th>
+                                        <th class="px-3 py-2.5 font-bold text-slate-500 w-28">Status</th>
+                                        <th class="px-3 py-2.5 font-bold text-slate-500 w-16 text-center">Aksi</th>
+                                        <th class="px-3 py-2.5 font-bold text-slate-500 w-36">Dibuat</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -487,8 +487,8 @@
                                             <td class="px-3 py-2 text-center text-slate-400 font-bold align-middle">
                                                 {{ ($queueItems->currentPage() - 1) * $queueItems->perPage() + $idx + 1 }}
                                             </td>
-                                            <td class="px-3 py-2 align-middle">
-                                                <span class="inline-flex items-center gap-1 font-semibold text-slate-600">
+                                            <td class="px-3 py-2 align-middle whitespace-nowrap">
+                                                <span class="inline-flex items-center gap-1 font-semibold text-slate-600 truncate">
                                                     @if(str_contains(strtolower($item['type']), 'sosial') || str_contains(strtolower($item['type']), 'social') || str_contains(strtolower($item['type']), 'media'))
                                                         <span class="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0"></span>
                                                     @else
@@ -498,22 +498,22 @@
                                                 </span>
                                             </td>
                                             <td class="px-3 py-2 text-slate-500 align-middle whitespace-nowrap">{{ $item['content_date'] }}</td>
-                                            <td class="px-3 py-2 text-slate-800 align-middle">
+                                            <td class="px-3 py-2 text-slate-800 align-middle min-w-0 max-w-[320px]">
                                                 @if(!empty($item['url']))
-                                                    <a href="{{ $item['url'] }}" target="_blank" class="line-clamp-1 font-semibold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-0.5" title="{{ $item['title'] }}">
-                                                        <span class="truncate">{{ $item['title'] }}</span>
-                                                        <span class="material-symbols-outlined text-[12px] shrink-0">open_in_new</span>
+                                                    <a href="{{ $item['url'] }}" target="_blank" class="font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 max-w-full" title="{{ $item['title'] }}">
+                                                        <span class="truncate block">{{ $item['title'] }}</span>
+                                                        <span class="material-symbols-outlined text-[13px] shrink-0 text-blue-500">open_in_new</span>
                                                     </a>
                                                  @else
-                                                    <div class="line-clamp-1 text-slate-700" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
+                                                    <div class="truncate text-slate-700 font-medium" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
                                                 @endif
                                                 @if($item['status'] === 'retry_wait' && $item['error_message'])
                                                     <div class="text-[9px] text-rose-500 font-medium mt-0.5 truncate" title="{{ $item['error_message'] }}">
-                                                        ⚠ {{ Str::limit($item['error_message'], 60) }}
+                                                        ⚠ {{ Str::limit($item['error_message'], 50) }}
                                                     </div>
                                                 @endif
                                             </td>
-                                            <td class="px-3 py-2 font-semibold text-[#1fa387] align-middle truncate" title="{{ $item['project'] }}">
+                                            <td class="px-3 py-2 font-semibold text-[#1fa387] align-middle truncate whitespace-nowrap max-w-[140px]" title="{{ $item['project'] }}">
                                                 {{ $item['project'] }}
                                             </td>
                                             <td class="px-3 py-2 align-middle whitespace-nowrap">
@@ -521,7 +521,7 @@
                                                     {{ $statusLabel }}
                                                 </span>
                                             </td>
-                                            <td class="px-3 py-2 text-center font-bold text-slate-500 align-middle">
+                                            <td class="px-3 py-2 text-center font-bold text-slate-500 align-middle whitespace-nowrap">
                                                 <button type="button" wire:click="openConfirmModal('force_requeue', {{ $item['id'] }})" class="inline-flex items-center justify-center w-6 h-6 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md transition" title="Kirim Ulang">
                                                     <span class="material-symbols-outlined text-[14px]">refresh</span>
                                                 </button>
