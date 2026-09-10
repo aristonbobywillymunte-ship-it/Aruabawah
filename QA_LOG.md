@@ -773,3 +773,21 @@ Setiap entri pengujian wajib mencakup komponen berikut:
 ### Verifikasi
 - PHP lint: No syntax errors.
 - `php artisan view:clear`: OK.
+
+## [QA-20260910-28] Fix Kontras Teks & Ikon saat Hover Tombol Detail Proyek
+
+**Tanggal**: 2026-09-10
+**File**: `resources/views/components/⚡projects-list.blade.php`
+**Status**: ✅ FIXED
+
+### Masalah
+Saat tombol "Detail Proyek" di-hover, latar belakang berubah menjadi hijau (`#1fa387`) namun teks dan ikon tidak terlihat (invisible/kontras hilang) karena `hover:text-white` pada parent `<a>` tidak mewarisi secara eksplisit ke elemen anak atau belum ter-build.
+
+### Perbaikan
+1. Menambahkan utility class `group` pada kontainer tag `<a>` tombol "Detail Proyek".
+2. Menambahkan `group-hover:text-white transition-colors` pada label teks serta ikon `arrow_forward` dan spinner `progress_activity`.
+3. Menjalankan `npm run build` dan `php artisan view:clear` untuk memastikan utility class ter-compile sempurna ke dalam bundle CSS.
+
+### Verifikasi
+- Asset build: `npm run build` sukses (vite).
+- Cache view dibersihkan.

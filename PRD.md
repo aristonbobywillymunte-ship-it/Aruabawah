@@ -685,3 +685,13 @@ Tombol "Detail Proyek" pada kartu proyek masih menggunakan warna non-brand (`bor
 <!-- State loading -->
 <span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
 ```
+
+## Bab 7.28 — Perbaikan Kontras Hover pada Tombol "Detail Proyek"
+
+### Masalah
+Saat hover di atas tombol "Detail Proyek", latar belakang berubah menjadi warna hijau brand (`#1fa387`) namun teks dan ikon tidak tampak jelas (invisible) karena warna teks pada anak elemen (`<span>` teks dan ikon `material-symbols-outlined`) tidak otomatis terwarisi atau tertimpa dengan putih.
+
+### Solusi
+1. Menggunakan pola `group` pada parent `<a>`.
+2. Menyematkan kelas `group-hover:text-white transition-colors` pada span teks dan elemen ikon `arrow_forward` / `progress_activity`.
+3. Kompilasi asset via `npm run build` sehingga kelas CSS Tailwind v4 tersimpan ke production bundle.

@@ -1266,14 +1266,14 @@ new class extends Component
                                         wire:navigate
                                         href="{{ route('home', ['project' => base64_encode($project['id']), 'tab' => base64_encode('penyebutan')]) }}"
                                         @click="openingProject = true"
-                                        class="block w-full py-3 border border-[#1fa387] text-[#1fa387] rounded-xl text-center text-sm font-bold hover:bg-[#1fa387] hover:text-white cursor-pointer transition-colors"
+                                        class="group block w-full py-3 border border-[#1fa387] text-[#1fa387] rounded-xl text-center text-sm font-bold hover:bg-[#1fa387] hover:text-white cursor-pointer transition-colors"
                                     >
-                                        <span x-show="!openingProject" class="inline-flex items-center justify-center gap-2">
+                                        <span x-show="!openingProject" class="inline-flex items-center justify-center gap-2 group-hover:text-white transition-colors">
                                             Detail Proyek
-                                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                                            <span class="material-symbols-outlined text-[18px] group-hover:text-white transition-colors">arrow_forward</span>
                                         </span>
-                                        <span x-cloak x-show="openingProject" class="inline-flex items-center justify-center gap-2">
-                                            <span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                                        <span x-cloak x-show="openingProject" class="inline-flex items-center justify-center gap-2 group-hover:text-white transition-colors">
+                                            <span class="material-symbols-outlined text-[18px] animate-spin group-hover:text-white">progress_activity</span>
                                             Membuka...
                                         </span>
                                     </a>
