@@ -233,6 +233,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 - [2026-09-10]: Penambahan indikator loading visual reaktif pada input pencarian (animasi spinner di dalam text box & status "Mencari...") serta indikator status "Menyaring..." pada header utama Filter Panel dashboard (QA-20260910-11).
 - [2026-09-10]: Pembersihan AI-slop pada Tab Laporan (memindahkan tombol download PDF ke footer terdedikasi, harmonisasi warna merah kasar menjadi teal `#1fa387`, eliminasi emoji panah) dan perbaikan 4 tag penutup yang hilang di Tab Sumber sebelum `@endif` (QA-20260910-12).
 - [2026-09-10]: Isolasi state modal Rentang Tanggal (`showDatePicker`) pada Alpine.js untuk mencegah penutupan modal prematur saat memilih preset atau tanggal kalender, memastikan modal hanya tertutup dan tersinkronisasi saat tombol "Terapkan" ditekan (QA-20260910-13).
+- [2026-09-10]: Pembersihan AI-slop pada halaman Ganti Password (`/change-password`): menyelaraskan dynamic branding, menambahkan interaktivitas toggle lihat/sembunyikan kata sandi (eye toggle), menyematkan ikon Material Symbols pada input form, memberikan petunjuk validasi kata sandi, dan feedback status submitting (QA-20260910-14).
 
 ---
 
@@ -418,5 +419,22 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
      - Eksekusi simulasi via `php artisan tinker`:
        - Tab Penyebutan: **146.963 bytes**, exit code 0.
      - **Status**: **PASSED**.
+
+### 7.14 QA Verifikasi Pembersihan AI-Slop Halaman Ganti Password (10 September 2026)
+* **Environment Pengujian**: Runtime Docker Container Lokal (`media_intelligent_container`), PHP 8.4 CLI, Laravel 11/13.17.
+* **Target Uji**: Halaman Ganti Password (`/change-password` pada `resources/views/auth/change-password.blade.php`).
+* **Skenario & Hasil Pengujian**:
+  1. **Dynamic Branding**:
+     - Mengganti teks hardcoded dengan helper `AppBrandingHelper::getAppName()` dan `getAppLogoPath()`.
+  2. **Fitur Toggle Password Eye (Alpine.js)**:
+     - Mengintegrasikan toggle show/hide password pada ketiga field (*Password Saat Ini, Password Baru, Konfirmasi Password*).
+  3. **Visual Input Fields & Validasi**:
+     - Menambahkan ikon Material Symbols di setiap input serta panduan syarat panjang kata sandi minimal 8 karakter.
+     - Menambahkan feedback animasi submitting untuk mencegah klik ganda.
+  4. **Verifikasi Render Fisik Runtime**:
+     - Eksekusi simulasi via `php artisan tinker`:
+       - Halaman Ganti Password: **10.204 bytes**, exit code 0.
+     - **Status**: **PASSED**.
+
 
 

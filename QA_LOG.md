@@ -352,3 +352,34 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Render view `welcome` via tinker: **146.963 bytes** (exit code 0, zero error).
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+---
+
+### [QA-20260910-14] Pembersihan AI-Slop & Redesain Profesional Halaman Ganti Password
+* **Tanggal & Waktu**: 10 September 2026, 20:26 WIB
+* **Konteks Masalah**:
+  Audit pada rute `http://localhost/change-password` menemukan sejumlah cacat UI dan AI-slop:
+  1. Teks nama aplikasi dan judul masih di-hardcode ("Arusbawah Media Intelligence") alih-alih menggunakan helper branding dinamis.
+  2. Ketiadaan fitur toggle "Lihat/Sembunyikan Password" (eye toggle) yang menyulitkan pengguna memeriksa ketikan kata sandi baru.
+  3. Desain input field polos tanpa ikon representatif (`lock`, `key`, `verified_user`) dan ketiadaan petunjuk panjang password (minimal 8 karakter).
+  4. Template kartu terlihat mengambang polos (starter kit template slop) tanpa logo resmi organisasi.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/auth/change-password.blade.php`
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Target URL: `http://localhost/change-password`
+* **Parameter & Hasil Pengujian**:
+  1. **Dynamic Branding & Identity**:
+     - Menggunakan `\App\Helpers\AppBrandingHelper::getAppName()` dan `\App\Helpers\AppBrandingHelper::getAppLogoPath()`.
+  2. **Interaktivitas Toggle Password Eye**:
+     - Menghadirkan toggle show/hide berbasis Alpine.js (`showCurrent`, `showNew`, `showConfirm`) dengan ikon Material Symbols (`visibility` / `visibility_off`).
+  3. **Embedded Visual Icons & Focus Rings**:
+     - Menyematkan ikon `lock`, `key`, dan `verified_user` di sisi kiri setiap input, dengan padding proporsional dan efek focus ring teal `#1fa387`.
+  4. **Petunjuk Validasi & Loading State Submit**:
+     - Menambahkan teks keterangan minimal 8 karakter di bawah kolom password baru.
+     - Menambahkan animasi spinner loading saat form di-submit untuk mencegah double submission.
+  5. **Physical Runtime Render Test**:
+     - Perintah: `php artisan view:clear` (exit code 0).
+     - Render view `auth.change-password` via tinker: **10.204 bytes** (exit code 0, zero error).
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
