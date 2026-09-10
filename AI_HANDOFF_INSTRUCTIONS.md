@@ -51,4 +51,9 @@ Repositori ini telah mengintegrasikan modul skill resmi di `.ai/skills/`:
    - Seluruh hasil pengetesan, skenario uji, parameter, dan status kelulusan (PASSED/FAILED) **wajib didokumentasikan di `PRD.md` Bab 7 (Laporan Hasil Verifikasi QA)**.
 5. **WAJIB MEMPERBARUI LOG PROGRESS (BAB 6)**:
    - Setelah QA selesai dan dicatat, AI wajib memperbarui kronologi di `PRD.md` Bagian 6 sebelum mengakhiri sesi/merespon user.
+6. **DILARANG KERAS GIT PUSH OTOMATIS (CUKUP COMMIT LOKAL)**:
+   - AI **HANYA BOLEH MELAKUKAN GIT COMMIT** di repositori lokal.
+   - **DILARANG MELAKUKAN `git push` SECARA MANDIRI/OTOMATIS**.
+   - Tindakan `git push` **WAJIB MENUNGGU PERINTAH EKSPLISIT** dari user.
+
 

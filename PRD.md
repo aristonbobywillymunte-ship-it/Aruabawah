@@ -188,8 +188,10 @@ Sebelum mengeksekusi perintah terminal atau mengedit kode:
 4. **WAJIB MELAKUKAN QA SETELAH SETIAP PERBAIKAN**: Dilarang hanya mengklaim selesai. Setiap perbaikan kode/fitur wajib diuji secara nyata (PHP linting `php -l`, simulasi eksekusi terminal, atau test live di dalam container `media_intelligent_container`).
 5. **WAJIB MENDOKUMENTASIKAN HASIL QA KE BAB 7**: Seluruh parameter uji, skenario, dan status kelulusan (PASSED/FAILED) wajib ditulis lengkap di Bab 7 (Laporan Hasil Verifikasi QA).
 6. **Wajib Memperbarui Catatan Progres**: Setiap selesai melakukan task dan QA, AI **wajib** mencatat ringkasan perubahan di Bagian 6 dokumen ini agar AI berikutnya langsung tersinkronisasi.
+7. **DILARANG KERAS GIT PUSH OTOMATIS (CUKUP COMMIT LOKAL)**: AI hanya diizinkan membuat `git commit` di lokal. **Dilarang keras melakukan `git push` sendiri tanpa instruksi eksplisit dari user**.
 
 ---
+
 
 
 
@@ -205,8 +207,10 @@ Sebelum mengeksekusi perintah terminal atau mengedit kode:
 - [2026-09-10]: Analisis dan dokumentasi menyeluruh terhadap arsitektur Menu Penyebutan (Mentions Feed SQL Union, Quality Gate Anti-Noise & Selesai Komentar, Widget Jaringan Topik/Aktor, serta Mesin Filter Panel terpusat) dicatat resmi pada PRD Bagian 3.7.
 - [2026-09-10]: Audit mendalam, verifikasi stabilitas query, dan perbaikan halaman Analisis (Executive View, KPI Metrics, Distribusi Saluran Media, Komparasi Sentimen Sosmed vs Berita, serta Grafik Tren Vektor Spline) dicatat resmi pada PRD Bagian 3.8.
 - [2026-09-10]: Formalisasi aturan mutlak wajib QA dan dokumentasi: Setiap AI yang melakukan perbaikan kode diwajibkan melakukan pengetesan fisik nyata (QA), mencatat skenario dan hasilnya di Bab 7, serta memperbarui log Bab 6 sebelum mengakhiri sesi; dikunci di PRD Bagian 5.3 dan AI_HANDOFF_INSTRUCTIONS.md.
+- [2026-09-10]: Penambahan aturan mutlak larangan git push otomatis: Setiap AI hanya diperbolehkan membuat commit lokal dan dilarang keras melakukan `git push` tanpa perintah eksplisit dari user; dikunci di PRD Bagian 5.3 poin 7 dan AI_HANDOFF_INSTRUCTIONS.md poin 6.
 
 ---
+
 
 
 
