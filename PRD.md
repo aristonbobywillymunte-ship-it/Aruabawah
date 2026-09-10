@@ -754,4 +754,4 @@ Modal dinyatakan **OPEN untuk perbaikan UI**. Arah perbaikan: panel lebih sederh
 
 ## Bab 7.33 — Feedback Setelah Pembaruan Wawasan AI
 
-`generateAiInsights()` sudah menghasilkan `session()->flash('message')`, tetapi feedback sebelumnya hanya dirender di tab Kata Kunci. Akibatnya pengguna tab Wawasan tidak mendapat notifikasi setelah menekan **Ya, Perbarui**. Banner status sukses sekarang dirender langsung di header tab Wawasan dengan `role="status"`.
+`generateAiInsights()` sekarang mengirim event Livewire `admin-toast` setelah proses berhasil. Container `<x-admin-toast />` ditambahkan ke layout `welcome`, sehingga pengguna mendapat toast sukses global setelah menekan **Ya, Perbarui**. Banner inline tidak digunakan agar feedback tetap berupa toast sesuai standar aplikasi.

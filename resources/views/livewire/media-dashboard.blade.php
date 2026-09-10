@@ -3281,13 +3281,6 @@
                         </button>
                     </div>
 
-                    @if (session()->has('message'))
-                        <div class="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left text-xs font-semibold text-emerald-800" role="status">
-                            <span class="material-symbols-outlined shrink-0 text-[18px] text-emerald-600">check_circle</span>
-                            <span>{{ session('message') }}</span>
-                        </div>
-                    @endif
-
                     @if(!empty($project->ai_insight_updated_at) && (!empty($this->startDate) || !empty($this->endDate)))
                         <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between gap-3 text-left">
                             <div class="flex items-center gap-2 text-xs text-amber-800">

@@ -670,7 +670,11 @@ class MediaDashboard extends Component
         $this->wawasanMemo = [];
         $cacheKey = 'media_dashboard_wawasan:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
         Cache::forget($cacheKey);
-        session()->flash('message', 'Wawasan AI berhasil diperbarui!');
+        $this->dispatch('admin-toast', payload: [
+            'type' => 'success',
+            'title' => 'Wawasan diperbarui',
+            'messageDetail' => 'Ringkasan dan rekomendasi AI berhasil diperbarui.',
+        ]);
     }
 
     public function preparePdfReport(string $togglesJson = '{}'): void

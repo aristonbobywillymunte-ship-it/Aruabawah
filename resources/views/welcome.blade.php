@@ -25,6 +25,8 @@
             <livewire:projects-list />
         @endif
 
+        <x-admin-toast />
+
         @livewireScripts
 
         @if(session()->has('toast'))

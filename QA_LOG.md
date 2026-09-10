@@ -1,10 +1,10 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
-### [QA-20260910-35] Notifikasi Sukses Pembaruan Wawasan AI
-* **Konteks**: `generateAiInsights()` membuat flash message, tetapi banner hanya dirender pada tab Kata Kunci sehingga feedback tidak terlihat setelah CTA modal diklik dari tab Wawasan.
-* **Perubahan**: Menambahkan banner status sukses langsung di header tab Wawasan.
+### [QA-20260910-35] Notifikasi Toast Pembaruan Wawasan AI
+* **Konteks**: `generateAiInsights()` membuat flash message, tetapi feedback tidak tampil sebagai toast setelah CTA modal diklik dari tab Wawasan.
+* **Perubahan**: Mengirim event Livewire `admin-toast` dari `generateAiInsights()` dan memasang `<x-admin-toast />` pada layout `welcome`; banner inline dihapus.
 * **QA fisik**: `view:clear` berhasil; PHP lint berhasil; render terautentikasi tab Wawasan menghasilkan `RENDER_SUCCESS=152282`; `git diff --check` bersih.
-* **Status**: PASSED untuk compile/lint/render. Browser click test belum tersedia.
+* **Status**: PASSED untuk compile/lint/render. Browser toast visibility test belum tersedia.
 
 ### [QA-20260910-34] Pemindahan Pemicu Modal Wawasan AI ke Livewire
 * **Konteks**: `@click` Alpine tidak membuka modal pada runtime pengguna.
