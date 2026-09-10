@@ -40,17 +40,33 @@ class ProjectEditModal extends Component
         // Eager load only needed package for display
         $this->projectPackage = $project->package_id ? Package::find($project->package_id) : null;
         
-        $savedNewsOverride = $project->news_run_times_override ?? [];
-        $pkgNewsRuns = $this->projectPackage?->news_runs_per_day;
-        $this->news_run_times_override = !empty($savedNewsOverride)
-            ? array_values($savedNewsOverride)
-            : ($pkgNewsRuns ? $this->resizeOverrideSlots([], $pkgNewsRuns) : []);
+        $savedNewsOverride = array_values(array_filter($project->news_run_times_override ?? []));
+        $pkgNewsRuns = (int) ($this->projectPackage?->news_runs_per_day ?? 0);
+        $pkgNewsTimes = array_values(array_filter($this->projectPackage?->news_run_times ?? []));
 
-        $savedSocialOverride = $project->social_run_times_override ?? [];
-        $pkgSocialRuns = $this->projectPackage?->social_runs_per_day;
-        $this->social_run_times_override = !empty($savedSocialOverride)
-            ? array_values($savedSocialOverride)
-            : ($pkgSocialRuns ? $this->resizeOverrideSlots([], $pkgSocialRuns) : []);
+        if ($pkgNewsRuns > 0) {
+            $slots = [];
+            for ($i = 0; $i < $pkgNewsRuns; $i++) {
+                $slots[] = $savedNewsOverride[$i] ?? ($pkgNewsTimes[$i] ?? '');
+            }
+            $this->news_run_times_override = $slots;
+        } else {
+            $this->news_run_times_override = [];
+        }
+
+        $savedSocialOverride = array_values(array_filter($project->social_run_times_override ?? []));
+        $pkgSocialRuns = (int) ($this->projectPackage?->social_runs_per_day ?? 0);
+        $pkgSocialTimes = array_values(array_filter($this->projectPackage?->social_run_times ?? []));
+
+        if ($pkgSocialRuns > 0) {
+            $slots = [];
+            for ($i = 0; $i < $pkgSocialRuns; $i++) {
+                $slots[] = $savedSocialOverride[$i] ?? ($pkgSocialTimes[$i] ?? '');
+            }
+            $this->social_run_times_override = $slots;
+        } else {
+            $this->social_run_times_override = [];
+        }
         
         $recipients = DB::table('project_telegram_recipients')
             ->where('project_id', $project->id)
@@ -63,44 +79,28 @@ class ProjectEditModal extends Component
         $this->showModal = true;
     }
 
-    protected function maxAllowedSlots(string $type): int
+    public function resetNewsToPackage(): void
     {
-        if ($type === 'news') {
-            return (int) ($this->projectPackage?->news_runs_per_day ?: 24);
+        $pkgNewsRuns = (int) ($this->projectPackage?->news_runs_per_day ?? 0);
+        $pkgNewsTimes = array_values(array_filter($this->projectPackage?->news_run_times ?? []));
+
+        $slots = [];
+        for ($i = 0; $i < $pkgNewsRuns; $i++) {
+            $slots[] = $pkgNewsTimes[$i] ?? '';
         }
-        return (int) ($this->projectPackage?->social_runs_per_day ?: 24);
+        $this->news_run_times_override = $slots;
     }
 
-    public function addNewsSlot(): void
+    public function resetSocialToPackage(): void
     {
-        $max = $this->maxAllowedSlots('news');
-        if (count($this->news_run_times_override) < $max) {
-            $this->news_run_times_override[] = '';
-        }
-    }
+        $pkgSocialRuns = (int) ($this->projectPackage?->social_runs_per_day ?? 0);
+        $pkgSocialTimes = array_values(array_filter($this->projectPackage?->social_run_times ?? []));
 
-    public function removeNewsSlot(int $index): void
-    {
-        if (isset($this->news_run_times_override[$index])) {
-            unset($this->news_run_times_override[$index]);
-            $this->news_run_times_override = array_values($this->news_run_times_override);
+        $slots = [];
+        for ($i = 0; $i < $pkgSocialRuns; $i++) {
+            $slots[] = $pkgSocialTimes[$i] ?? '';
         }
-    }
-
-    public function addSocialSlot(): void
-    {
-        $max = $this->maxAllowedSlots('social');
-        if (count($this->social_run_times_override) < $max) {
-            $this->social_run_times_override[] = '';
-        }
-    }
-
-    public function removeSocialSlot(int $index): void
-    {
-        if (isset($this->social_run_times_override[$index])) {
-            unset($this->social_run_times_override[$index]);
-            $this->social_run_times_override = array_values($this->social_run_times_override);
-        }
+        $this->social_run_times_override = $slots;
     }
 
     protected function parseOptionalKeywordString(string $value): array

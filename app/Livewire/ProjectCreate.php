@@ -167,53 +167,72 @@ class ProjectCreate extends Component
         return $normalized;
     }
 
-    public function addNewsSlot(): void
-    {
-        $max = $this->maxAllowedSlots('news');
-        if (count($this->news_run_times_override) < $max) {
-            $this->news_run_times_override[] = '';
-        }
-    }
-
-    public function removeNewsSlot(int $index): void
-    {
-        if (isset($this->news_run_times_override[$index])) {
-            unset($this->news_run_times_override[$index]);
-            $this->news_run_times_override = array_values($this->news_run_times_override);
-        }
-    }
-
-    public function addSocialSlot(): void
-    {
-        $max = $this->maxAllowedSlots('social');
-        if (count($this->social_run_times_override) < $max) {
-            $this->social_run_times_override[] = '';
-        }
-    }
-
-    public function removeSocialSlot(int $index): void
-    {
-        if (isset($this->social_run_times_override[$index])) {
-            unset($this->social_run_times_override[$index]);
-            $this->social_run_times_override = array_values($this->social_run_times_override);
-        }
-    }
-
     protected function syncOverrideSlotsFromPackage(?Package $package): void
     {
-        $pkgNewsRuns = $package?->news_runs_per_day;
-        $pkgSocialRuns = $package?->social_runs_per_day;
+        if (! $package) {
+            $this->news_run_times_override = [];
+            $this->social_run_times_override = [];
+            return;
+        }
 
-        // Jika paket memiliki jatah run harian, sesuaikan slotnya. Jika 0 / null, sediakan minimal 1 slot fleksibel jika masih kosong.
-        $this->news_run_times_override = $this->resizeOverrideSlots(
-            $this->news_run_times_override,
-            $pkgNewsRuns ?: (empty($this->news_run_times_override) ? 1 : count($this->news_run_times_override))
-        );
+        $newsRuns = (int) ($package->news_runs_per_day ?? 0);
+        $packageNewsTimes = array_values(array_filter($package->news_run_times ?? []));
 
-        $this->social_run_times_override = $this->resizeOverrideSlots(
-            $this->social_run_times_override,
-            $pkgSocialRuns ?: (empty($this->social_run_times_override) ? 1 : count($this->social_run_times_override))
-        );
+        if ($newsRuns > 0) {
+            $slots = [];
+            for ($i = 0; $i < $newsRuns; $i++) {
+                $slots[] = $this->news_run_times_override[$i] ?? ($packageNewsTimes[$i] ?? '');
+            }
+            $this->news_run_times_override = $slots;
+        } else {
+            $this->news_run_times_override = [];
+        }
+
+        $socialRuns = (int) ($package->social_runs_per_day ?? 0);
+        $packageSocialTimes = array_values(array_filter($package->social_run_times ?? []));
+
+        if ($socialRuns > 0) {
+            $slots = [];
+            for ($i = 0; $i < $socialRuns; $i++) {
+                $slots[] = $this->social_run_times_override[$i] ?? ($packageSocialTimes[$i] ?? '');
+            }
+            $this->social_run_times_override = $slots;
+        } else {
+            $this->social_run_times_override = [];
+        }
+    }
+
+    public function selectPackage(int $packageId): void
+    {
+        $this->packageId = $packageId;
+        $package = $this->selectedPackage();
+        $this->syncOverrideSlotsFromPackage($package);
+    }
+
+    public function resetNewsToPackage(): void
+    {
+        $package = $this->selectedPackage();
+        $newsRuns = (int) ($package?->news_runs_per_day ?? 0);
+        $packageNewsTimes = array_values(array_filter($package?->news_run_times ?? []));
+
+        $slots = [];
+        for ($i = 0; $i < $newsRuns; $i++) {
+            $slots[] = $packageNewsTimes[$i] ?? '';
+        }
+        $this->news_run_times_override = $slots;
+    }
+
+    public function resetSocialToPackage(): void
+    {
+        $package = $this->selectedPackage();
+        $socialRuns = (int) ($package?->social_runs_per_day ?? 0);
+        $packageSocialTimes = array_values(array_filter($package?->social_run_times ?? []));
+
+        $slots = [];
+        for ($i = 0; $i < $socialRuns; $i++) {
+            $slots[] = $packageSocialTimes[$i] ?? '';
+        }
+        $this->social_run_times_override = $slots;
     }
 
     public function updatedPackageId($value): void

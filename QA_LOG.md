@@ -1,5 +1,14 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-44] Otomatisasi Input Kolom Jam Scraping Mengikuti Alokasi Paket Tanpa Tombol Tambah/Hapus
+* **Konteks**: User meminta agar kolom input jam scraping proyek langsung terbuat secara otomatis sesuai jumlah alokasi paket (contoh paket 4x sehari langsung menampilkan 4 kolom jam), sehingga user tidak perlu lagi repot menekan tombol tambah atau menghapus kolom secara manual.
+* **Perubahan**:
+  1. **Auto-Populate Slots**: Pada `ProjectCreate.php` (`syncOverrideSlotsFromPackage` & `selectPackage`) serta `ProjectEditModal.php` (`open`), sistem secara otomatis merender array slot jam dengan jumlah persis sama dengan `news_runs_per_day` dan `social_runs_per_day` paket, diisi nilai awal dari default jam paket.
+  2. **Eliminasi Manual Add/Remove Buttons**: Menghapus tombol *"+ Tambah Jam Portal"*, *"+ Tambah Jam Sosial"*, dan tombol *Hapus (X)* per kolom di `project-create.blade.php` dan `project-edit-modal.blade.php`.
+  3. **Grid Kolom Responsif & Aksi Reset**: Menampilkan kolom jam dalam layout grid yang rapi (`Jam 1`, `Jam 2`, dst.) dengan tombol *"Gunakan Jadwal Default Paket"* untuk mengembalikan ke jam default paket secara instan dan tombol *"Kosongkan Semua"*.
+* **QA fisik**: `php -l` lulus pada `ProjectCreate.php` & `ProjectEditModal.php`, `docker exec media_intelligent_container php artisan view:clear` sukses.
+* **Status**: PASSED.
+
 ### [QA-20260911-43] Penegakan Ketat Kuota Harian Paket pada Pengaturan Jadwal Kustom Proyek
 * **Konteks**: User meminta batasan tegas pada jumlah slot jadwal override proyek: jika user memilih mengatur jam sendiri (kustom), maka jumlah jam yang diatur harus tepat sama dengan jatah eksekusi harian paket (`news_runs_per_day` & `social_runs_per_day`), tidak boleh kurang dan tidak boleh lebih. Jika tidak diatur, user tetap dapat mengosongkan seluruh slot untuk mengikuti jadwal default paket.
 * **Perubahan**:

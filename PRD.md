@@ -783,3 +783,17 @@ Pengguna membutuhkan kepastian bahwa jadwal scraping kustom yang diatur pada tin
 3. **Penyempurnaan UI/UX Real-time**:
    - Di `project-create.blade.php` dan `project-edit-modal.blade.php`, ditampilkan badge slot dinamis (`Slot: X/Y`), penanda status warna hijau/amber, label informasi kuota penuh, serta tombol *"+ Tambah Jam"* yang otomatis tersembunyi saat slot telah mencapai batas paket.
 
+## Bab 7.37 — Otomatisasi Input Kolom Jam Scraping Sesuai Kuota Paket
+
+### Latar Belakang
+Sebelumnya pengguna harus mengklik tombol tambah berkali-kali untuk menyusun slot jam yang sesuai dengan kuota paket, yang berisiko memicu kebingungan dan kegagalan validasi. Pengguna menghendaki agar jumlah kolom jam scraping langsung terisi otomatis sesuai kuota paket tanpa perlu tombol tambah atau hapus.
+
+### Perubahan
+1. **Auto-Populate Kolom Jam**:
+   - Komponen Livewire `ProjectCreate.php` dan `ProjectEditModal.php` secara otomatis membentuk jumlah input jam tepat sebanyak kuota harian paket (`news_runs_per_day` dan `social_runs_per_day`), diisi nilai awal dari default jadwal paket.
+2. **Eliminasi Tombol Tambah & Hapus Manual**:
+   - Tombol manual *"+ Tambah Jam"* dan tombol silang *Hapus (X)* dihilangkan sepenuhnya dari UI. Kolom jam disajikan dalam grid ringkas (Jam 1, Jam 2, dst.).
+3. **Pintasan Default & Reset**:
+   - Menyediakan tautan cepat *"Gunakan Jadwal Default Paket"* untuk memulihkan jam default paket dan *"Kosongkan Semua"* untuk kembali mengikuti jadwal paket secara murni.
+
+
