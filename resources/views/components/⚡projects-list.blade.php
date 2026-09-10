@@ -1019,33 +1019,79 @@ new class extends Component
 
                     <div wire:init="loadProjects">
                         @if($projectsLoaded)
-                            @if(!auth()->user()?->isAdmin() && empty($projects))
-                                <div class="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-600 shadow-sm">
-                                    Belum ada project yang diberikan ke akun Anda.
-                                </div>
-                            @endif
+                            @php
+                                $authUser = auth()->user();
+                                $isClient = $authUser && $authUser->isClient();
+                                $hasAllowedPackages = $isClient ? $authUser->allowedPackages()->exists() : true;
+                                $canCreateProjects = !$isClient || (optional($authUser->clientSettings)->can_create_projects && $hasAllowedPackages);
+                                
+                                $effectiveMaxProjects = $isClient ? $authUser->getEffectiveMaxProjects() : null;
+                                $activeProjectsCount = $isClient ? $authUser->projects()->where('is_active', true)->count() : count($projects);
+                                $isLimitReached = $isClient && $effectiveMaxProjects !== null && $activeProjectsCount >= $effectiveMaxProjects;
+                                $canShowCreateCard = $canCreateProjects && !$isLimitReached;
+                            @endphp
 
-                            <!-- Project Grid -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-                                <!-- Create Project Card -->
-                                @if(auth()->check())
-                                    <a 
-                                        href="{{ route('projects.create') }}" 
-                                        wire:navigate
-                                        class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col items-center justify-center text-center hover:bg-white/50 transition-all duration-300 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
-                                        style="min-height: 620px; height: 100%; display: flex; text-decoration: none;"
-                                    >
-                                        <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-5 shadow-sm">
-                                            <svg class="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                                            </svg>
-                                        </div>
-                                        <h3 class="text-xl font-hanken font-bold text-slate-800 mb-2">Buat Proyek Baru</h3>
-                                        <p class="text-slate-400 text-sm max-w-[220px] leading-relaxed">
-                                            Tambahkan monitoring media online, cetak, dan media sosial baru
-                                        </p>
-                                    </a>
-                                @endif
+                            @if(empty($projects))
+                                {{-- Unified clean empty state --}}
+                                <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center shadow-sm max-w-xl mx-auto my-6">
+                                    <div class="w-16 h-16 rounded-2xl {{ $canShowCreateCard ? 'bg-[#1fa387]/10 text-[#1fa387]' : 'bg-slate-100 text-slate-400' }} flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                        <span class="material-symbols-outlined text-3xl">{{ $canShowCreateCard ? 'add_chart' : 'folder_off' }}</span>
+                                    </div>
+                                    <h3 class="text-lg font-hanken font-bold text-slate-800 mb-2">
+                                        {{ $canShowCreateCard ? 'Mulai Proyek Pertama Anda' : 'Belum Ada Proyek Aktif' }}
+                                    </h3>
+                                    <p class="text-sm text-slate-500 leading-relaxed mb-6">
+                                        @if($canShowCreateCard)
+                                            Akun Anda siap digunakan. Buat proyek monitoring baru untuk mulai melacak isu, percakapan, dan tren media secara real-time.
+                                            @if($effectiveMaxProjects !== null)
+                                                <span class="block mt-1 font-semibold text-[#1fa387]">Kuota: {{ $activeProjectsCount }} dari {{ $effectiveMaxProjects }} proyek aktif.</span>
+                                            @endif
+                                        @else
+                                            @if($isClient && $isLimitReached)
+                                                Batas maksimal kuota proyek aktif Anda ({{ $effectiveMaxProjects }} proyek) telah tercapai.
+                                            @else
+                                                Belum ada proyek yang ditautkan ke akun Anda. Silakan hubungi administrator sistem untuk mendapatkan akses proyek monitoring.
+                                            @endif
+                                        @endif
+                                    </p>
+                                    @if($canShowCreateCard)
+                                        <a 
+                                            href="{{ route('projects.create') }}" 
+                                            wire:navigate
+                                            class="inline-flex items-center gap-2 px-6 py-3 bg-[#1fa387] hover:bg-[#178a71] text-white text-sm font-bold rounded-xl shadow-sm transition shadow-[#1fa387]/20"
+                                        >
+                                            <span class="material-symbols-outlined text-[18px]">add</span>
+                                            <span>Buat Proyek Baru</span>
+                                        </a>
+                                    @endif
+                                </div>
+                            @else
+                                {{-- Project Grid --}}
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                                    {{-- Create Project Card (only shown when allowed and quota is not full) --}}
+                                    @if($canShowCreateCard)
+                                        <a 
+                                            href="{{ route('projects.create') }}" 
+                                            wire:navigate
+                                            class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col items-center justify-center text-center hover:bg-white/50 transition-all duration-300 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+                                            style="min-height: 620px; height: 100%; display: flex; text-decoration: none;"
+                                        >
+                                            <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-5 shadow-sm">
+                                                <svg class="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                                                </svg>
+                                            </div>
+                                            <h3 class="text-xl font-hanken font-bold text-slate-800 mb-2">Buat Proyek Baru</h3>
+                                            <p class="text-slate-400 text-sm max-w-[220px] leading-relaxed mb-2">
+                                                Tambahkan monitoring portal berita dan media sosial baru
+                                            </p>
+                                            @if($isClient && $effectiveMaxProjects !== null)
+                                                <span class="text-xs font-semibold text-[#1fa387] bg-[#1fa387]/10 px-2.5 py-1 rounded-full">
+                                                    Kuota: {{ $activeProjectsCount }} / {{ $effectiveMaxProjects }}
+                                                </span>
+                                            @endif
+                                        </a>
+                                    @endif
 
                                 <!-- Dynamic Projects List -->
                                 @foreach($projects as $idx => $project)
@@ -1109,6 +1155,10 @@ new class extends Component
                                         </button>
 
                                         {{-- Edit Button --}}
+                                        @php
+                                            $canEdit = !$authUser->isClient() || optional($authUser->clientSettings)->can_edit_projects;
+                                        @endphp
+                                        @if($canEdit)
                                         <button
                                             wire:click="$dispatch('open-project-edit', { projectId: {{ $project['id'] }} })"
                                             title="Edit Proyek"
@@ -1116,6 +1166,7 @@ new class extends Component
                                         >
                                             <span class="material-symbols-outlined text-[18px]">edit</span>
                                         </button>
+                                        @endif
 
                                         {{-- Nonaktifkan Button — do_not_disturb_on, bukan trash (bukan hapus permanen) --}}
                                         @php

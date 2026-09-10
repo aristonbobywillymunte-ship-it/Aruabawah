@@ -24,6 +24,43 @@ class ProjectCreate extends Component
     public $createStep = 1;
     public $packageId = null;
 
+    public function mount(): void
+    {
+        $user = auth()->user();
+        if ($user && $user->isClient()) {
+            if (! optional($user->clientSettings)->can_create_projects) {
+                session()->flash('toast', [
+                    'type' => 'error',
+                    'message' => 'Anda tidak memiliki izin untuk membuat proyek baru.'
+                ]);
+                $this->redirect('/', navigate: true);
+                return;
+            }
+
+            $effectiveMax = $user->getEffectiveMaxProjects();
+            if ($effectiveMax !== null) {
+                $currentCount = $user->projects()->where('is_active', true)->count();
+                if ($currentCount >= $effectiveMax) {
+                    session()->flash('toast', [
+                        'type' => 'error',
+                        'message' => 'Batas maksimal proyek aktif Anda (' . $effectiveMax . ' proyek) telah tercapai.'
+                    ]);
+                    $this->redirect('/', navigate: true);
+                    return;
+                }
+            }
+
+            if (! $user->allowedPackages()->exists()) {
+                session()->flash('toast', [
+                    'type' => 'error',
+                    'message' => 'Belum ada paket yang diizinkan untuk akun Anda. Silakan hubungi administrator.'
+                ]);
+                $this->redirect('/', navigate: true);
+                return;
+            }
+        }
+    }
+
     protected function parseOptionalKeywordString(string $value): array
     {
         $items = array_map('trim', explode(',', $value));

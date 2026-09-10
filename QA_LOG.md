@@ -1,5 +1,16 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-40] Isolasi Proyek Klien, Kuota Paket Admin & Eliminasi Slop Empty State
+* **Konteks**: Role `client` seharusnya hanya melihat proyek miliknya sendiri, dan izin serta batas jumlah proyek ditentukan oleh konfigurasi paket di admin (`packages.max_projects` atau `client_settings.max_projects`). Ditemukan slop UI berupa penumpukan double empty state (*"Belum ada project yang diberikan..."* dan kartu raksasa *"Buat Proyek Baru"*), bypass izin pembuatan proyek di UI pada akun klien yang tidak berhak/kuotanya habis, copy usang *"media cetak"*, serta tombol edit yang tidak mengecek izin `can_edit_projects`.
+* **Perubahan**:
+  1. **Enforcement Izin & Kuota Paket**: Memastikan kartu dan tombol *"Buat Proyek Baru"* hanya tampil jika user memiliki izin `can_create_projects`, memiliki paket aktif di `allowedPackages`, dan jumlah proyek aktifnya belum mencapai kuota paket (`effectiveMaxProjects`).
+  2. **Mount Guard pada Halaman Pembuatan Proyek**: Menambahkan guard pada `ProjectCreate::mount()` untuk mencegah akses via URL langsung jika klien tidak memiliki izin, kuota proyek penuh, atau tidak memiliki paket yang diizinkan.
+  3. **Unified & Contextual Empty State**: Menyatukan tampilan saat tidak ada proyek menjadi kartu bersih elegan dengan pesan kontekstual (menjelaskan status kuota/izin/instruksi menghubungi admin) dan menghilangkan kartu 620px liar saat kuota habis.
+  4. **Pembersihan Copy & Izin Edit**: Mengoreksi deskripsi kartu monitoring (menghapus *"media cetak"* menjadi *"portal berita online dan media sosial"*) serta memproteksi tombol Edit Proyek dengan guard `can_edit_projects`.
+  5. **Empty State pada Halaman Pemilihan Paket**: Menambahkan feedback humanis di Step 1 `/projects/create` apabila klien belum memiliki paket yang diizinkan oleh admin.
+* **QA fisik**: `php -l` lulus pada `app/Livewire/ProjectCreate.php` (No syntax errors detected), `php artisan view:clear` sukses (Compiled views cleared).
+* **Status**: PASSED.
+
 ### [QA-20260911-39] Rate Limiting & Eliminasi Slop Halaman Login
 * **Konteks**: Halaman login (`/login`) belum memiliki brute-force protection (rate limiting) pada controller otentikasi. Ditemukan slop visual berupa fallback logo geometris berwarna merah cerah (`#ff4d4d`/`#e50914`) yang meniru template generik dan bertabrakan dengan brand teal sistem (`#1fa387`). Terdapat dead-link `href="#"` pada footer login dan potensi submit button stuck jika validasi HTML5 form gagal.
 * **Perubahan**:

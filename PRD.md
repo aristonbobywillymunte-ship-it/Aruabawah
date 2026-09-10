@@ -218,6 +218,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-11]: Isolasi proyek akun client dan sinkronisasi kuota proyek admin: memastikan kartu dan tombol Buat Proyek Baru hanya tampil jika kuota paket aktif (`max_projects`) belum habis dan client memiliki izin, mount guard di `/projects/create`, pembersihan double empty state menjadi satu kartu kontekstual, pembersihan copy usang "media cetak", dan guard `can_edit_projects` pada tombol edit (QA-20260911-40).
 - [2026-09-11]: Penerapan proteksi brute-force rate limiting (5 percobaan/menit/IP) pada `LoginController.php`, pesan error berbahasa Indonesia ramah, eliminasi AI-slop visual berupa fallback logo geometris merah generik ke palet teal resmi sistem, perbaikan dead link `href="#"` pada footer login, serta pencegahan submit button stuck pada validasi form (QA-20260911-39).
 - [2026-09-11]: Eliminasi slop & refactor perbaikan tombol serta modal komentar pada feed Penyebutan: mengeliminasi duplikasi 3 modal terpisah menjadi 1 modal terpadu, menghilangkan race condition event dispatch asinkron via direct fetch, menyematkan Material Symbols Outlined, merapikan copy empty state, dan menjaga scroll-lock / pointer event (QA-20260911-38).
 

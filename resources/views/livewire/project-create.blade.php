@@ -46,6 +46,22 @@
 
         {{-- ── STEP 1: Pilih Paket ── --}}
         @if($createStep === 1)
+            @if($packages->isEmpty())
+                <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center shadow-sm">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined text-3xl">inventory_2</span>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800 mb-1">Tidak Ada Paket Tersedia</h3>
+                    <p class="text-sm text-slate-500 max-w-md mx-auto mb-6 leading-relaxed">
+                        Akun Anda belum memiliki paket monitoring yang diizinkan oleh administrator. Silakan hubungi admin untuk mengaktifkan paket monitoring untuk akun Anda.
+                    </p>
+                    <a href="{{ route('home') }}" wire:navigate
+                       class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1fa387] hover:bg-[#178a71] text-white text-xs font-bold rounded-xl shadow-sm transition">
+                        <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                        <span>Kembali ke Proyek</span>
+                    </a>
+                </div>
+            @else
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
                 @foreach($packages as $p)
                     @php 
@@ -214,6 +230,7 @@
                     @endif
                 </button>
             </div>
+            @endif
 
         {{-- ── STEP 2: Form Proyek ── --}}
         @else
