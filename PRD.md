@@ -96,7 +96,29 @@ Dokumen ini adalah **Source of Truth (Pusat Kebenaran)** untuk seluruh arsitektu
 7. **Pusat Pemantauan Pengguna (`/` $\rightarrow$ `MediaDashboard.php`)**:
    - Tempat klien melihat hasil scraping medsos yang telah divalidasi dan dianalisis lengkap dengan metrik interaksi, komentar, dan filter reaktif.
 
+### 3.7 Detail Menu Penyebutan (Mentions Feed) & Filter Panel
+* **Arsitektur Menu Penyebutan (`tab=penyebutan`)**:
+  - **Dual-Source SQL Union**: Menggabungkan postingan portal (`articles`) dan medsos (`social_media_items`) menjadi satu linimasa terpadu dengan normalisasi kolom.
+  - **Quality Gates Query**:
+    1. Filter Anti-Noise: `(ai_analysis_results.is_noise IS NULL OR is_noise = false)`.
+    2. Guard Selesai Komentar: Untuk media sosial, hanya menampilkan yang komentarnya sudah lengkap (`comments_checked = true`).
+  - **Optimasi Infinite Scroll Stream**:
+    - Memakai container scroll ber-ID `mentions-feed-scroll` dengan atribut `data-total-count`.
+    - Event listener `scroll` pasif dengan `requestAnimationFrame` dan debounce 1200ms memicu method Livewire `$wire.loadMore()`.
+    - Mencegah benturan Alpine/DOM Morphing collapse pada mobile.
+  - **Widget Analisis Jaringan Dinamis**:
+    - **Topik Kunci Teratas**: Frekuensi kata kunci proyek + kalkulasi sentimen dominan (Positif/Netral/Negatif) dari relasi `ai_analysis_results`.
+    - **Aktor & Sumber Berpengaruh**: Menampilkan akun/media dengan volume interaksi dan sebutan tertinggi.
+* **Mekanisme Filter Panel (`components/⚡filter-items.blade.php`)**:
+  - **Search Bar**: `wire:model.live.debounce.600ms="search"` mencari ke teks caption, judul, dan nama author secara case-insensitive.
+  - **Date Range Selector**: Modal kalender dengan preset instan (Harian, Mingguan, Bulanan, Tahunan).
+  - **Multi-Source Checklist**: Checklist platform `[Instagram, TikTok, Facebook, News]` dilengkapi counter jumlah data real-time.
+  - **Sentiment Toggle**: Checklist status sentimen AI `[positive, neutral, negative]`.
+  - **Sorting Selector**: Dropdown pengurutan linimasa (`newest` vs `popular`).
+  - **Desain Responsif**: Sticky panel di desktop (`lg:block`) dan floating slide-over drawer di layar seluler (`lg:hidden`).
+
 ---
+
 
 
 
@@ -154,8 +176,10 @@ Sebelum mengeksekusi perintah terminal atau mengedit kode:
 - [2026-09-10]: Eksekusi verifikasi QA live pada runtime container lokal (`media_intelligent_container`) membuktikan alokasi RAM, rem biaya (cost limit), dan limit hasil Apify terdistribusi 100% mematuhi konfigurasi paket proyek aktif; didokumentasikan resmi pada PRD Bab 7.
 - [2026-09-10]: Pengesahan dokumen protokol serah terima AI (`AI_HANDOFF_INSTRUCTIONS.md`) dan penyempurnaan Bagian 5 PRD.md sebagai pedoman wajib anti-halusinasi bagi model AI pengganti.
 - [2026-09-10]: Perbaikan error PostgreSQL `column ai_analysis_results.is_noise does not exist` di dashboard dengan menjalankan migrasi tertunda (`2026_08_09_002149_add_quality_gate_fields_to_ai_analysis_results_table`) via `php artisan migrate --force` di container lokal. Kolom `is_noise`, `noise_reason`, `subjects`, dan `quality_confidence` kini aktif dan query dashboard berjalan normal.
+- [2026-09-10]: Analisis dan dokumentasi menyeluruh terhadap arsitektur Menu Penyebutan (Mentions Feed SQL Union, Quality Gate Anti-Noise & Selesai Komentar, Widget Jaringan Topik/Aktor, serta Mesin Filter Panel terpusat) dicatat resmi pada PRD Bagian 3.7.
 
 ---
+
 
 
 
