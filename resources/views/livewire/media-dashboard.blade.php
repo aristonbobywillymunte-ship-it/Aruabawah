@@ -3137,9 +3137,9 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 text-left">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-0.5 font-sans flex items-center gap-2">
-                                <span class="material-symbols-outlined text-indigo-600 text-[22px]">psychology</span>Wawasan & Ringkasan AI
+                                <span class="material-symbols-outlined text-[#1fa387] text-[22px]">psychology</span>Wawasan & Ringkasan AI
                                 @if(!empty($project->ai_insight_updated_at))
-                                    <span class="text-[10px] font-medium px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100 uppercase tracking-wider">Murni AI</span>
+                                    <span class="text-[10px] font-medium px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 uppercase tracking-wider">Terupdate</span>
                                 @endif
                             </h2>
                             <p class="text-xs text-slate-500">Analisis cerdas berdasarkan agregasi data sentimen terkini.</p>
@@ -3150,7 +3150,7 @@
                             wire:click="generateAiInsights"
                             wire:loading.attr="disabled"
                             wire:target="generateAiInsights"
-                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                            class="bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-[11px] px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                         >
                             <svg wire:loading.remove wire:target="generateAiInsights" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                             <svg wire:loading wire:target="generateAiInsights" class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -3209,7 +3209,7 @@
                         <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[110px]">
                             <div class="flex justify-between items-center w-full">
                                 <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block">Kesehatan Sentimen</span>
-                                <span class="text-[9px] font-bold text-emerald-650 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider">{{ $w['positive_pct'] }}% Positif</span>
+                                <span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider">{{ $w['positive_pct'] }}% Positif</span>
                             </div>
                             <div class="space-y-2 w-full">
                                 <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
@@ -3217,7 +3217,7 @@
                                     <div class="h-full bg-slate-300" style="width: {{ $w['neutral_pct'] }}%"></div>
                                     <div class="h-full bg-rose-500" style="width: {{ $w['negative_pct'] }}%"></div>
                                 </div>
-                                <div class="flex items-center justify-between text-[9px] font-black text-slate-400 tracking-wide">
+                                <div class="flex items-center justify-between text-[9px] font-bold text-slate-500 tracking-wide">
                                     <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> P: {{ $w['positive_pct'] }}%</span>
                                     <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> N: {{ $w['neutral_pct'] }}%</span>
                                     <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Neg: {{ $w['negative_pct'] }}%</span>
@@ -3232,9 +3232,8 @@
                                 <h3 class="text-3xl font-black uppercase tracking-tight leading-none {{ $crisisTextClass }}">{{ $w['crisis_signal'] }}</h3>
                                 <p class="text-[11px] font-semibold text-slate-400">Tingkat ancaman negatif</p>
                             </div>
-                            <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center flex-shrink-0 relative">
-                                <span class="animate-ping absolute inline-flex h-3 w-3 rounded-full opacity-75 {{ $crisisPingClass }}"></span>
-                                <span class="relative inline-flex rounded-full h-3 w-3 {{ $crisisBgClass }}"></span>
+                            <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                <span class="inline-flex rounded-full h-3.5 w-3.5 {{ $crisisBgClass }}"></span>
                             </div>
                         </div>
 
@@ -3244,7 +3243,7 @@
                             class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md hover:bg-slate-50/50 transition-all duration-200 active:scale-[0.98] cursor-pointer flex items-center justify-between h-[110px] group"
                         >
                             <div class="space-y-1.5 text-left">
-                                <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block group-hover:text-indigo-650 transition-colors">Kondisi Viral</span>
+                                <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block group-hover:text-[#1fa387] transition-colors">Kondisi Viral</span>
                                 <h3 class="text-3xl font-black tracking-tight leading-none text-{{ $this->viralMeta['viral_color'] }}-600">{{ $this->viralMeta['viral_status'] }}</h3>
                                 <p class="text-[11px] font-semibold text-slate-400 truncate max-w-[170px]" title="{{ $this->viralMeta['viral_desc'] }}">{{ $this->viralMeta['viral_desc'] }}</p>
                             </div>
@@ -3263,12 +3262,12 @@
                                 <div class="flex justify-between items-center pb-2 border-b border-slate-100/85 mb-4 relative z-10 w-full">
                                     <div class="space-y-0.5 text-left">
                                         <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                                            <span class="material-symbols-outlined text-[18px] text-[#1fa387]">psychology</span>
-                                            RINGKASAN EKSEKUTIF AI
+                                            <span class="material-symbols-outlined text-[#1fa387]">psychology</span>
+                                            RINGKASAN EKSEKUTIF
                                         </h3>
-                                        <p class="text-[10px] text-slate-400">Ringkasan wawasan cerdas dari AI berdasarkan data proyek terkini.</p>
+                                        <p class="text-[10px] text-slate-400">Ikhtisar strategis berbasis analisis agregasi data sentimen terkini.</p>
                                     </div>
-                                    <span class="text-[10px] font-bold text-[#1fa387] bg-[#1fa387]/10 px-2 py-0.5 rounded border border-[#1fa387]/20 uppercase tracking-wider">AI Generated</span>
+                                    <span class="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 uppercase tracking-wider">Eksekutif</span>
                                 </div>
                                 <div class="text-slate-600 text-xs leading-relaxed space-y-2">
                                     {!! preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', nl2br(e($w['summary']))) !!}
