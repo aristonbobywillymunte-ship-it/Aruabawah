@@ -218,6 +218,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-11]: Penerapan proteksi brute-force rate limiting (5 percobaan/menit/IP) pada `LoginController.php`, pesan error berbahasa Indonesia ramah, eliminasi AI-slop visual berupa fallback logo geometris merah generik ke palet teal resmi sistem, perbaikan dead link `href="#"` pada footer login, serta pencegahan submit button stuck pada validasi form (QA-20260911-39).
 - [2026-09-11]: Eliminasi slop & refactor perbaikan tombol serta modal komentar pada feed Penyebutan: mengeliminasi duplikasi 3 modal terpisah menjadi 1 modal terpadu, menghilangkan race condition event dispatch asinkron via direct fetch, menyematkan Material Symbols Outlined, merapikan copy empty state, dan menjaga scroll-lock / pointer event (QA-20260911-38).
 
 - [2026-07-31]: Pemisahan mode discovery portal (`auto`, `manual_only`, `google_news_only`), cooldown 720 menit kandidat portal, pembatasan limit Apify maksimal 50 item per run terdistribusi, dan perbaikan normalisasi matcher alias `walikota` vs `wali kota`.

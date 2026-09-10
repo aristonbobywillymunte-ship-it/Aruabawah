@@ -564,22 +564,21 @@
                 @if($customLogo = \App\Helpers\AppBrandingHelper::getAppLogoPath())
                     <img src="{{ asset('storage/' . $customLogo) }}" style="height: 96px; max-width: 240px; object-fit: contain; vertical-align: middle; margin: 0;" class="transition-transform hover:scale-105 duration-300">
                 @else
-                    <!-- Ultra-Premium Geometric A & Wave Logo -->
+                    <!-- Brand Geometric Logo Fallback -->
                     <svg width="72" height="72" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="transition-transform hover:scale-105 duration-300">
                         <defs>
                             <linearGradient id="premiumLogoGradLoginBig" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#ff4d4d" />
-                                <stop offset="50%" stop-color="#e50914" />
-                                <stop offset="100%" stop-color="#9a0000" />
+                                <stop offset="0%" stop-color="#ffffff" />
+                                <stop offset="100%" stop-color="#e6f6f2" />
                             </linearGradient>
                             <filter id="logoShadowLoginBig" x="-10%" y="-10%" width="120%" height="120%">
-                                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#e50914" flood-opacity="0.15" />
+                                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.15" />
                             </filter>
                         </defs>
                         <path d="M12 38 C14 26, 18 10, 24 8" stroke="url(#premiumLogoGradLoginBig)" stroke-width="5.5" stroke-linecap="round" filter="url(#logoShadowLoginBig)" />
                         <path d="M24 8 C30 10, 34 26, 36 38" stroke="url(#premiumLogoGradLoginBig)" stroke-width="5.5" stroke-linecap="round" filter="url(#logoShadowLoginBig)" />
-                        <path d="M15 28 Q 24 24, 33 28" stroke="#ff4d4d" stroke-width="4" stroke-linecap="round" />
-                        <path d="M18 33 Q 24 30, 30 33" stroke="#e50914" stroke-width="2.5" stroke-linecap="round" opacity="0.8" />
+                        <path d="M15 28 Q 24 24, 33 28" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />
+                        <path d="M18 33 Q 24 30, 30 33" stroke="#e6f6f2" stroke-width="2.5" stroke-linecap="round" opacity="0.9" />
                     </svg>
                 @endif
                 <div class="brand-text-big">
@@ -633,22 +632,22 @@
                 @if($customLogo = \App\Helpers\AppBrandingHelper::getAppLogoPath())
                     <img src="{{ asset('storage/' . $customLogo) }}" style="height:36px; max-width:120px; object-fit:contain;" class="transition-transform hover:scale-105 duration-300">
                 @else
-                    <!-- Ultra-Premium Geometric A & Wave Logo -->
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="transition-transform hover:scale-105 duration-300">
+                    <!-- Brand Geometric Logo Fallback (Teal) -->
+                    <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="transition-transform hover:scale-105 duration-300">
                         <defs>
                             <linearGradient id="premiumLogoGradLoginMobile" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#ff4d4d" />
-                                <stop offset="50%" stop-color="#e50914" />
-                                <stop offset="100%" stop-color="#9a0000" />
+                                <stop offset="0%" stop-color="#2ec4a3" />
+                                <stop offset="50%" stop-color="#1fa387" />
+                                <stop offset="100%" stop-color="#178a70" />
                             </linearGradient>
                             <filter id="logoShadowLoginMobile" x="-10%" y="-10%" width="120%" height="120%">
-                                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#e50914" flood-opacity="0.15" />
+                                <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#1fa387" flood-opacity="0.2" />
                             </filter>
                         </defs>
                         <path d="M12 38 C14 26, 18 10, 24 8" stroke="url(#premiumLogoGradLoginMobile)" stroke-width="5.5" stroke-linecap="round" filter="url(#logoShadowLoginMobile)" />
                         <path d="M24 8 C30 10, 34 26, 36 38" stroke="url(#premiumLogoGradLoginMobile)" stroke-width="5.5" stroke-linecap="round" filter="url(#logoShadowLoginMobile)" />
-                        <path d="M15 28 Q 24 24, 33 28" stroke="#ff4d4d" stroke-width="4" stroke-linecap="round" />
-                        <path d="M18 33 Q 24 30, 30 33" stroke="#e50914" stroke-width="2.5" stroke-linecap="round" opacity="0.8" />
+                        <path d="M15 28 Q 24 24, 33 28" stroke="#1fa387" stroke-width="4" stroke-linecap="round" />
+                        <path d="M18 33 Q 24 30, 30 33" stroke="#178a70" stroke-width="2.5" stroke-linecap="round" opacity="0.8" />
                     </svg>
                 @endif
                 <div>
@@ -743,7 +742,7 @@
 
             <div class="login-footer">
                 &copy; {{ date('Y') }} {{ \App\Helpers\AppBrandingHelper::getAppName() }} Media Intelligence. Seluruh hak dilindungi.<br/>
-                <span style="margin-top:4px;display:inline-block;">Butuh akun? <a href="#">Hubungi administrator</a></span>
+                <span style="margin-top:4px;display:inline-block;">Butuh akun? <a href="javascript:void(0)" onclick="alert('Silakan hubungi administrator sistem di unit IT atau manajemen organisasi Anda untuk mendapatkan akses akun.')">Hubungi administrator</a></span>
             </div>
         </div>
     </main>
@@ -754,20 +753,29 @@
         const passInput = document.getElementById('password');
         const eyeIcon = document.getElementById('eye-icon');
 
-        toggleBtn.addEventListener('click', () => {
-            const isHidden = passInput.type === 'password';
-            passInput.type = isHidden ? 'text' : 'password';
-            eyeIcon.textContent = isHidden ? 'visibility_off' : 'visibility';
-        });
+        if (toggleBtn && passInput && eyeIcon) {
+            toggleBtn.addEventListener('click', () => {
+                const isHidden = passInput.type === 'password';
+                passInput.type = isHidden ? 'text' : 'password';
+                eyeIcon.textContent = isHidden ? 'visibility_off' : 'visibility';
+            });
+        }
 
         // Button loading state on submit
         const form = document.getElementById('login-form');
         const loginBtn = document.getElementById('btn-login');
 
-        form.addEventListener('submit', () => {
-            loginBtn.innerHTML = '<span class="material-symbols-outlined" style="animation:spin 1s linear infinite;">progress_activity</span> Memproses...';
-            loginBtn.disabled = true;
-        });
+        if (form && loginBtn) {
+            form.addEventListener('submit', function (e) {
+                if (!form.checkValidity()) {
+                    return;
+                }
+                setTimeout(() => {
+                    loginBtn.innerHTML = '<span class="material-symbols-outlined" style="animation:spin 1s linear infinite;">progress_activity</span> Memproses...';
+                    loginBtn.disabled = true;
+                }, 10);
+            });
+        }
     </script>
 
     <style>

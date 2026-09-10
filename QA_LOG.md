@@ -1,5 +1,16 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-39] Rate Limiting & Eliminasi Slop Halaman Login
+* **Konteks**: Halaman login (`/login`) belum memiliki brute-force protection (rate limiting) pada controller otentikasi. Ditemukan slop visual berupa fallback logo geometris berwarna merah cerah (`#ff4d4d`/`#e50914`) yang meniru template generik dan bertabrakan dengan brand teal sistem (`#1fa387`). Terdapat dead-link `href="#"` pada footer login dan potensi submit button stuck jika validasi HTML5 form gagal.
+* **Perubahan**:
+  1. **Rate Limiting Keamanan**: Menambahkan `RateLimiter` 5 percobaan per menit per kombinasi email + IP pada `LoginController.php`. Jika terlampaui, request diblokir dengan pesan throttle ramah Bahasa Indonesia dan indikator sisa detik.
+  2. **Pesan Kesalahan Terstandarisasi**: Mengubah pesan autentikasi gagal menjadi Bahasa Indonesia yang jelas: `"Email atau password yang Anda masukkan tidak sesuai."`.
+  3. **Harmonisasi Brand & Anti-Slop Visual**: Mengganti SVG gradient fallback logo (desktop & mobile) dari palet merah generik ke palet identitas brand sistem teal/emerald (`#1fa387`, `#2ec4a3`, `#178a70` dan putih bersih untuk kontras panel hijau).
+  4. **Eliminasi Dead Link**: Menghapus `href="#"` pada tautan *"Hubungi administrator"* dan menggantinya dengan handler dialog bantuan informasi administrator.
+  5. **Resilient Submit State**: Menambahkan pengecekan `form.checkValidity()` sebelum mendisabled tombol submit untuk mencegah tombol macet (*stuck*) saat input kosong/tidak valid.
+* **QA fisik**: `php -l` lulus (No syntax errors detected), `php artisan view:clear` sukses (Compiled views cleared), validasi via curl HTTP response terverifikasi.
+* **Status**: PASSED.
+
 ### [QA-20260911-38] Eliminasi Slop & Perbaikan Tombol serta Modal Komentar Penyebutan
 * **Konteks**: Tombol komentar pada feed tab Penyebutan sering error/macet karena *race-condition* dua HTTP request (`open...` + `dispatch('load-...')`), tabrakan ID antara `articles` dan `social_media_items`, serta tombol disabled tanpa penjelasan. Ditemukan slop duplikasi 3 modal terpisah (~240 baris redundant), karakter penutup non-standar (`✕`), copy slop menyebut vendor third-party, dan spinner SVG manual.
 * **Perubahan**:
