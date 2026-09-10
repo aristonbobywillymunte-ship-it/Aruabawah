@@ -1,5 +1,17 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-53] Penyelarasan Layout Header Modal AI Pipeline & Eliminasi Tabrakan Tombol dengan Judul
+* **Konteks**: Pada modal "Sistem Kesehatan AI - Daftar Antrean Berjalan (AI Pipeline)", judul/subjudul dan tombol aksi (*Bersihkan Data* dan *Kosongkan Redis*) sebelumnya dipaksakan berada dalam satu baris header yang sama, sehingga pada resolusi layar tertentu tombol menabrak teks judul antrean.
+* **Perubahan**:
+  1. **Pemisahan Header & Action Bar**:
+     - Mengadopsi struktur arsitektur yang konsisten seperti modal Apify: judul, badge kategori, dan tombol close `[X]` diletakkan di **Modal Header** atas yang leluasa (`flex-1 min-w-0`).
+     - Tombol aksi (*Bersihkan Data* dan *Kosongkan Redis*) dipindahkan ke **Modal Actions Bar** khusus tepat di bawah header dengan background putih bersih dan alignment kanan (`justify-end gap-2`).
+  2. **Jaminan Bebas Tabrakan**:
+     - Teks judul *"Sistem Kesehatan AI"* dan *"Daftar Antrean Berjalan (AI Pipeline)"* kini memiliki ruang 100% penuh di kiri tanpa ada risiko terhimpit tombol aksi ataupun tombol tutup.
+* **QA fisik**: `php -l` lulus tanpa error sintaks pada `resources/views/livewire/admin/system-health.blade.php`. Tinker render view `admin.dashboard` terbukti `OK`. `php artisan view:clear` sukses.
+* **Status**: PASSED.
+
+
 ### [QA-20260911-52] Optimasi Layout Kolom Tabel Modal Antrean AI (Pencegahan Teks Judul Menabrak Kolom Lain)
 * **Konteks**: User melaporkan judul/konten pada tabel modal antrean AI (*Sistem Kesehatan AI - Daftar Antrean Berjalan (AI Pipeline)*) menabrak kolom-kolom sebelahnya.
 * **Perubahan**:

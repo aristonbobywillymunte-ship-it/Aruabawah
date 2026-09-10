@@ -321,34 +321,33 @@
                 <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[95vh]" style="max-height: calc(100dvh - 40px);">
                 <!-- Modal Header -->
                 <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 flex-1 min-w-0">
-                        <div class="min-w-0 shrink-0">
-                            <p class="text-[9px] font-bold uppercase tracking-wider text-[#1fa387]">Sistem Kesehatan AI</p>
-                            <h2 class="text-sm font-black text-slate-900 leading-tight mt-0.5">Daftar Antrean Berjalan <span class="text-slate-400 font-semibold block sm:inline">(AI Pipeline)</span></h2>
-                        </div>
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <button type="button" wire:click="openConfirmModal('clean_ghosts')" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition text-[11px] font-bold shadow-sm" wire:loading.attr="disabled">
-                                <span wire:loading.remove wire:target="openConfirmModal('clean_ghosts')" class="material-symbols-outlined text-[14px]">cleaning_services</span>
-                                <svg wire:loading wire:target="openConfirmModal('clean_ghosts')" class="animate-spin h-[14px] w-[14px] text-slate-600" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span class="hidden sm:inline">Bersihkan Data</span>
-                                <span class="sm:hidden">Bersihkan</span>
-                            </button>
-                            <button type="button" wire:click="openConfirmModal('purge_queue')" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition text-[11px] font-bold shadow-sm" wire:loading.attr="disabled">
-                                <span wire:loading.remove wire:target="openConfirmModal('purge_queue')" class="material-symbols-outlined text-[14px]">delete_sweep</span>
-                                <svg wire:loading wire:target="openConfirmModal('purge_queue')" class="animate-spin h-[14px] w-[14px] text-rose-600" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span class="hidden sm:inline">Kosongkan Redis</span>
-                                <span class="sm:hidden">Kosongkan</span>
-                            </button>
-                        </div>
+                    <div class="min-w-0 flex-1">
+                        <span class="text-[9px] font-bold uppercase tracking-wider text-[#1fa387] block mb-0.5">Sistem Kesehatan AI</span>
+                        <h2 class="text-sm font-black text-slate-900 leading-tight mt-0.5">Daftar Antrean Berjalan <span class="text-slate-400 font-semibold block sm:inline">(AI Pipeline)</span></h2>
+                        <p class="text-[9px] text-slate-400 mt-1 sm:mt-0.5 leading-relaxed">Menampilkan status antrean analisis artikel portal dan media sosial yang sedang mengantre atau diproses AI.</p>
                     </div>
                     <button type="button" wire:click="closeQueueModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
                         <span class="material-symbols-outlined text-[18px] block">close</span>
+                    </button>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="px-4 sm:px-6 py-2.5 border-b border-slate-100 bg-white flex items-center justify-end gap-2 shrink-0">
+                    <button type="button" wire:click="openConfirmModal('clean_ghosts')" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition text-[11px] font-bold shadow-sm" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="openConfirmModal('clean_ghosts')" class="material-symbols-outlined text-[14px]">cleaning_services</span>
+                        <svg wire:loading wire:target="openConfirmModal('clean_ghosts')" class="animate-spin h-[14px] w-[14px] text-slate-600" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Bersihkan Data</span>
+                    </button>
+                    <button type="button" wire:click="openConfirmModal('purge_queue')" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition text-[11px] font-bold shadow-sm" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="openConfirmModal('purge_queue')" class="material-symbols-outlined text-[14px]">delete_sweep</span>
+                        <svg wire:loading wire:target="openConfirmModal('purge_queue')" class="animate-spin h-[14px] w-[14px] text-rose-600" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Kosongkan Redis</span>
                     </button>
                 </div>
 
