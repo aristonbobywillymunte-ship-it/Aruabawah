@@ -219,9 +219,10 @@
         @else
             <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50">
 
-                {{-- Selected package pill --}}
+                {{-- Selected package pill + jadwal override — satu blok --}}
                 @if($selectedPackage)
-                    <div class="flex items-center justify-between px-6 py-4 bg-slate-50/60 rounded-t-2xl">
+                    {{-- Pill header paket --}}
+                    <div class="flex items-center justify-between px-6 py-4 bg-slate-50/60 rounded-t-2xl border-b border-slate-100">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-lg bg-[#1fa387]/10 flex items-center justify-center text-[#1fa387]">
                                 <span class="material-symbols-outlined text-[16px]">inventory_2</span>
@@ -237,69 +238,97 @@
                             Ubah Paket
                         </button>
                     </div>
-                @endif
 
-                @if($selectedPackage)
+                    {{-- Override jadwal Portal & Sosial --}}
                     @php
                         $portalSlots = min(24, (int) ($selectedPackage->news_runs_per_day ?? 0));
                         $socialSlots = min(24, (int) ($selectedPackage->social_runs_per_day ?? 0));
                     @endphp
-                    <div class="px-6 pt-5 pb-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="px-6 pt-5 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {{-- Portal --}}
                         <div class="rounded-2xl border border-violet-100 bg-violet-50/50 p-4 space-y-3">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-violet-500">Portal Paket</p>
-                                    <p class="text-sm font-extrabold text-slate-800">{{ $selectedPackage->news_runs_per_day ? $selectedPackage->news_runs_per_day . 'x / hari' : 'Interval lama' }}</p>
+                                    <p class="text-sm font-extrabold text-slate-800">{{ $selectedPackage->news_runs_per_day ? $selectedPackage->news_runs_per_day . 'x / hari' : 'Tidak dijadwalkan' }}</p>
                                 </div>
                                 <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-white border border-violet-100 text-violet-500">Jadwal Paket</span>
                             </div>
                             <p class="text-xs text-slate-500 leading-relaxed">{{ $selectedPackage->news_run_times ? implode(' · ', $selectedPackage->news_run_times) : 'Belum ada jadwal paket.' }}</p>
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-bold text-slate-800">Override Jadwal Portal Proyek</label>
-                                    <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-violet-100">Opsional</span>
+                            @if($portalSlots > 0)
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800">Override Jadwal Portal</label>
+                                        <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-violet-100">Opsional</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500">Kosongkan semua slot untuk mengikuti jadwal Paket.</p>
+                                    <div class="grid gap-2">
+                                        @for($i = 0; $i < $portalSlots; $i++)
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[10px] font-black text-violet-400 w-10 shrink-0 text-right">Slot {{ $i + 1 }}</span>
+                                                <input
+                                                    type="time"
+                                                    wire:model="news_run_times_override.{{ $i }}"
+                                                    class="flex-1 pl-3 pr-3 py-2.5 text-sm bg-white shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-200 text-slate-800 transition-all font-medium border border-violet-100"
+                                                >
+                                            </div>
+                                        @endfor
+                                    </div>
+                                    @error('news_run_times_override') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                                 </div>
-                                <p class="text-xs text-slate-500">Kosongkan seluruh jam untuk mengikuti jadwal Paket.</p>
-                                <div class="grid gap-2">
-                                    @for($i = 0; $i < $portalSlots; $i++)
-                                        <input
-                                            type="time"
-                                            wire:model="news_run_times_override.{{ $i }}"
-                                            class="w-full pl-4 pr-4 py-3 text-sm bg-white shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:bg-white focus:shadow-none focus:ring-2 focus:ring-violet-200 placeholder-slate-400 text-slate-800 transition-all font-medium border border-violet-100"
-                                        >
-                                    @endfor
-                                </div>
-                                @error('news_run_times_override') <p class="text-red-500 text-xs font-medium mt-1">{{ $message }}</p> @enderror
-                            </div>
+                            @endif
                         </div>
 
+                        {{-- Sosial --}}
                         <div class="rounded-2xl border border-sky-100 bg-sky-50/50 p-4 space-y-3">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-sky-500">Sosial Paket</p>
-                                    <p class="text-sm font-extrabold text-slate-800">{{ $selectedPackage->social_runs_per_day ? $selectedPackage->social_runs_per_day . 'x / hari' : 'Interval lama' }}</p>
+                                    <p class="text-sm font-extrabold text-slate-800">{{ $selectedPackage->social_runs_per_day ? $selectedPackage->social_runs_per_day . 'x / hari' : 'Tidak dijadwalkan' }}</p>
                                 </div>
                                 <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-white border border-sky-100 text-sky-500">Jadwal Paket</span>
                             </div>
                             <p class="text-xs text-slate-500 leading-relaxed">{{ $selectedPackage->social_run_times ? implode(' · ', $selectedPackage->social_run_times) : 'Belum ada jadwal paket.' }}</p>
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <label class="text-sm font-bold text-slate-800">Override Jadwal Sosial Proyek</label>
-                                    <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-sky-100">Opsional</span>
+                            @if($socialSlots > 0)
+                                <div class="space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-sm font-bold text-slate-800">Override Jadwal Sosial</label>
+                                        <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-sky-100">Opsional</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500">Kosongkan semua slot untuk mengikuti jadwal Paket.</p>
+                                    <div class="grid gap-2">
+                                        @for($i = 0; $i < $socialSlots; $i++)
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[10px] font-black text-sky-400 w-10 shrink-0 text-right">Slot {{ $i + 1 }}</span>
+                                                <input
+                                                    type="time"
+                                                    wire:model="social_run_times_override.{{ $i }}"
+                                                    class="flex-1 pl-3 pr-3 py-2.5 text-sm bg-white shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-200 text-slate-800 transition-all font-medium border border-sky-100"
+                                                >
+                                            </div>
+                                        @endfor
+                                    </div>
+                                    @error('social_run_times_override') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                                 </div>
-                                <p class="text-xs text-slate-500">Kosongkan seluruh jam untuk mengikuti jadwal Paket.</p>
-                                <div class="grid gap-2">
-                                    @for($i = 0; $i < $socialSlots; $i++)
-                                        <input
-                                            type="time"
-                                            wire:model="social_run_times_override.{{ $i }}"
-                                            class="w-full pl-4 pr-4 py-3 text-sm bg-white shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:bg-white focus:shadow-none focus:ring-2 focus:ring-sky-200 placeholder-slate-400 text-slate-800 transition-all font-medium border border-sky-100"
-                                        >
-                                    @endfor
-                                </div>
-                                @error('social_run_times_override') <p class="text-red-500 text-xs font-medium mt-1">{{ $message }}</p> @enderror
-                            </div>
+                            @endif
                         </div>
+                    </div>
+
+                    {{-- Divider sebelum form fields --}}
+                    <div class="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mx-6"></div>
+                @else
+                    {{-- Edge-case guard: package hilang, arahkan user kembali --}}
+                    <div class="p-6 flex flex-col items-center gap-3 text-center">
+                        <span class="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
+                            <span class="material-symbols-outlined text-[24px]">warning</span>
+                        </span>
+                        <p class="text-sm font-bold text-slate-800">Paket belum dipilih</p>
+                        <p class="text-xs text-slate-500">Silakan kembali ke langkah sebelumnya dan pilih paket terlebih dahulu.</p>
+                        <button type="button" wire:click="$set('createStep', 1)"
+                            class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#1fa387] hover:bg-[#188c73] text-white font-bold rounded-xl text-xs transition cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                            Kembali ke Pilih Paket
+                        </button>
                     </div>
                 @endif
 
@@ -313,7 +342,7 @@
                         </div>
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">folder</span>
-                            <input wire:model="name" type="text"
+                            <input wire:model.blur="name" type="text"
                                 placeholder="Contoh: Monitoring Prabowo Subianto"
                                 class="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:bg-white focus:shadow-none focus:ring-2 focus:ring-[#1fa387]/20 placeholder-slate-400 text-slate-800 transition-all font-medium">
                         </div>
@@ -405,15 +434,15 @@
                         @error('excludeKeywords') <p class="text-red-500 text-xs font-medium mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">error</span>{{ $message }}</p> @enderror
                     </div>
 
-                    {{-- Action buttons --}}
-                    <div class="flex justify-end gap-3 pt-4">
+                    {{-- Action buttons — responsif di mobile --}}
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-100">
                         <button type="button" wire:click="$set('createStep', 1)"
-                            class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl text-xs transition cursor-pointer active:scale-[0.98]">
+                            class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl text-xs transition cursor-pointer active:scale-[0.98] w-full sm:w-auto">
                             <span class="material-symbols-outlined text-[16px]">arrow_back</span>
                             Kembali ke Pilih Paket
                         </button>
                         <button type="submit"
-                            class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 min-w-[140px] bg-[#1fa387] hover:bg-[#178a71] text-white font-extrabold rounded-xl text-xs transition shadow-sm cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                            class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 min-w-[140px] bg-[#1fa387] hover:bg-[#178a71] text-white font-extrabold rounded-xl text-xs transition shadow-sm cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto"
                             wire:loading.attr="disabled"
                             wire:target="createProject">
                             <span wire:loading.remove wire:target="createProject" class="inline-flex items-center gap-1.5">

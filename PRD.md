@@ -536,3 +536,17 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 
 
+
+### 7.21 Perbaikan Slop Step 2 "Konfigurasi Proyek" pada Halaman Buat Proyek (10 September 2026)
+* **Fitur**: Pembersihan slop UX dan code pada Step 2 (`@else` block) halaman `/projects/create`.
+* **Perbaikan yang Diimplementasikan**:
+  1. **Merge duplikasi** — dua `@if($selectedPackage)` terpisah digabung menjadi satu blok tunggal dengan `@else` guard.
+  2. **Copy baku** — `'Interval lama'` → `'Tidak dijadwalkan'` pada tampilan jadwal Portal dan Sosial.
+  3. **Slot numbering** — Setiap input `type="time"` kini memiliki label `Slot N` di sisi kiri.
+  4. **Divider visual** — Garis pemisah gradient ditambahkan antara kartu jadwal dan form field utama.
+  5. **Blur validation** — `wire:model.blur` pada field Nama Proyek untuk umpan balik validasi `unique` saat blur.
+  6. **Responsif mobile** — Action buttons kini menggunakan `flex-col-reverse sm:flex-row` dengan lebar penuh di mobile.
+  7. **Edge-case guard** — Jika `$selectedPackage` null di Step 2, tampil amber warning + tombol kembali.
+  8. **Jadwal slot guard** — Input override hanya tampil jika `$portalSlots > 0` / `$socialSlots > 0`.
+* **File Diubah**: `resources/views/livewire/project-create.blade.php`
+* **QA**: `[QA-20260910-21]` — PASSED.

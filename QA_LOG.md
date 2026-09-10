@@ -562,3 +562,37 @@ Setiap entri pengujian wajib mencakup komponen berikut:
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
 
+
+---
+
+### [QA-20260910-21] Audit & Perbaikan Slop Step 2 "Konfigurasi Proyek" (`/projects/create`)
+* **Tanggal & Waktu**: 10 September 2026, 21:11 WIB
+* **Konteks Masalah**:
+  Audit lanjutan Step 2 halaman pembuatan proyek menemukan 8 poin slop:
+  1. Duplikasi `@if($selectedPackage)` dua kali berturut-turut (code slop).
+  2. Copy slop: teks `'Interval lama'` tidak baku — harusnya `'Tidak dijadwalkan'`.
+  3. Input time tanpa nomor slot — user tidak tahu Slot 1, Slot 2, dst.
+  4. Tidak ada pemisah visual (divider) antara kartu jadwal dan form field.
+  5. `wire:model` pada field `name` tidak memberikan validasi unique saat blur.
+  6. Action buttons tidak responsif di mobile (`flex justify-end` saja).
+  7. Edge-case: tidak ada guard jika `$selectedPackage` null di Step 2.
+  8. `@if($portalSlots > 0)` / `@if($socialSlots > 0)` belum ada — input muncul walau paket tanpa jadwal.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/project-create.blade.php`
+* **Perbaikan yang Dilakukan**:
+  1. Merge dua blok `@if($selectedPackage)` menjadi satu blok tunggal.
+  2. `'Interval lama'` → `'Tidak dijadwalkan'` (2 tempat).
+  3. Tambah label `Slot N` di kiri setiap input time override.
+  4. Tambah `<div class="h-px bg-gradient...">` sebagai divider sebelum form field.
+  5. `wire:model="name"` → `wire:model.blur="name"` untuk validasi unique onBlur.
+  6. Action buttons: `flex flex-col-reverse sm:flex-row sm:justify-end` + `w-full sm:w-auto` per tombol.
+  7. Tambah blok `@else` pada `@if($selectedPackage)` dengan amber warning + tombol kembali.
+  8. Wrap input time dalam `@if($portalSlots > 0)` dan `@if($socialSlots > 0)`.
+  9. Pill header paket ditambah `border-b border-slate-100` untuk pemisah visual.
+* **Physical Runtime Verification**:
+  - PHP Lint: No syntax errors detected ✅
+  - View Clear: `php artisan view:clear` → Clear successfully ✅
+  - Blade Render Test Step 1 (packages=empty): **2.943 bytes**, exit code 0 ✅
+  - Blade Render Test Step 2 (no package guard): **12.763 bytes**, exit code 0 ✅
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
