@@ -1,8 +1,15 @@
-<div>
-    {{-- Page Header --}}
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+<div class="space-y-4">
+    {{-- Unified Toolbar --}}
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="relative w-full sm:w-80">
+            <span wire:loading.remove wire:target="search" class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+            <span wire:loading wire:target="search" class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1fa387] text-[18px] animate-spin">progress_activity</span>
+            <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari nama atau email klien..."
+                   class="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387] transition-all shadow-sm">
+        </div>
+
         <a href="{{ route('admin.clients.create') }}" wire:navigate
-           class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-[#1fa387] hover:bg-[#188c73] text-white rounded-xl text-sm font-semibold transition-all shadow-sm shrink-0">
+           class="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1fa387] hover:bg-[#188c73] text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shrink-0 w-full sm:w-auto">
             <span class="material-symbols-outlined text-[18px]">person_add</span>
             <span>Tambah Klien</span>
         </a>
@@ -10,14 +17,6 @@
 
     {{-- Table Container --}}
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        {{-- Toolbar --}}
-        <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
-            <div class="relative w-full sm:w-80">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
-                <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari nama atau email klien..."
-                       class="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387] transition-all shadow-sm">
-            </div>
-        </div>
 
         {{-- Table --}}
         <div class="overflow-x-auto">

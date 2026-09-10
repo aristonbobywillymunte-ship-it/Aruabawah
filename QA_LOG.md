@@ -474,4 +474,37 @@ Setiap entri pengujian wajib mencakup komponen berikut:
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
 
+---
+
+### [QA-20260910-18] Pembersihan Slop Antarmuka & Toolbar Manajemen Klien
+* **Tanggal & Waktu**: 10 September 2026, 20:43 WIB
+* **Konteks Masalah**:
+  Audit visual mendalam pada halaman manajemen klien menemukan:
+  1. Toolbar terpisah (*starter kit slop*) di `client-list.blade.php` di mana tombol Tambah Klien berada di luar wadah tabel dan search bar berada di dalam header tabel.
+  2. Ketiadaan visual feedback spinner saat Livewire melakukan pencarian data klien (`wire:model.live.debounce.300ms="search"`).
+  3. Tombol "Kembali" pada halaman Tambah Klien dan Pengaturan Klien hanya berupa kotak panah kecil tanpa teks label konteks yang ramah pengguna.
+  4. Tombol "Ya, Lepas" pada pelepasan proyek dari klien (`detachProject`) belum memiliki atribut `wire:loading.attr="disabled"` dan spinner animasi.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/admin/client-management/client-list.blade.php`
+  - `resources/views/livewire/admin/client-management/client-create.blade.php`
+  - `resources/views/livewire/admin/client-management/client-settings.blade.php`
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4 CLI, Laravel Livewire 3)
+* **Parameter & Hasil Pengujian**:
+  1. **Penyatuan Toolbar & Indikator Loading Search**:
+     - Menggabungkan search bar dan tombol "Tambah Klien" dalam satu baris toolbar responsif yang elegan.
+     - Menyematkan spinner animasi `progress_activity` saat mengetik di input pencarian.
+  2. **Perbaikan Navigasi Tombol Kembali**:
+     - Menghadirkan tombol kembali dengan label jelas *"Kembali ke Manajemen Klien"* pada form Tambah Klien dan Pengaturan Klien.
+  3. **Proteksi & Feedback Loading Detach Proyek**:
+     - Menambahkan disabled state dan spinner animasi pada tombol "Ya, Lepas".
+  4. **Physical Runtime Verification**:
+     - View Clear: `php artisan view:clear` -> Clear successfully.
+     - Livewire Component Render Test via Tinker:
+       - Client List: **5.093 bytes**, exit code 0.
+       - Client Create: **7.017 bytes**, exit code 0.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+
 

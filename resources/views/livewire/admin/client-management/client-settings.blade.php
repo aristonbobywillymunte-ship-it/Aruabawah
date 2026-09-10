@@ -3,8 +3,9 @@
 
     <div class="flex items-center justify-between">
         <a href="{{ route('admin.clients') }}" wire:navigate
-           class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors">
-            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-500 hover:text-[#1fa387] hover:bg-[#1fa387]/5 text-xs font-bold transition-all">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            <span>Kembali ke Manajemen Klien</span>
         </a>
     </div>
 
@@ -255,11 +256,25 @@
                             @if($confirmDetachProjectId === $ap->id)
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs text-slate-500 mr-2">Lepas proyek dari klien?</span>
-                                    <button type="button" wire:click="detachProject({{ $ap->id }})" class="cursor-pointer px-3 py-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors">Ya, Lepas</button>
-                                    <button type="button" wire:click="$set('confirmDetachProjectId', null)" class="cursor-pointer px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Batal</button>
+                                    <button type="button"
+                                            wire:click="detachProject({{ $ap->id }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="detachProject({{ $ap->id }})"
+                                            class="cursor-pointer px-3 py-1.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50">
+                                        <span wire:loading wire:target="detachProject({{ $ap->id }})" class="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                                        <span>Ya, Lepas</span>
+                                    </button>
+                                    <button type="button"
+                                            wire:click="$set('confirmDetachProjectId', null)"
+                                            wire:loading.attr="disabled"
+                                            class="cursor-pointer px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50">
+                                        Batal
+                                    </button>
                                 </div>
                             @else
-                                <button type="button" wire:click="$set('confirmDetachProjectId', {{ $ap->id }})" class="cursor-pointer px-4 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100">
+                                <button type="button"
+                                        wire:click="$set('confirmDetachProjectId', {{ $ap->id }})"
+                                        class="cursor-pointer px-4 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100">
                                     Lepas
                                 </button>
                             @endif

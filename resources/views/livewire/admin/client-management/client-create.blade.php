@@ -1,9 +1,10 @@
-<div>
-    {{-- Page Header --}}
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+<div class="space-y-4">
+    {{-- Back Navigation --}}
+    <div class="flex items-center justify-between">
         <a href="{{ route('admin.clients') }}" wire:navigate
-           class="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-colors self-start lg:self-auto">
-            <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+           class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-500 hover:text-[#1fa387] hover:bg-[#1fa387]/5 text-xs font-bold transition-all">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            <span>Kembali ke Manajemen Klien</span>
         </a>
     </div>
 
