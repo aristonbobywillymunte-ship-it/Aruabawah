@@ -1,5 +1,20 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-50] Pembersihan Kode Slop & Eliminasi Query Mati di Halaman /admin
+* **Konteks**: User meminta audit dan pembersihan kode/UI yang terindikasi "slop" pada dashboard administrator (`http://localhost/admin`). Ditemukan query berat yang tidak pernah ditampilkan di view, serta tag-tag HTML rusak (`</template>` liar) dan penumpukan double footer modal antrean AI.
+* **Perubahan**:
+  1. **Eliminasi Dead Code & Query Berat di `routes/web.php`**:
+     - Menyederhanakan route closure `Route::get('/admin', ...)` agar langsung mereturn `view('admin.dashboard')`.
+     - Menghapus query loop proyek, regex keywords matching artikel (`ContentMatchingService`), query relasi AI, dan agregasi total yang sebelumnya dijalankan sia-sia di setiap pemanggilan `/admin` karena view `admin.dashboard` tidak pernah menggunakan variabel-variabel tersebut.
+  2. **Pembersihan Tag HTML Rusak di `resources/views/livewire/admin/system-health.blade.php`**:
+     - Menghapus tag-tag penutup `</template>` liar di baris 23 (bawah error logs) dan baris 509, 515, 539 (di dalam tabel antrean AI).
+     - Menjamin validitas DOM tree dan mencegah parsing issue pada Alpine.js / browser rendering.
+  3. **Penyempurnaan Modal Footer Antrean AI**:
+     - Menggabungkan pagination bar dan tombol "Tutup" modal ke dalam satu bar footer yang rapi dan terpadu, menghilangkan penumpukan dua footer terpisah.
+* **QA fisik**: `php -l` lulus pada `routes/web.php`. Verifikasi render view via Tinker dengan user login sukses (`OK`). Cache blade dibersihkan (`php artisan view:clear`).
+* **Status**: PASSED.
+
+
 ### [QA-20260911-49] Penegakan Paket Tetap Per Klien & Pembatasan Kuota Proyek Mengikuti Paket
 * **Konteks**: Paket langganan hakikatnya adalah lisensi yang melekat pada akun klien dan hanya dipilih sekali. Sebelumnya, klien yang membuat proyek kedua, ketiga, dst. selalu diarahkan kembali ke Step 1 (Pilih Paket) dan bisa mengganti paket yang berbeda secara bebas. Selain itu kuota proyek harus secara ketat mengikuti `max_projects` dari paket tersebut.
 * **Perubahan**:

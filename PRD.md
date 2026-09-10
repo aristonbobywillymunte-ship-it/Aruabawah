@@ -849,3 +849,16 @@ Paket monitoring hakikatnya adalah lisensi langganan yang melekat pada satu akun
    - Step indicator (1. Pilih Paket, 2. Konfigurasi Proyek) disembunyikan untuk klien berpaket tetap.
    - Tombol *"Ubah Paket"* di header digantikan oleh badge informasi *"Paket Akun (Terkunci)"*.
    - Tombol *"Kembali ke Pilih Paket"* di footer digantikan menjadi *"Batal"* (kembali ke dashboard).
+
+## Bab 7.42 — Pembersihan Kode Slop & Eliminasi Query Mati Dashboard Admin (/admin)
+
+### Latar Belakang
+Halaman dashboard admin (`/admin`) sebelumnya memiliki beban loading yang lambat dan indikasi artefak kode rusak (*slop*). Pada rute closure `Route::get('/admin')`, dijalankan iterasi query berat untuk 6 proyek terbaru lengkap dengan pencocokan regex artikel, query AI, dan perhitungan agregat, padahal view `admin.dashboard` murni hanya merender header status dan komponen Livewire `SystemHealth`. Selain itu, terdapat tag penutup HTML liar (`</template>`) dan penumpukan dua footer terpisah pada modal antrean AI.
+
+### Perubahan
+1. **Pembersihan Route Closure**:
+   - Menghapus query mati (dead code) pada `routes/web.php` sehingga rute `/admin` langsung me-return view tanpa membebani database dan memori server.
+2. **Perbaikan Validitas HTML DOM**:
+   - Menghapus seluruh tag `</template>` liar di `system-health.blade.php` yang tidak memiliki tag pembuka.
+3. **Penyatuan Modal Footer**:
+   - Memadukan ringkasan paginasi dan tombol "Tutup" pada modal antrean AI menjadi satu footer bar yang bersih dan rapi.

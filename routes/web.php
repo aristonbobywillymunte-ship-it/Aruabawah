@@ -42,77 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects/create', App\Livewire\ProjectCreate::class)->name('projects.create');
 
     Route::get('/admin', function () {
-        $user = auth()->user();
-
-        $projects = \App\Models\Project::query()
-            ->orderByDesc('created_at')
-            ->limit(6)
-            ->get()
-            ->map(function ($project) {
-                $socialSources = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
-                $matchedCounts = app(ContentMatchingService::class)->countMatchingContentForProject($project);
-                $matchKeywords = array_values(array_unique(array_filter(array_merge(
-                    $project->scrapeKeywordVariants(),
-                    $project->scrapeContextKeywordVariants()
-                ))));
-
-                $articleQuery = \App\Models\Article::query()
-                    ->withCompleteOfficialAiResult()
-                    ->where(function ($contentQuery) use ($matchKeywords) {
-                        foreach ($matchKeywords as $index => $keyword) {
-                            $method = $index === 0 ? 'where' : 'orWhere';
-                            $contentQuery->{$method}(function ($inner) use ($keyword) {
-                                $inner->where('title', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('content', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('excerpt', 'ilike', '%' . $keyword . '%')
-                                    ->orWhere('ai.summary', 'ilike', '%' . $keyword . '%');
-                            });
-                        }
-                    });
-
-                foreach ($project->scrapeExcludeKeywords() as $keyword) {
-                    $articleQuery->where(function ($q) use ($keyword) {
-                        $q->whereRaw('LOWER(COALESCE(title, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%'])
-                          ->whereRaw('LOWER(COALESCE(content, \'\')) NOT LIKE ?', ['%' . strtolower($keyword) . '%']);
-                    });
-                }
-
-                $socialCount = $matchedCounts['social'] ?? 0;
-                $lastRisk = (clone $articleQuery)
-                    ->join('ai_analysis_results as ai', 'articles.id', '=', 'ai.article_id')
-                    ->where('ai.analysis_status', 'success')
-                    ->orderByDesc('articles.published_at')
-                    ->value('ai.risk_level');
-
-                return [
-                    'id' => $project->id,
-                    'name' => $project->name,
-                    'status' => ($matchedCounts['articles'] ?? 0) > 0 ? 'Aktif' : 'Belum Aktif',
-                    'articles_count' => $matchedCounts['articles'] ?? 0,
-                    'social_count' => $socialCount,
-                    'risk_level' => $lastRisk ? ucfirst($lastRisk) : 'Rendah',
-                    'last_risk_score' => $lastRisk,
-                ];
-            });
-
-        $socialSources = ['Twitter', 'Twitter/X', 'x.com', 'Instagram', 'Youtube', 'TikTok', 'Facebook', 'Threads'];
-        $totalProjects = \App\Models\Project::count();
-        $totalUsers = \App\Models\User::count();
-        $totalArticles = \App\Models\Article::count();
-        $totalSocialItems = \App\Models\Article::whereIn('source_name', $socialSources)->count();
-        $totalHighRisk = \App\Models\AiAnalysisResult::whereIn('risk_level', ['high', 'critical'])
-            ->where('analysis_status', 'success')
-            ->count();
-
-        return view('admin.dashboard', compact(
-            'user',
-            'projects',
-            'totalProjects',
-            'totalUsers',
-            'totalArticles',
-            'totalSocialItems',
-            'totalHighRisk'
-        ));
+        return view('admin.dashboard');
     })->middleware('admin')->name('admin.dashboard');
     Route::get('/admin/users', function () {
         return view('admin.users');

@@ -20,7 +20,6 @@
             @endforeach
         </div>
     </div>
-        </template>
 @endif
 
     <!-- Grid Card Status Health -->
@@ -505,16 +504,14 @@
                                                         <span class="truncate">{{ $item['title'] }}</span>
                                                         <span class="material-symbols-outlined text-[12px] shrink-0">open_in_new</span>
                                                     </a>
-                                                @else
+                                                 @else
                                                     <div class="line-clamp-1 text-slate-700" title="{{ $item['title'] }}">{{ $item['title'] }}</div>
-                                                    </template>
-@endif
+                                                @endif
                                                 @if($item['status'] === 'retry_wait' && $item['error_message'])
                                                     <div class="text-[9px] text-rose-500 font-medium mt-0.5 truncate" title="{{ $item['error_message'] }}">
                                                         ⚠ {{ Str::limit($item['error_message'], 60) }}
                                                     </div>
-                                                    </template>
-@endif
+                                                @endif
                                             </td>
                                             <td class="px-3 py-2 font-semibold text-[#1fa387] align-middle truncate" title="{{ $item['project'] }}">
                                                 {{ $item['project'] }}
@@ -537,33 +534,32 @@
                             </table>
                                 </div>
                         </div>
-                        </template>
-@endif
+                    @endif
                 </div>
 
                 </div> <!-- Tutup Modal Body -->
 
                 <!-- Modal Footer: SELALU FIX di bawah, tidak pernah ikut scroll -->
-                <div class="px-5 py-2.5 bg-white border-t border-slate-100 shrink-0 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.05)] z-10 relative">
-                    <div class="flex items-center justify-between text-[11px] font-bold text-slate-500">
-                        <div>
-                            Menampilkan <strong class="text-slate-800">{{ $queueItems->firstItem() ?? 0 }}-{{ $queueItems->lastItem() ?? 0 }}</strong> dari <strong class="text-slate-800">{{ $queueItems->total() }}</strong> antrean
-                        </div>
+                <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-b-[24px]">
+                    <div class="text-[11px] font-bold text-slate-500 order-2 sm:order-1">
+                        Menampilkan <strong class="text-slate-800">{{ $queueItems->firstItem() ?? 0 }}-{{ $queueItems->lastItem() ?? 0 }}</strong> dari <strong class="text-slate-800">{{ $queueItems->total() }}</strong> antrean
+                    </div>
 
+                    <div class="flex items-center gap-3 order-1 sm:order-2 w-full sm:w-auto justify-between sm:justify-end">
                         @if($queueItems->hasPages())
                             <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-0.5 shadow-sm">
                                 {{-- First --}}
                                 @if($queueItems->onFirstPage())
-                                    <span class="px-2.5 py-1.5 text-slate-300 font-bold bg-slate-50/50 cursor-not-allowed select-none rounded-l-[10px]">First</span>
+                                    <span class="px-2.5 py-1 text-slate-300 font-bold bg-slate-50/50 cursor-not-allowed select-none rounded-l-[10px] text-xs">First</span>
                                 @else
-                                    <button type="button" wire:click="gotoPage(1, 'queuePage')" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-50 font-bold rounded-l-[10px] transition">First</button>
+                                    <button type="button" wire:click="gotoPage(1, 'queuePage')" class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 font-bold rounded-l-[10px] transition text-xs">First</button>
                                 @endif
 
                                 {{-- Prev --}}
                                 @if($queueItems->onFirstPage())
-                                    <span class="px-2 py-1.5 text-slate-300 cursor-not-allowed select-none inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_left</span></span>
+                                    <span class="px-2 py-1 text-slate-300 cursor-not-allowed select-none inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_left</span></span>
                                 @else
-                                    <button type="button" wire:click="previousPage('queuePage')" class="px-2 py-1.5 text-slate-600 hover:bg-slate-50 transition inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_left</span></button>
+                                    <button type="button" wire:click="previousPage('queuePage')" class="px-2 py-1 text-slate-600 hover:bg-slate-50 transition inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_left</span></button>
                                 @endif
 
                                 {{-- Page Numbers --}}
@@ -573,41 +569,36 @@
                                 @endphp
                                 @for($p = $startPage; $p <= $endPage; $p++)
                                     @if($p == $queueItems->currentPage())
-                                        <span class="px-3 py-1.5 bg-[#1fa387] text-white font-black select-none">{{ $p }}</span>
+                                        <span class="px-2.5 py-1 bg-[#1fa387] text-white font-black select-none text-xs">{{ $p }}</span>
                                     @else
-                                        <button type="button" wire:click="gotoPage({{ $p }}, 'queuePage')" class="px-3 py-1.5 text-slate-600 hover:bg-slate-50 font-bold transition">{{ $p }}</button>
+                                        <button type="button" wire:click="gotoPage({{ $p }}, 'queuePage')" class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 font-bold transition text-xs">{{ $p }}</button>
                                     @endif
                                 @endfor
 
                                 {{-- Next --}}
                                 @if($queueItems->hasMorePages())
-                                    <button type="button" wire:click="nextPage('queuePage')" class="px-2 py-1.5 text-slate-600 hover:bg-slate-50 transition inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_right</span></button>
+                                    <button type="button" wire:click="nextPage('queuePage')" class="px-2 py-1 text-slate-600 hover:bg-slate-50 transition inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_right</span></button>
                                 @else
-                                    <span class="px-2 py-1.5 text-slate-300 cursor-not-allowed select-none inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_right</span></span>
+                                    <span class="px-2 py-1 text-slate-300 cursor-not-allowed select-none inline-flex items-center"><span class="material-symbols-outlined text-[14px]">chevron_right</span></span>
                                 @endif
 
                                 {{-- Last --}}
                                 @if($queueItems->hasMorePages())
-                                    <button type="button" wire:click="gotoPage({{ $queueItems->lastPage() }}, 'queuePage')" class="px-2.5 py-1.5 text-slate-600 hover:bg-slate-50 font-bold rounded-r-[10px] transition">Last</button>
+                                    <button type="button" wire:click="gotoPage({{ $queueItems->lastPage() }}, 'queuePage')" class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 font-bold rounded-r-[10px] transition text-xs">Last</button>
                                 @else
-                                    <span class="px-2.5 py-1.5 text-slate-300 font-bold bg-slate-50/50 cursor-not-allowed select-none rounded-r-[10px]">Last</span>
+                                    <span class="px-2.5 py-1 text-slate-300 font-bold bg-slate-50/50 cursor-not-allowed select-none rounded-r-[10px] text-xs">Last</span>
                                 @endif
                             </div>
-                        @else
-                            <div></div>
-@endif
-                    </div>
-                </div>
+                        @endif
 
-                <!-- Modal Footer -->
-                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0 rounded-b-[24px]">
-                    <button
-                        type="button"
-                        wire:click="closeQueueModal"
-                        class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
-                    >
-                        Tutup
-                    </button>
+                        <button
+                            type="button"
+                            wire:click="closeQueueModal"
+                            class="px-4 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
+                        >
+                            Tutup
+                        </button>
+                    </div>
                 </div>
 
             </div>
