@@ -759,3 +759,7 @@ Modal dinyatakan **OPEN untuk perbaikan UI**. Arah perbaikan: panel lebih sederh
 ## Bab 7.34 — Loading State Modal Konfirmasi Wawasan AI
 
 CTA **Ya, Perbarui** sebelumnya tidak memiliki loading state dan modal ditutup sebelum request dimulai. Sekarang modal tetap terbuka selama `generateAiInsights`, tombol aksi dinonaktifkan, dan CTA menampilkan spinner `progress_activity` serta teks **Memproses AI...** sampai job selesai.
+
+## Bab 7.35 — Anti-Slop Toast Wawasan AI
+
+Toast sukses Wawasan AI diselaraskan dengan standar UI proyek: satu judul ringkas, ikon Material Symbols, panel putih netral, border aksen tipis, radius 12px, shadow ringan, tanpa SweetAlert icon generik dan tanpa timer progress bar. Toast sekarang menampilkan **Wawasan AI diperbarui** setelah job selesai.

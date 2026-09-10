@@ -39,9 +39,9 @@
         gap: 12px;
         align-items: flex-start;
         padding: 12px 14px;
-        border-radius: 16px;
+        border-radius: 12px;
         background: #ffffff;
-        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
         border: 1px solid rgba(148, 163, 184, 0.18);
         overflow: hidden;
     }
@@ -55,15 +55,15 @@
     .admin-toast.is-leaving { animation: adminToastLeave 180ms ease-in forwards; }
 
     .admin-toast__icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 999px;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
         display: grid;
         place-items: center;
         flex: 0 0 34px;
-        font-size: 18px;
+        font-size: 16px;
         line-height: 1;
-        font-weight: 800;
+        font-weight: 500;
     }
 
     .admin-toast--success .admin-toast__icon {
@@ -105,7 +105,7 @@
         word-break: break-word;
     }
 
-    /* SweetAlert2 Solid Colored Toast Styles */
+    /* Legacy SweetAlert classes retained for other screens. */
     .swal-toast-success, .swal-toast-error, .swal-toast-warning, .swal-toast-info {
         max-width: 280px !important;
         padding: 8px 12px !important;
@@ -255,8 +255,9 @@
         const buildToast = (type, title, message) => {
             const el = document.createElement('div');
             el.className = `admin-toast admin-toast--${type} is-entering`;
+            const icon = type === 'success' ? 'check_circle' : (type === 'warning' ? 'warning' : (type === 'error' ? 'error' : 'info'));
             el.innerHTML = `
-                <div class="admin-toast__icon">${type === 'success' ? '✓' : (type === 'warning' ? '!' : '×')}</div>
+                <div class="admin-toast__icon"><span class="material-symbols-outlined">${icon}</span></div>
                 <div class="admin-toast__body">
                     <div class="admin-toast__title">${title}</div>
                     ${message ? `<div class="admin-toast__message">${message}</div>` : ''}
@@ -275,33 +276,6 @@
             const lastShown = shownKeys.get(key) || 0;
             if (now - lastShown < dedupeMs) return;
             shownKeys.set(key, now);
-
-            // Fallback chain: SweetAlert2 -> Custom HTML Toast -> Alert
-            if (window.Swal) {
-                const Toast = Swal.mixin({
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: autoCloseMs,
-                    timerProgressBar: true,
-                    iconColor: '#ffffff', // Set icon color to white for contrast on solid background
-                    customClass: {
-                        popup: `swal-toast-${type}`,
-                    },
-                    showClass: {
-                        popup: 'swal-toast-enter',
-                    },
-                    hideClass: {
-                        popup: 'swal-toast-leave',
-                    }
-                });
-                Toast.fire({
-                    icon: type,
-                    title: cleanTitle,
-                    text: cleanMessage
-                });
-                return;
-            }
 
             const root = getRoot();
             if (!root) {

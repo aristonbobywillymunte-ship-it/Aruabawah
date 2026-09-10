@@ -671,8 +671,8 @@ class MediaDashboard extends Component
         Cache::forget($cacheKey);
         $this->dispatch('admin-toast', payload: [
             'type' => 'success',
-            'title' => 'Wawasan diperbarui',
-            'messageDetail' => 'Ringkasan dan rekomendasi AI berhasil diperbarui.',
+            'title' => 'Wawasan AI diperbarui',
+            'messageDetail' => '',
         ]);
         $this->showAiInsightConfirmModal = false;
     }

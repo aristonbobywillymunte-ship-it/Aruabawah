@@ -1,5 +1,10 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260910-37] Anti-Slop Toast Wawasan AI
+* **Perubahan**: Toast custom netral menggantikan SweetAlert toast generik; ikon memakai Material Symbols, progress bar dihapus, copy dipadatkan.
+* **QA fisik**: `view:clear` berhasil; PHP lint berhasil; render terautentikasi menghasilkan `RENDER_SUCCESS=164539`; marker custom toast terdeteksi; `git diff --check` bersih.
+* **Status**: PASSED untuk compile/lint/render. Browser visual test belum tersedia.
+
 ### [QA-20260910-36] Loading State Modal Konfirmasi Wawasan AI
 * **Temuan**: CTA `Ya, Perbarui` belum memiliki `wire:loading`; modal ditutup sebelum request berjalan sehingga pengguna tidak melihat proses.
 * **Perubahan**: Modal dipertahankan selama `generateAiInsights`; CTA dan tombol Batal disabled saat request; CTA menampilkan spinner `progress_activity` dan teks `Memproses AI...`.
