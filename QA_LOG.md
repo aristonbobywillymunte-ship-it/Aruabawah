@@ -628,3 +628,34 @@ Setiap entri pengujian wajib mencakup komponen berikut:
   - Livewire Resolution Test: `ProjectsList` resolved successfully via tinker ✅
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+---
+
+### [QA-20260910-23] Perbaikan Slop Antarmuka & UX Modal Edit Proyek (`project-edit-modal.blade.php`)
+* **Tanggal & Waktu**: 10 September 2026, 21:22 WIB
+* **Konteks Masalah**:
+  Audit pada modal Edit Proyek menemukan sejumlah slop visual, copywriting, dan performa:
+  1. Tombol close (X) header dan select paket menggunakan raw SVG inline.
+  2. Typo class Tailwind CSS non-standar (`text-slate-455`, `hover:text-slate-650`, `border-slate-350`, `rounded-custom`).
+  3. Input time jadwal override memakai `wire:model.live` yang memicu round-trip server berlebihan per perubahan jam.
+  4. Slot override jadwal tidak memiliki penomoran slot (`Slot 1`, `Slot 2`, dst).
+  5. Teks copy jadwal paket `'Interval lama'` tidak baku (harus `'Tidak dijadwalkan'`).
+  6. Tombol simpan menggunakan inline style `background-color: #1fa387;` dan raw SVG spinner.
+  7. Belum adanya shortcut tombol keyboard `Escape` dan handler click outside untuk menutup modal dengan nyaman.
+  8. Input form utama belum dilengkapi dengan ikon visual sistem `material-symbols-outlined` seperti halnya form Create Project.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/project-edit-modal.blade.php`
+* **Perbaikan yang Dilakukan**:
+  1. Standarisasi tombol close (X), lock paket, dan tombol submit ke font ikon `material-symbols-outlined: close`, `lock`, `save`, dan `progress_activity`.
+  2. Menghapus semua invalid class Tailwind dan menggantinya ke standar sistem (`rounded-xl`, `border-slate-200`, `text-slate-500`, dsb).
+  3. Mengubah binding waktu override dari `wire:model.live` menjadi `wire:model`.
+  4. Menambahkan label penomoran slot (`Slot N`) yang proporsional di sisi kiri setiap input time override.
+  5. Menyelaraskan teks jadwal paket `'Interval lama'` menjadi `'Tidak dijadwalkan'`.
+  6. Menambahkan handler `@keydown.escape.window="$wire.close()"` dan `@click.outside.stop="$wire.close()"`.
+  7. Melengkapi seluruh input field form (`Nama Proyek`, `Telegram Chat ID`, `Kata Kunci Pencarian`, `Kata Kunci Penyaring`, `Kata Kunci Pengecualian`) dengan ikon prefix sistem yang konsisten.
+* **Physical Runtime Verification**:
+  - PHP Lint: No syntax errors detected (`php -l`) ✅
+  - View Clear: `php artisan view:clear` → Clear successfully ✅
+  - Livewire Resolution Test: `ProjectEditModal` resolved successfully via tinker ✅
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

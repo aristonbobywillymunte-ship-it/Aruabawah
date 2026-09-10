@@ -562,3 +562,16 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
   - Memperjelas label tombol konfirmasi menjadi kontekstual (*"Ya, Nonaktifkan"*, *"Ya, Hapus Permanen"*, *"Ya, Aktifkan"*, dsb).
 * **File Diubah**: `resources/views/components/⚡projects-list.blade.php`
 * **QA**: `[QA-20260910-22]` — PASSED.
+
+### 7.23 Modernisasi & Pembersihan Slop Modal Edit Proyek (10 September 2026)
+* **Fitur**: Audit komprehensif dan perbaikan antarmuka modal Edit Proyek (`project-edit-modal`).
+* **Latar Belakang**: Adanya class Tailwind non-standar, penggunaan raw SVG inline yang tidak seragam, performa round-trip Livewire berlebih pada input waktu override, serta belum adanya penomoran slot dan keyboard shortcut penutup modal.
+* **Solusi yang Diimplementasikan**:
+  - Menghapus seluruh class Tailwind yang keliru/typo (`text-slate-455`, `border-slate-350`, `rounded-custom`, dll) dan menerapkan styling konsisten berstandar design system modern.
+  - Memperbaiki performa input time override dengan mengganti `wire:model.live` ke `wire:model`.
+  - Menambahkan penomoran slot jadwal override (`Slot 1`, `Slot 2`, dst) serta standardisasi copy teks jadwal paket bawaan menjadi *"Tidak dijadwalkan"*.
+  - Melengkapi input field dengan ikon prefix `material-symbols-outlined` (`folder`, `send`, `search`, `filter_alt`, `block`).
+  - Menambahkan dukungan penutupan modal via tombol keyboard `Escape` dan klik di luar area modal (*click outside*).
+  - Mengganti seluruh spinner tombol simpan ke `progress_activity`.
+* **File Diubah**: `resources/views/livewire/project-edit-modal.blade.php`
+* **QA**: `[QA-20260910-23]` — PASSED.
