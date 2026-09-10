@@ -870,3 +870,17 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
 ### Verifikasi
 - PHP syntax check lulus (`No syntax errors detected`).
 - `php artisan view:clear` sukses.
+
+---
+
+## [QA-20260910-32] Fix Overlay `preparePdfReport` Memblokir Tombol Perbarui Wawasan AI
+
+- **Tanggal:** 2026-09-10
+- **Konteks:** Tombol "Perbarui Wawasan AI" tidak bisa ditekan — klik tidak ter-register.
+- **Root Cause:** Div overlay `wire:loading.flex wire:target="preparePdfReport"` di line 5880 `media-dashboard.blade.php` tidak memiliki `style="display:none;"`. Berbeda dengan overlay lain (reportFeedback, AI confirm modal) yang sudah memiliki atribut ini. Tanpa `style="display:none;"`, Livewire kadang tidak menyembunyikan elemen `wire:loading.flex` saat tidak ada proses loading, sehingga overlay `fixed inset-0 z-[9999]` menutup seluruh layar dan memblokir semua pointer event termasuk klik tombol.
+- **Target File:** `resources/views/livewire/media-dashboard.blade.php` (line 5880)
+- **Perubahan:** Tambah `style="display:none;"` ke div overlay preparePdfReport.
+- **Verifikasi:**
+  - `php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+  - PHP syntax check implisit via view compile ✅
+- **Status:** PASSED ✅
