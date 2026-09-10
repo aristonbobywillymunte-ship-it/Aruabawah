@@ -230,6 +230,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 - [2026-09-10]: Formalisasi aturan mutlak wajib QA dan dokumentasi: Setiap AI yang melakukan perbaikan kode diwajibkan melakukan pengetesan fisik nyata (QA), mencatat skenario dan hasilnya di Bab 7, serta memperbarui log Bab 6 sebelum mengakhiri sesi; dikunci di PRD Bagian 5.3 dan AI_HANDOFF_INSTRUCTIONS.md.
 - [2026-09-10]: Penambahan aturan mutlak larangan git push otomatis: Setiap AI hanya diperbolehkan membuat commit lokal dan dilarang keras melakukan `git push` tanpa perintah eksplisit dari user; dikunci di PRD Bagian 5.3 poin 7 dan AI_HANDOFF_INSTRUCTIONS.md poin 6.
 - [2026-09-10]: Audit dan perbaikan exception `Livewire\Features\SupportMultipleRootElementDetection\MultipleRootElementsDetectedException: Livewire only supports one HTML element per component` pada komponen `projects-list` saat membuka route `/?project=...&tab=...`. Penyebab berupa penempatan penutup `@endif` prematur di tengah Blade template yang menyebabkan footer & modal di-render di luar root DOM tree. Masalah diperbaiki dan diverifikasi lolos render 100%.
+- [2026-09-10]: Pembersihan AI-Slop dan inkonsistensi data pada Tab Analisis (`?project=61&tab=YW5hbGlzaXM=`): menghapus border gradien neon multi-warna, mengeliminasi efek background blur blob palsu, mengganti drop shadow neon jenuh dengan soft neutral shadow, menghapus filter sentimen buatan (`whereRaw sentiment = 'positive'`) pada Penyebutan Populer agar ranking jangkauan mencerminkan data riil, serta memperbaiki typo array key Facebook. Didokumentasikan dan diuji lolos QA (QA-20260910-03).
 
 ---
 
@@ -261,13 +262,23 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 * **Skenario & Hasil Pengujian**:
   1. **Skenario Proyek Aktif Terpilih (`project=NjE=&tab=YW5hbGlzaXM=`)**:
      - Simulasi render Blade view `welcome` dengan Livewire component `projects-list` saat `$projectId` terisi.
-     - Sebelum perbaikan: Menghasilkan `MultipleRootElementsDetectedException: Livewire only supports one HTML element per component. Multiple root elements detected for component: [projects-list]`.
-     - Setelah perbaikan: Render HTML berhasil dengan status exit code 0, panjang HTML 131.560 byte, tanpa exception `MultipleRootElementsDetectedException`.
-     - **Status**: **PASSED**.
+     - Status: **PASSED (Exit Code 0, Render 131.560 bytes)**.
   2. **Skenario Halaman List Proyek Bersih (Tanpa Parameter Proyek)**:
      - Simulasi render Blade view `welcome` saat `$projectId = null`.
-     - Komponen merender struktur wrapper penuh (Header, Project Grid Cards, Modal Trashed, Modal Confirm, Toast, dan Footer) secara tepat di dalam satu root `<div>`.
-     - Hasil render: Sukses dengan panjang HTML 25.254 byte, tanpa error maupun deprecation warning PHP 8.4.
+     - Status: **PASSED (Exit Code 0, Render 25.254 bytes)**.
+
+### 7.3 QA Verifikasi Pembersihan AI-Slop & Query Tab Analisis (10 September 2026)
+* **Environment Pengujian**: Runtime Docker Container Lokal (`media_intelligent_container`), PHP 8.4 CLI, Laravel 11/13.17, Livewire 3.
+* **Target Uji**: URL `http://localhost/?project=61&tab=YW5hbGlzaXM=` (`livewire/media-dashboard.blade.php`).
+* **Skenario & Hasil Pengujian**:
+  1. **Pembersihan Tampilan AI-Slop Sesuai Taste-Skill**:
+     - Border neon multi-warna pada grid kategori diganti menjadi solid border netral `border-slate-200`.
+     - Drop shadow neon jenuh (`shadow-pink-500/20`, `shadow-blue-500/20`) diganti dengan soft neutral shadow (`shadow-sm`).
+     - Background blur blobs palsu pada awan kata dieliminasi.
+  2. **Koreksi Logika Penyebutan Populer**:
+     - Menghapus klausa `whereRaw("ai_pop.sentiment = 'positive'")` agar artikel/postingan populer disajikan murni berdasarkan volume pembaca (`project_estimated_readers DESC`) dan keterlibatan publik yang nyata.
+  3. **Verifikasi Render Fisik Runtime**:
+     - Eksekusi simulasi via `php artisan tinker`: Render sukses 100% dengan status exit code 0, panjang HTML 131.560 byte, tanpa error.
      - **Status**: **PASSED**.
 
 

@@ -21,6 +21,45 @@ Setiap entri pengujian wajib mencakup komponen berikut:
 
 ## Riwayat Log Verifikasi QA
 
+### [QA-20260910-03] Verifikasi Pembersihan AI-Slop & Inkonsistensi Tab Analisis (`?project=61&tab=YW5hbGlzaXM=`)
+* **Tanggal & Waktu**: 10 September 2026, 19:35 WIB
+* **Konteks Masalah**:
+  Audit antarmuka tab Analisis menemukan beberapa elemen *AI-Slop* dan cacat query:
+  1. Border gradien warna-warni neon (`p-[1px] bg-gradient-to-br`) dan efek blur blob latar belakang palsu pada grid kategori dan awan kata.
+  2. Drop shadow berwarna jenuh (`shadow-pink-500/20`, `shadow-blue-500/20`, `shadow-slate-900/20`) yang melanggar panduan *Taste-Skill Section 4.4*.
+  3. Hardcoded filter `whereRaw("ai_pop.sentiment = 'positive'")` pada widget Penyebutan Populer yang memblokir postingan netral/negatif bervolume tinggi.
+  4. Typo nested array key pada kartu Facebook: `$counts['counts']['sources']['Facebook']`.
+* **Target File Diperbaiki**:
+  - `resources/views/livewire/media-dashboard.blade.php`
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container`
+  - Engine: PHP 8.4 CLI, Laravel 11/13.17, Livewire 3
+  - Database: PostgreSQL `media_intelligent`
+* **Metode & Skenario Uji Fisik**:
+  1. Pembersihan compiled view:
+     ```bash
+     docker exec media_intelligent_container php artisan view:clear
+     ```
+  2. Uji render runtime halaman dengan proyek aktif ID 61 dan tab analisis:
+     ```bash
+     docker exec media_intelligent_container php artisan tinker --execute='
+     $user = App\Models\User::where("email", "user@arusbawah.co")->first();
+     auth()->login($user);
+     request()->merge(["project" => "61", "tab" => "YW5hbGlzaXM="]);
+     $html = View::make("welcome")->render();
+     echo "RENDER SUCCESS: " . strlen($html) . " bytes\n";
+     '
+     ```
+* **Hasil Pengamatan Nyata**:
+  - `view:clear` berhasil dijalankan (*exit code 0*).
+  - Eksekusi render Blade berhasil 100% tanpa error, tanpa exception sintaks, dengan ukuran HTML `131.560 bytes`.
+  - Grid kategori kini menggunakan solid borders yang bersih (*border-slate-200*) dengan neutral soft shadow (*shadow-sm*).
+  - Query Penyebutan Populer kini mengambil artikel/postingan murni berdasarkan ranking pembaca (`project_estimated_readers DESC`) tanpa manipulasi sentimen buatan.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: *Pending local commit*
+
+---
+
 ### [QA-20260910-02] Verifikasi Livewire Multiple Root Elements Fix pada Komponen `projects-list`
 * **Tanggal & Waktu**: 10 September 2026, 19:28 WIB
 * **Konteks Masalah**:
