@@ -791,3 +791,29 @@ Saat tombol "Detail Proyek" di-hover, latar belakang berubah menjadi hijau (`#1f
 ### Verifikasi
 - Asset build: `npm run build` sukses (vite).
 - Cache view dibersihkan.
+
+## [QA-20260910-29] Standarisasi Tombol & Optimasi Reaktivitas Wawasan AI
+
+**Tanggal**: 2026-09-10
+**File**: 
+- `resources/views/livewire/media-dashboard.blade.php`
+- `app/Livewire/MediaDashboard.php`
+**Status**: ✅ FIXED
+
+### Masalah
+1. Tombol "Perbarui Wawasan AI" menggunakan raw SVG inline untuk ikon petir dan spinner loading (melanggar panduan Material Symbols).
+2. Badge "Terupdate" hanya berstatus teks statis tanpa informasi kapan terakhir kali diperbarui.
+3. Method `generateAiInsights()` tidak mereset memo `$this->wawasanMemo` dan entri cache `Cache::remember` untuk tab Wawasan, sehingga wawasan baru berpotensi tidak langsung tampil secara reaktif karena tertahan cache lama.
+
+### Perbaikan
+1. **Standarisasi Ikon Tombol**:
+   - Ikon normal: `<span class="material-symbols-outlined text-[16px]">auto_awesome</span>`.
+   - Spinner loading: `<span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>`.
+2. **Badge Terupdate Dinamis**:
+   - Menampilkan selang waktu relatif secara human-readable (`Terupdate diffForHumans()`) serta tooltip tanggal & jam lengkap.
+3. **Invalidasi Cache & Memo di Backend**:
+   - Menambahkan `$this->wawasanMemo = [];` dan `Cache::forget($cacheKey);` saat `generateAiInsights()` dijalankan agar wawasan langsung ter-refresh secara real-time.
+
+### Verifikasi
+- PHP lint pada `MediaDashboard.php` dan `media-dashboard.blade.php`: No syntax errors.
+- `php artisan view:clear`: Sukses.

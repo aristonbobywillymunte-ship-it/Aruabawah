@@ -654,6 +654,9 @@ class MediaDashboard extends Component
         $project = $this->resolveProjectOrFail($this->projectId);
         \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id, $this->startDate, $this->endDate);
         $project->refresh();
+        $this->wawasanMemo = [];
+        $cacheKey = 'media_dashboard_wawasan:' . $this->getDecodedProjectId() . ':' . $this->dashboardCacheSignature();
+        Cache::forget($cacheKey);
         session()->flash('message', 'Wawasan AI berhasil diperbarui!');
     }
 

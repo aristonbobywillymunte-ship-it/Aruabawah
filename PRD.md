@@ -695,3 +695,18 @@ Saat hover di atas tombol "Detail Proyek", latar belakang berubah menjadi warna 
 1. Menggunakan pola `group` pada parent `<a>`.
 2. Menyematkan kelas `group-hover:text-white transition-colors` pada span teks dan elemen ikon `arrow_forward` / `progress_activity`.
 3. Kompilasi asset via `npm run build` sehingga kelas CSS Tailwind v4 tersimpan ke production bundle.
+
+## Bab 7.29 — Standarisasi Tombol & Optimasi Reaktivitas Wawasan AI
+
+### Latar Belakang
+Header tab "Wawasan & Ringkasan AI" memiliki tombol "Perbarui Wawasan AI" yang masih menggunakan raw SVG inline serta badge "Terupdate" tanpa informasi waktu. Selain itu, backend memo dan cache tidak direset saat pembaruan wawasan AI dipicu.
+
+### Perubahan
+1. **Ikon Sistem Material Symbols**:
+   - Menghapus raw SVG bolt dan SVG spinner.
+   - Menggunakan ikon `auto_awesome` untuk state idle.
+   - Menggunakan ikon `progress_activity` dengan kelas `animate-spin` saat proses pembaruan berjalan (`wire:loading`).
+2. **Badge Terupdate Realtime**:
+   - Menampilkan `Terupdate {{ Carbon::parse(...)->diffForHumans() }}` dan tooltip tanggal lengkap.
+3. **Invalidasi Cache Wawasan**:
+   - Menghapus cache key `media_dashboard_wawasan:...` dan mereset array `$this->wawasanMemo = []` pada method `generateAiInsights()` di `MediaDashboard.php` agar perubahan AI segera terlihat di layar tanpa stale data.
