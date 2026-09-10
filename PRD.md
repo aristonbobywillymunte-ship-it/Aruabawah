@@ -723,3 +723,17 @@ Ketika pengguna mengubah rentang tanggal filter, metrik angka terhitung ulang se
    - Di kartu Ringkasan Eksekutif, disematkan badge transparan:
      - `<span class="bg-emerald-50 text-emerald-700">auto_awesome Model AI</span>` untuk hasil LLM.
      - `<span class="bg-slate-100 text-slate-600">calculate Estimasi Sistem</span>` untuk hasil formula statistik default.
+
+## Bab 7.31 — Modal Konfirmasi Sebelum Eksekusi Pembaruan Wawasan AI
+
+### Latar Belakang
+Pemanggilan AI untuk merumuskan wawasan dan rekomendasi memakan waktu proses komputasi serta token API. Sebelumnya, tombol memicu eksekusi langsung tanpa peringatan, sehingga rawan terpencet tanpa sengaja.
+
+### Perubahan
+1. **Pemisahan Aksi (Guard Confirmation)**:
+   - Tombol utama tidak lagi langsung memanggil backend Livewire, melainkan membuka modal konfirmasi interaktif.
+2. **Standar Modal PRD**:
+   - Scroll-lock background aktif ganda via `x-effect` Alpine.
+   - Menggunakan trap roda mouse `@wheel.self.prevent` dan sentuhan `@touchmove.self.prevent`.
+   - Mendukung penutupan dengan tombol Escape dan klik di luar kontainer modal.
+   - Ikon Material Symbols `auto_awesome` dan tombol eksekusi *"Ya, Perbarui"* dengan ikon `check_circle`.

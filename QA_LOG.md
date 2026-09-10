@@ -842,3 +842,31 @@ Saat tombol "Detail Proyek" di-hover, latar belakang berubah menjadi hijau (`#1f
 ### Verifikasi
 - PHP syntax check lulus.
 - View cache berhasil dibersihkan.
+
+## [QA-20260910-31] Implementasi Modal Konfirmasi Sebelum Eksekusi Wawasan AI
+
+**Tanggal**: 2026-09-10
+**File**: `resources/views/livewire/media-dashboard.blade.php`
+**Status**: ✅ FIXED
+
+### Masalah
+Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM secara instan tanpa dialog konfirmasi, sehingga rentan terhadap ketidaksengajaan klik (accidental click) yang memicu konsumsi token LLM dan mengubah data ringkasan proyek.
+
+### Perbaikan
+1. **State Konfirmasi Alpine**:
+   - Menambahkan variable `showAiInsightConfirmModal: false` pada objek root `x-data` di `media-dashboard.blade.php`.
+   - Menambahkan `showAiInsightConfirmModal` ke `x-effect` scroll-lock agar background lock aktif saat modal terbuka.
+2. **Tombol Pemicu**:
+   - Mengubah tombol header "Perbarui Wawasan AI" menjadi `@click="showAiInsightConfirmModal = true"` alih-alih langsung memanggil `$wire.generateAiInsights()`.
+3. **Modal Konfirmasi Interaktif**:
+   - Menampilkan modal konfirmasi dengan judul *"Perbarui Wawasan AI?"* dan penjelasan ringkas.
+   - Menggunakan ikon Material Symbols `auto_awesome` (emerald/brand).
+   - Mematuhi standar modal PRD:
+     - Backdrop blur `bg-slate-900/60 backdrop-blur-sm`.
+     - Wheel & touch trap: `@wheel.self.prevent @touchmove.self.prevent`.
+     - Tutup via Escape key `@keydown.escape.window` dan klik luar `@click.outside`.
+     - Tombol Batal & tombol CTA *"Ya, Perbarui"* dengan ikon `check_circle`.
+
+### Verifikasi
+- PHP syntax check lulus (`No syntax errors detected`).
+- `php artisan view:clear` sukses.

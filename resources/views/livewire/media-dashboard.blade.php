@@ -28,6 +28,7 @@
          reportFeedbackType: 'success',
          reportFeedbackTitle: '',
          reportFeedbackMessage: '',
+         showAiInsightConfirmModal: false,
          scrollToTop() {
              window.scrollTo({ top: 0, behavior: 'smooth' });
          }
@@ -39,7 +40,8 @@
              || (typeof showInstagramCommentsModal !== 'undefined' && showInstagramCommentsModal)
              || (typeof showFacebookCommentsModal !== 'undefined' && showFacebookCommentsModal)
              || openMobileMenu
-             || (typeof reportFeedbackOpen !== 'undefined' && reportFeedbackOpen);
+             || (typeof reportFeedbackOpen !== 'undefined' && reportFeedbackOpen)
+             || (typeof showAiInsightConfirmModal !== 'undefined' && showAiInsightConfirmModal);
          document.body.style.overflow = shouldLock ? 'hidden' : '';
          document.documentElement.style.overflow = shouldLock ? 'hidden' : '';
      "
@@ -3267,7 +3269,7 @@
                         
                         <button 
                             type="button"
-                            wire:click="generateAiInsights"
+                            @click="showAiInsightConfirmModal = true"
                             wire:loading.attr="disabled"
                             wire:target="generateAiInsights"
                             class="bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-[11px] px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
@@ -5914,6 +5916,54 @@
             >
                 Tutup
             </button>
+        </div>
+    </div>
+
+    <!-- Confirm Perbarui Wawasan AI Modal Overlay -->
+    <div
+        x-show="showAiInsightConfirmModal"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        @keydown.escape.window="showAiInsightConfirmModal = false"
+        @wheel.self.prevent
+        @touchmove.self.prevent
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+        style="display:none;"
+    >
+        <div
+            @click.outside="showAiInsightConfirmModal = false"
+            class="w-full max-w-sm rounded-3xl bg-white shadow-2xl border border-slate-100/80 p-6 text-center"
+        >
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1fa387]/10 text-[#1fa387]">
+                <span class="material-symbols-outlined text-[28px]">auto_awesome</span>
+            </div>
+            
+            <h3 class="text-base font-extrabold text-slate-900 leading-snug">Perbarui Wawasan AI?</h3>
+            <p class="mt-2 text-xs leading-relaxed text-slate-500">
+                Sistem akan membaca kembali data penyebutan dan sentimen terkini untuk merumuskan ulang ringkasan eksekutif serta rekomendasi strategis.
+            </p>
+
+            <div class="mt-6 flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                    type="button"
+                    @click="showAiInsightConfirmModal = false"
+                    class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs transition cursor-pointer"
+                >
+                    Batal
+                </button>
+                <button
+                    type="button"
+                    @click="showAiInsightConfirmModal = false; $wire.generateAiInsights()"
+                    class="px-5 py-2.5 rounded-xl bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                    <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                    Ya, Perbarui
+                </button>
+            </div>
         </div>
     </div>
 </div>
