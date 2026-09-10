@@ -186,7 +186,7 @@ Sebelum mengeksekusi perintah terminal atau mengedit kode:
 2. **Dilarang Mengubah Skema Database**: Dilarang menjalankan migrasi yang merusak skema tanpa persetujuan eksplisit user.
 3. **Verifikasi Fisik Sebelum Menjawab**: Dilarang menyimpulkan file/fitur ada atau tidak ada tanpa verifikasi langsung menggunakan `view_file` atau `grep_search`.
 4. **WAJIB MELAKUKAN QA SETELAH SETIAP PERBAIKAN**: Dilarang hanya mengklaim selesai. Setiap perbaikan kode/fitur wajib diuji secara nyata (PHP linting `php -l`, simulasi eksekusi terminal, atau test live di dalam container `media_intelligent_container`).
-5. **WAJIB MENDOKUMENTASIKAN HASIL QA KE BAB 7**: Seluruh parameter uji, skenario, dan status kelulusan (PASSED/FAILED) wajib ditulis lengkap di Bab 7 (Laporan Hasil Verifikasi QA).
+5. **WAJIB MENDOKUMENTASIKAN HASIL QA KE BAB 7 & BUKU QA MANDIRI (`QA_LOG.md`)**: Seluruh parameter uji, skenario, dan status kelulusan (PASSED/FAILED) wajib ditulis lengkap di Bab 7 (Laporan Hasil Verifikasi QA) dan dicatat terperinci pada file mandiri [`QA_LOG.md`](file:///Users/unity/Documents/proyek%20baru/QA_LOG.md).
 6. **Wajib Memperbarui Catatan Progres**: Setiap selesai melakukan task dan QA, AI **wajib** mencatat ringkasan perubahan di Bagian 6 dokumen ini agar AI berikutnya langsung tersinkronisasi.
 7. **DILARANG KERAS GIT PUSH OTOMATIS (CUKUP COMMIT LOKAL)**: AI hanya diizinkan membuat `git commit` di lokal. **Dilarang keras melakukan `git push` sendiri tanpa instruksi eksplisit dari user**.
 

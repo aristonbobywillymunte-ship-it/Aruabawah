@@ -16,8 +16,9 @@
 ## 2. Urutan Membaca File Wajib (Execution Order)
 Sebelum menjawab atau mengeksekusi perintah user, AI **WAJIB** membaca file berikut secara berurutan:
 1. [**`PRD.md`**](file:///Users/unity/Documents/proyek%20baru/PRD.md) $\rightarrow$ **Source of Truth Utama**: Memuat arsitektur sistem, status fitur, aturan Apify, pipeline AI, menu yang terlibat, dan riwayat progress terkini.
-2. [**`AI_CONTEXT.md`**](file:///Users/unity/Documents/proyek%20baru/AI_CONTEXT.md) $\rightarrow$ Aturan teknis detail scraper portal, Google News decoder, scheduler, dan rem biaya Apify.
-3. [**`NEW_AI_HANDOFF.md`**](file:///Users/unity/Documents/proyek%20baru/NEW_AI_HANDOFF.md) $\rightarrow$ Detail arsitektur UI/UX mobile, perbaikan Livewire, dan riwayat bug fix.
+2. [**`QA_LOG.md`**](file:///Users/unity/Documents/proyek%20baru/QA_LOG.md) $\rightarrow$ **Buku Catatan QA Mandiri**: Memuat seluruh riwayat pengetesan fisik terperinci, skenario uji, actual output, dan status kelulusan.
+3. [**`AI_CONTEXT.md`**](file:///Users/unity/Documents/proyek%20baru/AI_CONTEXT.md) $\rightarrow$ Aturan teknis detail scraper portal, Google News decoder, scheduler, dan rem biaya Apify.
+4. [**`NEW_AI_HANDOFF.md`**](file:///Users/unity/Documents/proyek%20baru/NEW_AI_HANDOFF.md) $\rightarrow$ Detail arsitektur UI/UX mobile, perbaikan Livewire, dan riwayat bug fix.
 
 ---
 
@@ -47,8 +48,8 @@ Repositori ini telah mengintegrasikan modul skill resmi di `.ai/skills/`:
 3. **WAJIB MELAKUKAN QA SETELAH SETIAP PERBAIKAN**:
    - Setiap AI yang melakukan perbaikan kode/fitur **DILARANG HANYA MENGKLAIM SELESAI**.
    - Wajib menjalankan verifikasi fisik langsung (PHP linting `php -l`, simulasi eksekusi terminal, atau verifikasi di dalam docker container `media_intelligent_container`).
-4. **WAJIB MENCATAT HASIL QA KE PRD BAB 7**:
-   - Seluruh hasil pengetesan, skenario uji, parameter, dan status kelulusan (PASSED/FAILED) **wajib didokumentasikan di `PRD.md` Bab 7 (Laporan Hasil Verifikasi QA)**.
+4. **WAJIB MENCATAT HASIL QA KE PRD BAB 7 & BUKU QA MANDIRI (`QA_LOG.md`)**:
+   - Seluruh hasil pengetesan, skenario uji, parameter, dan status kelulusan (PASSED/FAILED) **wajib didokumentasikan di `PRD.md` Bab 7 (Laporan Hasil Verifikasi QA) DAN dicatat secara detail pada `QA_LOG.md`**.
 5. **WAJIB MEMPERBARUI LOG PROGRESS (BAB 6)**:
    - Setelah QA selesai dan dicatat, AI wajib memperbarui kronologi di `PRD.md` Bagian 6 sebelum mengakhiri sesi/merespon user.
 6. **DILARANG KERAS GIT PUSH OTOMATIS (CUKUP COMMIT LOKAL)**:
