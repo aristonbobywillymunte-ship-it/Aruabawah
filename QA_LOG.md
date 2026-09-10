@@ -8,7 +8,8 @@
   3. **Unified & Contextual Empty State**: Menyatukan tampilan saat tidak ada proyek menjadi kartu bersih elegan dengan pesan kontekstual (menjelaskan status kuota/izin/instruksi menghubungi admin) dan menghilangkan kartu 620px liar saat kuota habis.
   4. **Pembersihan Copy & Izin Edit**: Mengoreksi deskripsi kartu monitoring (menghapus *"media cetak"* menjadi *"portal berita online dan media sosial"*) serta memproteksi tombol Edit Proyek dengan guard `can_edit_projects`.
   5. **Empty State pada Halaman Pemilihan Paket**: Menambahkan feedback humanis di Step 1 `/projects/create` apabila klien belum memiliki paket yang diizinkan oleh admin.
-* **QA fisik**: `php -l` lulus pada `app/Livewire/ProjectCreate.php` (No syntax errors detected), `php artisan view:clear` sukses (Compiled views cleared).
+  6. **Hotfix Blade Syntax**: Menutup blok `@if(empty($projects))` dengan `@endif` sebelum blok `@else` status skeleton loader `projectsLoaded` pada baris 1335.
+* **QA fisik**: `php -l` lulus pada `app/Livewire/ProjectCreate.php`, `docker exec media_intelligent_container php artisan view:clear` sukses, eksekusi render langsung komponen Livewire `ProjectsList` di dalam container Docker menghasilkan `DOCKER_LIVEWIRE_RENDER_SUCCESS: 17644` bytes tanpa ParseError.
 * **Status**: PASSED.
 
 ### [QA-20260911-39] Rate Limiting & Eliminasi Slop Halaman Login
