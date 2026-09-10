@@ -1,5 +1,14 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-42] Fleksibilitas Pengaturan Jadwal Scraping Mandiri Proyek (Portal & Sosial)
+* **Konteks**: User tidak bisa mengatur jam jadwal scraping proyeknya sendiri jika paket admin belum diisi jatah run hariannya (`$portalSlots == 0` / `$socialSlots == 0`). User terkunci dengan status pasif *"Tidak dijadwalkan / Belum ada jadwal paket"*.
+* **Perubahan**:
+  1. **Dynamic Slot Management**: Menambahkan method reaktif `addNewsSlot()`, `removeNewsSlot($index)`, `addSocialSlot()`, dan `removeSocialSlot($index)` pada `ProjectCreate.php` dan `ProjectEditModal.php`.
+  2. **Eliminasi Guard Pemblokir Input**: Membuka input pengaturan jadwal scraping kustom di `project-create.blade.php` dan `project-edit-modal.blade.php` tanpa bergantung pada nilai `news_runs_per_day > 0` milik paket.
+  3. **Fallback & Reset Cerdas**: Jika user tidak mengatur jam kustom (slot kosong), sistem tetap otomatis mengikuti default jadwal paket. Disediakan tombol *"Reset ke Paket"* untuk menghapus override jam dengan sekali klik.
+* **QA fisik**: `php -l` lulus pada `ProjectCreate.php` & `ProjectEditModal.php` (No syntax errors detected), `docker exec media_intelligent_container php artisan view:clear` sukses (Compiled views cleared).
+* **Status**: PASSED.
+
 ### [QA-20260911-41] Integrasi Pemilihan Paket Monitoring pada Formulir Tambah Klien Baru
 * **Konteks**: Saat admin atau user membuat akun klien baru di `/admin/clients/create`, formulir sebelumnya hanya meminta nama, email, dan password tanpa mengaitkan paket monitoring (`allowedPackages`). Akibatnya, setiap klien baru selalu mendapatkan kuota 0 proyek (`getEffectiveMaxProjects() == 0`) dan tombol pembuatan proyek tidak muncul.
 * **Perubahan**:

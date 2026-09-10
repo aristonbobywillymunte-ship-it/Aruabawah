@@ -152,16 +152,50 @@ class ProjectCreate extends Component
         return $normalized;
     }
 
+    public function addNewsSlot(): void
+    {
+        if (count($this->news_run_times_override) < 24) {
+            $this->news_run_times_override[] = '';
+        }
+    }
+
+    public function removeNewsSlot(int $index): void
+    {
+        if (isset($this->news_run_times_override[$index])) {
+            unset($this->news_run_times_override[$index]);
+            $this->news_run_times_override = array_values($this->news_run_times_override);
+        }
+    }
+
+    public function addSocialSlot(): void
+    {
+        if (count($this->social_run_times_override) < 24) {
+            $this->social_run_times_override[] = '';
+        }
+    }
+
+    public function removeSocialSlot(int $index): void
+    {
+        if (isset($this->social_run_times_override[$index])) {
+            unset($this->social_run_times_override[$index]);
+            $this->social_run_times_override = array_values($this->social_run_times_override);
+        }
+    }
+
     protected function syncOverrideSlotsFromPackage(?Package $package): void
     {
+        $pkgNewsRuns = $package?->news_runs_per_day;
+        $pkgSocialRuns = $package?->social_runs_per_day;
+
+        // Jika paket memiliki jatah run harian, sesuaikan slotnya. Jika 0 / null, sediakan minimal 1 slot fleksibel jika masih kosong.
         $this->news_run_times_override = $this->resizeOverrideSlots(
             $this->news_run_times_override,
-            $package?->news_runs_per_day
+            $pkgNewsRuns ?: (empty($this->news_run_times_override) ? 1 : count($this->news_run_times_override))
         );
 
         $this->social_run_times_override = $this->resizeOverrideSlots(
             $this->social_run_times_override,
-            $package?->social_runs_per_day
+            $pkgSocialRuns ?: (empty($this->social_run_times_override) ? 1 : count($this->social_run_times_override))
         );
     }
 

@@ -39,14 +39,18 @@ class ProjectEditModal extends Component
         
         // Eager load only needed package for display
         $this->projectPackage = $project->package_id ? Package::find($project->package_id) : null;
-        $this->news_run_times_override = $this->resizeOverrideSlots(
-            $project->news_run_times_override ?? [],
-            $this->projectPackage?->news_runs_per_day
-        );
-        $this->social_run_times_override = $this->resizeOverrideSlots(
-            $project->social_run_times_override ?? [],
-            $this->projectPackage?->social_runs_per_day
-        );
+        
+        $savedNewsOverride = $project->news_run_times_override ?? [];
+        $pkgNewsRuns = $this->projectPackage?->news_runs_per_day;
+        $this->news_run_times_override = !empty($savedNewsOverride)
+            ? array_values($savedNewsOverride)
+            : ($pkgNewsRuns ? $this->resizeOverrideSlots([], $pkgNewsRuns) : []);
+
+        $savedSocialOverride = $project->social_run_times_override ?? [];
+        $pkgSocialRuns = $this->projectPackage?->social_runs_per_day;
+        $this->social_run_times_override = !empty($savedSocialOverride)
+            ? array_values($savedSocialOverride)
+            : ($pkgSocialRuns ? $this->resizeOverrideSlots([], $pkgSocialRuns) : []);
         
         $recipients = DB::table('project_telegram_recipients')
             ->where('project_id', $project->id)
@@ -57,6 +61,36 @@ class ProjectEditModal extends Component
         
         $this->resetValidation();
         $this->showModal = true;
+    }
+
+    public function addNewsSlot(): void
+    {
+        if (count($this->news_run_times_override) < 24) {
+            $this->news_run_times_override[] = '';
+        }
+    }
+
+    public function removeNewsSlot(int $index): void
+    {
+        if (isset($this->news_run_times_override[$index])) {
+            unset($this->news_run_times_override[$index]);
+            $this->news_run_times_override = array_values($this->news_run_times_override);
+        }
+    }
+
+    public function addSocialSlot(): void
+    {
+        if (count($this->social_run_times_override) < 24) {
+            $this->social_run_times_override[] = '';
+        }
+    }
+
+    public function removeSocialSlot(int $index): void
+    {
+        if (isset($this->social_run_times_override[$index])) {
+            unset($this->social_run_times_override[$index]);
+            $this->social_run_times_override = array_values($this->social_run_times_override);
+        }
     }
 
     protected function parseOptionalKeywordString(string $value): array

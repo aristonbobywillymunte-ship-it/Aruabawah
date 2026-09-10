@@ -218,6 +218,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-11]: Fleksibilitas jadwal scraping mandiri proyek (Portal & Sosial): mengeliminasi pemblokir slot jam saat paket admin belum memiliki jadwal default, menyediakan fitur tambah/hapus jam kustom mandiri bagi pengguna, serta menjaga fallback otomatis ke default paket jika tidak diatur (QA-20260911-42).
 - [2026-09-11]: Integrasi pemilihan paket monitoring pada formulir pembuatan akun klien baru (`/admin/clients/create`): menambahkan pilihan whitelist paket monitoring saat registrasi klien, auto-sync `allowedPackages`, perbaikan teks edukatif empty state, serta pengaitan paket aktif pada akun klien eksisting (QA-20260911-41).
 - [2026-09-11]: Isolasi proyek akun client dan sinkronisasi kuota proyek admin: memastikan kartu dan tombol Buat Proyek Baru hanya tampil jika kuota paket aktif (`max_projects`) belum habis dan client memiliki izin, mount guard di `/projects/create`, pembersihan double empty state menjadi satu kartu kontekstual, pembersihan copy usang "media cetak", dan guard `can_edit_projects` pada tombol edit (QA-20260911-40).
 - [2026-09-11]: Penerapan proteksi brute-force rate limiting (5 percobaan/menit/IP) pada `LoginController.php`, pesan error berbahasa Indonesia ramah, eliminasi AI-slop visual berupa fallback logo geometris merah generik ke palet teal resmi sistem, perbaikan dead link `href="#"` pada footer login, serta pencegahan submit button stuck pada validasi form (QA-20260911-39).
