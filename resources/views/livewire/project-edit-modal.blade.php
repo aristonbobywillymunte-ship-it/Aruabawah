@@ -11,10 +11,11 @@
         >
             <div 
                 @click.outside.stop="$wire.close()"
-                class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col h-[82vh] max-h-[640px]"
+                class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col"
+                style="height: 82vh; max-height: 640px; display: flex; flex-direction: column;"
             >
                 <!-- Modal Header (Fixed / Non-Scrollable) -->
-                <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between shrink-0" style="flex-shrink: 0;">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-2xl bg-[#1fa387]/10 flex items-center justify-center text-[#1fa387] shrink-0">
                             <span class="material-symbols-outlined text-[20px]">edit</span>
@@ -34,8 +35,8 @@
                 </div>
 
                 <!-- Modal Body (Form - Hanya Bagian Ini Yang Boleh Di-scroll) -->
-                <form wire:submit.prevent="updateProject" class="flex flex-col flex-1 min-h-0 overflow-hidden">
-                    <div class="px-8 py-6 space-y-6 flex-1 overflow-y-auto overscroll-contain">
+                <form wire:submit.prevent="updateProject" class="flex flex-col flex-1 min-h-0 overflow-hidden" style="flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+                    <div class="px-8 py-6 space-y-6 flex-1 overflow-y-auto overscroll-contain" style="flex: 1 1 auto; overflow-y: auto;">
                         <!-- Pilih Paket (Paling Atas) -->
                         @if($projectPackage)
                         <div class="space-y-2">
