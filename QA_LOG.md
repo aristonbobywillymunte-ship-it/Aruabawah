@@ -659,3 +659,31 @@ Setiap entri pengujian wajib mencakup komponen berikut:
   - Livewire Resolution Test: `ProjectEditModal` resolved successfully via tinker ✅
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+---
+
+### [QA-20260910-24] Standardisasi Ukuran Fix Modal & Background Scroll Lock
+* **Tanggal & Waktu**: 10 September 2026, 21:26 WIB
+* **Konteks Masalah**:
+  Audit interaksi modal (`project-edit-modal` dan `⚡projects-list`) menemukan:
+  1. Ukuran modal melebar tak terkendali (`max-w-4xl`) di monitor besar sehingga bidang input tampak renggang dan tidak ergonomis.
+  2. Saat modal aktif, halaman latar belakang di belakang backdrop masih dapat ter-scroll (*scroll bleed*), mengurangi fokus dan kenyamanan navigasi.
+  3. Perlu aturan arsitektur baku yang mewajibkan isolasi scroll modal (*fixed boundaries header-footer, inner body scroll only, background scroll lock*).
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/project-edit-modal.blade.php`
+  - `resources/views/components/⚡projects-list.blade.php`
+* **Perbaikan yang Dilakukan**:
+  1. **Standardisasi Ukuran Fix**:
+     - Modal Edit Proyek diatur menjadi proporsional `max-w-2xl` dengan tinggi terarah `h-[82vh] max-h-[640px]`.
+     - Modal Daftar Proyek Dinonaktifkan diatur menjadi `max-w-3xl` dengan tinggi `h-[80vh] max-h-[580px]`.
+  2. **Isolasi Scroll Body Form**:
+     - Header (`shrink-0 border-b`) dan Footer (`shrink-0 border-t`) statis/terkunci.
+     - Kontainer form di tengah diberikan `flex-1 overflow-y-auto overscroll-contain`.
+  3. **Background Scroll Lock Otomatis (Alpine.js)**:
+     - Backdrop modal dilengkapi hook Alpine `x-data x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');"`.
+     - Latar belakang terkunci saat modal dibuka, dan pulih saat modal ditutup.
+* **Physical Runtime Verification**:
+  - PHP Lint: No syntax errors detected (`php -l`) ✅
+  - View Clear: `php artisan view:clear` → Clear successfully ✅
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

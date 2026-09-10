@@ -1,6 +1,8 @@
 <div>
     @if($showModal)
         <div
+            x-data
+            x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');"
             x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100"
@@ -9,9 +11,9 @@
         >
             <div 
                 @click.outside.stop="$wire.close()"
-                class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col h-[85vh] max-h-[700px]"
+                class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col h-[82vh] max-h-[640px]"
             >
-                <!-- Modal Header -->
+                <!-- Modal Header (Fixed / Non-Scrollable) -->
                 <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-2xl bg-[#1fa387]/10 flex items-center justify-center text-[#1fa387] shrink-0">
@@ -31,9 +33,9 @@
                     </button>
                 </div>
 
-                <!-- Modal Body (Form) -->
-                <form wire:submit.prevent="updateProject" class="flex flex-col flex-1 min-h-0">
-                    <div class="px-8 py-6 space-y-6 flex-1 overflow-y-auto">
+                <!-- Modal Body (Form - Hanya Bagian Ini Yang Boleh Di-scroll) -->
+                <form wire:submit.prevent="updateProject" class="flex flex-col flex-1 min-h-0 overflow-hidden">
+                    <div class="px-8 py-6 space-y-6 flex-1 overflow-y-auto overscroll-contain">
                         <!-- Pilih Paket (Paling Atas) -->
                         @if($projectPackage)
                         <div class="space-y-2">

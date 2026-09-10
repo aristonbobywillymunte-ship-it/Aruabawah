@@ -575,3 +575,20 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
   - Mengganti seluruh spinner tombol simpan ke `progress_activity`.
 * **File Diubah**: `resources/views/livewire/project-edit-modal.blade.php`
 * **QA**: `[QA-20260910-23]` — PASSED.
+
+### 7.24 Standardisasi Ukuran Fix Modal & Isolasi Scroll Lock Latar Belakang (10 September 2026)
+* **Fitur**: Standar arsitektur antarmuka modal (Edit Proyek, Daftar Proyek Dinonaktifkan, Modal Konfirmasi).
+* **Aturan & Standar Modal Baku**:
+  1. **Ukuran Fix & Proporsional**: Modal tidak boleh melebar tak terkontrol. Form modal standar menggunakan lebar maksimum `max-w-2xl` dan batasan tinggi terarah `max-h-[640px]`.
+  2. **Isolasi Scroll (Scroll Inner Body Only)**:
+     - Header (`shrink-0 border-b`) dan Footer (`shrink-0 border-t`) harus selalu terkunci (statis).
+     - Hanya bagian isi/body modal yang boleh bergulir menggunakan `flex-1 overflow-y-auto overscroll-contain`.
+  3. **Background Scroll Lock (Halaman Belakang Terkunci Total)**:
+     - Selama modal aktif, elemen `document.body` wajib diberi class `overflow-hidden`.
+     - Ditangani secara otomatis lewat lifecycle Alpine.js:
+       ```html
+       x-data
+       x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');"
+       ```
+* **File Diubah**: `resources/views/livewire/project-edit-modal.blade.php`, `resources/views/components/⚡projects-list.blade.php`
+* **QA**: `[QA-20260910-24]` — PASSED.

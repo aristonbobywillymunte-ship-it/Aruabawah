@@ -1306,8 +1306,8 @@ new class extends Component
             <!-- Trashed Projects Modal -->
             @if($showTrashedModal)
                 <div
-                    x-data="{ show: true }"
-                    x-show="show"
+                    x-data
+                    x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
@@ -1316,7 +1316,7 @@ new class extends Component
                 >
                     <div 
                         @click.outside="!$wire.showConfirmModal && $wire.closeModals()"
-                        class="bg-white rounded-3xl w-full max-w-4xl shadow-2xl border border-slate-100/80 overflow-hidden transform transition-all duration-300 scale-100 flex flex-col h-[600px]"
+                        class="bg-white rounded-3xl w-full max-w-3xl shadow-2xl border border-slate-100/80 overflow-hidden transform transition-all duration-300 scale-100 flex flex-col h-[80vh] max-h-[580px]"
                     >
                         <!-- Modal Header -->
                         <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
@@ -1421,6 +1421,8 @@ new class extends Component
             <!-- Confirm Project Action Modal -->
             @if($showConfirmModal)
                 <div
+                    x-data
+                    x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
