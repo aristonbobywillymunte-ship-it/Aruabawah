@@ -1,5 +1,21 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-49] Penegakan Paket Tetap Per Klien & Pembatasan Kuota Proyek Mengikuti Paket
+* **Konteks**: Paket langganan hakikatnya adalah lisensi yang melekat pada akun klien dan hanya dipilih sekali. Sebelumnya, klien yang membuat proyek kedua, ketiga, dst. selalu diarahkan kembali ke Step 1 (Pilih Paket) dan bisa mengganti paket yang berbeda secara bebas. Selain itu kuota proyek harus secara ketat mengikuti `max_projects` dari paket tersebut.
+* **Perubahan**:
+  1. **Model User (`app/Models/User.php`)**:
+     - Menambahkan method `getClientPackage(): ?Package` untuk mendeteksi paket tetap yang terikat pada akun klien (diambil dari proyek pertama yang dimiliki klien atau paket tunggal yang diizinkan).
+     - Memperbarui `getMaxProjectEntitlement()` agar memprioritaskan batasan `max_projects` dari paket tetap klien tersebut.
+  2. **Controller Livewire (`app/Livewire/ProjectCreate.php`)**:
+     - Pada `mount()`, jika klien sudah memiliki paket tetap, otomatis mengunci `packageId`, menyinkronkan slot jam jadwal, dan langsung melompati Step 1 menuju Step 2 (`createStep = 2`).
+     - Pada `createProject()`, menambahkan validasi backend bahwa jika klien memiliki paket tetap, pembuatan proyek baru dilarang mengganti paket lain.
+  3. **Antarmuka Blade (`project-create.blade.php`)**:
+     - Menyembunyikan step indicator jika klien sudah memiliki paket tetap.
+     - Menghilangkan tombol *"Ubah Paket"* di header dan menggantinya dengan badge *"Paket Akun (Terkunci)"*.
+     - Mengubah tombol *"Kembali ke Pilih Paket"* di footer menjadi *"Batal"* (kembali ke beranda proyek).
+* **QA fisik**: `php -l` lulus pada `User.php`, `ProjectCreate.php`, dan `project-create.blade.php`. Simulasi Livewire mount via Tinker memverifikasi klien otomatis melompat ke Step 2 dengan `packageId = 1`, `createStep = 2`, dan slot terisi 2 kolom jam. `php artisan view:clear` sukses.
+* **Status**: PASSED.
+
 ### [QA-20260911-48] Penyembunyian Toggle dan Panel "STATUS AI & RISIKO" pada Kartu Proyek Klien
 * **Konteks**: User meminta agar elemen "Sembunyikan/Tampilkan" dan panel statistik "STATUS AI & RISIKO" (metrik Siap Ditampilkan, Analisis AI, High Risk) disembunyikan dari kartu proyek untuk pengguna dengan role `client`.
 * **Perubahan**:

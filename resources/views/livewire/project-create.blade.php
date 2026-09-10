@@ -10,6 +10,7 @@
             </a>
 
             {{-- Step indicator --}}
+            @if(!$isClientWithFixedPackage)
             <div class="flex items-center gap-3 mb-5">
                 <div class="flex items-center gap-2">
                     <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black
@@ -31,6 +32,7 @@
                     <span class="text-xs font-bold {{ $createStep === 2 ? 'text-slate-800' : 'text-slate-400' }}">Konfigurasi Proyek</span>
                 </div>
             </div>
+            @endif
 
             <h1 class="text-2xl font-hanken font-bold text-slate-900 tracking-tight">
                 @if($createStep === 1) Pilih Paket Monitoring @else Konfigurasi Proyek @endif
@@ -212,7 +214,7 @@
                 {{-- Info chip — konsisten dengan material-symbols sistem --}}
                 <div class="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-50 border border-blue-100 rounded-xl text-blue-600 text-xs font-bold">
                     <span class="material-symbols-outlined text-[16px] shrink-0">info</span>
-                    <span>Paket dapat diubah kapan saja setelah proyek dibuat.</span>
+                    <span>Paket yang Anda pilih akan menjadi paket utama untuk proyek monitoring akun Anda.</span>
                 </div>
                 
                 <button
@@ -249,11 +251,18 @@
                                 <p class="text-sm font-bold text-slate-800 leading-tight">{{ $selectedPackage->name }}</p>
                             </div>
                         </div>
-                        <button type="button" wire:click="$set('createStep', 1)"
-                            class="text-xs font-bold text-[#1fa387] hover:text-[#178a71] inline-flex items-center gap-1 transition-colors cursor-pointer">
-                            <span class="material-symbols-outlined text-[14px]">edit</span>
-                            Ubah Paket
-                        </button>
+                        @if($isClientWithFixedPackage)
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200" title="Paket ini terikat pada akun Anda">
+                                <span class="material-symbols-outlined text-[14px]">lock</span>
+                                <span>Paket Akun</span>
+                            </span>
+                        @else
+                            <button type="button" wire:click="$set('createStep', 1)"
+                                class="text-xs font-bold text-[#1fa387] hover:text-[#178a71] inline-flex items-center gap-1 transition-colors cursor-pointer">
+                                <span class="material-symbols-outlined text-[14px]">edit</span>
+                                Ubah Paket
+                            </button>
+                        @endif
                     </div>
 
                     {{-- Override jadwal Portal & Sosial --}}
@@ -497,11 +506,19 @@
 
                     {{-- Action buttons — responsif di mobile --}}
                     <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-slate-100">
-                        <button type="button" wire:click="$set('createStep', 1)"
-                            class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl text-xs transition cursor-pointer active:scale-[0.98] w-full sm:w-auto">
-                            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-                            Kembali ke Pilih Paket
-                        </button>
+                        @if($isClientWithFixedPackage)
+                            <a href="{{ route('home') }}" wire:navigate
+                                class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl text-xs transition cursor-pointer active:scale-[0.98] w-full sm:w-auto">
+                                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                                Batal
+                            </a>
+                        @else
+                            <button type="button" wire:click="$set('createStep', 1)"
+                                class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl text-xs transition cursor-pointer active:scale-[0.98] w-full sm:w-auto">
+                                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                                Kembali ke Pilih Paket
+                            </button>
+                        @endif
                         <button type="submit"
                             class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 min-w-[140px] bg-[#1fa387] hover:bg-[#178a71] text-white font-extrabold rounded-xl text-xs transition shadow-sm cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto"
                             wire:loading.attr="disabled"

@@ -58,6 +58,14 @@ class ProjectCreate extends Component
                 $this->redirect('/', navigate: true);
                 return;
             }
+
+            // Paket hanya sekali pilih per client: jika sudah ada proyek atau paket tetap, kunci langsung ke paket tersebut
+            $clientPackage = $user->getClientPackage();
+            if ($clientPackage) {
+                $this->packageId = $clientPackage->id;
+                $this->syncOverrideSlotsFromPackage($clientPackage);
+                $this->createStep = 2; // Langsung ke form konfigurasi proyek tanpa Step 1 (pilih paket)
+            }
         }
     }
 
@@ -280,6 +288,13 @@ class ProjectCreate extends Component
                 $this->addError('packageId', 'Anda tidak memiliki akses ke paket yang dipilih.');
                 return;
             }
+
+            // Paket hanya sekali pilih per client: jika sudah ada paket tetap, tidak boleh ganti paket lain
+            $clientPackage = $user->getClientPackage();
+            if ($clientPackage && (int) $clientPackage->id !== (int) $this->packageId) {
+                $this->addError('packageId', "Akun Anda terikat pada paket '{$clientPackage->name}'. Proyek baru harus menggunakan paket yang sama.");
+                return;
+            }
         }
 
         // Validate package security & existence
@@ -392,10 +407,12 @@ class ProjectCreate extends Component
         }
 
         $packages = $query->orderBy('price', 'asc')->get();
+        $isClientWithFixedPackage = $user && $user->isClient() && (bool) $user->getClientPackage();
 
         return view('livewire.project-create', [
             'packages' => $packages,
             'selectedPackage' => $this->selectedPackage(),
+            'isClientWithFixedPackage' => $isClientWithFixedPackage,
         ]);
     }
 }

@@ -832,3 +832,20 @@ Pada kartu proyek di dashboard daftar proyek (`⚡projects-list.blade.php`), ter
 2. **Kesesuaian Pengguna**:
    - Admin dan pengguna internal tetap memiliki visibilitas penuh terhadap status pipeline AI dan risiko.
    - Klien mendapatkan tampilan kartu proyek yang lebih rapi tanpa beban informasi status antrean AI internal.
+
+## Bab 7.41 — Penegakan Paket Tetap Per Klien & Pembatasan Kuota Proyek Mengikuti Paket
+
+### Latar Belakang
+Paket monitoring hakikatnya adalah lisensi langganan yang melekat pada satu akun klien dan hanya dipilih satu kali. Klien tidak boleh memilih paket berbeda setiap kali membuat proyek baru. Jika klien telah memiliki paket tetap, pembuatan proyek baru harus langsung menggunakan paket yang sama dan kuota maksimal proyek (`max_projects`) dibatasi secara ketat oleh paket tersebut.
+
+### Perubahan
+1. **Pendeteksian Paket Tetap Klien**:
+   - Model `User` dilengkapi method `getClientPackage()` yang mengidentifikasi paket pertama yang digunakan oleh klien atau paket tunggal yang diizinkan.
+   - Perhitungan hak kuota (`getMaxProjectEntitlement()`) memprioritaskan batasan `max_projects` dari paket tetap klien tersebut.
+2. **Otomatisasi Alur Pembuatan Proyek**:
+   - Jika klien sudah memiliki paket tetap, komponen Livewire `ProjectCreate` langsung mengunci `packageId`, menyelaraskan slot jam jadwal dari paket, dan melompati Step 1 (Pilih Paket) langsung menuju Step 2 (Konfigurasi Proyek).
+   - Validasi backend di `createProject()` memastikan klien tidak dapat menyisipkan paket lain di luar paket tetap akunnya.
+3. **Penyempurnaan Tampilan UI**:
+   - Step indicator (1. Pilih Paket, 2. Konfigurasi Proyek) disembunyikan untuk klien berpaket tetap.
+   - Tombol *"Ubah Paket"* di header digantikan oleh badge informasi *"Paket Akun (Terkunci)"*.
+   - Tombol *"Kembali ke Pilih Paket"* di footer digantikan menjadi *"Batal"* (kembali ke dashboard).

@@ -129,11 +129,40 @@ class User extends Authenticatable
         return null;
     }
 
+    /**
+     * Dapatkan paket yang telah ditetapkan/dipilih untuk klien ini.
+     * Jika klien sudah memiliki proyek, paket proyek pertama menjadi paket tetap klien.
+     * Jika belum ada proyek tetapi hanya diizinkan 1 paket, gunakan paket tersebut.
+     */
+    public function getClientPackage(): ?\App\Models\Package
+    {
+        if (! $this->isClient()) {
+            return null;
+        }
+
+        $firstProjectWithPackage = $this->projects()->whereNotNull('package_id')->with('package')->first();
+        if ($firstProjectWithPackage && $firstProjectWithPackage->package) {
+            return $firstProjectWithPackage->package;
+        }
+
+        if ($this->allowedPackages()->count() === 1) {
+            return $this->allowedPackages()->first();
+        }
+
+        return null;
+    }
+
     /** 
      * Dapatkan batas maksimal proyek dari paket yang diizinkan saat ini.
      */
     public function getMaxProjectEntitlement(): ?int
     {
+        // Jika klien sudah memiliki paket tetap, gunakan batasan paket tersebut
+        $clientPkg = $this->getClientPackage();
+        if ($clientPkg) {
+            return $clientPkg->max_projects;
+        }
+
         return self::calculateMaxProjectEntitlement($this->allowedPackages);
     }
 
