@@ -65,20 +65,26 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                    <button wire:click="toggleStatus({{ $client->id }})"
-                                            class="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-amber-500 hover:text-amber-500 hover:bg-amber-50 transition-all shadow-sm"
+                                    <button wire:click="requestToggleStatus({{ $client->id }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="requestToggleStatus({{ $client->id }})"
+                                            class="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-amber-500 hover:text-amber-500 hover:bg-amber-50 transition-all shadow-sm disabled:opacity-50"
                                             title="{{ $client->status === 'active' ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}">
-                                        <span class="material-symbols-outlined text-[16px]">{{ $client->status === 'active' ? 'do_not_disturb_on' : 'check_circle' }}</span>
+                                        <span wire:loading.remove wire:target="requestToggleStatus({{ $client->id }})" class="material-symbols-outlined text-[16px]">{{ $client->status === 'active' ? 'do_not_disturb_on' : 'check_circle' }}</span>
+                                        <span wire:loading wire:target="requestToggleStatus({{ $client->id }})" class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
                                     </button>
                                     <a href="{{ route('admin.clients.settings', $client->id) }}" wire:navigate
                                        class="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-[#1fa387] hover:text-[#1fa387] hover:bg-[#1fa387]/5 transition-all shadow-sm"
                                        title="Pengaturan & Limitasi Klien">
                                         <span class="material-symbols-outlined text-[16px]">settings</span>
                                     </a>
-                                    <button wire:click="deleteClient({{ $client->id }})" wire:confirm="Apakah Anda yakin ingin menghapus klien ini permanen? Tindakan ini tidak dapat dibatalkan."
-                                            class="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-rose-500 hover:text-rose-500 hover:bg-rose-50 transition-all shadow-sm"
+                                    <button wire:click="requestDelete({{ $client->id }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="requestDelete({{ $client->id }})"
+                                            class="cursor-pointer inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 hover:border-rose-500 hover:text-rose-500 hover:bg-rose-50 transition-all shadow-sm disabled:opacity-50"
                                             title="Hapus Klien">
-                                        <span class="material-symbols-outlined text-[16px]">delete</span>
+                                        <span wire:loading.remove wire:target="requestDelete({{ $client->id }})" class="material-symbols-outlined text-[16px]">delete</span>
+                                        <span wire:loading wire:target="requestDelete({{ $client->id }})" class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
                                     </button>
                                 </div>
                             </td>
@@ -108,4 +114,88 @@
             </div>
         @endif
     </div>
+
+    <!-- Status Change Confirmation Modal -->
+    @if($confirmingStatusChange)
+        <div wire:key="status-modal-{{ $statusClientId }}"
+             x-data
+             x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');"
+             @keydown.escape.window="$wire.set('confirmingStatusChange', false)"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+            <div @click.outside="$wire.set('confirmingStatusChange', false)"
+                 class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl text-left space-y-4 border border-slate-100">
+                <div class="flex items-center gap-3.5">
+                    <span class="w-12 h-12 rounded-2xl {{ $targetStatus === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }} flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[24px]">{{ $targetStatus === 'active' ? 'check_circle' : 'do_not_disturb_on' }}</span>
+                    </span>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider {{ $targetStatus === 'active' ? 'text-emerald-600' : 'text-amber-600' }}">Konfirmasi Status</p>
+                        <h2 class="text-base font-black text-slate-900 leading-snug">{{ $targetStatus === 'active' ? 'Aktifkan Akun Klien?' : 'Nonaktifkan Akun Klien?' }}</h2>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Apakah Anda yakin ingin mengubah status akun <strong>{{ $statusClientName }}</strong> menjadi <strong>{{ $targetStatus === 'active' ? 'Aktif' : 'Nonaktif' }}</strong>?
+                    {{ $targetStatus === 'inactive' ? 'Klien tidak dapat login ke dashboard selama akun dalam status nonaktif.' : 'Klien akan dapat kembali login dan mengakses proyek yang diberikan.' }}
+                </p>
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button type="button"
+                            wire:click="$set('confirmingStatusChange', false)"
+                            wire:loading.attr="disabled"
+                            class="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">
+                        Batal
+                    </button>
+                    <button type="button"
+                            wire:click="toggleStatusConfirmed"
+                            wire:loading.attr="disabled"
+                            wire:target="toggleStatusConfirmed"
+                            class="px-6 py-2.5 rounded-xl {{ $targetStatus === 'active' ? 'bg-[#1fa387] hover:bg-[#188c73]' : 'bg-amber-500 hover:bg-amber-600' }} text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow-sm">
+                        <span wire:loading wire:target="toggleStatusConfirmed" class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                        <span>{{ $targetStatus === 'active' ? 'Ya, Aktifkan' : 'Ya, Nonaktifkan' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Delete Confirmation Modal -->
+    @if($confirmingDelete)
+        <div wire:key="delete-modal-{{ $deleteClientId }}"
+             x-data
+             x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');"
+             @keydown.escape.window="$wire.set('confirmingDelete', false)"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+            <div @click.outside="$wire.set('confirmingDelete', false)"
+                 class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl text-left space-y-4 border border-slate-100">
+                <div class="flex items-center gap-3.5">
+                    <span class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[24px]">warning</span>
+                    </span>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-rose-500">Konfirmasi Hapus</p>
+                        <h2 class="text-base font-black text-slate-900 leading-snug">Hapus Klien Permanen?</h2>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Apakah Anda yakin ingin menghapus akun klien <strong>{{ $deleteClientName }}</strong> secara permanen?
+                    Tindakan ini tidak dapat dibatalkan dan seluruh konfigurasi limit klien akan dibersihkan. Data artikel dan proyek yang sudah ada tetap aman.
+                </p>
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button type="button"
+                            wire:click="$set('confirmingDelete', false)"
+                            wire:loading.attr="disabled"
+                            class="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">
+                        Batal
+                    </button>
+                    <button type="button"
+                            wire:click="deleteConfirmed"
+                            wire:loading.attr="disabled"
+                            wire:target="deleteConfirmed"
+                            class="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shadow-sm">
+                        <span wire:loading wire:target="deleteConfirmed" class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                        <span>Ya, Hapus Permanen</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

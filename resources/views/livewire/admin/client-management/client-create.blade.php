@@ -8,7 +8,7 @@
     </div>
 
     <div class="max-w-3xl">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" x-data="{ showPassword: false, showPasswordConfirmation: false }">
             <form wire:submit.prevent="createClient" class="p-6 space-y-6">
 
                 <div class="space-y-1.5">
@@ -35,8 +35,15 @@
                     <label class="text-sm font-bold text-slate-800">Password</label>
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">lock</span>
-                        <input wire:model="password" type="password" placeholder="Minimal 8 karakter"
-                               class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387] transition-all">
+                        <input wire:model="password" :type="showPassword ? 'text' : 'password'" placeholder="Minimal 8 karakter"
+                               class="w-full pl-10 pr-10 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387] transition-all">
+                        <button type="button"
+                                @click="showPassword = !showPassword"
+                                tabindex="-1"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer flex items-center p-1"
+                                title="Tampilkan / Sembunyikan Password">
+                            <span class="material-symbols-outlined text-[18px]" x-text="showPassword ? 'visibility_off' : 'visibility'">visibility</span>
+                        </button>
                     </div>
                     @error('password') <p class="text-red-500 text-xs font-medium">{{ $message }}</p> @enderror
                 </div>
@@ -45,8 +52,15 @@
                     <label class="text-sm font-bold text-slate-800">Konfirmasi Password</label>
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">lock</span>
-                        <input wire:model="password_confirmation" type="password" placeholder="Ulangi password"
-                               class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387] transition-all">
+                        <input wire:model="password_confirmation" :type="showPasswordConfirmation ? 'text' : 'password'" placeholder="Ulangi password"
+                               class="w-full pl-10 pr-10 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1fa387]/20 focus:border-[#1fa387] transition-all">
+                        <button type="button"
+                                @click="showPasswordConfirmation = !showPasswordConfirmation"
+                                tabindex="-1"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer flex items-center p-1"
+                                title="Tampilkan / Sembunyikan Password">
+                            <span class="material-symbols-outlined text-[18px]" x-text="showPasswordConfirmation ? 'visibility_off' : 'visibility'">visibility</span>
+                        </button>
                     </div>
                 </div>
 

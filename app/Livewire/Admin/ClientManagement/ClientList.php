@@ -12,32 +12,84 @@ class ClientList extends Component
 
     public $search = '';
 
+    // Confirmation Modal States
+    public bool $confirmingDelete = false;
+    public ?int $deleteClientId = null;
+    public string $deleteClientName = '';
+
+    public bool $confirmingStatusChange = false;
+    public ?int $statusClientId = null;
+    public string $statusClientName = '';
+    public string $targetStatus = '';
+
     public function mount()
     {
         abort_if(!auth()->check() || auth()->user()->isClient(), 403, 'Akses ditolak. Klien tidak dapat mengakses halaman ini.');
     }
 
-    public function toggleStatus($clientId)
+    public function requestToggleStatus(int $clientId): void
     {
         $client = User::where('role', 'client')->findOrFail($clientId);
-        $client->status = $client->status === 'active' ? 'inactive' : 'active';
-        $client->save();
-        
-        session()->flash('message', 'Status klien berhasil diubah.');
+        $this->statusClientId = $client->id;
+        $this->statusClientName = $client->name;
+        $this->targetStatus = $client->status === 'active' ? 'inactive' : 'active';
+        $this->confirmingStatusChange = true;
     }
 
-    public function deleteClient($clientId)
+    public function toggleStatusConfirmed(): void
+    {
+        if (!$this->statusClientId) {
+            $this->confirmingStatusChange = false;
+            return;
+        }
+
+        $client = User::where('role', 'client')->findOrFail($this->statusClientId);
+        $client->status = $this->targetStatus;
+        $client->save();
+
+        $statusText = $client->status === 'active' ? 'diaktifkan' : 'dinonaktifkan';
+        $this->confirmingStatusChange = false;
+        $this->statusClientId = null;
+        $this->statusClientName = '';
+        $this->targetStatus = '';
+
+        $message = "Status akun klien '{$client->name}' berhasil {$statusText}.";
+        session()->flash('success', $message);
+        $this->dispatch('admin-toast', type: 'success', title: 'Status Berubah', message: $message);
+    }
+
+    public function requestDelete(int $clientId): void
     {
         $client = User::where('role', 'client')->findOrFail($clientId);
-        
-        // Hapus juga ClientSetting jika ada (bisa melalui relasi jika didefinisikan ON DELETE CASCADE)
+        $this->deleteClientId = $client->id;
+        $this->deleteClientName = $client->name;
+        $this->confirmingDelete = true;
+    }
+
+    public function deleteConfirmed(): void
+    {
+        if (!$this->deleteClientId) {
+            $this->confirmingDelete = false;
+            return;
+        }
+
+        $client = User::where('role', 'client')->findOrFail($this->deleteClientId);
+        $clientName = $client->name;
+
+        // Hapus juga ClientSetting jika ada
         if ($client->clientSettings) {
             $client->clientSettings()->delete();
         }
-        
+
         $client->delete();
-        
-        session()->flash('message', 'Klien berhasil dihapus.');
+
+        $this->confirmingDelete = false;
+        $this->deleteClientId = null;
+        $this->deleteClientName = '';
+
+        $message = "Klien '{$clientName}' berhasil dihapus permanen.";
+        session()->flash('success', $message);
+        $this->dispatch('admin-toast', type: 'success', title: 'Klien Dihapus', message: $message);
     }
 
     public function render()

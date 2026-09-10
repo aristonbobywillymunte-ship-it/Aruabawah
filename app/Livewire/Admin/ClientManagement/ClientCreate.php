@@ -52,7 +52,7 @@ class ClientCreate extends Component
             'can_delete_projects' => false,
         ]);
 
-        session()->flash('message', 'Klien berhasil dibuat.');
+        session()->flash('success', "Akun klien '{$user->name}' berhasil dibuat.");
         
         return $this->redirectRoute('admin.clients', navigate: true);
     }

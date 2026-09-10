@@ -436,3 +436,42 @@ Setiap entri pengujian wajib mencakup komponen berikut:
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
 
+---
+
+### [QA-20260910-17] Modernisasi Modal Konfirmasi & Interaktivitas Modul Manajemen Klien (/admin/clients)
+* **Tanggal & Waktu**: 10 September 2026, 20:41 WIB
+* **Konteks Masalah**:
+  Audit modul Manajemen Klien (`/admin/clients`) menemukan:
+  1. Penghapusan akun klien masih mengandalkan pop-up bawaan browser `wire:confirm`, tidak konsisten dengan desain modal interaktif modern sistem.
+  2. Toggle status dan aksi hapus belum memiliki visual loading state / disabled feedback saat sedang diproses.
+  3. Form pembuatan klien baru di `/admin/clients/create` belum memiliki fitur toggle lihat/sembunyikan password (*eye toggle*).
+  4. Penggunaan session flash message belum tersinkronisasi dengan container toast global admin (`admin-toast`).
+* **Target Komponen Diperbaiki**:
+  - `app/Livewire/Admin/ClientManagement/ClientList.php`
+  - `resources/views/livewire/admin/client-management/client-list.blade.php`
+  - `app/Livewire/Admin/ClientManagement/ClientCreate.php`
+  - `resources/views/livewire/admin/client-management/client-create.blade.php`
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4 CLI, Laravel Livewire 3)
+* **Parameter & Hasil Pengujian**:
+  1. **Modal Konfirmasi Interaktif Modern**:
+     - Menggantikan `wire:confirm` dengan modal Tailwind/Alpine untuk konfirmasi hapus permanen (`confirmingDelete`) dan konfirmasi pengubahan status (`confirmingStatusChange`).
+     - Modal dilengkapi backdrop blur, overflow control (`overflow-hidden`), escape key listener (`@keydown.escape.window`), dan outside click handler.
+  2. **Feedback Loading State**:
+     - Menambahkan atribut `wire:loading.attr="disabled"` dan spinner SVG (`progress_activity`) pada tombol aksi tabel serta tombol konfirmasi modal.
+  3. **Fitur Toggle Password Eye**:
+     - Mengintegrasikan state Alpine.js (`showPassword`, `showPasswordConfirmation`) dengan ikon Material Symbols (`visibility` / `visibility_off`) pada form pembuatan klien.
+  4. **Penyelarasan Notifikasi Toast**:
+     - Mengubah flash message menjadi `session()->flash('success', ...)` dan men-dispatch event Livewire `admin-toast` untuk integrasi SweetAlert2.
+  5. **Physical Runtime Verification**:
+     - Linter PHP: `php -l` pada `ClientList.php` dan `ClientCreate.php` -> **No syntax errors detected**.
+     - View Clear: `php artisan view:clear` -> Clear successfully.
+     - Livewire Component Render Test via Tinker:
+       - Client List base: **4.970 bytes**, exit code 0.
+       - Client Create base: **6.992 bytes**, exit code 0.
+       - Status Modal active render: **6.573 bytes**, exit code 0.
+       - Delete Modal active render: **6.585 bytes**, exit code 0.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+
