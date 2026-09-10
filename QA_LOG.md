@@ -125,3 +125,22 @@ Setiap entri pengujian wajib mencakup komponen berikut:
 * **Commit Lokal**: `d0ea6df`
 
 ---
+
+### [QA-20260910-04] Eliminasi AI-Slop Styling pada Feed Menu Penyebutan
+* **Tanggal & Waktu**: 10 September 2026, 19:40 WIB
+* **Konteks Masalah**:
+  Tampilan kartu penyebutan media dan postingan pada tab Penyebutan (`http://localhost/?project=61&tab=cGVueWVidXRhbg==`) menggunakan pola AI-Slop generik berupa pendaran bayangan berlebih (`50px glow`), border kiri tebal 4px asimetris yang mematahkan lekukan sudut card `rounded-[24px]`, serta inline gradient dinamis dengan hex-opacity pudar pada expander Ringkasan AI.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/media-dashboard.blade.php` (feed kartu penyebutan dan box expander Ringkasan AI)
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Parameter: `project=61`, `tab=penyebutan` (Base64: `cGVueWVidXRhbg==`)
+* **Parameter & Hasil Pengujian**:
+  1. **Hover Glow Elimination**: Drop shadow neon 50px diganti dengan bayangan netral terukur `shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)] hover:border-slate-300`.
+  2. **Corner Radius Preservation**: Menghilangkan `border-l-4` dan `border-left-color: {{ $sentimentColor }}` yang menyebabkan *glitch* patahan lekukan sudut pada card `rounded-[24px]`. Indikator sentimen tetap tegas dan jelas melalui badge pill di sudut kanan atas kartu.
+  3. **AI Summary Box Modernization**: Mengganti inline background gradient hex-opacity dinamis (`linear-gradient(to right, {{ $iconColor }}08, #f8fafc05)`) menjadi solid container `bg-slate-50 border border-slate-200 rounded-2xl` dengan typography netral `text-slate-600`.
+  4. **Physical Runtime Render Test**:
+     - Perintah: `php artisan view:clear` dan eksekusi rendering Blade view `welcome` untuk tab Penyebutan.
+     - Status: **PASSED (Exit Code 0, Render HTML Output: 144.833 bytes, Zero Error)**.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

@@ -860,24 +860,23 @@
                                     $sentimentColor = '#64748b'; // Neutral default
                                     $sentimentBg = 'bg-slate-50 border-slate-200/80 text-slate-700';
                                     $sentimentLabel = $hasReadableAiReach ? 'Netral' : 'Belum dianalisis AI';
-                                    $hoverGlowClass = 'hover:border-slate-300 hover:shadow-[0_20px_50px_rgba(99,102,241,0.06)]';
+                                    $hoverGlowClass = 'hover:border-slate-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)]';
                                     if ($this->getValidAiResult($article)?->sentiment === 'positive') {
                                         $sentimentColor = '#10b981';
                                         $sentimentBg = 'bg-emerald-50/80 border-emerald-100/50 text-emerald-700';
                                         $sentimentLabel = 'Positif';
-                                        $hoverGlowClass = 'hover:border-emerald-300 hover:shadow-[0_20px_50px_rgba(16,185,129,0.08)]';
+                                        $hoverGlowClass = 'hover:border-emerald-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)]';
                                     } elseif ($this->getValidAiResult($article)?->sentiment === 'negative') {
                                         $sentimentColor = '#ef4444';
                                         $sentimentBg = 'bg-rose-50/70 border-rose-100/50 text-rose-700';
                                         $sentimentLabel = 'Negatif';
-                                        $hoverGlowClass = 'hover:border-rose-300 hover:shadow-[0_20px_50px_rgba(239,68,68,0.08)]';
+                                        $hoverGlowClass = 'hover:border-rose-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)]';
                                     }
                                 @endphp
                                 <article 
                                     wire:key="mention-card-{{ $article->id }}-{{ md5((string) $article->source_name) }}"
                                     data-mention-card
-                                    class="bg-white rounded-[24px] sm:rounded-3xl border border-slate-200/80 p-3.5 sm:p-6 shadow-[0_4px_24px_rgba(0,0,0,0.015)] flex flex-col justify-between transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 border-l-4"
-                                    style="border-left-color: {{ $sentimentColor }}"
+                                    class="bg-white rounded-[24px] sm:rounded-3xl border border-slate-200/80 p-3.5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-between transition-all duration-200 hover:shadow-[0_12px_32px_rgba(0,0,0,0.04)] hover:border-slate-300 hover:-translate-y-0.5"
                                 >
                                     @php
                                         $isFacebook = str_contains(strtolower($article->source_name), 'facebook');
@@ -1131,8 +1130,7 @@
                                                 <button 
                                                     type="button"
                                                     @click="isOpen = !isOpen"
-                                                    class="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm border"
-                                                    style="background-color: {{ $iconColor }}10; color: {{ $iconColor }}; border-color: {{ $iconColor }}25;"
+                                                    class="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm border bg-slate-100 hover:bg-slate-200/70 border-slate-200 text-slate-600 hover:text-slate-800"
                                                     title="Ringkasan AI"
                                                 >
                                                     <span class="material-symbols-outlined text-[15px] transition-transform duration-200" :class="isOpen ? 'rotate-45 scale-110' : ''">auto_awesome</span>
@@ -1147,15 +1145,15 @@
                                                     x-transition:leave="transition ease-in duration-200"
                                                     x-transition:leave-start="opacity-100 transform translate-y-0 scale-100"
                                                     x-transition:leave-end="opacity-0 transform -translate-y-2 scale-95"
-                                                    class="mt-3 p-4 border rounded-2xl flex items-start gap-3.5 shadow-sm"
-                                                    style="display: none; background-image: linear-gradient(to right, {{ $iconColor }}08, #f8fafc05); border-color: {{ $iconColor }}1b;"
+                                                    class="mt-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-start gap-3.5 shadow-sm"
+                                                    style="display: none;"
                                                 >
-                                                    <div class="w-8 h-8 rounded-xl border flex items-center justify-center flex-shrink-0 shadow-sm bg-white" style="border-color: {{ $iconColor }}25;">
-                                                        <span class="material-symbols-outlined text-[16px] font-bold" style="color: {{ $iconColor }};">auto_awesome</span>
+                                                    <div class="w-8 h-8 rounded-xl border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-sm bg-white text-slate-600">
+                                                        <span class="material-symbols-outlined text-[16px] font-bold">auto_awesome</span>
                                                     </div>
                                                     <div class="space-y-1 min-w-0 flex-grow">
                                                         <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Ringkasan AI</span>
-                                                        <p class="text-xs md:text-sm text-slate-500 leading-relaxed font-medium">
+                                                        <p class="text-xs md:text-sm text-slate-600 leading-relaxed font-medium">
                                                             {{ $aiSummary }}
                                                         </p>
                                                     </div>
