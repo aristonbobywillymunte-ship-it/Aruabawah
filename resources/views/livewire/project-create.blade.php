@@ -217,7 +217,7 @@
                 
                 <button
                     type="button"
-                    wire:click="$set('createStep', 2)"
+                    wire:click="proceedToStep2"
                     @disabled(!$packageId)
                     class="inline-flex justify-center items-center gap-2 px-6 py-3 font-extrabold rounded-xl text-sm transition-all duration-200 min-w-[220px]
                         {{ $packageId
@@ -290,7 +290,7 @@
                                 
                                 @if($portalSlots > 0)
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        @foreach($news_run_times_override as $i => $time)
+                                        @for($i = 0; $i < $portalSlots; $i++)
                                             <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-violet-100 shadow-2xs">
                                                 <span class="text-[10px] font-black text-violet-500 w-11 shrink-0 text-center bg-violet-50 py-1 rounded-lg">Jam {{ $i + 1 }}</span>
                                                 <input
@@ -299,7 +299,7 @@
                                                     class="w-full px-2 py-1 text-xs bg-transparent focus:outline-none focus:ring-1 focus:ring-violet-300 text-slate-800 font-semibold rounded-lg"
                                                 >
                                             </div>
-                                        @endforeach
+                                        @endfor
                                     </div>
 
                                     <div class="pt-1 flex items-center justify-between">
@@ -338,7 +338,7 @@
                                 </div>
                                 <p class="text-[11px] text-slate-500 leading-tight">
                                     @if($socialSlots > 0)
-                                        Jumlah kolom jam otomatis mengikuti kuota paket (<strong>{{ $socialSlots }}x sehari</strong>). Anda dapat menyesuaikan jam pelaksanaan di bawah.
+                                        Jumlah kolom jam otomatis mengikuti alokasi paket (<strong>{{ $socialSlots }}x sehari</strong>). Anda dapat menyesuaikan jam pelaksanaan di bawah.
                                     @else
                                         Paket ini tidak menjadwalkan eksekusi sosial media otomatis.
                                     @endif
@@ -346,7 +346,7 @@
                                 
                                 @if($socialSlots > 0)
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        @foreach($social_run_times_override as $i => $time)
+                                        @for($i = 0; $i < $socialSlots; $i++)
                                             <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-sky-100 shadow-2xs">
                                                 <span class="text-[10px] font-black text-sky-500 w-11 shrink-0 text-center bg-sky-50 py-1 rounded-lg">Jam {{ $i + 1 }}</span>
                                                 <input
@@ -355,7 +355,7 @@
                                                     class="w-full px-2 py-1 text-xs bg-transparent focus:outline-none focus:ring-1 focus:ring-sky-300 text-slate-800 font-semibold rounded-lg"
                                                 >
                                             </div>
-                                        @endforeach
+                                        @endfor
                                     </div>
 
                                     <div class="pt-1 flex items-center justify-between">

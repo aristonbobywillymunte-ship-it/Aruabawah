@@ -235,6 +235,15 @@ class ProjectCreate extends Component
         $this->social_run_times_override = $slots;
     }
 
+    public function proceedToStep2(): void
+    {
+        if ($this->packageId) {
+            $package = $this->selectedPackage();
+            $this->syncOverrideSlotsFromPackage($package);
+            $this->createStep = 2;
+        }
+    }
+
     public function updatedPackageId($value): void
     {
         $package = $this->selectedPackage();

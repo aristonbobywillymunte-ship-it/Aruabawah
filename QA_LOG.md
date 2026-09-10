@@ -1,5 +1,13 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-46] Pemulihan Render Kolom Jam Proyek Berdasarkan Alokasi Pasti Paket
+* **Konteks**: User mendapati tampilan form proyek di Step 2 hanya memunculkan teks informasi *"Jumlah kolom jam otomatis mengikuti kuota paket (2x sehari)..."* beserta tombol *"Gunakan Jadwal Default Paket / Kosongkan Semua"*, namun input kotak waktu (`<input type="time">`) tidak muncul karena loop sebelumnya mengiterasi array `$news_run_times_override` yang bernilai kosong (`[]`).
+* **Perubahan**:
+  1. **For-Loop Rendering Definitif**: Mengubah perulangan di `project-create.blade.php` dan `project-edit-modal.blade.php` dari iterasi array override menjadi `for ($i = 0; $i < $portalSlots; $i++)` dan `for ($i = 0; $i < $socialSlots; $i++)`. Dengan demikian, kotak input jam (`Jam 1`, `Jam 2`, dst.) dijamin selalu tampil di layar sebanyak kuota paket.
+  2. **Transisi Step 2 Aman**: Menambahkan method `proceedToStep2()` di `ProjectCreate.php` yang secara eksplisit memanggil `syncOverrideSlotsFromPackage()` sebelum berpindah ke langkah pengisian form proyek.
+* **QA fisik**: `php -l` lulus pada `ProjectCreate.php` & `ProjectEditModal.php`, `docker exec media_intelligent_container php artisan view:clear` sukses.
+* **Status**: PASSED.
+
 ### [QA-20260911-45] Kontrol Tambah & Kurang Jam Dinamis pada Pengaturan Paket Admin
 * **Konteks**: Di `/admin/packages`, modal parameter paket sebelumnya mewajibkan admin mengetik angka manual di input text untuk menambah atau mengurangi run harian tanpa ada tombol interaktif tambah/kurang atau hapus slot jam. Padahal paket adalah acuan utama jalannya scraping untuk user dan klien di seluruh sistem.
 * **Perubahan**:
