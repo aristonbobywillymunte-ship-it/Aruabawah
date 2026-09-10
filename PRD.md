@@ -640,3 +640,18 @@ Jika pengembang hanya menambahkan `overflow: hidden` pada elemen `<body>`, brows
 
 * **File Diubah**: `resources/views/components/media-dashboard-styles.blade.php`, `resources/views/livewire/project-edit-modal.blade.php`
 * **QA**: `[QA-20260910-25]` — PASSED.
+
+### 7.26 Pembersihan Slop Modal Proyek Dinonaktifkan (10 September 2026)
+* **Fitur**: Audit dan pembersihan slop pada modal *Proyek Dinonaktifkan* (`showTrashedModal`) di komponen `projects-list`.
+* **Solusi yang Diimplementasikan**:
+  - Menerapkan arsitektur penguncian latar belakang sesuai aturan wajib Bab 7.25: Dual-lock `<html>` dan `<body>` via lifecycle Alpine, serta perangkap wheel/touch `@wheel.self.prevent` dan `@touchmove.self.prevent`.
+  - Mengisolasi scrolling daftar proyek dinonaktifkan menggunakan `overscroll-contain` dan `flex: 1 1 auto; min-height: 0;`.
+  - Standarisasi seluruh elemen visual ke `material-symbols-outlined`:
+    - Header: `do_not_disturb_on`
+    - Close button: `close`
+    - Empty state: `check_circle`
+    - Tombol Aktifkan: `restore` + `progress_activity` spinner
+    - Tombol Hapus: `delete_forever` + `progress_activity` spinner
+  - Memperbaiki class typo Tailwind CSS (`text-rose-650` → `text-rose-600`, `hover:text-slate-650` → `hover:text-slate-600`).
+* **File Diubah**: `resources/views/components/⚡projects-list.blade.php`
+* **QA**: `[QA-20260910-26]` — PASSED.

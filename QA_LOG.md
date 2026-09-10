@@ -722,3 +722,32 @@ Setiap entri pengujian wajib mencakup komponen berikut:
   - Vite Asset Build: `npm run build` → Selesai dalam 844ms ✅
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+---
+
+### [QA-20260910-26] Pembersihan Slop Modal Proyek Dinonaktifkan & Penegakan Dual Scroll-Lock
+* **Tanggal & Waktu**: 10 September 2026, 21:38 WIB
+* **Konteks Masalah**:
+  Modal daftar "Proyek Dinonaktifkan" di `⚡projects-list.blade.php` memiliki sejumlah slop:
+  1. Penguncian scroll latar belakang hanya pada `body` (belum dual-lock HTML+BODY dan belum ada trap wheel di backdrop).
+  2. Icon header, close button, icon empty state, dan icon tombol aksi masih menggunakan raw inline SVG dan class non-standar (`hover:text-slate-650`, `text-slate-350`, `text-rose-650`).
+  3. Body scroll belum memiliki `overscroll-contain` dan pembatasan flex eksplisit.
+  4. Spinner tombol aksi masih berupa raw SVG.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/components/⚡projects-list.blade.php`
+* **Perbaikan yang Dilakukan**:
+  1. Menerapkan aturan wajib PRD 7.25: Dual-lock HTML+BODY via Alpine lifecycle (`x-init`) dan penahan event `@wheel.self.prevent` serta `@touchmove.self.prevent`.
+  2. Mengganti icon header ke `material-symbols-outlined: do_not_disturb_on` (amber lembut) untuk mencerminkan status nonaktif.
+  3. Mengganti close button ke `material-symbols-outlined: close`.
+  4. Memperbaiki tampilan empty state dengan icon `material-symbols-outlined: check_circle` dan class warna standar `text-slate-400`.
+  5. Melengkapi tombol aksi dengan icon representatif:
+     - Tombol Aktifkan: `material-symbols-outlined: restore` + spinner `progress_activity`.
+     - Tombol Hapus: `material-symbols-outlined: delete_forever` + spinner `progress_activity`.
+  6. Mengisolasi scrolling body list dengan `overscroll-contain` dan pembatasan flex `style="flex: 1 1 auto; min-height: 0;"`.
+  7. Menghapus semua class typo Tailwind (`text-rose-650` → `text-rose-600`, `hover:text-slate-650` → `hover:text-slate-600`).
+* **Physical Runtime Verification**:
+  - PHP Lint: No syntax errors detected (`php -l`) ✅
+  - View & Bootstrap Cache Clear: `php artisan optimize:clear` → Selesai ✅
+  - Vite Asset Build: `npm run build` → Selesai dalam 1.82s ✅
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

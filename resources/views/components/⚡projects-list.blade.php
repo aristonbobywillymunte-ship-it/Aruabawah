@@ -1307,52 +1307,66 @@ new class extends Component
             @if($showTrashedModal)
                 <div
                     x-data
-                    x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');"
+                    x-init="
+                        document.documentElement.classList.add('overflow-hidden');
+                        document.body.classList.add('overflow-hidden');
+                        return () => {
+                            document.documentElement.classList.remove('overflow-hidden');
+                            document.body.classList.remove('overflow-hidden');
+                        };
+                    "
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
                     @keydown.escape.window="!$wire.showConfirmModal && $wire.closeModals()"
+                    @wheel.self.prevent
+                    @touchmove.self.prevent
                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
                 >
                     <div 
                         @click.outside="!$wire.showConfirmModal && $wire.closeModals()"
-                        class="bg-white rounded-3xl w-full max-w-3xl shadow-2xl border border-slate-100/80 overflow-hidden transform transition-all duration-300 scale-100 flex flex-col h-[80vh] max-h-[580px]"
+                        class="bg-white rounded-3xl w-full max-w-3xl shadow-2xl border border-slate-100/80 overflow-hidden transform transition-all duration-300 scale-100 flex flex-col"
+                        style="height: 80vh; max-height: 580px; display: flex; flex-direction: column;"
                     >
                         <!-- Modal Header -->
-                        <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+                        <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0" style="flex-shrink: 0;">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 shadow-sm border border-slate-200/50">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                                <div class="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 shrink-0 border border-amber-100/60">
+                                    <span class="material-symbols-outlined text-[20px]">do_not_disturb_on</span>
                                 </div>
                                 <div>
                                     <h3 class="text-base font-hanken font-extrabold text-slate-900 leading-tight">Proyek Dinonaktifkan</h3>
                                     <p class="text-[11px] text-slate-400 mt-0.5 font-medium">Pulihkan kembali proyek atau hapus secara permanen untuk membersihkan data.</p>
                                 </div>
                             </div>
-                            <button wire:click="closeModals" class="text-slate-400 hover:text-slate-650 hover:bg-slate-100 p-2 rounded-full transition duration-150 cursor-pointer">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                            <button 
+                                type="button"
+                                wire:click="closeModals" 
+                                class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-xl transition duration-150 cursor-pointer"
+                            >
+                                <span class="material-symbols-outlined text-[20px]">close</span>
                             </button>
                         </div>
 
                         <!-- Modal Body (Fix Height & Scrollable) -->
-                        <div class="flex-1 overflow-y-auto px-8 py-6">
+                        <div class="flex-1 overflow-y-auto overscroll-contain px-8 py-6" style="flex: 1 1 auto; min-height: 0;">
                             @php
                                 $trashed = $this->getTrashedProjects();
                             @endphp
                             @if($trashed->isEmpty())
-                                <div class="flex flex-col items-center justify-center h-full text-center">
-                                    <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-350 border border-slate-100 mb-4">
-                                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                                <div class="flex flex-col items-center justify-center h-full text-center py-12">
+                                    <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 mb-4">
+                                        <span class="material-symbols-outlined text-[32px]">check_circle</span>
                                     </div>
                                     <h4 class="text-sm font-bold text-slate-800 mb-1">Tidak ada proyek yang dinonaktifkan</h4>
-                                    <p class="text-xs text-slate-450 max-w-[280px] leading-relaxed">Semua proyek Anda saat ini dalam status aktif dan berjalan normal.</p>
+                                    <p class="text-xs text-slate-400 max-w-[280px] leading-relaxed">Semua proyek Anda saat ini dalam status aktif dan berjalan normal.</p>
                                 </div>
                             @else
                                 <div class="divide-y divide-slate-100">
                                     @foreach($trashed as $idx => $tp)
                                         <div class="py-5 flex items-center justify-between gap-6 px-4 rounded-2xl transition duration-150 {{ $idx % 2 === 0 ? 'bg-[#F8F9FA]' : 'bg-white' }} hover:bg-slate-50 border border-transparent hover:border-slate-100">
                                             <div class="flex items-start gap-3 flex-1 min-w-0">
-                                                <!-- Index Badge (Identical to active project card index) -->
+                                                <!-- Index Badge -->
                                                 <div class="px-2 py-1 rounded bg-[#1fa387]/10 text-[#1fa387] font-bold text-[10px] tracking-widest border border-[#1fa387]/20 shrink-0">
                                                     {{ sprintf('%02d', $idx + 1) }}
                                                 </div>
@@ -1364,7 +1378,7 @@ new class extends Component
                                                         <span class="text-[9px] text-slate-400 font-bold">Dibuat: {{ $tp->created_at ? $tp->created_at->format('d M Y H:i') : '—' }}</span>
                                                     </div>
                                                     
-                                                    <!-- Uppercase Tosca Title (Identical to active project card title) -->
+                                                    <!-- Title -->
                                                     <h4 class="text-sm font-extrabold text-[#1fa387] truncate uppercase tracking-tight">{{ $tp->name }}</h4>
                                                     
                                                     <!-- Keywords List -->
@@ -1380,21 +1394,25 @@ new class extends Component
                                             <!-- Action Buttons (Rata Kanan) -->
                                             <div class="flex items-center gap-3 flex-shrink-0">
                                                 <button
+                                                    type="button"
                                                     wire:click="confirmRestoreProject({{ $tp->id }})"
                                                     wire:loading.attr="disabled"
                                                     wire:target="confirmRestoreProject({{ $tp->id }})"
                                                     class="px-5 py-2.5 bg-[#1fa387] hover:bg-[#1a8b73] text-white text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer shadow-sm active:scale-[0.98] disabled:opacity-50 inline-flex items-center gap-1.5"
                                                 >
-                                                    <svg wire:loading wire:target="confirmRestoreProject({{ $tp->id }})" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    <span wire:loading.remove wire:target="confirmRestoreProject({{ $tp->id }})" class="material-symbols-outlined text-[16px]">restore</span>
+                                                    <span wire:loading wire:target="confirmRestoreProject({{ $tp->id }})" class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
                                                     <span>Aktifkan</span>
                                                 </button>
                                                 <button
+                                                    type="button"
                                                     wire:click="confirmForceDeleteProject({{ $tp->id }})"
                                                     wire:loading.attr="disabled"
                                                     wire:target="confirmForceDeleteProject({{ $tp->id }})"
-                                                    class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-650 text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer active:scale-[0.98] disabled:opacity-50 inline-flex items-center gap-1.5"
+                                                    class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer active:scale-[0.98] disabled:opacity-50 inline-flex items-center gap-1.5"
                                                 >
-                                                    <svg wire:loading wire:target="confirmForceDeleteProject({{ $tp->id }})" class="animate-spin h-3.5 w-3.5 text-rose-650" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    <span wire:loading.remove wire:target="confirmForceDeleteProject({{ $tp->id }})" class="material-symbols-outlined text-[16px]">delete_forever</span>
+                                                    <span wire:loading wire:target="confirmForceDeleteProject({{ $tp->id }})" class="material-symbols-outlined text-[16px] animate-spin text-rose-600">progress_activity</span>
                                                     <span>Hapus</span>
                                                 </button>
                                             </div>
@@ -1405,7 +1423,7 @@ new class extends Component
                         </div>
 
                         <!-- Modal Footer -->
-                        <div class="px-8 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
+                        <div class="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 shrink-0" style="flex-shrink: 0;">
                             <button
                                 type="button"
                                 wire:click="closeModals"
@@ -1422,11 +1440,20 @@ new class extends Component
             @if($showConfirmModal)
                 <div
                     x-data
-                    x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');"
+                    x-init="
+                        document.documentElement.classList.add('overflow-hidden');
+                        document.body.classList.add('overflow-hidden');
+                        return () => {
+                            document.documentElement.classList.remove('overflow-hidden');
+                            document.body.classList.remove('overflow-hidden');
+                        };
+                    "
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
                     @keydown.escape.window="$wire.closeConfirmModal()"
+                    @wheel.self.prevent
+                    @touchmove.self.prevent
                     class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
                 >
                     <div
