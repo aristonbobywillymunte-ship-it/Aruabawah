@@ -65,6 +65,44 @@
                     </div>
                 </div>
 
+                {{-- Paket yang Diizinkan untuk Klien --}}
+                <div class="space-y-3 pt-2">
+                    <div>
+                        <label class="text-sm font-bold text-slate-800">Pilihan Paket Monitoring</label>
+                        <p class="text-xs text-slate-500 mt-0.5">Tentukan paket mana saja yang boleh dipilih atau digunakan oleh klien ini.</p>
+                    </div>
+
+                    @if($packages->isEmpty())
+                        <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs">
+                            Belum ada paket monitoring aktif di sistem. Silakan buat atau aktifkan paket di menu Master Paket terlebih dahulu.
+                        </div>
+                    @else
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            @foreach($packages as $package)
+                                @php
+                                    $isPkgChecked = in_array($package->id, $selectedPackages);
+                                @endphp
+                                <label class="flex items-start gap-3 p-4 border rounded-xl cursor-pointer transition-all {{ $isPkgChecked ? 'border-[#1fa387] bg-[#1fa387]/5 shadow-sm' : 'border-slate-200 hover:bg-slate-50' }}">
+                                    <input wire:model="selectedPackages" type="checkbox" value="{{ $package->id }}" class="mt-1 w-4 h-4 text-[#1fa387] rounded border-slate-300 focus:ring-[#1fa387]">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-sm font-bold text-slate-800 truncate">{{ $package->name }}</span>
+                                            <span class="text-xs font-bold text-[#1fa387] shrink-0">
+                                                {{ ($package->price ?? 0) > 0 ? 'Rp ' . number_format($package->price, 0, ',', '.') : 'Gratis / Khusus' }}
+                                            </span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                                            <span>Maks. Proyek: <strong>{{ $package->max_projects ?? 'Unlimited' }}</strong></span>
+                                            <span>Keyword: <strong>{{ $package->max_keywords_per_project ?? 'Unlimited' }}</strong></span>
+                                        </div>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                    @endif
+                    @error('selectedPackages') <p class="text-red-500 text-xs font-medium mt-1">{{ $message }}</p> @enderror
+                </div>
+
                 <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
                     <a href="{{ route('admin.clients') }}" wire:navigate
                        class="cursor-pointer px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">

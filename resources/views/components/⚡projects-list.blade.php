@@ -1047,7 +1047,9 @@ new class extends Component
                                                 <span class="block mt-1 font-semibold text-[#1fa387]">Kuota: {{ $activeProjectsCount }} dari {{ $effectiveMaxProjects }} proyek aktif.</span>
                                             @endif
                                         @else
-                                            @if($isClient && $isLimitReached)
+                                            @if($isClient && !$hasAllowedPackages)
+                                                Akun Anda belum memiliki paket monitoring yang diaktifkan oleh administrator. Silakan hubungi admin untuk memilih paket monitoring akun Anda.
+                                            @elseif($isClient && $isLimitReached)
                                                 Batas maksimal kuota proyek aktif Anda ({{ $effectiveMaxProjects }} proyek) telah tercapai.
                                             @else
                                                 Belum ada proyek yang ditautkan ke akun Anda. Silakan hubungi administrator sistem untuk mendapatkan akses proyek monitoring.

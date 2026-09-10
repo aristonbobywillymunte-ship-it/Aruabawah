@@ -1,5 +1,16 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-41] Integrasi Pemilihan Paket Monitoring pada Formulir Tambah Klien Baru
+* **Konteks**: Saat admin atau user membuat akun klien baru di `/admin/clients/create`, formulir sebelumnya hanya meminta nama, email, dan password tanpa mengaitkan paket monitoring (`allowedPackages`). Akibatnya, setiap klien baru selalu mendapatkan kuota 0 proyek (`getEffectiveMaxProjects() == 0`) dan tombol pembuatan proyek tidak muncul.
+* **Perubahan**:
+  1. **Integrasi Paket pada Form Tambah Klien**: Menambahkan properti `$selectedPackages` dan daftar paket aktif pada `ClientCreate.php`. Default mencentang paket aktif yang tersedia, dengan validasi minimal 1 paket terpilih.
+  2. **Tampilan Kartu Pilihan Paket**: Merender pilihan paket dengan rincian limit proyek & kata kunci di `client-create.blade.php`.
+  3. **Auto Sync Izin Paket**: Menghubungkan paket yang dipilih ke klien baru via `$user->allowedPackages()->sync($this->selectedPackages)`.
+  4. **Penyempurnaan Copy UX Empty State**: Mengubah pesan empty state dashboard proyek agar membedakan secara spesifik antara klien yang belum memiliki paket vs klien yang kuota paketnya telah habis penuh.
+  5. **Resolusi Data Klien Eksisting**: Menautkan paket aktif ke akun `client@arusbawah.co` (ID: 119) di database runtime.
+* **QA fisik**: `php -l` lulus pada `ClientCreate.php`, `docker exec media_intelligent_container php artisan view:clear` sukses, pengetesan Livewire render `ProjectsList` untuk akun `client@arusbawah.co` memverifikasi `VERIFIED_LOADED: Tombol "Buat Proyek Baru" MUNCUL setelah loadProjects!`.
+* **Status**: PASSED.
+
 ### [QA-20260911-40] Isolasi Proyek Klien, Kuota Paket Admin & Eliminasi Slop Empty State
 * **Konteks**: Role `client` seharusnya hanya melihat proyek miliknya sendiri, dan izin serta batas jumlah proyek ditentukan oleh konfigurasi paket di admin (`packages.max_projects` atau `client_settings.max_projects`). Ditemukan slop UI berupa penumpukan double empty state (*"Belum ada project yang diberikan..."* dan kartu raksasa *"Buat Proyek Baru"*), bypass izin pembuatan proyek di UI pada akun klien yang tidak berhak/kuotanya habis, copy usang *"media cetak"*, serta tombol edit yang tidak mengecek izin `can_edit_projects`.
 * **Perubahan**:
