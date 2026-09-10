@@ -1306,7 +1306,6 @@ new class extends Component
                             </div>
                         @endif
                     </div>
-                @endif
             </main>
 
 
@@ -1525,4 +1524,5 @@ new class extends Component
                 <p class="text-xs text-slate-400 font-medium">© 2026 Arusbawah Media Intelligence. All rights reserved.</p>
             </footer>
         </div>
+    @endif
 </div>

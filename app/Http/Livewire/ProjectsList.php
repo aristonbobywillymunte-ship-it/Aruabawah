@@ -21,10 +21,13 @@ class ProjectsList extends Component
 
     public function getDecodedProjectId()
     {
+        if (empty($this->projectId)) {
+            return null;
+        }
         if (is_numeric($this->projectId)) {
             return (int) $this->projectId;
         }
-        $decoded = base64_decode($this->projectId, true);
+        $decoded = base64_decode((string) $this->projectId, true);
         if ($decoded !== false && is_numeric($decoded)) {
             return (int) $decoded;
         }

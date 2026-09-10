@@ -208,14 +208,9 @@ Sebelum mengeksekusi perintah terminal atau mengedit kode:
 - [2026-09-10]: Audit mendalam, verifikasi stabilitas query, dan perbaikan halaman Analisis (Executive View, KPI Metrics, Distribusi Saluran Media, Komparasi Sentimen Sosmed vs Berita, serta Grafik Tren Vektor Spline) dicatat resmi pada PRD Bagian 3.8.
 - [2026-09-10]: Formalisasi aturan mutlak wajib QA dan dokumentasi: Setiap AI yang melakukan perbaikan kode diwajibkan melakukan pengetesan fisik nyata (QA), mencatat skenario dan hasilnya di Bab 7, serta memperbarui log Bab 6 sebelum mengakhiri sesi; dikunci di PRD Bagian 5.3 dan AI_HANDOFF_INSTRUCTIONS.md.
 - [2026-09-10]: Penambahan aturan mutlak larangan git push otomatis: Setiap AI hanya diperbolehkan membuat commit lokal dan dilarang keras melakukan `git push` tanpa perintah eksplisit dari user; dikunci di PRD Bagian 5.3 poin 7 dan AI_HANDOFF_INSTRUCTIONS.md poin 6.
+- [2026-09-10]: Audit dan perbaikan exception `Livewire\Features\SupportMultipleRootElementDetection\MultipleRootElementsDetectedException: Livewire only supports one HTML element per component` pada komponen `projects-list` saat membuka route `/?project=...&tab=...`. Penyebab berupa penempatan penutup `@endif` prematur di tengah Blade template yang menyebabkan footer & modal di-render di luar root DOM tree. Masalah diperbaiki dan diverifikasi lolos render 100%.
 
 ---
-
-
-
-
-
-
 
 ## 7. Laporan Hasil Verifikasi QA (Quality Assurance)
 
@@ -238,6 +233,22 @@ Sebelum mengeksekusi perintah terminal atau mengedit kode:
   4. **Strict Error Guard**:
      - Pengujian skenario actor tanpa limit paket menghasilkan pengecualian: `InvalidArgumentException: Actor limit must come from package configuration or explicit job override`. Job otomatis dihentikan sebelum memanggil API eksternal.
      - **Status**: **PASSED (Zero Phantom/Default Run Leakage)**.
+
+### 7.2 QA Verifikasi Livewire Multiple Root Elements Fix pada `projects-list` (10 September 2026)
+* **Environment Pengujian**: Runtime Docker Container Lokal (`media_intelligent_container`), PHP 8.4 CLI, Laravel 11/13.17, Livewire 3.
+* **Target Uji**: Halaman utama `/` dengan dan tanpa parameter query string (`project=NjE=&tab=YW5hbGlzaXM=`).
+* **Skenario & Hasil Pengujian**:
+  1. **Skenario Proyek Aktif Terpilih (`project=NjE=&tab=YW5hbGlzaXM=`)**:
+     - Simulasi render Blade view `welcome` dengan Livewire component `projects-list` saat `$projectId` terisi.
+     - Sebelum perbaikan: Menghasilkan `MultipleRootElementsDetectedException: Livewire only supports one HTML element per component. Multiple root elements detected for component: [projects-list]`.
+     - Setelah perbaikan: Render HTML berhasil dengan status exit code 0, panjang HTML 131.560 byte, tanpa exception `MultipleRootElementsDetectedException`.
+     - **Status**: **PASSED**.
+  2. **Skenario Halaman List Proyek Bersih (Tanpa Parameter Proyek)**:
+     - Simulasi render Blade view `welcome` saat `$projectId = null`.
+     - Komponen merender struktur wrapper penuh (Header, Project Grid Cards, Modal Trashed, Modal Confirm, Toast, dan Footer) secara tepat di dalam satu root `<div>`.
+     - Hasil render: Sukses dengan panjang HTML 25.254 byte, tanpa error maupun deprecation warning PHP 8.4.
+     - **Status**: **PASSED**.
+
 
 
 
