@@ -1279,7 +1279,8 @@ new class extends Component
                                     </div>
                                 </div>
 
-                                <!-- AI & Risk Stats -->
+                                <!-- AI & Risk Stats (Hanya tampil untuk Admin/Non-Client) -->
+                                @if(!$authUser->isClient())
                                 <button
                                     type="button"
                                     @click="toggleRiskStats()"
@@ -1314,6 +1315,7 @@ new class extends Component
                                         </div>
                                     </div>
                                 </div>
+                                @endif
 
                                 <!-- Topics -->
                                 <div class="mb-8 mt-1">

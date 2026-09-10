@@ -1,5 +1,14 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-48] Penyembunyian Toggle dan Panel "STATUS AI & RISIKO" pada Kartu Proyek Klien
+* **Konteks**: User meminta agar elemen "Sembunyikan/Tampilkan" dan panel statistik "STATUS AI & RISIKO" (metrik Siap Ditampilkan, Analisis AI, High Risk) disembunyikan dari kartu proyek untuk pengguna dengan role `client`.
+* **Perubahan**:
+  - Di `resources/views/components/⚡projects-list.blade.php`, membungkus tombol interaktif `toggleRiskStats()` dan kontainer collapsible `STATUS AI & RISIKO` dengan kondisional `@if(!$authUser->isClient()) ... @endif`.
+  - Akun klien (`isClient() = true`) disajikan antarmuka kartu proyek yang bersih dan langsung menuju metrik utama tanpa paparan teknis status pemrosesan internal pipeline AI.
+  - Admin/Non-klien tetap dapat melihat dan memantau status validasi AI serta risiko.
+* **QA fisik**: `php -l` lulus pada `resources/views/components/⚡projects-list.blade.php`, `docker exec media_intelligent_container php artisan view:clear` sukses (Compiled views cleared).
+* **Status**: PASSED.
+
 ### [QA-20260911-47] Penyembunyian & Proteksi Tombol Jalankan Scraping Manual untuk Akun Klien
 * **Konteks**: User meminta agar tombol "Jalankan Scraping Sekarang" (trigger scraping manual) dihilangkan untuk peran klien (`client`), karena scraping klien harus berjalan otomatis murni mengikuti jadwal scheduler paket yang telah ditetapkan.
 * **Perubahan**:

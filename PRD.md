@@ -820,3 +820,15 @@ Pada kartu proyek di dashboard daftar proyek (`⚡projects-list.blade.php`), ter
    - Membungkus tombol *"Jalankan Scraping Sekarang"* pada kartu proyek dengan pengecekan role `@if(!$authUser->isClient()) ... @endif`. Akun klien tidak lagi melihat tombol play trigger scraping manual.
 2. **Backend Protection**:
    - Menambahkan guard protektif di Livewire method `confirmRunScraping($id)` dan `runScraping($id)`. Jika ada request ilegal dari klien (misalnya via manipulasi payload Livewire), eksekusi dibatalkan seketika dan menampilkan notifikasi kesalahan.
+
+## Bab 7.40 — Penyembunyian Panel Status AI & Risiko pada Kartu Proyek Klien
+
+### Latar Belakang
+Pada kartu proyek di dashboard daftar proyek (`⚡projects-list.blade.php`), terdapat tombol toggle *"Sembunyikan / Tampilkan"* beserta panel rincian *"STATUS AI & RISIKO"* (menampilkan jumlah artikel siap ditampilkan, artikel menunggu pemrosesan AI, dan artikel high risk). Informasi ini berorientasi teknis dan operasional backend. Untuk akun dengan peran klien (`client`), informasi teknis antrean pemrosesan AI ini dihilangkan agar tampilan kartu lebih bersih, terfokus, dan relevan dengan metrik sentimen utama.
+
+### Perubahan
+1. **Blade UI Guard**:
+   - Membungkus tombol toggle `toggleRiskStats()` dan panel collapsible `STATUS AI & RISIKO` dengan guard `@if(!$authUser->isClient()) ... @endif`.
+2. **Kesesuaian Pengguna**:
+   - Admin dan pengguna internal tetap memiliki visibilitas penuh terhadap status pipeline AI dan risiko.
+   - Klien mendapatkan tampilan kartu proyek yang lebih rapi tanpa beban informasi status antrean AI internal.
