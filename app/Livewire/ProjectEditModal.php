@@ -63,9 +63,18 @@ class ProjectEditModal extends Component
         $this->showModal = true;
     }
 
+    protected function maxAllowedSlots(string $type): int
+    {
+        if ($type === 'news') {
+            return (int) ($this->projectPackage?->news_runs_per_day ?: 24);
+        }
+        return (int) ($this->projectPackage?->social_runs_per_day ?: 24);
+    }
+
     public function addNewsSlot(): void
     {
-        if (count($this->news_run_times_override) < 24) {
+        $max = $this->maxAllowedSlots('news');
+        if (count($this->news_run_times_override) < $max) {
             $this->news_run_times_override[] = '';
         }
     }
@@ -80,7 +89,8 @@ class ProjectEditModal extends Component
 
     public function addSocialSlot(): void
     {
-        if (count($this->social_run_times_override) < 24) {
+        $max = $this->maxAllowedSlots('social');
+        if (count($this->social_run_times_override) < $max) {
             $this->social_run_times_override[] = '';
         }
     }
@@ -133,7 +143,7 @@ class ProjectEditModal extends Component
         return $values;
     }
 
-    protected function normalizeOverrideGroup(array $values, string $field): ?array
+    protected function normalizeOverrideGroup(array $values, string $field, ?int $requiredRuns = null): ?array
     {
         $trimmed = array_map(static fn ($value) => is_string($value) ? trim($value) : '', $values);
         $filled = array_values(array_filter($trimmed, static fn ($value) => $value !== ''));
@@ -142,11 +152,17 @@ class ProjectEditModal extends Component
             return null;
         }
 
+        $label = $field === 'news_run_times_override' ? 'Portal' : 'Sosial';
+
         if (count($filled) !== count($trimmed)) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                $field => $field === 'news_run_times_override'
-                    ? 'Lengkapi seluruh jadwal Portal Proyek atau kosongkan semuanya untuk mengikuti Paket.'
-                    : 'Lengkapi seluruh jadwal Sosial Proyek atau kosongkan semuanya untuk mengikuti Paket.',
+                $field => "Lengkapi seluruh jadwal {$label} Proyek atau kosongkan semuanya untuk mengikuti jadwal default Paket.",
+            ]);
+        }
+
+        if ($requiredRuns !== null && $requiredRuns > 0 && count($filled) !== $requiredRuns) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                $field => "Jadwal {$label} Proyek harus berjumlah tepat {$requiredRuns} jam sesuai ketentuan paket (saat ini diisi " . count($filled) . " jam), atau kosongkan seluruhnya untuk mengikuti jadwal default Paket.",
             ]);
         }
 
@@ -234,8 +250,16 @@ class ProjectEditModal extends Component
             'topics' => $topics,
             'context_keywords' => $this->parseOptionalKeywordString((string) $this->contextKeywords),
             'exclude_keywords' => $this->parseOptionalKeywordString((string) $this->excludeKeywords),
-            'news_run_times_override' => $this->normalizeOverrideGroup($this->news_run_times_override, 'news_run_times_override'),
-            'social_run_times_override' => $this->normalizeOverrideGroup($this->social_run_times_override, 'social_run_times_override'),
+            'news_run_times_override' => $this->normalizeOverrideGroup(
+                $this->news_run_times_override,
+                'news_run_times_override',
+                $package?->news_runs_per_day
+            ),
+            'social_run_times_override' => $this->normalizeOverrideGroup(
+                $this->social_run_times_override,
+                'social_run_times_override',
+                $package?->social_runs_per_day
+            ),
         ]);
 
         DB::table('project_telegram_recipients')->where('project_id', $project->id)->delete();

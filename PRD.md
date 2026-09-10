@@ -769,3 +769,17 @@ CTA **Ya, Perbarui** sebelumnya tidak memiliki loading state dan modal ditutup s
 ## Bab 7.35 — Anti-Slop Toast Wawasan AI
 
 Toast sukses Wawasan AI diselaraskan dengan standar UI proyek: satu judul ringkas, ikon Material Symbols, panel putih netral, border aksen tipis, radius 12px, shadow ringan, tanpa SweetAlert icon generik dan tanpa timer progress bar. Toast sekarang menampilkan **Wawasan AI diperbarui** setelah job selesai.
+
+## Bab 7.36 — Penegakan Ketat Kuota Harian Paket pada Pengaturan Jadwal Scraping Proyek
+
+### Latar Belakang
+Pengguna membutuhkan kepastian bahwa jadwal scraping kustom yang diatur pada tingkat proyek tidak menyalahi atau mengurangi alokasi eksekusi harian yang telah ditetapkan pada paket monitoring. Jika pengguna memilih untuk mengatur jam sendiri (kustom), maka jumlah slot jam yang ditentukan harus tepat sama dengan kuota paket (`news_runs_per_day` dan `social_runs_per_day`), tidak boleh kurang dan tidak boleh lebih. Jika pengguna tidak ingin mengatur jam kustom, slot dapat dikosongkan seluruhnya untuk secara otomatis mengikuti default jadwal paket.
+
+### Perubahan
+1. **Dynamic Slot Ceiling**:
+   - Method `addNewsSlot()` dan `addSocialSlot()` pada `ProjectCreate.php` dan `ProjectEditModal.php` menggunakan limit dinamis `maxAllowedSlots($type)` yang membaca kuota harian paket aktif. Penambahan slot otomatis dihentikan saat mencapai batas kuota paket.
+2. **Validasi Persis Sama (Strict Equality)**:
+   - Pada `normalizeOverrideGroup()`, saat menyimpan proyek (`createProject` dan `updateProject`), jika pengguna menginput jam kustom, jumlah slot terisi wajib tepat sama dengan kuota paket (`$requiredRuns`). Jika tidak sama, validasi melempar pesan spesifik dan terarah dalam Bahasa Indonesia.
+3. **Penyempurnaan UI/UX Real-time**:
+   - Di `project-create.blade.php` dan `project-edit-modal.blade.php`, ditampilkan badge slot dinamis (`Slot: X/Y`), penanda status warna hijau/amber, label informasi kuota penuh, serta tombol *"+ Tambah Jam"* yang otomatis tersembunyi saat slot telah mencapai batas paket.
+

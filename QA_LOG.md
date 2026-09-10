@@ -1,5 +1,14 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-43] Penegakan Ketat Kuota Harian Paket pada Pengaturan Jadwal Kustom Proyek
+* **Konteks**: User meminta batasan tegas pada jumlah slot jadwal override proyek: jika user memilih mengatur jam sendiri (kustom), maka jumlah jam yang diatur harus tepat sama dengan jatah eksekusi harian paket (`news_runs_per_day` & `social_runs_per_day`), tidak boleh kurang dan tidak boleh lebih. Jika tidak diatur, user tetap dapat mengosongkan seluruh slot untuk mengikuti jadwal default paket.
+* **Perubahan**:
+  1. **Dynamic Max Slot Ceiling**: Method `addNewsSlot()` dan `addSocialSlot()` pada `ProjectCreate.php` dan `ProjectEditModal.php` dibatasi secara ketat tidak dapat melebihi kuota harian paket (`maxAllowedSlots()`).
+  2. **Validasi Persis Sama**: Pada `normalizeOverrideGroup()`, saat validasi simpan (`createProject` & `updateProject`), jika user mengisi jadwal override, jumlah jam terisi (`count($filled)`) divalidasi wajib sama persis dengan jatah paket (`$requiredRuns`). Jika kurang atau lebih, validasi melempar pesan ramah: *"Jadwal [Portal/Sosial] Proyek harus berjumlah tepat X jam sesuai ketentuan paket (saat ini diisi Y jam), atau kosongkan seluruhnya untuk mengikuti jadwal default Paket."*
+  3. **Indikator Kuota Realtime di Blade**: Di `project-create.blade.php` dan `project-edit-modal.blade.php`, ditambahkan badge slot dinamis (`Slot: X/Y`), status badge warna hijau jika pas dan amber jika belum lengkap, peringatan jelas, serta penonaktifan tombol *"+ Tambah Jam"* dengan label teks bantuan saat kuota telah penuh.
+* **QA fisik**: `php -l` lulus pada `ProjectCreate.php` & `ProjectEditModal.php`, `docker exec media_intelligent_container php artisan view:clear` sukses.
+* **Status**: PASSED.
+
 ### [QA-20260911-42] Fleksibilitas Pengaturan Jadwal Scraping Mandiri Proyek (Portal & Sosial)
 * **Konteks**: User tidak bisa mengatur jam jadwal scraping proyeknya sendiri jika paket admin belum diisi jatah run hariannya (`$portalSlots == 0` / `$socialSlots == 0`). User terkunci dengan status pasif *"Tidak dijadwalkan / Belum ada jadwal paket"*.
 * **Perubahan**:

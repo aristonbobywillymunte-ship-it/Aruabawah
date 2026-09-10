@@ -258,8 +258,10 @@
 
                     {{-- Override jadwal Portal & Sosial --}}
                     @php
-                        $portalSlots = min(24, (int) ($selectedPackage->news_runs_per_day ?? 0));
-                        $socialSlots = min(24, (int) ($selectedPackage->social_runs_per_day ?? 0));
+                        $portalSlots = (int) ($selectedPackage->news_runs_per_day ?? 0);
+                        $socialSlots = (int) ($selectedPackage->social_runs_per_day ?? 0);
+                        $maxPortal = $portalSlots > 0 ? $portalSlots : 24;
+                        $maxSocial = $socialSlots > 0 ? $socialSlots : 24;
                     @endphp
                     <div class="px-6 pt-5 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         {{-- Portal --}}
@@ -276,9 +278,21 @@
                             <div class="space-y-2.5 pt-2 border-t border-violet-100/60">
                                 <div class="flex items-center justify-between">
                                     <label class="text-xs font-bold text-slate-800">Atur Jadwal Scraping Portal</label>
-                                    <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-violet-100">Kustom</span>
+                                    <span class="text-[10px] font-bold {{ count($news_run_times_override) > 0 ? (count($news_run_times_override) === $portalSlots ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-amber-600 bg-amber-50 border-amber-200') : 'text-slate-500 bg-white border-violet-100' }} px-2 py-0.5 rounded-full border">
+                                        @if($portalSlots > 0)
+                                            Slot: {{ count($news_run_times_override) }}/{{ $portalSlots }}
+                                        @else
+                                            Kustom ({{ count($news_run_times_override) }})
+                                        @endif
+                                    </span>
                                 </div>
-                                <p class="text-[11px] text-slate-500 leading-tight">Kosongkan semua slot untuk mengikuti jadwal default paket.</p>
+                                <p class="text-[11px] text-slate-500 leading-tight">
+                                    @if($portalSlots > 0)
+                                        Jika diatur kustom, wajib mengisi tepat <strong>{{ $portalSlots }} jam</strong> sesuai paket, atau kosongkan semuanya untuk mengikuti default paket.
+                                    @else
+                                        Kosongkan semua slot untuk mengikuti jadwal default paket.
+                                    @endif
+                                </p>
                                 
                                 <div class="grid gap-2">
                                     @forelse($news_run_times_override as $i => $time)
@@ -302,12 +316,14 @@
                                 </div>
 
                                 <div class="pt-1 flex items-center justify-between">
-                                    @if(count($news_run_times_override) < 24)
+                                    @if(count($news_run_times_override) < $maxPortal)
                                         <button type="button" wire:click="addNewsSlot"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-violet-200 hover:border-violet-300 text-violet-600 hover:bg-violet-50 text-xs font-bold rounded-xl transition cursor-pointer shadow-2xs">
                                             <span class="material-symbols-outlined text-[15px]">add</span>
                                             <span>Tambah Jam Portal</span>
                                         </button>
+                                    @else
+                                        <span class="text-[11px] font-medium text-slate-400 italic">Kuota jam portal penuh ({{ $maxPortal }})</span>
                                     @endif
                                     @if(count($news_run_times_override) > 0)
                                         <button type="button" wire:click="$set('news_run_times_override', [])"
@@ -334,9 +350,21 @@
                             <div class="space-y-2.5 pt-2 border-t border-sky-100/60">
                                 <div class="flex items-center justify-between">
                                     <label class="text-xs font-bold text-slate-800">Atur Jadwal Scraping Sosial</label>
-                                    <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-sky-100">Kustom</span>
+                                    <span class="text-[10px] font-bold {{ count($social_run_times_override) > 0 ? (count($social_run_times_override) === $socialSlots ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-amber-600 bg-amber-50 border-amber-200') : 'text-slate-500 bg-white border-sky-100' }} px-2 py-0.5 rounded-full border">
+                                        @if($socialSlots > 0)
+                                            Slot: {{ count($social_run_times_override) }}/{{ $socialSlots }}
+                                        @else
+                                            Kustom ({{ count($social_run_times_override) }})
+                                        @endif
+                                    </span>
                                 </div>
-                                <p class="text-[11px] text-slate-500 leading-tight">Kosongkan semua slot untuk mengikuti jadwal default paket.</p>
+                                <p class="text-[11px] text-slate-500 leading-tight">
+                                    @if($socialSlots > 0)
+                                        Jika diatur kustom, wajib mengisi tepat <strong>{{ $socialSlots }} jam</strong> sesuai paket, atau kosongkan semuanya untuk mengikuti default paket.
+                                    @else
+                                        Kosongkan semua slot untuk mengikuti jadwal default paket.
+                                    @endif
+                                </p>
                                 
                                 <div class="grid gap-2">
                                     @forelse($social_run_times_override as $i => $time)
@@ -360,12 +388,14 @@
                                 </div>
 
                                 <div class="pt-1 flex items-center justify-between">
-                                    @if(count($social_run_times_override) < 24)
+                                    @if(count($social_run_times_override) < $maxSocial)
                                         <button type="button" wire:click="addSocialSlot"
                                             class="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-sky-200 hover:border-sky-300 text-sky-600 hover:bg-sky-50 text-xs font-bold rounded-xl transition cursor-pointer shadow-2xs">
                                             <span class="material-symbols-outlined text-[15px]">add</span>
                                             <span>Tambah Jam Sosial</span>
                                         </button>
+                                    @else
+                                        <span class="text-[11px] font-medium text-slate-400 italic">Kuota jam sosial penuh ({{ $maxSocial }})</span>
                                     @endif
                                     @if(count($social_run_times_override) > 0)
                                         <button type="button" wire:click="$set('social_run_times_override', [])"
