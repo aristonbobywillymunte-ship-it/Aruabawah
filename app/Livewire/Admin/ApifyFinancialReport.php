@@ -11,8 +11,6 @@ class ApifyFinancialReport extends Component
 {
     use WithPagination;
 
-    protected $paginationTheme = 'bootstrap';
-
     // Filter project
     public ?int $projectId = null;
     
@@ -101,14 +99,12 @@ class ApifyFinancialReport extends Component
                     // Cari main post yang bersangkutan untuk mendapatkan post_url aslinya
                     $relatedPost = $mainPosts->firstWhere('id', $c->social_media_item_id);
                     return [
-                        'post_url' => $relatedPost ? $relatedPost->post_url : '',
-                        'author_name' => $c->author_name ?? 'Pengguna',
-                        'content' => $c->content ?? '[tanpa teks]',
-                        'likes' => (int) $c->like_count,
-                        'comments' => 0,
-                        'shares' => 0,
-                        'posted_at' => $c->posted_at ? \Carbon\Carbon::parse($c->posted_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
-                        'parent_author' => $relatedPost ? $relatedPost->author_name : null,
+                        'post_url'       => $relatedPost ? $relatedPost->post_url : '',
+                        'author_name'    => $c->author_name ?? 'Pengguna',
+                        'content'        => $c->content ?? '[tanpa teks]',
+                        'likes'          => (int) $c->like_count,
+                        'posted_at'      => $c->posted_at ? \Carbon\Carbon::parse($c->posted_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+                        'parent_author'  => $relatedPost ? $relatedPost->author_name : null,
                         'parent_content' => $relatedPost ? Str::limit($relatedPost->content, 60) : null,
                     ];
                 })->toArray();
@@ -124,7 +120,16 @@ class ApifyFinancialReport extends Component
 
             $rawItems = DB::table('social_media_items')
                 ->where('platform', $platform)
-                ->where('project_id', $projectId)
+                ->when($projectId, function ($q) use ($projectId) {
+                    $q->where('project_id', $projectId);
+                }, function ($q) use ($keywordsList) {
+                    $q->where(function ($sub) use ($keywordsList) {
+                        foreach ($keywordsList as $kw) {
+                            $sub->orWhere('content', 'like', '%' . $kw . '%')
+                                ->orWhere('author_name', 'like', '%' . $kw . '%');
+                        }
+                    });
+                })
                 ->orderBy('posted_at', 'desc')
                 ->orderBy('id', 'desc')
                 ->limit(150);
@@ -133,13 +138,12 @@ class ApifyFinancialReport extends Component
 
             $this->selectedItems = $rawItems->map(function($item) {
                 return [
-                    'post_url' => $item->post_url,
+                    'post_url'    => $item->post_url,
                     'author_name' => $item->author_name ?? 'N/A',
-                    'content' => Str::limit($item->content, 150),
-                    'likes' => (int) $item->like_count,
-                    'comments' => (int) $item->comment_count,
-                    'shares' => (int) $item->share_count,
-                    'posted_at' => $item->posted_at ? \Carbon\Carbon::parse($item->posted_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
+                    'content'     => Str::limit($item->content, 150),
+                    'likes'       => (int) $item->like_count,
+                    'comments'    => (int) $item->comment_count,
+                    'posted_at'   => $item->posted_at ? \Carbon\Carbon::parse($item->posted_at)->isoFormat('D MMM YYYY, HH:mm') : '-',
                 ];
             })->toArray();
         }

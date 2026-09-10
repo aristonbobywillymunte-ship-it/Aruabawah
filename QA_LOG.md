@@ -1,5 +1,122 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-61] Fix Backdrop Modal Tidak Terlihat — Apify Financial Report
+* **Konteks**: Modal "Hasil Pengambilan Komentar/Postingan" membuka tanpa backdrop gelap. Root cause: `@if($showItemsModal)` membuat elemen baru di setiap render — Livewire 3 morph DOM menghapus & membuat ulang elemen sehingga Alpine `x-init` scroll-lock tidak terpanggil reliabel, dan elemen `fixed inset-0` bisa gagal render backdrop jika DOM lifecycle tidak stabil.
+* **Perubahan**:
+  1. `resources/views/livewire/admin/apify-financial-report.blade.php`:
+     - Ubah `@if($showItemsModal)...@endif` ke pola `x-show="open"` + `x-cloak` — elemen selalu ada di DOM, visibility dikontrol Alpine
+     - `x-data="{ get open() { return $wire.showItemsModal } }"` — reaktif langsung ke Livewire property
+     - Scroll-lock via `$watch('open', val => {...})` — terpanggil reliabel saat state berubah
+     - `z-index` naik dari `z-50` ke `z-[9999]` — memastikan backdrop di atas semua elemen layout
+     - Background backdrop diperkuat dari `bg-slate-900/50` ke `bg-slate-900/60`
+  2. `resources/views/layouts/admin.blade.php`:
+     - Tambah CSS `[x-cloak] { display: none !important; }` agar modal tidak flash sebelum Alpine init
+* **Hasil Pengujian Fisik**:
+  - `php -l` blade: No syntax errors detected ✅
+  - Div balance: 43 open / 43 close ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
+### [QA-20260911-60] Fix 3 Bug Modal Komentar Scraped Comments — ApifyFinancialReport
+
+* **Konteks**: Analisa modal "Hasil Pengambilan Komentar (Scraped Comments)" pada halaman `/admin/apify-financials` menemukan 3 bug: (1) dead property `shares` dimap tapi tidak pernah ditampilkan di blade, (2) tombol close (header) dan Tutup (footer) tanpa `wire:loading.attr="disabled"` — double-submit hazard, (3) empty state generik ketika postingan induk komentar tidak ditemukan di DB — tampil keyword URL panjang yang membingungkan.
+* **Perubahan**:
+  1. `resources/views/livewire/admin/apify-financial-report.blade.php`:
+     - Tombol ✕ header: tambah `wire:loading.attr="disabled"`
+     - Tombol "Tutup" footer: tambah `wire:loading.attr="disabled"`
+     - Empty state: branch `@if($isCommentModal)` — ikon `comment_bank`, pesan spesifik "Postingan induk tidak ditemukan di database" + instruksi aksi; branch `@else` tetap seperti semula
+  2. `app/Livewire/Admin/ApifyFinancialReport.php`:
+     - Branch komentar (line ~98): hapus key `'comments' => 0` dan `'shares' => 0` dari array map
+     - Branch postingan (line ~141): hapus key `'shares' => (int) $item->share_count` dari array map
+* **Hasil Pengujian Fisik**:
+  - `php -l` PHP component: No syntax errors detected ✅
+  - `php -l` blade: No syntax errors detected ✅
+  - Div balance: 43 open / 43 close ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
+### [QA-20260911-59] Fix BadMethodCallException — isInstagramArticle & isFacebookArticle Hilang di MediaDashboard
+
+* **Konteks**: Error `BadMethodCallException: Method App\Livewire\MediaDashboard::isInstagramArticle does not exist` pada POST `/livewire-17c45995/update`. Method dipanggil di 2 lokasi PHP (line 1183, 1355) dan 1 lokasi blade (line 965), tapi tidak pernah didefinisikan. `isFacebookArticle` juga sama — tidak ada definisi.
+* **Perubahan**:
+  - `app/Livewire/MediaDashboard.php` — Tambah 2 method baru setelah `isTikTokArticle` (line 1438):
+    - `protected function isInstagramArticle($article): bool` — deteksi via `source_name` mengandung `instagram`/`ig`
+    - `protected function isFacebookArticle($article): bool` — deteksi via `source_name` mengandung `facebook`/`fb`
+  - Pola identik dengan `isTikTokArticle` yang sudah ada.
+* **Hasil Pengujian Fisik**:
+  - `php -l`: No syntax errors detected ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared successfully ✅
+* **Status**: ✅ PASSED
+
+### [QA-20260911-58] Fix Null-State Dot Warna Kolom Status Uji di Tabel AI Providers
+
+* **Konteks**: Kolom "Uji Terakhir" pada tabel `/admin/ai-providers` menggunakan ternary 2-kondisi untuk warna dot status: `success → hijau`, else `→ merah`. Akibatnya, provider yang belum pernah ditest (`last_test_status = null`) menampilkan dot **merah** seolah-olah sudah gagal.
+* **Perubahan**:
+  - `resources/views/livewire/admin/ai-providers.blade.php` line 174
+  - Ternary 2-kondisi diperluas menjadi 3-kondisi: `success → bg-emerald-500`, `failed → bg-rose-500`, `null/lainnya → bg-slate-400` (abu-abu netral).
+* **Hasil Pengujian Fisik**:
+  - `php -l`: No syntax errors detected ✅
+  - Div balance: 69 open / 69 close ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared successfully ✅
+* **Status**: ✅ PASSED
+
+### [QA-20260911-57] Ekspansi Ukuran Modal (Large Modal Layout) di AI Providers (/admin/ai-providers)
+
+* **Konteks**: User meminta agar ukuran modal pada halaman `http://localhost/admin/ai-providers` diperbesar agar lebih leluasa saat mengonfigurasi payload JSON dan meninjau respons panjang pengujian LLM.
+* **Perubahan**:
+  1. **Modal Form Provider (`$showFormModal`)**:
+     - Memperbesar kontainer modal dari `max-w-lg` (512px) menjadi `max-w-4xl` (896px) dengan `max-h-[92vh]`.
+     - Layout formulir kini jauh lebih leluasa, khususnya untuk input JSON Custom Headers dan Custom Request Body Template.
+  2. **Modal Uji Prompt LLM (`$showTestModal`)**:
+     - Memperbesar kontainer modal dari `max-w-lg` (512px) menjadi `max-w-2xl` (672px) dengan `max-h-[92vh] flex flex-col`.
+     - Memperlebar textarea prompt uji dan memperluas kotak output hasil respons JSON/teks dari `max-h-40` menjadi `max-h-64` lengkap dengan scroll internal.
+* **QA fisik**:
+  - `php -l` lulus pada `resources/views/livewire/admin/ai-providers.blade.php`.
+  - Keseimbangan tag HTML diverifikasi: 69 open `<div>`, 69 close `</div>` (seimbang 100%).
+  - Cache view Laravel dibersihkan via `docker exec media_intelligent_container php artisan view:clear`.
+* **Status**: PASSED.
+
+
+### [QA-20260911-56] Penegakan Standar AGENTS.md, Modal Dismiss, Loading State & Keseimbangan Tag di AI Providers (/admin/ai-providers)
+* **Konteks**: Audit menyeluruh pada halaman `http://localhost/admin/ai-providers` sesuai instruksi kerja `AGENTS.md`. Ditemukan modal tidak memiliki backdrop dismiss (`wire:click.self`), tombol-tombol modal belum memiliki animasi spinner dan proteksi `wire:loading.attr="disabled"`, baris tabel kosong `colspan="9"` (kurang 1 kolom), serta tag penutup div yang kurang di modal form.
+* **Perubahan**:
+  1. **Backdrop Dismiss & Dynamic `wire:key`**:
+     - Menambahkan event dismiss `wire:click.self` pada 4 modal (`$showFormModal`, `$showTestModal`, `$confirmingDelete`, `$confirmingToggle`).
+     - Menambahkan atribut `wire:key` yang dinamis dan unik pada masing-masing modal untuk mencegah Livewire DOM morphing artifact.
+  2. **Proteksi Double-Submit & Indikator Loading**:
+     - Tombol "Simpan Provider" (`wire:target="save"`), "Jalankan Uji" (`wire:target="runTest"`), "Ya, Hapus" (`wire:target="deleteConfirmed"`), dan "Ya, Aktifkan/Nonaktifkan" (`wire:target="toggleStatusConfirmed"`) kini memiliki animasi spinner SVG dan `wire:loading.attr="disabled"`.
+  3. **Penyelarasan Kolom & HTML Balance**:
+     - Mengubah `colspan="9"` menjadi `colspan="10"` pada baris `@empty` tabel AI Provider.
+     - Menambahkan tag penutup `</div>` yang kurang pada kontainer form group Identitas & Kredensial.
+* **QA fisik**:
+  - `php -l` lulus tanpa error sintaks pada `resources/views/livewire/admin/ai-providers.blade.php`.
+  - Keseimbangan tag HTML diverifikasi: 68 open `<div>`, 68 close `</div>` (seimbang 100%).
+  - Cache view Laravel dibersihkan via `docker exec media_intelligent_container php artisan view:clear`.
+* **Status**: PASSED.
+
+
+### [QA-20260911-55] Restorasi Backdrop Modal & Eliminasi x-teleport di Laporan Keuangan Apify (/admin/apify-financials)
+* **Konteks**: User melaporkan saat membuka modal hasil scraping di `http://localhost/admin/apify-financials`, backdrop/latar belakang gelap semi-transparan (`bg-slate-900/50 backdrop-blur-sm`) tidak muncul di layar.
+* **Perubahan**:
+  1. **Pelepasan Pembungkus `<template x-teleport="body">`**:
+     - Menghapus tag `<template x-teleport="body">` dan penutup `</template>` pada modal hasil scraping di `resources/views/livewire/admin/apify-financial-report.blade.php`.
+     - Menghilangkan konflik Livewire 3 DOM morphing collision yang menyebabkan elemen wrapper fixed kehilangan konteks render di root saat state `$modalLoading` berganti.
+  2. **Reposisi Modal ke Root Level Komponen**:
+     - Memindahkan markup modal ke tingkat root komponen Livewire (di luar kontainer pembungkus tabel `rounded-3xl border shadow-sm overflow-x-auto`).
+     - Memastikan styling `fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm` mencakup viewport secara penuh tanpa dibatasi oleh stacking context lokal kartu tabel.
+  3. **Preservasi Strict Scroll-Lock & Dismiss**:
+     - Mempertahankan proteksi scroll-lock resmi via Alpine.js:
+       ```javascript
+       x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"
+       ```
+     - Mempertahankan `wire:click.self="closeItemsModal"` untuk fitur klik di luar modal (backdrop dismiss).
+* **QA fisik**:
+  - `php -l` lulus tanpa error sintaks pada `resources/views/livewire/admin/apify-financial-report.blade.php`.
+  - Keseimbangan tag HTML diverifikasi: 43 open `<div>`, 43 close `</div>` (seimbang 100%).
+  - Cache view Laravel berhasil dibersihkan via `docker exec media_intelligent_container php artisan view:clear`.
+* **Status**: PASSED.
+
+
 ### [QA-20260911-54] Perbaikan Slop Modal Konfirmasi AlpineJS & Header Kolom Notifikasi di Pipeline Monitor
 * **Konteks**: User meminta audit halaman `http://localhost/admin/pipeline-monitor`. Ditemukan modal konfirmasi aksi AlpineJS kehilangan backdrop fixed dan wrapper kartu putih sehingga tidak tampil popup saat tombol konfirmasi diklik, serta header tabel notifikasi yang kurang akurat.
 * **Perubahan**:

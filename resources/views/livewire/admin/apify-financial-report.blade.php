@@ -138,8 +138,8 @@
                                         wire:loading.class="opacity-50 cursor-not-allowed"
                                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1fa387]/10 hover:bg-[#1fa387]/20 text-[#1fa387] font-black tracking-wide transition active:scale-95 cursor-pointer shadow-sm text-[10px]"
                                     >
-                                        <span wire:loading.remove wire:target="openItems({{ $run['project_id'] ? $run['project_id'] : 'null' }}, '{{ $run['platform'] }}', '{{ addslashes($run['keyword']) }}', '{{ $run['run_id'] }}', '{{ addslashes($run['project_name']) }}')" class="material-symbols-outlined text-[13px] font-bold">visibility</span>
-                                        <svg wire:loading wire:target="openItems({{ $run['project_id'] ? $run['project_id'] : 'null' }}, '{{ $run['platform'] }}', '{{ addslashes($run['keyword']) }}', '{{ $run['run_id'] }}', '{{ addslashes($run['project_name']) }}')" class="animate-spin h-3 w-3 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <span wire:loading.remove wire:target="openItems" class="material-symbols-outlined text-[13px] font-bold">visibility</span>
+                                        <svg wire:loading wire:target="openItems" class="animate-spin h-3 w-3 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
@@ -171,103 +171,6 @@
                 </table>
             </div>
 
-            {{-- Modal Display Hasil Scraping --}}
-            @if($showItemsModal)
-            <template x-teleport="body">
-                <div wire:key="apify-financial-items-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 py-6 font-sans" @touchmove.prevent @wheel.prevent>
-                    <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[95vh]" style="max-height: calc(100dvh - 40px);">
-                        
-                        {{-- Modal Header --}}
-                        <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
-                            <div class="min-w-0 flex-1">
-                                <p class="text-[9px] font-bold uppercase tracking-wider text-[#1fa387] truncate">Platform: {{ $selectedPlatform }} <span class="hidden sm:inline">&nbsp;&bull;&nbsp; Proyek: {{ $selectedProjectName }} &nbsp;&bull;&nbsp; Run ID: {{ $selectedRunId }}</span></p>
-                                <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Hasil Pengambilan {{ $isCommentModal ? 'Komentar' : 'Postingan' }} <span class="text-slate-400 font-semibold block sm:inline">({{ $isCommentModal ? 'Scraped Comments' : 'Scraped Posts' }})</span></h2>
-                            </div>
-                            <button type="button" wire:click="closeItemsModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
-                                <span class="material-symbols-outlined text-[18px] block">close</span>
-                            </button>
-                        </div>
-
-                        {{-- Modal Body (Scrollable & loading state, fixed height) --}}
-                        <div class="flex-1 overflow-y-auto p-4 sm:p-6 relative" style="min-height: 300px; overscroll-behavior: contain;" @touchmove.stop @wheel.stop>
-                            
-                            {{-- Loading State --}}
-                            @if($modalLoading)
-                                <div class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10">
-                                    <svg class="animate-spin h-8 w-8 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span class="text-xs font-bold text-slate-600 mt-3">Mengambil data hasil scraping...</span>
-                                </div>
-                            @endif
-
-                            @if(empty($selectedItems) && !$modalLoading)
-                                <div class="flex flex-col items-center justify-center py-16 text-slate-400">
-                                    <span class="material-symbols-outlined text-[48px] text-slate-300">database_off</span>
-                                    <p class="text-xs font-bold mt-2">Tidak ada data item tersimpan yang cocok dengan filter pencarian.</p>
-                                    <p class="text-[10px] text-slate-400 mt-1 max-w-md text-center">Keyword: {{ $selectedKeyword }}</p>
-                                </div>
-                            @elseif(!$modalLoading)
-                                <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                                    <div class="overflow-x-auto">
-                                        <table class="min-w-[800px] w-full text-left text-xs border-collapse">
-                                        <thead>
-                                            <tr class="bg-slate-50 border-b border-slate-200">
-                                                <th class="px-4 py-3 font-bold text-slate-600">Pembuat ({{ $isCommentModal ? 'Komentator' : 'Author' }})</th>
-                                                <th class="px-4 py-3 font-bold text-slate-600">{{ $isCommentModal ? 'Isi Komentar' : 'Konten/Isi Postingan' }}</th>
-                                                <th class="px-4 py-3 font-bold text-slate-600 text-center">Statistik</th>
-                                                <th class="px-4 py-3 font-bold text-slate-600 text-center">{{ $isCommentModal ? 'Waktu Komen' : 'Tanggal Post' }}</th>
-                                                <th class="px-4 py-3 font-bold text-slate-600 text-center">Tautan</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-slate-100">
-                                            @foreach($selectedItems as $item)
-                                                <tr class="hover:bg-slate-50/40 transition-colors">
-                                                    <td class="px-4 py-3 font-bold text-slate-800 whitespace-nowrap">{{ $item['author_name'] }}</td>
-                                                                                                        <td class="px-4 py-3 text-slate-600 leading-relaxed font-medium min-w-[280px]">
-                                                        @if($isCommentModal && !empty($item['parent_author']))
-                                                            <div class="mb-1 text-[10px] text-slate-400 font-semibold truncate bg-slate-50 border border-slate-100/80 rounded-md px-2 py-0.5 inline-block max-w-full">
-                                                                Komentar di video &#64;{{ $item['parent_author'] }}: "{{ $item['parent_content'] }}"
-                                                            </div>
-                                                        @endif
-                                                        <div>{{ $item['content'] }}</div>
-                                                    </td>
-                                                    <td class="px-4 py-3 text-slate-500 whitespace-nowrap text-center leading-normal">
-                                                        <div class="font-bold text-[#1fa387]">{{ $item['likes'] }} Likes</div>
-                                                        @if(!$isCommentModal)
-                                                            <div class="text-[10px] text-slate-400 font-semibold">{{ $item['comments'] }} Komentar</div>
-                                                        @endif
-                                                    </td>
-                                                    <td class="px-4 py-3 text-slate-400 whitespace-nowrap text-center font-semibold">{{ $item['posted_at'] }}</td>
-                                                    <td class="px-4 py-3 text-center whitespace-nowrap">
-                                                        @if(filter_var($item['post_url'], FILTER_VALIDATE_URL))
-                                                            <a href="{{ $item['post_url'] }}" target="_blank" class="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-slate-100 hover:bg-[#1fa387]/10 text-slate-500 hover:text-[#1fa387] transition shadow-sm active:scale-90" title="Buka Link Postingan">
-                                                                <span class="material-symbols-outlined text-[16px] block">open_in_new</span>
-                                                            </a>
-                                                        @else
-                                                            <span class="text-slate-350 italic text-[10px]">-</span>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-
-                        {{-- Modal Footer --}}
-                        <div class="bg-slate-50 border-t border-slate-100 px-6 py-4 flex items-center justify-between shrink-0">
-                            <span class="text-[10px] text-slate-400 font-semibold">Total: {{ count($selectedItems) }} {{ $isCommentModal ? 'komentar' : 'postingan' }} berhasil ditarik.</span>
-                            <button type="button" wire:click="closeItemsModal" class="h-9 px-5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-sm">Tutup</button>
-                        </div>
-                    </div>
-                </div>
-                </template>
-@endif
-
             {{-- Pagination Links --}}
             @if($recentRuns->hasPages())
             <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500 font-sans">
@@ -293,4 +196,119 @@
             @endif
         </div>
     @endif
+
+    {{-- Modal Display Hasil Scraping (Root Level - Tanpa x-teleport agar backdrop render stabil) --}}
+    <div wire:key="apify-financial-items-modal"
+         x-data="{ get open() { return $wire.showItemsModal } }"
+         x-show="open"
+         x-cloak
+         wire:click.self="closeItemsModal"
+         x-init="
+             $watch('open', val => {
+                 if (val) {
+                     document.body.style.overflow = 'hidden';
+                     document.documentElement.style.overflow = 'hidden';
+                 } else {
+                     document.body.style.overflow = '';
+                     document.documentElement.style.overflow = '';
+                 }
+             })
+         "
+         class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6 font-sans">
+        <div class="w-full max-w-6xl bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[92vh]">
+            
+            {{-- Modal Header --}}
+            <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
+                <div class="min-w-0 flex-1">
+                    <p class="text-[9px] font-bold uppercase tracking-wider text-[#1fa387] truncate">Platform: {{ $selectedPlatform }} <span class="hidden sm:inline">&nbsp;&bull;&nbsp; Proyek: {{ $selectedProjectName }} &nbsp;&bull;&nbsp; Run ID: {{ $selectedRunId }}</span></p>
+                    <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Hasil Pengambilan {{ $isCommentModal ? 'Komentar' : 'Postingan' }} <span class="text-slate-400 font-semibold block sm:inline">({{ $isCommentModal ? 'Scraped Comments' : 'Scraped Posts' }})</span></h2>
+                </div>
+                <button type="button" wire:click="closeItemsModal" wire:loading.attr="disabled" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
+                    <span class="material-symbols-outlined text-[18px] block">close</span>
+                </button>
+            </div>
+
+            {{-- Modal Body (Scrollable & loading state, fixed height) --}}
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 relative min-h-[300px] overscroll-contain">
+                
+                {{-- Loading State --}}
+                @if($modalLoading)
+                    <div class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10">
+                        <svg class="animate-spin h-8 w-8 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-xs font-bold text-slate-600 mt-3">Mengambil data hasil scraping...</span>
+                    </div>
+                @endif
+
+                @if(empty($selectedItems) && !$modalLoading)
+                    <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+                        <span class="material-symbols-outlined text-[48px] text-slate-300">{{ $isCommentModal ? 'comment_bank' : 'database_off' }}</span>
+                        @if($isCommentModal)
+                            <p class="text-xs font-bold mt-2 text-center">Postingan induk tidak ditemukan di database.</p>
+                            <p class="text-[10px] text-slate-400 mt-1 max-w-md text-center">URL target belum tersimpan di tabel <code class="bg-slate-100 px-1 rounded">social_media_items</code> untuk platform <span class="font-bold">{{ $selectedPlatform }}</span>. Pastikan run scraper postingan untuk URL ini telah selesai sebelum membuka komentar.</p>
+                        @else
+                            <p class="text-xs font-bold mt-2">Tidak ada data item tersimpan yang cocok dengan filter pencarian.</p>
+                            <p class="text-[10px] text-slate-400 mt-1 max-w-md text-center">Keyword: {{ $selectedKeyword }}</p>
+                        @endif
+                    </div>
+                @elseif(!$modalLoading)
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-[800px] w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200">
+                                    <th class="px-4 py-3 font-bold text-slate-600">Pembuat ({{ $isCommentModal ? 'Komentator' : 'Author' }})</th>
+                                    <th class="px-4 py-3 font-bold text-slate-600">{{ $isCommentModal ? 'Isi Komentar' : 'Konten/Isi Postingan' }}</th>
+                                    <th class="px-4 py-3 font-bold text-slate-600 text-center">Statistik</th>
+                                    <th class="px-4 py-3 font-bold text-slate-600 text-center">{{ $isCommentModal ? 'Waktu Komen' : 'Tanggal Post' }}</th>
+                                    <th class="px-4 py-3 font-bold text-slate-600 text-center">Tautan</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @foreach($selectedItems as $item)
+                                    <tr class="hover:bg-slate-50/40 transition-colors">
+                                        <td class="px-4 py-3 font-bold text-slate-800 whitespace-nowrap">{{ $item['author_name'] }}</td>
+                                        <td class="px-4 py-3 text-slate-600 leading-relaxed font-medium min-w-[280px]">
+                                            @if($isCommentModal && !empty($item['parent_author']))
+                                                <div class="mb-1 text-[10px] text-slate-400 font-semibold truncate bg-slate-50 border border-slate-100/80 rounded-md px-2 py-0.5 inline-block max-w-full">
+                                                    Komentar di video &#64;{{ $item['parent_author'] }}: "{{ $item['parent_content'] }}"
+                                                </div>
+                                            @endif
+                                            <div>{{ $item['content'] }}</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-slate-500 whitespace-nowrap text-center leading-normal">
+                                            <div class="font-bold text-[#1fa387]">{{ $item['likes'] }} Likes</div>
+                                            @if(!$isCommentModal)
+                                                <div class="text-[10px] text-slate-400 font-semibold">{{ $item['comments'] }} Komentar</div>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-slate-400 whitespace-nowrap text-center font-semibold">{{ $item['posted_at'] }}</td>
+                                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                                            @if(filter_var($item['post_url'], FILTER_VALIDATE_URL))
+                                                <a href="{{ $item['post_url'] }}" target="_blank" class="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-slate-100 hover:bg-[#1fa387]/10 text-slate-500 hover:text-[#1fa387] transition shadow-sm active:scale-90" title="Buka Link Postingan">
+                                                    <span class="material-symbols-outlined text-[16px] block">open_in_new</span>
+                                                </a>
+                                            @else
+                                                <span class="text-slate-350 italic text-[10px]">-</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Modal Footer --}}
+            <div class="bg-slate-50 border-t border-slate-100 px-6 py-4 flex items-center justify-between shrink-0">
+                <span class="text-[10px] text-slate-400 font-semibold">Total: {{ count($selectedItems) }} {{ $isCommentModal ? 'komentar' : 'postingan' }} berhasil ditarik.</span>
+                <button type="button" wire:click="closeItemsModal" wire:loading.attr="disabled" class="h-9 px-5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-sm">Tutup</button>
+            </div>
+        </div>
+    </div>
 </div>
+

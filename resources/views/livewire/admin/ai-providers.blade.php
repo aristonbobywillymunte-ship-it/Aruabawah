@@ -171,7 +171,7 @@
                             <td class="px-4 py-3 font-semibold text-slate-500">
                                 @if($provider->last_tested_at)
                                     <div class="flex items-center gap-1">
-                                        <span class="inline-flex w-1.5 h-1.5 rounded-full {{ $provider->last_test_status === 'success' ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
+                                        <span class="inline-flex w-1.5 h-1.5 rounded-full {{ $provider->last_test_status === 'success' ? 'bg-emerald-500' : ($provider->last_test_status === 'failed' ? 'bg-rose-500' : 'bg-slate-400') }}"></span>
                                         <span>{{ $provider->last_tested_at->format('d/m/Y H:i') }}</span>
                                     </div>
                                 @else
@@ -268,7 +268,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center text-slate-400 italic">Belum ada provider AI terdaftar.</td>
+                            <td colspan="10" class="px-6 py-12 text-center text-slate-400 italic">Belum ada provider AI terdaftar.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -278,8 +278,11 @@
 
     <!-- Form Add/Edit Provider Modal -->
     @if($showFormModal)
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
-            <div class="w-full max-w-lg overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain flex flex-col max-h-[90vh]">
+        <div wire:key="ai-provider-form-modal-{{ $isEditing ? 'edit' : 'create' }}-{{ $editingId ?? 'new' }}" 
+             wire:click.self="closeFormModal"
+             x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
+            <div class="w-full max-w-4xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain flex flex-col max-h-[92vh]">
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0">
                     <div>
                         <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Manajemen Model AI</p>
@@ -335,7 +338,8 @@
                                                 type="button" 
                                                 wire:click="detectModels" 
                                                 wire:loading.attr="disabled"
-                                                class="h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 text-xs font-bold transition flex-shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+                                                wire:target="detectModels, save"
+                                                class="h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 text-xs font-bold transition flex-shrink-0 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                                             >
                                                 <!-- Loading state -->
                                                 <svg wire:loading wire:target="detectModels" class="animate-spin h-3 w-3 text-slate-500" fill="none" viewBox="0 0 24 24">
@@ -365,6 +369,7 @@
                                         @error('model_name') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
+                            </div>
                         </div>
 
                         <!-- Group 2: Performa & Limit -->
@@ -426,7 +431,21 @@
 
                     <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-white shrink-0">
                         <button type="button" wire:click="closeFormModal" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
-                        <button type="submit" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer font-sans">Simpan Provider</button>
+                        <button 
+                            type="submit" 
+                            wire:loading.attr="disabled"
+                            wire:target="save"
+                            class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer font-sans disabled:opacity-50"
+                        >
+                            <span wire:loading.remove wire:target="save">Simpan Provider</span>
+                            <span wire:loading wire:target="save" class="flex items-center gap-2">
+                                <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Menyimpan...</span>
+                            </span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -435,9 +454,12 @@
 
     <!-- Test Run Modal -->
     @if($showTestModal)
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
-            <div class="w-full max-w-lg overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain">
-                <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div wire:key="ai-provider-test-modal-{{ $testingId ?? 'none' }}" 
+             wire:click.self="closeTestModal"
+             x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
+            <div class="w-full max-w-2xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain flex flex-col max-h-[92vh]">
+                <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 shrink-0">
                     <div>
                         <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Pengujian LLM</p>
                         <h2 class="text-base font-black text-slate-900 mt-0.5">Uji Koneksi Provider</h2>
@@ -447,35 +469,51 @@
                     </button>
                 </div>
                 
-                <form wire:submit.prevent="runTest" class="p-6 space-y-4 font-sans">
-                    <div>
-                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Prompt Uji</label>
-                        <textarea wire:model="testPrompt" rows="3" class="w-full rounded-xl border border-slate-200 p-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition"></textarea>
-                        @error('testPrompt') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                <form wire:submit.prevent="runTest" class="flex flex-col min-h-0 flex-1 font-sans">
+                    <div class="p-6 space-y-4 overflow-y-auto flex-1">
+                        <div>
+                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Prompt Uji</label>
+                            <textarea wire:model="testPrompt" rows="3" class="w-full rounded-xl border border-slate-200 p-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition bg-white shadow-sm"></textarea>
+                            @error('testPrompt') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        @if($testResultStatus)
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2 text-xs">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-slate-700">Hasil Test:</span>
+                                    <span class="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold {{ $testResultStatus === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                                        {{ $testResultStatus === 'success' ? 'Berhasil' : 'Gagal' }}
+                                    </span>
+                                </div>
+                                @if($testResultResponse)
+                                    <div class="text-slate-800 bg-white border border-slate-100 rounded-xl p-3 mt-1 leading-relaxed max-h-64 overflow-y-auto font-mono text-[10px] shadow-inner">
+                                        {!! $testResultResponse !!}
+                                    </div>
+                                @endif
+                                @if($testResultError)
+                                    <div class="text-rose-600 font-bold mt-1 border-t border-slate-200 pt-2">{{ $testResultError }}</div>
+                                @endif
+                            </div>
+                        @endif
                     </div>
 
-                    @if($testResultStatus)
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2 text-xs">
-                            <div class="flex items-center gap-2">
-                                <span class="font-bold text-slate-700">Hasil Test:</span>
-                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold {{ $testResultStatus === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
-                                    {{ $testResultStatus === 'success' ? 'Berhasil' : 'Gagal' }}
-                                </span>
-                            </div>
-                            @if($testResultResponse)
-                                <div class="text-slate-800 bg-white border border-slate-100 rounded-xl p-3 mt-1 leading-relaxed max-h-40 overflow-y-auto font-mono text-[10px]">
-                                    {!! $testResultResponse !!}
-                                </div>
-                            @endif
-                            @if($testResultError)
-                                <div class="text-rose-600 font-bold mt-1 border-t border-slate-200 pt-2">{{ $testResultError }}</div>
-                            @endif
-                        </div>
-                    @endif
-
-                    <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-white shrink-0">
                         <button type="button" wire:click="closeTestModal" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer font-sans">Batal</button>
-                        <button type="submit" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer font-sans">Jalankan Uji</button>
+                        <button 
+                            type="submit" 
+                            wire:loading.attr="disabled"
+                            wire:target="runTest"
+                            class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer font-sans disabled:opacity-50"
+                        >
+                            <span wire:loading.remove wire:target="runTest">Jalankan Uji</span>
+                            <span wire:loading wire:target="runTest" class="flex items-center gap-2">
+                                <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Menguji API...</span>
+                            </span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -484,7 +522,10 @@
 
     <!-- Delete Confirmation Modal -->
     @if($confirmingDelete)
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
+        <div wire:key="ai-provider-delete-modal-{{ $deleteId ?? 'none' }}" 
+             wire:click.self="$set('confirmingDelete', false)"
+             x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
             <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain">
                 <div class="flex items-center gap-3">
                     <span class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
@@ -498,7 +539,21 @@
                 <p class="text-xs text-slate-500 leading-relaxed">Aksi ini bersifat permanen. Konfigurasi model dan API Key terkait akan dihapus secara total dari database.</p>
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button wire:click="$set('confirmingDelete', false)" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
-                    <button wire:click="deleteConfirmed" class="h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Hapus</button>
+                    <button 
+                        wire:click="deleteConfirmed" 
+                        wire:loading.attr="disabled"
+                        wire:target="deleteConfirmed"
+                        class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                    >
+                        <span wire:loading.remove wire:target="deleteConfirmed">Ya, Hapus</span>
+                        <span wire:loading wire:target="deleteConfirmed" class="flex items-center gap-1.5">
+                            <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Menghapus...</span>
+                        </span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -506,7 +561,10 @@
 
     <!-- Toggle Status Confirmation Modal -->
     @if($confirmingToggle)
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
+        <div wire:key="ai-provider-toggle-modal-{{ $toggleId ?? 'none' }}" 
+             wire:click.self="cancelToggle"
+             x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
             <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain">
                 <div class="flex items-center gap-3">
                     @if($toggleCurrentStatus)
@@ -551,9 +609,37 @@
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button wire:click="cancelToggle" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
                     @if($toggleCurrentStatus)
-                        <button wire:click="toggleStatusConfirmed" class="h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Nonaktifkan</button>
+                        <button 
+                            wire:click="toggleStatusConfirmed" 
+                            wire:loading.attr="disabled"
+                            wire:target="toggleStatusConfirmed"
+                            class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                        >
+                            <span wire:loading.remove wire:target="toggleStatusConfirmed">Ya, Nonaktifkan</span>
+                            <span wire:loading wire:target="toggleStatusConfirmed" class="flex items-center gap-1.5">
+                                <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Memproses...</span>
+                            </span>
+                        </button>
                     @else
-                        <button wire:click="toggleStatusConfirmed" class="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Aktifkan</button>
+                        <button 
+                            wire:click="toggleStatusConfirmed" 
+                            wire:loading.attr="disabled"
+                            wire:target="toggleStatusConfirmed"
+                            class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                        >
+                            <span wire:loading.remove wire:target="toggleStatusConfirmed">Ya, Aktifkan</span>
+                            <span wire:loading wire:target="toggleStatusConfirmed" class="flex items-center gap-1.5">
+                                <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Memproses...</span>
+                            </span>
+                        </button>
                     @endif
                 </div>
             </div>

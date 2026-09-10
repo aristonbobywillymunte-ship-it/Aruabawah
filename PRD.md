@@ -909,3 +909,103 @@ Halaman manajemen scraper Apify (`/admin/apify`) memiliki beberapa indikasi slop
    - Membersihkan method fiktif dari `wire:target` global loading state.
    - Menyeimbangkan seluruh struktur tag kontainer HTML (`div: 129 / 129`).
 
+## Bab 7.45 — Audit & Perbaikan Halaman Laporan Keuangan Apify (/admin/apify-financials)
+
+### Latar Belakang
+Pada halaman audit biaya scraper Apify (`/admin/apify-financials`):
+- Modal visualisasi item sebelumnya memakai inline styles dan event blocking `@touchmove.prevent @wheel.prevent` yang berpotensi memicu glitch scroll pada browser seluler / trackpad.
+- Backdrop modal belum mendukung fitur penutupan saat diklik di luar modal (*click backdrop to dismiss*).
+- Pada baris tabel item, atribut `wire:target` mengulang 5 parameter panjang (`$run['project_id'], $run['platform'], addslashes($run['keyword']), ...`) sebanyak 3 kali sehingga rentan gagal parsing string jika keyword memuat karakter kutip khusus.
+- Terdapat properti dead code `protected $paginationTheme = 'bootstrap';` pada komponen Livewire yang murni menggunakan Tailwind.
+- Query item postingan non-komentar membatasi `project_id = $projectId` secara kaku, sehingga jika run sistem tidak memiliki `project_id`, modal akan menampilkan data kosong padahal item berhasil ditarik.
+
+### Perubahan
+1. **Penegakan Standar Scroll-Lock Bab 7.43**:
+   - Menghapus inline style kaku dan listener `@touchmove.prevent @wheel.prevent`.
+   - Menerapkan hook resmi:
+     ```javascript
+     x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"
+     ```
+   - Menata modal ke `w-full max-w-6xl max-h-[92vh]` dengan `overflow-y-auto overscroll-contain`.
+2. **Backdrop Dismiss**:
+   - Menambahkan `wire:click.self="closeItemsModal"` pada overlay backdrop.
+3. **Penyederhanaan `wire:target`**:
+   - Menyederhanakan target loading tombol item menjadi `wire:target="openItems"`.
+4. **Pembersihan Dead Code & Optimalisasi Query Item**:
+   - Menghapus properti `$paginationTheme = 'bootstrap'`.
+   - Mengoptimalkan query `social_media_items` dengan `when($projectId)` dan fallback pencarian multi-kata kunci agar data hasil scraping tetap dapat di-preview secara transparan.
+
+## Bab 7.46 — Pemulihan Backdrop Modal Laporan Keuangan Apify (/admin/apify-financials)
+
+### Latar Belakang
+Pada halaman `/admin/apify-financials`, saat modal pratinjau hasil postingan/komentar dibuka, efek backdrop gelap semi-transparan (`bg-slate-900/50 backdrop-blur-sm`) tidak tampil di browser:
+- Penggunaan pembungkus `<template x-teleport="body">` memutus node modal dari root komponen Livewire 3 sehingga terjadi konflik re-render (DOM morphing collision) saat status `$modalLoading` berganti.
+- Modal bersarang di dalam kontainer kartu tabel (`rounded-3xl shadow-sm overflow-x-auto`) yang dapat menimbulkan stacking context tersendiri di engine rendering browser.
+
+### Perubahan & QA
+1. **Pelepasan `<template x-teleport="body">`**:
+   - Menghapus tag pembungkus `<template x-teleport="body">` dan penutup `</template>` agar modal kembali dirender secara native oleh Livewire 3 seperti pola modal di `/admin/apify` dan `/admin/users`.
+2. **Reposisi ke Root Level Komponen**:
+   - Memindahkan struktur modal ke level paling luar komponen Livewire (sejajar dengan kontainer utama), memastikan kelas `fixed inset-0 z-50` menutup seluruh layar tanpa terkurung oleh stacking context kartu tabel.
+3. **Validasi & QA Tag**:
+   - Memastikan strict scroll-lock tetap aktif via Alpine.js:
+     ```javascript
+     x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"
+     ```
+   - Keseimbangan tag HTML diverifikasi: `43 open, 43 close`.
+   - View cache dibersihkan via `php artisan view:clear` dan linter PHP mendeteksi `No syntax errors`.
+
+## Bab 7.47 — Audit Komprehensif & Penyelarasan Standar AGENTS.md pada AI Providers (/admin/ai-providers)
+
+### Latar Belakang
+Halaman manajemen provider kecerdasan buatan (`/admin/ai-providers`) diaudit berdasarkan pedoman kerja operasional `AGENTS.md`:
+- Keempat modal (Form Tambah/Ubah Provider, Uji Koneksi Prompt, Konfirmasi Hapus, dan Konfirmasi Status Toggle) belum memiliki kemampuan penutupan saat area backdrop diklik (`wire:click.self`).
+- Modal belum memiliki `wire:key` yang unik, memicu risiko salah morphing di Livewire 3 saat berganti modal.
+- Tombol aksi simpan, submit pengujian, konfirmasi hapus, dan konfirmasi toggle belum memiliki proteksi `wire:loading.attr="disabled"` serta indikator visual proses loading.
+- Baris tabel data kosong (`@empty`) memuat bug `colspan="9"` padahal terdapat 10 kolom header.
+- Terdapat ketidakseimbangan satu tag div penutup pada kontainer Identitas & Kredensial di dalam modal form.
+
+### Perubahan & QA
+1. **Penerapan Fitur Backdrop Dismiss & Identifikasi Kunci Modal**:
+   - Seluruh 4 modal (`$showFormModal`, `$showTestModal`, `$confirmingDelete`, `$confirmingToggle`) telah dilengkapi event `wire:click.self` untuk dismiss instan saat area latar belakang diklik.
+   - Menambahkan atribut `wire:key` yang presisi dan dinamis pada setiap pembungkus modal.
+2. **Proteksi Tombol & Umpan Balik Loading**:
+   - Tombol *Simpan Provider* (`wire:target="save"`), *Jalankan Uji* (`wire:target="runTest"`), *Ya, Hapus* (`wire:target="deleteConfirmed"`), dan *Ya, Aktifkan/Nonaktifkan* (`wire:target="toggleStatusConfirmed"`) kini dibekali spinner animasi SVG dan atribut `wire:loading.attr="disabled"`.
+3. **Penyempurnaan Tabel & Keseimbangan Tag Kontainer**:
+   - Memperbaiki `colspan="10"` pada baris empty state tabel.
+   - Memperbaiki penutupan tag pembungkus `div` pada form modal sehingga seluruh kontainer HTML seimbang sempurna (`68 open, 68 close`).
+   - Linter PHP lulus `No syntax errors detected` dan view cache dibersihkan via `php artisan view:clear`.
+
+## Bab 7.48 — Peningkatan Skala Ukuran Modal AI Providers (/admin/ai-providers)
+
+### Latar Belakang
+Modal konfigurasi form provider dan modal uji prompt sebelumnya berukuran sempit (`max-w-lg` / 512px). Hal ini menyebabkan field JSON custom headers/body dan hasil pengujian LLM yang panjang tampak berdesakan dan memerlukan scrolling vertikal yang berlebihan.
+
+### Perubahan & QA
+1. **Modal Form Tambah/Ubah Provider (`$showFormModal`)**:
+   - Diperbesar dari `max-w-lg` (512px) menjadi `max-w-4xl` (896px) dengan `max-h-[92vh]`.
+   - Area form luas, memudahkan peninjauan field kredensial, performa limit, serta JSON headers/body.
+2. **Modal Uji Prompt LLM (`$showTestModal`)**:
+   - Diperbesar dari `max-w-lg` (512px) menjadi `max-w-2xl` (672px) dengan `max-h-[92vh]`.
+   - Box hasil respons LLM diperluas dari `max-h-40` menjadi `max-h-64` dengan scroll internal yang halus.
+3. **Verifikasi**:
+   - Tag HTML diverifikasi seimbang: `69 open <div>, 69 close </div>`.
+   - `php -l` lulus tanpa error, view cache dibersihkan via `php artisan view:clear`.
+
+## Bab 7.49 — Fix Null-State Dot Warna Kolom Status Uji (/admin/ai-providers)
+
+### Latar Belakang
+Kolom "Uji Terakhir" pada tabel AI Providers menampilkan dot berwarna untuk mengindikasikan hasil pengujian koneksi terakhir. Implementasi sebelumnya menggunakan ternary 2-kondisi: `success → hijau`, else `→ merah`. Akibatnya, provider yang **belum pernah ditest** (`last_test_status = null`) menampilkan dot merah — misleading karena kesan yang terbaca adalah "gagal", padahal statusnya adalah "belum ada data".
+
+### Perubahan
+- **File**: `resources/views/livewire/admin/ai-providers.blade.php`, line 174
+- Ternary diperluas dari 2-kondisi ke **3-kondisi**:
+  - `last_test_status === 'success'` → `bg-emerald-500` (hijau)
+  - `last_test_status === 'failed'` → `bg-rose-500` (merah)
+  - `null` / nilai lain → `bg-slate-400` (abu-abu netral, "belum pernah ditest")
+
+### Verifikasi
+- `php -l`: No syntax errors detected ✅
+- Div balance: 69 open / 69 close ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+

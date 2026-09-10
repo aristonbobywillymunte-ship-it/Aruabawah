@@ -1437,6 +1437,24 @@ class MediaDashboard extends Component
             || str_contains($source, 'tk');
     }
 
+    protected function isInstagramArticle($article): bool
+    {
+        $source = strtolower(trim((string) ($article->source_name ?? '')));
+
+        return $source === 'instagram'
+            || str_contains($source, 'instagram')
+            || str_contains($source, 'ig');
+    }
+
+    protected function isFacebookArticle($article): bool
+    {
+        $source = strtolower(trim((string) ($article->source_name ?? '')));
+
+        return $source === 'facebook'
+            || str_contains($source, 'facebook')
+            || str_contains($source, 'fb');
+    }
+
     protected function resolveSocialMediaItemForArticle($article): ?SocialMediaItem
     {
         if (! $this->isSocialArticle($article)) {

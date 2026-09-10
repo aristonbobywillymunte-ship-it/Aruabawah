@@ -64,6 +64,8 @@
             height: 100% !important;
             overscroll-behavior: none !important;
         }
+        /* Hide Alpine x-cloak elements until Alpine initializes */
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="min-h-screen bg-[#f7f9ff] text-slate-800 font-sans" :class="mobileMenuOpen ? 'overflow-hidden' : ''" x-data="{ mobileMenuOpen: false }">
