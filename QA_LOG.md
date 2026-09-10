@@ -383,3 +383,24 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Render view `auth.change-password` via tinker: **10.204 bytes** (exit code 0, zero error).
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+---
+
+### [QA-20260910-15] Perbaikan Tombol Kembali Halaman Ganti Password Tanpa Loading
+* **Tanggal & Waktu**: 10 September 2026, 20:28 WIB
+* **Konteks Masalah**:
+  Tombol "Kembali" pada halaman Ganti Password sebelumnya menggunakan elemen `<button type="button" onclick="window.history.back()">` yang pada kondisi tertentu memicu penundaan/loading history browser alih-alih langsung berpindah ke halaman utama dashboard.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/auth/change-password.blade.php` (elemen Action Controls)
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Target URL: `http://localhost/change-password`
+* **Parameter & Hasil Pengujian**:
+  1. **Direct Instant Navigation**:
+     - Menggantikan elemen `<button onclick="...">` dengan native anchor link `<a href="{{ url('/') }}">`.
+     - Ketika diklik, browser langsung melakukan navigasi instan kembali ke root dashboard tanpa penundaan history state.
+  2. **Physical Runtime Render Test**:
+     - Perintah: `php artisan view:clear` (exit code 0).
+     - Render view `auth.change-password` via tinker: **10.082 bytes** (exit code 0, zero error).
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
