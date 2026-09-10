@@ -1,5 +1,11 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260910-36] Loading State Modal Konfirmasi Wawasan AI
+* **Temuan**: CTA `Ya, Perbarui` belum memiliki `wire:loading`; modal ditutup sebelum request berjalan sehingga pengguna tidak melihat proses.
+* **Perubahan**: Modal dipertahankan selama `generateAiInsights`; CTA dan tombol Batal disabled saat request; CTA menampilkan spinner `progress_activity` dan teks `Memproses AI...`.
+* **QA fisik**: `view:clear` berhasil; PHP lint berhasil; render terautentikasi tab Wawasan menghasilkan `RENDER_SUCCESS=165396`; marker `Memproses AI...` terdeteksi; `git diff --check` bersih.
+* **Status**: PASSED untuk compile/lint/render. Browser timing test belum tersedia.
+
 ### [QA-20260910-35] Notifikasi Toast Pembaruan Wawasan AI
 * **Konteks**: `generateAiInsights()` membuat flash message, tetapi feedback tidak tampil sebagai toast setelah CTA modal diklik dari tab Wawasan.
 * **Perubahan**: Mengirim event Livewire `admin-toast` dari `generateAiInsights()` dan memasang `<x-admin-toast />` pada layout `welcome`; banner inline dihapus.

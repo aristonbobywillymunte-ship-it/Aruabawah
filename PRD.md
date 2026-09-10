@@ -755,3 +755,7 @@ Modal dinyatakan **OPEN untuk perbaikan UI**. Arah perbaikan: panel lebih sederh
 ## Bab 7.33 — Feedback Setelah Pembaruan Wawasan AI
 
 `generateAiInsights()` sekarang mengirim event Livewire `admin-toast` setelah proses berhasil. Container `<x-admin-toast />` ditambahkan ke layout `welcome`, sehingga pengguna mendapat toast sukses global setelah menekan **Ya, Perbarui**. Banner inline tidak digunakan agar feedback tetap berupa toast sesuai standar aplikasi.
+
+## Bab 7.34 — Loading State Modal Konfirmasi Wawasan AI
+
+CTA **Ya, Perbarui** sebelumnya tidak memiliki loading state dan modal ditutup sebelum request dimulai. Sekarang modal tetap terbuka selama `generateAiInsights`, tombol aksi dinonaktifkan, dan CTA menampilkan spinner `progress_activity` serta teks **Memproses AI...** sampai job selesai.

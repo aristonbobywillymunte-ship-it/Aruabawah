@@ -5950,6 +5950,8 @@
                 <button
                     type="button"
                     wire:click="closeAiInsightConfirmModal"
+                    wire:loading.attr="disabled"
+                    wire:target="generateAiInsights"
                     class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs transition cursor-pointer"
                 >
                     Batal
@@ -5957,10 +5959,14 @@
                 <button
                     type="button"
                     wire:click="generateAiInsights"
-                    class="px-5 py-2.5 rounded-xl bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    wire:loading.attr="disabled"
+                    wire:target="generateAiInsights"
+                    class="px-5 py-2.5 rounded-xl bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-wait"
                 >
-                    <span class="material-symbols-outlined text-[16px]">check_circle</span>
-                    Ya, Perbarui
+                    <span wire:loading.remove wire:target="generateAiInsights" class="material-symbols-outlined text-[16px]">check_circle</span>
+                    <span wire:loading wire:target="generateAiInsights" class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                    <span wire:loading.remove wire:target="generateAiInsights">Ya, Perbarui</span>
+                    <span wire:loading wire:target="generateAiInsights">Memproses AI...</span>
                 </button>
             </div>
         </div>

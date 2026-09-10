@@ -663,7 +663,6 @@ class MediaDashboard extends Component
 
     public function generateAiInsights()
     {
-        $this->showAiInsightConfirmModal = false;
         $project = $this->resolveProjectOrFail($this->projectId);
         \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id, $this->startDate, $this->endDate);
         $project->refresh();
@@ -675,6 +674,7 @@ class MediaDashboard extends Component
             'title' => 'Wawasan diperbarui',
             'messageDetail' => 'Ringkasan dan rekomendasi AI berhasil diperbarui.',
         ]);
+        $this->showAiInsightConfirmModal = false;
     }
 
     public function preparePdfReport(string $togglesJson = '{}'): void
