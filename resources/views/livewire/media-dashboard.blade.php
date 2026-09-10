@@ -3162,24 +3162,168 @@
                     <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
                     @if(!$wawasanLoaded)
-                        <div class="space-y-6 animate-pulse">
-                            <!-- KPI Skeleton -->
+                        <!-- Comprehensive Skeleton Loader Mirroring All Wawasan Cards -->
+                        <div class="space-y-5 animate-pulse">
+                            <!-- 1. Top 4 KPI Grid Skeleton -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                                @for($i=0; $i<4; $i++)
+                                <!-- KPI 1: Indeks Reputasi -->
                                 <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm h-[110px] flex items-center justify-between">
-                                    <div class="space-y-2">
-                                        <div class="h-4 w-20 bg-slate-200 rounded"></div>
-                                        <div class="h-8 w-16 bg-slate-200 rounded"></div>
-                                        <div class="h-3 w-32 bg-slate-200 rounded"></div>
+                                    <div class="space-y-2 text-left">
+                                        <div class="h-3 w-24 bg-slate-100 rounded"></div>
+                                        <div class="h-7 w-16 bg-slate-200 rounded-lg"></div>
+                                        <div class="h-2.5 w-32 bg-slate-100 rounded"></div>
                                     </div>
-                                    <div class="w-14 h-14 bg-slate-200 rounded-full"></div>
+                                    <div class="w-12 h-12 bg-slate-100 rounded-full border-2 border-slate-200"></div>
                                 </div>
-                                @endfor
+                                <!-- KPI 2: Kesehatan Sentimen -->
+                                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm h-[110px] flex flex-col justify-between">
+                                    <div class="flex justify-between items-center w-full">
+                                        <div class="h-3 w-28 bg-slate-100 rounded"></div>
+                                        <div class="h-4 w-16 bg-slate-100 rounded-full"></div>
+                                    </div>
+                                    <div class="space-y-2 w-full">
+                                        <div class="h-2 w-full bg-slate-200 rounded-full"></div>
+                                        <div class="flex justify-between">
+                                            <div class="h-2.5 w-12 bg-slate-100 rounded"></div>
+                                            <div class="h-2.5 w-12 bg-slate-100 rounded"></div>
+                                            <div class="h-2.5 w-12 bg-slate-100 rounded"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- KPI 3: Sinyal Krisis -->
+                                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm h-[110px] flex items-center justify-between">
+                                    <div class="space-y-2 text-left">
+                                        <div class="h-3 w-20 bg-slate-100 rounded"></div>
+                                        <div class="h-7 w-24 bg-slate-200 rounded-lg"></div>
+                                        <div class="h-2.5 w-28 bg-slate-100 rounded"></div>
+                                    </div>
+                                    <div class="w-10 h-10 bg-slate-100 rounded-full border border-slate-200"></div>
+                                </div>
+                                <!-- KPI 4: Kondisi Viral -->
+                                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm h-[110px] flex items-center justify-between">
+                                    <div class="space-y-2 text-left">
+                                        <div class="h-3 w-24 bg-slate-100 rounded"></div>
+                                        <div class="h-7 w-20 bg-slate-200 rounded-lg"></div>
+                                        <div class="h-2.5 w-32 bg-slate-100 rounded"></div>
+                                    </div>
+                                    <div class="w-10 h-10 bg-slate-100 rounded-full"></div>
+                                </div>
                             </div>
-                            <!-- Charts Skeleton -->
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div class="bg-white rounded-2xl border border-slate-200 p-5 h-[300px]"></div>
-                                <div class="bg-white rounded-2xl border border-slate-200 p-5 h-[300px]"></div>
+
+                            <!-- 2. Masonry 2-Column Cards Skeleton -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+                                <!-- Left Column Skeleton -->
+                                <div class="space-y-5">
+                                    <!-- Ringkasan Eksekutif Skeleton -->
+                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                        <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                            <div class="h-4 w-44 bg-slate-200 rounded"></div>
+                                            <div class="h-4 w-20 bg-slate-100 rounded-full"></div>
+                                        </div>
+                                        <div class="space-y-2.5">
+                                            <div class="h-3 w-full bg-slate-100 rounded"></div>
+                                            <div class="h-3 w-5/6 bg-slate-100 rounded"></div>
+                                            <div class="h-3 w-4/5 bg-slate-100 rounded"></div>
+                                            <div class="h-3 w-2/3 bg-slate-100 rounded"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Rekomendasi Tindakan Strategis Skeleton -->
+                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                        <div class="h-4 w-52 bg-slate-200 rounded pb-2 border-b border-slate-100"></div>
+                                        <div class="space-y-3">
+                                            @for($s=0; $s<3; $s++)
+                                            <div class="flex items-start gap-2.5">
+                                                <div class="w-4 h-4 bg-slate-200 rounded-full shrink-0 mt-0.5"></div>
+                                                <div class="h-3.5 bg-slate-100 rounded w-full"></div>
+                                            </div>
+                                            @endfor
+                                        </div>
+                                    </div>
+
+                                    <!-- Top Isu Negatif Skeleton -->
+                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                        <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                            <div class="h-4 w-36 bg-slate-200 rounded"></div>
+                                            <div class="h-4 w-16 bg-slate-100 rounded"></div>
+                                        </div>
+                                        <div class="space-y-4">
+                                            @for($s=0; $s<3; $s++)
+                                            <div class="space-y-2">
+                                                <div class="flex justify-between">
+                                                    <div class="h-3 bg-slate-100 rounded w-3/4"></div>
+                                                    <div class="h-3 bg-slate-100 rounded w-12"></div>
+                                                </div>
+                                                <div class="h-2 w-full bg-slate-100 rounded-full"></div>
+                                            </div>
+                                            @endfor
+                                        </div>
+                                    </div>
+
+                                    <!-- Perubahan Sentimen Skeleton -->
+                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                        <div class="h-4 w-40 bg-slate-200 rounded pb-2 border-b border-slate-100"></div>
+                                        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4 space-y-3">
+                                            <div class="flex justify-between">
+                                                <div class="h-4 w-32 bg-slate-200 rounded"></div>
+                                                <div class="h-4 w-12 bg-slate-200 rounded-lg"></div>
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-3 mt-3">
+                                                <div class="h-20 bg-white border border-slate-100 rounded-xl p-3"></div>
+                                                <div class="h-20 bg-white border border-slate-100 rounded-xl p-3"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column Skeleton -->
+                                <div class="space-y-5">
+                                    <!-- Distribusi Kategori Isu Skeleton -->
+                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                        <div class="h-4 w-44 bg-slate-200 rounded pb-2 border-b border-slate-100"></div>
+                                        <div class="space-y-4">
+                                            @for($s=0; $s<4; $s++)
+                                            <div class="space-y-2">
+                                                <div class="flex justify-between">
+                                                    <div class="h-3 bg-slate-100 rounded w-1/2"></div>
+                                                    <div class="h-3 bg-slate-100 rounded w-16"></div>
+                                                </div>
+                                                <div class="h-2 w-full bg-slate-100 rounded-full"></div>
+                                            </div>
+                                            @endfor
+                                        </div>
+                                    </div>
+
+                                    <!-- Kanal Media Terpopuler Skeleton -->
+                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                        <div class="h-4 w-44 bg-slate-200 rounded pb-2 border-b border-slate-100"></div>
+                                        <div class="space-y-3">
+                                            @for($s=0; $s<4; $s++)
+                                            <div class="h-10 bg-slate-50 border border-slate-100 rounded-xl w-full"></div>
+                                            @endfor
+                                        </div>
+                                    </div>
+
+                                    <!-- Pemicu Risiko Skeleton -->
+                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                                        <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                            <div class="h-4 w-32 bg-slate-200 rounded"></div>
+                                            <div class="h-4 w-16 bg-slate-100 rounded-full"></div>
+                                        </div>
+                                        <div class="space-y-3">
+                                            @for($s=0; $s<2; $s++)
+                                            <div class="p-3.5 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
+                                                <div class="flex justify-between">
+                                                    <div class="h-3.5 bg-slate-200 rounded w-2/3"></div>
+                                                    <div class="h-3 bg-slate-200 rounded w-12"></div>
+                                                </div>
+                                                <div class="h-3 bg-slate-100 rounded w-full"></div>
+                                                <div class="h-2.5 bg-slate-100 rounded w-1/3"></div>
+                                            </div>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @else

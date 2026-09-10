@@ -205,3 +205,29 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Status: **PASSED (Exit Code 0, Render HTML Output: 133.586 bytes, Zero Error)**.
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+### [QA-20260910-08] Implementasi Komprehensif Skeleton Loading Placeholder di Seluruh Card Tab Wawasan
+* **Tanggal & Waktu**: 10 September 2026, 19:48 WIB
+* **Konteks Masalah**:
+  Saat Tab Wawasan (`tab=wawasan`) pertama kali dibuka atau dimuat via `wire:init="loadWawasan"`, skeleton placeholder sebelumnya hanya merender kotak abu-abu generik yang tidak mencerminkan layout kartu sebenarnya (stakeholder / masonry cards).
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/media-dashboard.blade.php` (Skeleton loading blok `!$wawasanLoaded`, baris 3164–3260)
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Target URL: `http://localhost/?project=61&tab=d2F3YXNhbg==`
+* **Parameter & Hasil Pengujian**:
+  1. **Mirroring 4 KPI Grid Cards**: Menghadirkan kerangka skeleton presisi untuk Card Indeks Reputasi (lingkaran rasio), Kesehatan Sentimen (baris bar sentimen), Sinyal Krisis, dan Kondisi Viral.
+  2. **Mirroring 2-Column Masonry Cards**: Menghadirkan kerangka skeleton detail untuk seluruh card analitik:
+     - Ringkasan Eksekutif (garis paragraf terstruktur).
+     - Rekomendasi Tindakan Strategis (list item berikon).
+     - Top Isu Negatif (bar progress persentase).
+     - Perubahan Sentimen (grid komparasi paruh awal & akhir).
+     - Distribusi Kategori Isu (bar horizontal).
+     - Kanal Media Terpopuler (baris tabel).
+     - Pemicu Risiko (card list mitigasi risiko).
+  3. **Zero Layout Shift (CLS Protection)**: Menjamin tidak terjadi lompatan posisi elemen saat data selesai dimuat oleh Livewire.
+  4. **Physical Runtime Render Test**:
+     - Perintah: `php artisan view:clear` dan render view `welcome` via tinker.
+     - Status: **PASSED (Exit Code 0, Render HTML Output: 147.725 bytes, Zero Error)**.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
