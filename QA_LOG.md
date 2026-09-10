@@ -1,5 +1,18 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-54] Perbaikan Slop Modal Konfirmasi AlpineJS & Header Kolom Notifikasi di Pipeline Monitor
+* **Konteks**: User meminta audit halaman `http://localhost/admin/pipeline-monitor`. Ditemukan modal konfirmasi aksi AlpineJS kehilangan backdrop fixed dan wrapper kartu putih sehingga tidak tampil popup saat tombol konfirmasi diklik, serta header tabel notifikasi yang kurang akurat.
+* **Perubahan**:
+  1. **Restorasi Modal Konfirmasi AlpineJS (`pipeline-monitor.blade.php`)**:
+     - Mengembalikan pembungkus backdrop fixed `fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm` di dalam `<template x-teleport="body">`.
+     - Mengembalikan kontainer kartu modal putih `bg-white shadow-2xl rounded-2xl max-w-sm w-full p-6 border border-slate-200` lengkap dengan transisi halus AlpineJS.
+     - Memastikan seluruh tombol konfirmasi aksi (*Retry Semua*, *Bersihkan Antrean*, *Hapus Antrean*, *Hapus Notifikasi*) memunculkan modal popup konfirmasi yang responsif dan dapat ditutup via tombol Batalkan atau klik di luar modal.
+  2. **Penyempurnaan Label Header Tabel Notifikasi**:
+     - Mengubah header kolom ke-1 dari *"Artikel Terkait"* menjadi *"Sumber / Konten Terkait"* agar akurat mencakup konten portal maupun postingan media sosial.
+* **QA fisik**: `php -l` lulus tanpa error sintaks pada `resources/views/livewire/admin/pipeline-monitor.blade.php`. Verifikasi render view via Tinker sukses (`OK`). Cache blade dibersihkan (`php artisan view:clear`).
+* **Status**: PASSED.
+
+
 ### [QA-20260911-53] Penyelarasan Layout Header Modal AI Pipeline & Eliminasi Tabrakan Tombol dengan Judul
 * **Konteks**: Pada modal "Sistem Kesehatan AI - Daftar Antrean Berjalan (AI Pipeline)", judul/subjudul dan tombol aksi (*Bersihkan Data* dan *Kosongkan Redis*) sebelumnya dipaksakan berada dalam satu baris header yang sama, sehingga pada resolusi layar tertentu tombol menabrak teks judul antrean.
 * **Perubahan**:

@@ -603,7 +603,7 @@
             <table class="w-full text-left">
                 <thead>
                     <tr class="border-b-2 border-slate-100 bg-gradient-to-r from-slate-50 to-slate-50/60">
-                        <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">Artikel Terkait</th>
+                        <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">Sumber / Konten Terkait</th>
                         <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 w-24 text-center">Risiko</th>
                         <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 w-28 text-center">Status Notif</th>
                         <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 w-56">Pesan Error</th>
@@ -909,39 +909,49 @@
     {{-- ══════════════════════════════════════════════ --}}
     <template x-teleport="body">
         <div x-show="confirmOpen"
+             style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;"
+             class="backdrop-blur-sm px-4 font-sans"
+             @touchmove.prevent
+             @wheel.prevent
              x-transition:enter="transition ease-out duration-250"
-             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
-             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-             @click.away="confirmOpen = false"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             style="display: none;"
         >
-            <div class="px-6 pt-6 pb-4 text-center">
+            <div class="w-full max-w-sm bg-white shadow-2xl rounded-2xl overflow-hidden text-center p-6 border border-slate-200"
+                 x-transition:enter="transition ease-out duration-250"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 @click.away="confirmOpen = false"
+            >
                 <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl"
-                     :class="confirmType === 'danger' ? 'bg-red-50' : 'bg-[#1fa387]/10'">
+                     :class="confirmType === 'danger' ? 'bg-red-50 text-red-600' : 'bg-[#1fa387]/10 text-[#1fa387]'">
                      <svg class="w-6 h-6" :class="confirmType === 'danger' ? 'text-red-600' : 'text-[#1fa387]'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <circle cx="12" cy="12" r="10"/>
                         <line x1="12" y1="8" x2="12" y2="12"/>
                         <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
                 </div>
-                <h3 class="text-sm font-extrabold text-slate-900 tracking-tight" x-text="confirmTitle">Konfirmasi</h3>
+                <h3 class="text-base font-black text-slate-900 tracking-tight" x-text="confirmTitle">Konfirmasi</h3>
                 <p class="text-xs text-slate-500 mt-2 leading-relaxed" x-text="confirmMessage">Apakah Anda yakin?</p>
-            </div>
 
-            <div class="border-t border-slate-100"></div>
-
-            <div class="flex gap-2 px-5 py-4">
-                <button type="button" @click="confirmOpen = false"
-                        class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
-                    Batalkan
-                </button>
-                <button type="button" @click="executeConfirm()"
-                        class="flex-1 rounded-xl px-4 py-2.5 text-xs font-bold text-white transition shadow-sm"
-                        :class="confirmType === 'danger' ? 'bg-red-600 hover:bg-red-700 shadow-red-200/60' : 'bg-[#1fa387] hover:bg-[#17856d] shadow-[#1fa387]/20'">
-                    <span x-text="confirmType === 'danger' ? 'Ya, Lanjutkan' : 'Konfirmasi'">Konfirmasi</span>
-                </button>
+                <div class="mt-6 flex flex-col gap-2">
+                    <button type="button" @click="executeConfirm()"
+                            class="w-full inline-flex justify-center items-center gap-2 px-4 py-2.5 text-sm font-bold text-white transition rounded-xl shadow-sm"
+                            :class="confirmType === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#1fa387] hover:bg-[#15876f]'">
+                        <span x-text="confirmType === 'danger' ? 'Ya, Lanjutkan' : 'Konfirmasi'">Konfirmasi</span>
+                    </button>
+                    <button type="button" @click="confirmOpen = false"
+                            class="w-full px-4 py-2.5 text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition">
+                        Batalkan
+                    </button>
+                </div>
             </div>
         </div>
     </template>
