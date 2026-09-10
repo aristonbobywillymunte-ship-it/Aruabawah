@@ -4060,21 +4060,22 @@
                                             <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition duration-200" :class="pdfToggles.rekomendasi ? 'translate-x-4.5' : 'translate-x-1'"></span>
                                         </button>
                                     </div>
-                                    <div class="flex justify-end pt-6 border-t border-slate-100">
-                                        <button
-                                            type="button"
-                                            @click="$wire.preparePdfReport(JSON.stringify(pdfToggles))"
-                                            wire:loading.attr="disabled"
-                                            wire:target="preparePdfReport"
-                                            class="bg-[#c0392b] hover:bg-[#a93226] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-xs px-6 py-3 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-                                        >
-                                            <svg wire:loading.remove wire:target="preparePdfReport" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                            <svg wire:loading wire:target="preparePdfReport" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
-                                            <span>⬇ Unduh Laporan PDF</span>
-                                        </button>
-                                    </div>
                                 </div>
+                            </div>
+
+                            <div class="flex justify-end pt-6 border-t border-slate-100">
+                                <button
+                                    type="button"
+                                    @click="$wire.preparePdfReport(JSON.stringify(pdfToggles))"
+                                    wire:loading.attr="disabled"
+                                    wire:target="preparePdfReport"
+                                    class="bg-[#1fa387] hover:bg-[#178a70] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-xs px-6 py-3 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                >
+                                    <svg wire:loading.remove wire:target="preparePdfReport" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    <svg wire:loading wire:target="preparePdfReport" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
+                                    <span>Unduh Laporan PDF</span>
+                                </button>
                             </div>
                         </div>
 
@@ -4236,7 +4237,7 @@
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                                    <span>⬇ Unduh Laporan Excel</span>
+                                    <span>Unduh Laporan Excel</span>
                                 </a>
                             </div>
                             </div>
@@ -4832,6 +4833,10 @@
                                     @endforelse
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
             @endif
 
             <!-- Mobile Filter Backdrop -->
@@ -5849,8 +5854,8 @@
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
             </div>
-            <h3 class="text-base font-extrabold text-slate-900">Menyusun AI Report</h3>
-            <p class="mt-2 text-sm text-slate-500">AI sedang menyiapkan kesimpulan dan rekomendasi berdasarkan isu berita terbaru. Mohon tunggu sebentar.</p>
+            <h3 class="text-base font-extrabold text-slate-900">Menyusun Laporan PDF</h3>
+            <p class="mt-2 text-sm text-slate-500">Sistem sedang merangkum ringkasan dan analisis isu terbaru. Mohon tunggu sebentar.</p>
         </div>
     </div>
 

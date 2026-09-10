@@ -295,3 +295,33 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Status: **PASSED (Exit Code 0, Render HTML Output: 146.652 bytes, Zero Error)**.
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+---
+
+### [QA-20260910-12] Pembersihan AI-Slop Tab Laporan & Perbaikan Tag Penutup Tab Sumber
+* **Tanggal & Waktu**: 10 September 2026, 20:18 WIB
+* **Konteks Masalah**:
+  Audit antarmuka pada URL `http://localhost/?project=61&tab=bGFwb3Jhbg%3D%3D` (Tab Laporan) dan tab Sumber (`tab=sumber` / `c3VtYmVy`) menemukan beberapa kecacatan tampilan dan struktur:
+  1. Tombol Unduh Laporan PDF terjebak di dalam grid 3-kolom toggle switch pilihan laporan, menggunakan warna merah mencolok (`bg-[#c0392b]`), dan menggunakan emoji panah `⬇`.
+  2. Tombol Unduh Laporan Excel menggunakan emoji panah `⬇` dan tata letak tidak serasi.
+  3. Modal overlay proses pembuatan PDF menggunakan copy AI buzzword ("Menyusun AI Report", "AI sedang menyiapkan kesimpulan...").
+  4. Tab Sumber (`tab=sumber`) kehilangan tag penutup `</div>` (3 buah) dan `</section>` (1 buah) sebelum direktif `@endif`, merusak struktur DOM hirarki halaman.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/media-dashboard.blade.php` (Tab Laporan, Tab Sumber, dan Modal PDF)
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Target URL: `http://localhost/?project=61&tab=bGFwb3Jhbg==` dan `http://localhost/?project=61&tab=c3VtYmVy`
+* **Parameter & Hasil Pengujian**:
+  1. **Harmonisasi Footer Action Tab Laporan**:
+     - Memindahkan tombol Unduh PDF keluar dari grid 3-kolom ke baris footer dedicated (`border-t border-slate-100 flex justify-end`).
+     - Mengubah warna tombol PDF dari merah `#c0392b` menjadi tema brand `#1fa387` (`hover:bg-[#178a70]`).
+     - Menghilangkan emoji panah `⬇` pada tombol PDF dan Excel untuk tampilan yang bersih dan profesional.
+     - Mengubah teks modal proses PDF menjadi "Menyusun Laporan PDF" dan "Sistem sedang merangkum ringkasan dan analisis isu terbaru...".
+  2. **Perbaikan Struktur DOM Tab Sumber**:
+     - Menambahkan 3 tag penutup `</div>` dan 1 tag `</section>` yang hilang sebelum `@endif` baris 4835.
+  3. **Physical Runtime Render Test**:
+     - Eksekusi `view:clear` dan render via tinker untuk kedua tab.
+     - Tab Laporan: **150.104 bytes**, exit code 0.
+     - Tab Sumber: **135.856 bytes**, exit code 0.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

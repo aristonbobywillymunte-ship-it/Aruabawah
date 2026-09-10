@@ -230,7 +230,8 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 - [2026-09-10]: Formalisasi aturan mutlak wajib QA dan dokumentasi: Setiap AI yang melakukan perbaikan kode diwajibkan melakukan pengetesan fisik nyata (QA), mencatat skenario dan hasilnya di Bab 7, serta memperbarui log Bab 6 sebelum mengakhiri sesi; dikunci di PRD Bagian 5.3 dan AI_HANDOFF_INSTRUCTIONS.md.
 - [2026-09-10]: Penambahan aturan mutlak larangan git push otomatis: Setiap AI hanya diperbolehkan membuat commit lokal dan dilarang keras melakukan `git push` tanpa perintah eksplisit dari user; dikunci di PRD Bagian 5.3 poin 7 dan AI_HANDOFF_INSTRUCTIONS.md poin 6.
 - [2026-09-10]: Audit dan perbaikan exception `Livewire\Features\SupportMultipleRootElementDetection\MultipleRootElementsDetectedException: Livewire only supports one HTML element per component` pada komponen `projects-list` saat membuka route `/?project=...&tab=...`. Penyebab berupa penempatan penutup `@endif` prematur di tengah Blade template yang menyebabkan footer & modal di-render di luar root DOM tree. Masalah diperbaiki dan diverifikasi lolos render 100%.
-- [2026-09-10]: Pembersihan AI-Slop dan inkonsistensi data pada Tab Analisis (`?project=61&tab=YW5hbGlzaXM=`): menghapus border gradien neon multi-warna, mengeliminasi efek background blur blob palsu, mengganti drop shadow neon jenuh dengan soft neutral shadow, menghapus filter sentimen buatan (`whereRaw sentiment = 'positive'`) pada Penyebutan Populer agar ranking jangkauan mencerminkan data riil, serta memperbaiki typo array key Facebook. Didokumentasikan dan diuji lolos QA (QA-20260910-03).
+- [2026-09-10]: Penambahan indikator loading visual reaktif pada input pencarian (animasi spinner di dalam text box & status "Mencari...") serta indikator status "Menyaring..." pada header utama Filter Panel dashboard (QA-20260910-11).
+- [2026-09-10]: Pembersihan AI-slop pada Tab Laporan (memindahkan tombol download PDF ke footer terdedikasi, harmonisasi warna merah kasar menjadi teal `#1fa387`, eliminasi emoji panah) dan perbaikan 4 tag penutup yang hilang di Tab Sumber sebelum `@endif` (QA-20260910-12).
 
 ---
 
@@ -383,3 +384,21 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
   2. **Verifikasi Render Fisik Runtime**:
      - Eksekusi simulasi via `php artisan tinker`: Render sukses 100% dengan status exit code 0, panjang HTML 146.652 bytes tanpa error Blade/PHP.
      - **Status**: **PASSED**.
+
+### 7.12 QA Verifikasi Pembersihan AI-Slop Tab Laporan & Perbaikan Tag Penutup Tab Sumber (10 September 2026)
+* **Environment Pengujian**: Runtime Docker Container Lokal (`media_intelligent_container`), PHP 8.4 CLI, Laravel 11/13.17, Livewire 3.
+* **Target Uji**: Tab Laporan (`tab=laporan`) dan Tab Sumber (`tab=sumber`) pada `resources/views/livewire/media-dashboard.blade.php`.
+* **Skenario & Hasil Pengujian**:
+  1. **Harmonisasi Footer Action Tab Laporan**:
+     - Memindahkan tombol Unduh PDF keluar dari grid 3-kolom ke baris footer dedicated (`border-t border-slate-100 flex justify-end`).
+     - Menyelaraskan warna tombol PDF dari merah `#c0392b` menjadi tema brand `#1fa387` (`hover:bg-[#178a70]`).
+     - Mengeliminasi karakter emoji panah `⬇` pada tombol PDF dan Excel untuk estetika profesional dan rapi.
+     - Memperbarui copy modal proses PDF menjadi "Menyusun Laporan PDF" dan "Sistem sedang merangkum ringkasan dan analisis isu terbaru...".
+  2. **Perbaikan Struktur DOM Tab Sumber**:
+     - Menambahkan 3 tag penutup `</div>` dan 1 tag `</section>` yang hilang sebelum `@endif` baris 4835.
+  3. **Verifikasi Render Fisik Runtime**:
+     - Eksekusi simulasi via `php artisan tinker`:
+       - Tab Laporan: **150.104 bytes**, exit code 0.
+       - Tab Sumber: **135.856 bytes**, exit code 0.
+     - **Status**: **PASSED**.
+
