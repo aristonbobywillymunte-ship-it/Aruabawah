@@ -1309,30 +1309,34 @@ class MediaDashboard extends Component
     }
 
 
-    public function openCommentsModal(int $articleId, string $platform = 'TikTok'): void
+    public function openCommentsModal(string $itemType, int $articleId): void
     {
         $this->showCommentsModal = true;
         $this->loadingComments = false;
+
+        $targetItemType = $itemType === 'news' ? 'news' : 'social';
 
         $unionQuery = $this->projectArticlesQuery();
         $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
             ->setBindings($unionQuery->getBindings())
             ->where('union_res.id', $articleId)
-            ->where('union_res.item_type', 'social')
+            ->where('union_res.item_type', $targetItemType)
             ->first();
 
         if (! $article) {
-            $socialItemFallback = SocialMediaItem::query()->find($articleId);
-            if ($socialItemFallback) {
-                $article = (object) [
-                    'id' => $socialItemFallback->id,
-                    'url' => $socialItemFallback->post_url,
-                    'canonical_url' => $socialItemFallback->post_url,
-                    'title' => 'Post dari ' . ucfirst($socialItemFallback->platform ?? $platform) . ' oleh ' . ($socialItemFallback->author_name ?? 'Pengguna'),
-                    'source_name' => $socialItemFallback->platform ?? $platform,
-                    'published_at' => $socialItemFallback->posted_at,
-                    'item_type' => 'social',
-                ];
+            if ($targetItemType === 'social') {
+                $socialItemFallback = SocialMediaItem::query()->find($articleId);
+                if ($socialItemFallback) {
+                    $article = (object) [
+                        'id' => $socialItemFallback->id,
+                        'url' => $socialItemFallback->post_url,
+                        'canonical_url' => $socialItemFallback->post_url,
+                        'title' => 'Post dari ' . ucfirst($socialItemFallback->platform ?? 'Sosial Media') . ' oleh ' . ($socialItemFallback->author_name ?? 'Pengguna'),
+                        'source_name' => $socialItemFallback->platform ?? 'Sosial Media',
+                        'published_at' => $socialItemFallback->posted_at,
+                        'item_type' => 'social',
+                    ];
+                }
             } else {
                 $article = Article::query()->find($articleId);
             }
@@ -1396,7 +1400,7 @@ class MediaDashboard extends Component
     // Backward compatibility aliases agar tidak memicu error jika dipanggil via event lama
     public function openTikTokCommentsModal(int $articleId): void
     {
-        $this->openCommentsModal($articleId, 'TikTok');
+        $this->openCommentsModal('social', $articleId);
     }
 
     public function closeTikTokCommentsModal(): void
@@ -1406,7 +1410,7 @@ class MediaDashboard extends Component
 
     public function openInstagramCommentsModal(int $articleId): void
     {
-        $this->openCommentsModal($articleId, 'Instagram');
+        $this->openCommentsModal('social', $articleId);
     }
 
     public function closeInstagramCommentsModal(): void
@@ -1416,7 +1420,7 @@ class MediaDashboard extends Component
 
     public function openFacebookCommentsModal(int $articleId): void
     {
-        $this->openCommentsModal($articleId, 'Facebook');
+        $this->openCommentsModal('social', $articleId);
     }
 
     public function closeFacebookCommentsModal(): void

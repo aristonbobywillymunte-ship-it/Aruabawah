@@ -1038,12 +1038,12 @@
                                             @if($isSocial)
                                                 <button
                                                     type="button"
-                                                    wire:click.stop="openCommentsModal({{ $article->id }})"
+                                                    wire:click.stop="openCommentsModal('{{ $article->item_type ?? 'social' }}', {{ $article->id }})"
                                                     class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black transition-colors cursor-pointer hover:opacity-80 group/btn"
                                                     title="Lihat daftar komentar"
                                                 >
-                                                    <span wire:loading.remove wire:target="openCommentsModal({{ $article->id }})" class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">forum</span>
-                                                    <span wire:loading wire:target="openCommentsModal({{ $article->id }})" class="material-symbols-outlined text-[14px] md:text-[15px] animate-spin" style="color:{{ $iconColor }}">progress_activity</span>
+                                                    <span wire:loading.remove wire:target="openCommentsModal('{{ $article->item_type ?? 'social' }}', {{ $article->id }})" class="material-symbols-outlined text-[14px] md:text-[15px]" style="color:{{ $iconColor }}">forum</span>
+                                                    <span wire:loading wire:target="openCommentsModal('{{ $article->item_type ?? 'social' }}', {{ $article->id }})" class="material-symbols-outlined text-[14px] md:text-[15px] animate-spin" style="color:{{ $iconColor }}">progress_activity</span>
                                                     <span class="group-hover/btn:underline">{{ number_format($commentsCount, 0, ',', '.') }}</span>
                                                 </button>
                                             @else
