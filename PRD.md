@@ -232,6 +232,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 - [2026-09-10]: Audit dan perbaikan exception `Livewire\Features\SupportMultipleRootElementDetection\MultipleRootElementsDetectedException: Livewire only supports one HTML element per component` pada komponen `projects-list` saat membuka route `/?project=...&tab=...`. Penyebab berupa penempatan penutup `@endif` prematur di tengah Blade template yang menyebabkan footer & modal di-render di luar root DOM tree. Masalah diperbaiki dan diverifikasi lolos render 100%.
 - [2026-09-10]: Penambahan indikator loading visual reaktif pada input pencarian (animasi spinner di dalam text box & status "Mencari...") serta indikator status "Menyaring..." pada header utama Filter Panel dashboard (QA-20260910-11).
 - [2026-09-10]: Pembersihan AI-slop pada Tab Laporan (memindahkan tombol download PDF ke footer terdedikasi, harmonisasi warna merah kasar menjadi teal `#1fa387`, eliminasi emoji panah) dan perbaikan 4 tag penutup yang hilang di Tab Sumber sebelum `@endif` (QA-20260910-12).
+- [2026-09-10]: Isolasi state modal Rentang Tanggal (`showDatePicker`) pada Alpine.js untuk mencegah penutupan modal prematur saat memilih preset atau tanggal kalender, memastikan modal hanya tertutup dan tersinkronisasi saat tombol "Terapkan" ditekan (QA-20260910-13).
 
 ---
 
@@ -401,4 +402,21 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
        - Tab Laporan: **150.104 bytes**, exit code 0.
        - Tab Sumber: **135.856 bytes**, exit code 0.
      - **Status**: **PASSED**.
+
+### 7.13 QA Verifikasi Isolasi State Modal Datepicker (10 September 2026)
+* **Environment Pengujian**: Runtime Docker Container Lokal (`media_intelligent_container`), PHP 8.4 CLI, Laravel 11/13.17, Livewire 3.
+* **Target Uji**: Komponen Alpine DatePicker Modal pada `resources/views/livewire/media-dashboard.blade.php`.
+* **Skenario & Hasil Pengujian**:
+  1. **Isolasi State Alpine JavaScript**:
+     - Menghapus two-way reactive `@entangle` langsung pada `localStart` dan `localEnd`.
+     - Menggunakan watcher `$watch('show', ...)` untuk sinkronisasi nilai saat modal dibuka.
+  2. **Pencegahan Penutupan Prematur**:
+     - Mengklik tombol preset periode (Hari ini, Kemarin, 7 hari, 30 hari, 3 bulan, Tahun lalu) maupun tanggal pada grid kalender tidak lagi menutup modal atau memicu re-render prematur.
+     - Tombol "Semua Waktu" mereset visual tanggal tanpa menutup modal.
+     - Tombol "Terapkan" menjadi satu-satunya eksekutor update Livewire dan penutup modal.
+  3. **Verifikasi Render Fisik Runtime**:
+     - Eksekusi simulasi via `php artisan tinker`:
+       - Tab Penyebutan: **146.963 bytes**, exit code 0.
+     - **Status**: **PASSED**.
+
 

@@ -325,3 +325,30 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Tab Sumber: **135.856 bytes**, exit code 0.
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+---
+
+### [QA-20260910-13] Isolasi State Modal Datepicker & Pencegahan Penutupan Prematur
+* **Tanggal & Waktu**: 10 September 2026, 20:23 WIB
+* **Konteks Masalah**:
+  Saat modal Rentang Tanggal (`showDatePicker`) dibuka dari Filter Panel, memilih opsi preset (seperti "Hari ini", "7 hari terakhir", dsb), mengklik tanggal di kalender, atau mengklik "Semua Waktu" sebelumnya langsung memicu request Livewire atau menutup modal secara prematur tanpa memberi kesempatan kepada pengguna untuk meninjau pilihan.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/media-dashboard.blade.php` (Komponen Alpine DatePicker Modal)
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Target URL: `http://localhost/?project=61&tab=cGVueWVidXRhbg==`
+* **Parameter & Hasil Pengujian**:
+  1. **Isolasi State Alpine JavaScript**:
+     - Menggantikan `@entangle('startDate')` dan `@entangle('endDate')` dengan properti internal `localStart: null` dan `localEnd: null`.
+     - Menggunakan watcher `$watch('show', ...)` untuk menyalin nilai aktif dari Livewire hanya ketika modal dibuka, sehingga aksi seleksi tanggal bersifat lokal sepenuhnya.
+  2. **Pencegahan Penutupan Prematur**:
+     - Seluruh tombol preset periode (Hari ini, Kemarin, 7 hari, 30 hari, 3 bulan, Tahun lalu) kini hanya memperbarui visual range dan tampilan kalender tanpa menutup modal.
+     - Seleksi tanggal pada grid kalender (`selectDate`) memperbarui visual state tanpa menutup modal.
+     - Tombol "Semua Waktu" (`clearPeriod`) mengosongkan state tanggal lokal kalender dan membiarkan modal tetap terbuka untuk ditinjau.
+     - Tombol "Terapkan" (`applyFilter`) menjadi satu-satunya tombol konfirmasi yang menyinkronkan state ke Livewire (`$wire.set('startDate')`, `$wire.set('endDate')`) dan menutup modal.
+     - Tombol "Batal" dan klik di luar container (`@click.away`) membatalkan perubahan dan menutup modal tanpa memodifikasi tanggal Livewire.
+  3. **Physical Runtime Render Test**:
+     - Perintah: `php artisan view:clear` (exit code 0).
+     - Render view `welcome` via tinker: **146.963 bytes** (exit code 0, zero error).
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

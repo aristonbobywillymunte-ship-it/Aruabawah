@@ -4902,19 +4902,29 @@
     <div 
         x-data="{ 
             show: @entangle('showDatePicker'),
-            localStart: @entangle('startDate'), 
-            localEnd: @entangle('endDate'),
+            localStart: null, 
+            localEnd: null,
             periodMode: 'custom',
             month: new Date().getMonth(),
             year: new Date().getFullYear(),
             monthNames: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
             init() {
-                if (this.localStart) {
-                    let d = new Date(this.localStart);
-                    this.month = d.getMonth();
-                    this.year = d.getFullYear();
-                }
-                this.syncPeriodMode();
+                this.$watch('show', value => {
+                    if (value) {
+                        this.localStart = $wire.get('startDate') || null;
+                        this.localEnd = $wire.get('endDate') || null;
+                        if (this.localStart) {
+                            let d = new Date(this.localStart + 'T00:00:00');
+                            this.month = d.getMonth();
+                            this.year = d.getFullYear();
+                        } else {
+                            let now = new Date();
+                            this.month = now.getMonth();
+                            this.year = now.getFullYear();
+                        }
+                        this.syncPeriodMode();
+                    }
+                });
             },
             syncPeriodMode() {
                 if (!this.localStart || !this.localEnd) {
@@ -5034,7 +5044,7 @@
             applyFilter() {
                 $wire.set('startDate', this.localStart);
                 $wire.set('endDate', this.localEnd ? this.localEnd : this.localStart);
-                $wire.set('showDatePicker', false);
+                this.show = false;
             },
             setPeriod(mode) {
                 const today = new Date();
@@ -5107,7 +5117,7 @@
         style="display: none;"
     >
         <div 
-            @click.away="$wire.set('showDatePicker', false)" 
+            @click.away="show = false" 
             class="datepicker-modal-container bg-white w-full max-w-[780px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200"
         >
             <!-- Left Panel (PERIODE Presets) -->
@@ -5202,7 +5212,7 @@
                 <div class="flex justify-between items-center pt-6 border-t border-slate-100 flex-shrink-0 mt-6">
                     <button 
                         type="button" 
-                        @click="clearPeriod(); applyFilter()" 
+                        @click="clearPeriod()" 
                         class="text-xs text-slate-500 hover:text-[#1fa387] font-bold transition cursor-pointer"
                     >
                         Semua Waktu
@@ -5210,7 +5220,7 @@
                     <div class="flex items-center gap-3">
                         <button 
                             type="button" 
-                            @click="$wire.set('showDatePicker', false)" 
+                            @click="show = false" 
                             class="px-5 py-2 bg-slate-150 hover:bg-slate-200 text-slate-700 font-bold rounded-full text-xs transition cursor-pointer"
                         >
                             Batal
