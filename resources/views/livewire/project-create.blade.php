@@ -192,11 +192,11 @@
                 @endforeach
             </div>
 
-            <div class="mt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-6 border-t border-slate-100">
-                <!-- Inline Toast Notification -->
-                <div class="inline-flex items-center gap-2.5 px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 shadow-sm">
-                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="text-xs font-bold tracking-wide">Paket dapat diubah kapan saja setelah proyek dibuat.</span>
+            <div class="mt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-slate-100">
+                {{-- Info chip — konsisten dengan material-symbols sistem --}}
+                <div class="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-50 border border-blue-100 rounded-xl text-blue-600 text-xs font-bold">
+                    <span class="material-symbols-outlined text-[16px] shrink-0">info</span>
+                    <span>Paket dapat diubah kapan saja setelah proyek dibuat.</span>
                 </div>
                 
                 <button
@@ -208,14 +208,10 @@
                             ? 'bg-[#1fa387] hover:bg-[#178a71] text-white shadow-sm cursor-pointer active:scale-[0.98] shadow-[#1fa387]/20 hover:shadow-[#1fa387]/40'
                             : 'bg-slate-100 text-slate-400 cursor-not-allowed' }}"
                 >
-                    <span wire:loading.remove wire:target="$set('createStep', 2)">Lanjut ke Pengaturan</span>
-                    <span wire:loading wire:target="$set('createStep', 2)">Memuat...</span>
-                    
-                    <svg wire:loading wire:target="$set('createStep', 2)" class="animate-spin w-4 h-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span wire:loading.remove wire:target="$set('createStep', 2)" class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    Lanjut ke Pengaturan
+                    @if($packageId)
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    @endif
                 </button>
             </div>
 
@@ -238,7 +234,7 @@
                         <button type="button" wire:click="$set('createStep', 1)"
                             class="text-xs font-bold text-[#1fa387] hover:text-[#178a71] inline-flex items-center gap-1 transition-colors cursor-pointer">
                             <span class="material-symbols-outlined text-[14px]">edit</span>
-                            Ubah
+                            Ubah Paket
                         </button>
                     </div>
                 @endif
@@ -268,7 +264,7 @@
                                     @for($i = 0; $i < $portalSlots; $i++)
                                         <input
                                             type="time"
-                                            wire:model.live="news_run_times_override.{{ $i }}"
+                                            wire:model="news_run_times_override.{{ $i }}"
                                             class="w-full pl-4 pr-4 py-3 text-sm bg-white shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:bg-white focus:shadow-none focus:ring-2 focus:ring-violet-200 placeholder-slate-400 text-slate-800 transition-all font-medium border border-violet-100"
                                         >
                                     @endfor
@@ -296,7 +292,7 @@
                                     @for($i = 0; $i < $socialSlots; $i++)
                                         <input
                                             type="time"
-                                            wire:model.live="social_run_times_override.{{ $i }}"
+                                            wire:model="social_run_times_override.{{ $i }}"
                                             class="w-full pl-4 pr-4 py-3 text-sm bg-white shadow-inner shadow-slate-200/60 rounded-xl focus:outline-none focus:bg-white focus:shadow-none focus:ring-2 focus:ring-sky-200 placeholder-slate-400 text-slate-800 transition-all font-medium border border-sky-100"
                                         >
                                     @endfor
@@ -414,7 +410,7 @@
                         <button type="button" wire:click="$set('createStep', 1)"
                             class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-xl text-xs transition cursor-pointer active:scale-[0.98]">
                             <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-                            Kembali
+                            Kembali ke Pilih Paket
                         </button>
                         <button type="submit"
                             class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 min-w-[140px] bg-[#1fa387] hover:bg-[#178a71] text-white font-extrabold rounded-xl text-xs transition shadow-sm cursor-pointer active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
@@ -425,10 +421,7 @@
                                 Buat Proyek
                             </span>
                             <span wire:loading.flex wire:target="createProject" class="items-center gap-1.5">
-                                <svg class="animate-spin h-3.5 w-3.5 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
+                                <span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
                                 Membuat...
                             </span>
                         </button>

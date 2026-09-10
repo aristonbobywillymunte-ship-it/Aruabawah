@@ -518,6 +518,17 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 * **File Diubah**: `resources/views/livewire/admin/client-management/client-list.blade.php`
 * **QA**: `[QA-20260910-19]` — PASSED.
 
+### 7.20 Audit & Perbaikan Slop Halaman Buat Proyek (10 September 2026)
+* **Fitur**: Pembersihan slop teknis dan UX pada halaman 2-step pembuatan proyek.
+* **Latar Belakang**: Audit halaman `/projects/create` menemukan dead code, inkonsistensi ikon, label ambigu, dan performa slop pada wire binding.
+* **Perbaikan yang Diimplementasikan**:
+  1. **Dead spinner dihapus** — `wire:loading` pada `$set('createStep', 2)` adalah dead code karena `$set` tidak memicu server round-trip.
+  2. **Info chip distandarisasi** — Inline `<svg>` diganti dengan `material-symbols-outlined: info`, konsisten dengan sistem ikon seluruh aplikasi.
+  3. **Label navigasi diperjelas** — "Kembali" → "Kembali ke Pilih Paket", "Ubah" → "Ubah Paket".
+  4. **Performa time input** — `wire:model.live` → `wire:model` pada semua input override jadwal (menghilangkan unnecessary server round-trip per perubahan nilai).
+  5. **Spinner submit distandarisasi** — Inline `<svg animate-spin>` diganti dengan `progress_activity` material-symbols.
+* **File Diubah**: `resources/views/livewire/project-create.blade.php`
+* **QA**: `[QA-20260910-20]` — PASSED.
 
 
 

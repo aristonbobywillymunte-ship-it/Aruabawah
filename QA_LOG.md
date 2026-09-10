@@ -533,3 +533,32 @@ Setiap entri pengujian wajib mencakup komponen berikut:
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
 
+---
+
+### [QA-20260910-20] Audit & Perbaikan Slop Halaman Buat Proyek (`/projects/create`)
+* **Tanggal & Waktu**: 10 September 2026, 21:05 WIB
+* **Konteks Masalah**:
+  Audit mendalam halaman `/projects/create` menemukan 6 poin slop teknis dan UX:
+  1. **Dead spinner** pada tombol "Lanjut ke Pengaturan" — `wire:loading` diarahkan ke `$set('createStep', 2)` yang merupakan client-side property update tanpa server round-trip, sehingga spinner tidak pernah muncul.
+  2. **UX noise** — toast info biru yang selalu tampil di Step 1 menggunakan `<svg>` inline path panjang, tidak konsisten dengan sistem `material-symbols-outlined` aplikasi.
+  3. **Label tombol ambigu** — tombol "Kembali" di Step 2 tidak jelas apakah kembali ke step sebelumnya atau ke halaman awal.
+  4. **Performa slop** — input `type="time"` untuk override jadwal menggunakan `wire:model.live` yang memicu round-trip ke server setiap kali nilai berubah.
+  5. **Inkonsistensi ikon spinner** — tombol "Buat Proyek" menggunakan `<svg>` inline untuk animasi loading, tidak konsisten dengan `progress_activity` material-symbols yang dipakai seluruh app.
+  6. **Label ambigu** — tombol "Ubah" di pill paket terpilih tidak memberikan konteks jelas tentang apa yang diubah.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/project-create.blade.php`
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4 CLI, Laravel Livewire 3)
+* **Perbaikan yang Dilakukan**:
+  1. Hapus `wire:loading` + `<svg>` spinner dari tombol "Lanjut ke Pengaturan" (dead code).
+  2. Ganti `<svg>` info toast dengan `<span class="material-symbols-outlined">info</span>` — konsisten dengan sistem ikon.
+  3. Label tombol "Kembali" → **"Kembali ke Pilih Paket"** dan "Ubah" → **"Ubah Paket"** untuk konteks jelas.
+  4. Ubah `wire:model.live` → `wire:model` pada semua input `type="time"` override jadwal.
+  5. Ganti `<svg animate-spin>` pada spinner submit → `<span class="material-symbols-outlined animate-spin">progress_activity</span>`.
+* **Physical Runtime Verification**:
+  - PHP Lint: No syntax errors detected ✅
+  - View Clear: `php artisan view:clear` → Clear successfully ✅
+  - Blade Render Test (Step 1, packages=empty): **2.943 bytes**, exit code 0 ✅
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
