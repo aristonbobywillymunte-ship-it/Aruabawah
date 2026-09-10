@@ -273,3 +273,25 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Status: **PASSED (Exit Code 0, Render HTML Output: 147.160 bytes, Zero Error)**.
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+### [QA-20260910-11] Penambahan Indikator Loading Reaktif pada Input Pencarian & Header Filter Panel
+* **Tanggal & Waktu**: 10 September 2026, 19:54 WIB
+* **Konteks Masalah**:
+  Saat pengguna mengetik kata pada kolom "Pencarian" di Filter Panel (`wire:model.live.debounce.600ms="search"`), tidak ada indikator visual loading yang memberi tahu pengguna bahwa sistem sedang memproses dan mengambil data hasil filter.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/components/⚡filter-items.blade.php` (blok Search Panel)
+  - `resources/views/livewire/media-dashboard.blade.php` (Header Filter Panel)
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Target URL: `http://localhost/?project=61&tab=cGVueWVidXRhbg==`
+* **Parameter & Hasil Pengujian**:
+  1. **Dual Loading Indicator for Search**:
+     - *Header Search Label*: Menampilkan teks dan spinner `Mencari...` di sudut kanan atas label pencarian saat `wire:target="search"` aktif.
+     - *Inside Input Box*: Ikon loop statis otomatis berganti menjadi animasi spinner berputar `#1fa387` di dalam input field saat pengguna mengetik/Livewire mengirim request.
+  2. **Global Filter Loading Indicator**:
+     - Menambahkan indikator spinner `Menyaring...` pada header utama Filter Panel yang aktif saat filter apapun (search, checkbox sumber data, sentimen, maupun rentang tanggal) dieksekusi.
+  3. **Physical Runtime Render Test**:
+     - Perintah: `php artisan view:clear` dan render view `welcome` via tinker.
+     - Status: **PASSED (Exit Code 0, Render HTML Output: 146.652 bytes, Zero Error)**.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

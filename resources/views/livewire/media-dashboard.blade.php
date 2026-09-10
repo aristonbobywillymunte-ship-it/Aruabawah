@@ -303,7 +303,16 @@
 
     <!-- Desktop filter is fixed outside the lazy workspace so Livewire refreshes cannot remove it. -->
     <aside class="desktop-filter-panel md:order-[50] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)] border border-slate-200 rounded-2xl p-6 bg-white flex-shrink-0" wire:key="desktop-filter-panel-shell">
-        <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider border-b border-slate-100 pb-3 flex-shrink-0">Filter Panel</h4>
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-shrink-0">
+            <h4 class="text-sm font-bold text-slate-950 uppercase tracking-wider">Filter Panel</h4>
+            <div wire:loading.flex wire:target="search, selectedSources, selectedSentiment, startDate, endDate, setPresetPeriod" class="hidden items-center gap-1.5 text-xs text-[#1fa387] font-semibold">
+                <svg class="animate-spin h-3.5 w-3.5 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-[11px]">Menyaring...</span>
+            </div>
+        </div>
         @include('components.⚡filter-items', ['filterContext' => 'desktop'])
     </aside>
 
