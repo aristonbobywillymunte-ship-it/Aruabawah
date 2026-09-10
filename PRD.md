@@ -592,3 +592,51 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
        ```
 * **File Diubah**: `resources/views/livewire/project-edit-modal.blade.php`, `resources/views/components/⚡projects-list.blade.php`
 * **QA**: `[QA-20260910-24]` — PASSED.
+
+### 7.25 Aturan Wajib & Standar Mutlak Penguncian Latar Belakang Modal (10 September 2026)
+> [!IMPORTANT]
+> **PANDUAN WAJIB BAGI SETIAP PENGEMBANG / AI**: Setiap kali membuat modal baru atau memodifikasi modal yang sudah ada, aturan ini **WAJIB DIPATUHI DAN DICEK** tanpa kecuali.
+
+#### 🛑 Masalah Klasik Mengapa Latar Belakang Ikut Ter-scroll:
+Jika pengembang hanya menambahkan `overflow: hidden` pada elemen `<body>`, browser modern (Chrome, Safari, Edge) akan tetap meneruskan perputaran roda mouse (wheel event) ke elemen `<html>` (`documentElement`), sehingga halaman di balik modal tetap bergerak/bergulir.
+
+#### ✅ 3 Aturan Wajib Modal Bebas Scroll-Bleed:
+
+1. **Aturan CSS Global (Wajib Ada di CSS/Header)**:
+   ```css
+   html.overflow-hidden,
+   body.overflow-hidden {
+       overflow: hidden !important;
+       height: 100vh !important;
+       max-height: 100vh !important;
+       touch-action: none !important;
+   }
+   ```
+
+2. **Aturan Lifecycle Penguncian Ganda (Wajib di Backdrop Modal)**:
+   Backdrop pembungkus modal (`fixed inset-0`) wajib mengunci `<html>` DAN `<body>` sekaligus, serta membersihkannya saat unmount:
+   ```html
+   <div
+       x-data
+       x-init="
+           document.documentElement.classList.add('overflow-hidden');
+           document.body.classList.add('overflow-hidden');
+           return () => {
+               document.documentElement.classList.remove('overflow-hidden');
+               document.body.classList.remove('overflow-hidden');
+           };
+       "
+       @wheel.self.prevent
+       @touchmove.self.prevent
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+   >
+   ```
+
+3. **Aturan Isolasi Internal Modal (Hanya Body Modal yang Bergulir)**:
+   - Kontainer kotak modal: `class="bg-white rounded-3xl w-full max-w-2xl overflow-hidden flex flex-col" style="height: 82vh; max-height: 640px;"`
+   - Header modal: `shrink-0 border-b` (Statis di atas).
+   - Body form modal: `flex-1 overflow-y-auto overscroll-contain` (Hanya ini yang boleh scroll).
+   - Footer tombol aksi: `shrink-0 border-t` (Statis di bawah).
+
+* **File Diubah**: `resources/views/components/media-dashboard-styles.blade.php`, `resources/views/livewire/project-edit-modal.blade.php`
+* **QA**: `[QA-20260910-25]` — PASSED.

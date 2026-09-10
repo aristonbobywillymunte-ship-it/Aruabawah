@@ -687,3 +687,38 @@ Setiap entri pengujian wajib mencakup komponen berikut:
   - View Clear: `php artisan view:clear` → Clear successfully ✅
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+---
+
+### [QA-20260910-25] Penegasan Aturan Mutlak: Penguncian Latar Belakang Modal (Dual HTML+BODY Lock & Wheel Event Trap)
+* **Tanggal & Waktu**: 10 September 2026, 21:36 WIB
+* **Konteks Masalah**:
+  Pengujian runtime menemukan bahwa latar belakang (halaman di balik modal) masih bisa bergulir saat modal aktif. Hal ini disebabkan oleh:
+  1. Penguncian hanya dilakukan pada elemen `<body>`, sementara browser Chromium/Safari meneruskan event scroll ke `<html>` (`documentElement`).
+  2. Ketiadaan CSS pengunci ketinggian ketat `height: 100vh !important; touch-action: none !important;` pada class `overflow-hidden`.
+  3. Ketiadaan penahan event scroll mousewheel (`@wheel.self.prevent`) pada area backdrop gelap di luar modal.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/components/media-dashboard-styles.blade.php`
+  - `resources/views/livewire/project-edit-modal.blade.php`
+* **Perbaikan yang Dilakukan**:
+  1. Menyematkan aturan CSS global mutlak di `media-dashboard-styles.blade.php`:
+     ```css
+     html.overflow-hidden, body.overflow-hidden {
+         overflow: hidden !important;
+         height: 100vh !important;
+         max-height: 100vh !important;
+         touch-action: none !important;
+     }
+     ```
+  2. Memperbarui inisialisasi backdrop modal (`x-init`) agar mengunci `document.documentElement` dan `document.body` secara bersamaan:
+     ```javascript
+     document.documentElement.classList.add('overflow-hidden');
+     document.body.classList.add('overflow-hidden');
+     ```
+  3. Menambahkan `@wheel.self.prevent` dan `@touchmove.self.prevent` pada elemen backdrop modal untuk memutus rantai *scroll bleed/chaining*.
+* **Physical Runtime Verification**:
+  - PHP Lint: No syntax errors detected (`php -l`) ✅
+  - View & Bootstrap Cache Clear: `php artisan optimize:clear` → Selesai ✅
+  - Vite Asset Build: `npm run build` → Selesai dalam 844ms ✅
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

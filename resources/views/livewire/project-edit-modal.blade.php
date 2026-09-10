@@ -2,11 +2,20 @@
     @if($showModal)
         <div
             x-data
-            x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');"
+            x-init="
+                document.documentElement.classList.add('overflow-hidden');
+                document.body.classList.add('overflow-hidden');
+                return () => {
+                    document.documentElement.classList.remove('overflow-hidden');
+                    document.body.classList.remove('overflow-hidden');
+                };
+            "
             x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100"
             @keydown.escape.window="$wire.close()"
+            @wheel.self.prevent
+            @touchmove.self.prevent
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
         >
             <div 

@@ -3,6 +3,15 @@
         overflow-x: hidden;
     }
 
+    /* Modal Active: Kunci total scroll latar belakang (HTML + BODY) */
+    html.overflow-hidden,
+    body.overflow-hidden {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        touch-action: none !important;
+    }
+
     [x-cloak] {
         display: none !important;
     }
