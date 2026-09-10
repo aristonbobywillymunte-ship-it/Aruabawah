@@ -2671,16 +2671,16 @@
 
                         <!-- Top filter row -->
                         <div class="flex gap-2 mb-6">
-                            <div class="relative flex-grow max-w-xs flex gap-2">
+                            <div class="relative flex-grow max-w-xs">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
                                 <input 
                                     type="text" 
-                                    wire:model="keywordSearch" 
+                                    wire:model.live.debounce.300ms="keywordSearch" 
                                     placeholder="Cari kata kunci..." 
-                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1fa387] focus:bg-white transition"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1fa387] focus:bg-white transition"
                                 />
-                                <button class="bg-[#1fa387] hover:bg-[#1fa387]/90 text-white p-2 rounded-xl flex items-center justify-center cursor-pointer transition">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                </button>
                             </div>
                         </div>
 
@@ -2826,16 +2826,10 @@
                             </table>
                         </div>
 
-                        <!-- Footer / Pagination row matching layout exactly -->
-                        <div class="flex flex-col gap-3 sm:flex-row items-center justify-between mt-6 text-xs text-slate-400 font-semibold">
-                            <span>Menampilkan 1-{{ count($filteredTable) }} dari {{ count($filteredTable) }} data</span>
-                            <div class="flex items-center gap-1.5">
-                                <button class="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:bg-slate-100 transition cursor-pointer">«</button>
-                                <button class="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:bg-slate-100 transition cursor-pointer">‹</button>
-                                <span class="w-6 h-6 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold">1</span>
-                                <button class="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:bg-slate-100 transition cursor-pointer">›</button>
-                                <button class="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:bg-slate-100 transition cursor-pointer">»</button>
-                            </div>
+                        <!-- Footer summary row -->
+                        <div class="flex items-center justify-between mt-5 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
+                            <span>Menampilkan <strong class="text-slate-800">{{ count($filteredTable) }}</strong> kata kunci</span>
+                            <span class="text-[11px] text-slate-400">Pilih kata kunci untuk melihat grafik tren spesifik</span>
                         </div>
                     </div>
 
@@ -2856,16 +2850,16 @@
                             </div>
                             <div class="flex flex-col xs:flex-row items-stretch xs:items-center gap-2.5 w-full lg:w-auto">
                                 <!-- Interval Button Toggle -->
-                                <div class="bg-slate-100 p-0.5 rounded-full flex gap-1 text-[10px] font-bold text-slate-500 w-full xs:w-auto justify-center">
-                                    <button @click="trendInterval = 'harian'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendInterval == 'harian' ? 'bg-blue-600 text-white' : 'hover:text-slate-800'">Harian</button>
-                                    <button @click="trendInterval = 'mingguan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendInterval == 'mingguan' ? 'bg-blue-600 text-white' : 'hover:text-slate-800'">Mingguan</button>
-                                    <button @click="trendInterval = 'bulanan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendInterval == 'bulanan' ? 'bg-blue-600 text-white' : 'hover:text-slate-800'">Bulanan</button>
+                                <div class="bg-slate-100 p-1 rounded-xl flex gap-1 text-[10px] font-bold text-slate-500 w-full xs:w-auto justify-center border border-slate-200/60">
+                                    <button @click="trendInterval = 'harian'" class="flex-1 xs:flex-initial px-3 py-1 rounded-lg transition cursor-pointer text-center" :class="trendInterval == 'harian' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Harian</button>
+                                    <button @click="trendInterval = 'mingguan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-lg transition cursor-pointer text-center" :class="trendInterval == 'mingguan' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Mingguan</button>
+                                    <button @click="trendInterval = 'bulanan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-lg transition cursor-pointer text-center" :class="trendInterval == 'bulanan' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Bulanan</button>
                                 </div>
                                 <!-- Metric Button Toggle -->
-                                <div class="bg-slate-100 p-0.5 rounded-full flex gap-1 text-[10px] font-bold text-slate-500 w-full xs:w-auto justify-center">
-                                    <button @click="trendMetric = 'penyebutan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendMetric == 'penyebutan' ? 'bg-[#1fa387] text-white' : 'hover:text-slate-800'">Penyebutan</button>
-                                    <button @click="trendMetric = 'jangkauan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendMetric == 'jangkauan' ? 'bg-[#1fa387] text-white' : 'hover:text-slate-800'">Jangkauan</button>
-                                    <button @click="trendMetric = 'sentimen'" class="flex-1 xs:flex-initial px-3 py-1 rounded-full transition cursor-pointer text-center" :class="trendMetric == 'sentimen' ? 'bg-[#1fa387] text-white' : 'hover:text-slate-800'">Sentimen</button>
+                                <div class="bg-slate-100 p-1 rounded-xl flex gap-1 text-[10px] font-bold text-slate-500 w-full xs:w-auto justify-center border border-slate-200/60">
+                                    <button @click="trendMetric = 'penyebutan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-lg transition cursor-pointer text-center" :class="trendMetric == 'penyebutan' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Penyebutan</button>
+                                    <button @click="trendMetric = 'jangkauan'" class="flex-1 xs:flex-initial px-3 py-1 rounded-lg transition cursor-pointer text-center" :class="trendMetric == 'jangkauan' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Jangkauan</button>
+                                    <button @click="trendMetric = 'sentimen'" class="flex-1 xs:flex-initial px-3 py-1 rounded-lg transition cursor-pointer text-center" :class="trendMetric == 'sentimen' ? 'bg-[#1fa387] text-white shadow-sm' : 'hover:text-slate-800'">Sentimen</button>
                                 </div>
                             </div>
                         </div>
@@ -2876,21 +2870,9 @@
                                 <!-- Gradient fill under path -->
                                 <defs>
                                     <linearGradient id="trendCardGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stop-color="#1fa387" stop-opacity="0.22"/>
+                                        <stop offset="0%" stop-color="#1fa387" stop-opacity="0.16"/>
                                         <stop offset="100%" stop-color="#1fa387" stop-opacity="0.0"/>
                                     </linearGradient>
-                                    <filter id="trendShadow" x="-5%" y="-5%" width="110%" height="110%">
-                                        <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1fa387" flood-opacity="0.15" />
-                                    </filter>
-                                    <filter id="posShadow" x="-5%" y="-5%" width="110%" height="110%">
-                                        <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#10b981" flood-opacity="0.12" />
-                                    </filter>
-                                    <filter id="neuShadow" x="-5%" y="-5%" width="110%" height="110%">
-                                        <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#94a3b8" flood-opacity="0.12" />
-                                    </filter>
-                                    <filter id="negShadow" x="-5%" y="-5%" width="110%" height="110%">
-                                        <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#f43f5e" flood-opacity="0.12" />
-                                    </filter>
                                 </defs>
 
                                 <!-- Horizontal Grid Lines -->
@@ -2963,7 +2945,7 @@
                                         @php $pts = $allPts[$m][$iv]; @endphp
                                         <g :class="(trendInterval === '{{ $iv }}' && trendMetric === '{{ $m }}') ? '' : 'hidden'">
                                             <path d="{{ $getCurveFillPath($pts) }}" fill="url(#trendCardGrad)"/>
-                                            <path d="{{ $getCurvePath($pts) }}" fill="none" stroke="#1fa387" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" filter="url(#trendShadow)"/>
+                                            <path d="{{ $getCurvePath($pts) }}" fill="none" stroke="#1fa387" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
                                             @foreach($pts as $pt)
                                                 <circle cx="{{ $pt['x'] }}" cy="{{ $pt['y'] }}" r="5" fill="#fff" stroke="#1fa387" stroke-width="2.5" class="transition-all hover:r-7 duration-200 cursor-pointer"
                                                     @mouseenter="activePoint = { x: {{ $pt['x'] }}, y: {{ $pt['y'] }}, label: '{{ $pt['label'] }}', value: {{ $pt['count'] }} }"
@@ -2988,7 +2970,7 @@
                                     @endphp
                                     <g :class="(trendInterval === '{{ $iv }}' && trendMetric === 'sentimen') ? '' : 'hidden'">
                                         <!-- Positive line (emerald-500) -->
-                                        <path d="{{ $getCurvePath($posPts) }}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" filter="url(#posShadow)"/>
+                                        <path d="{{ $getCurvePath($posPts) }}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
                                         @foreach($posPts as $pt)
                                             <circle cx="{{ $pt['x'] }}" cy="{{ $pt['y'] }}" r="4.5" fill="#fff" stroke="#10b981" stroke-width="2" class="transition-all hover:r-6.5 duration-200 cursor-pointer"
                                                 @mouseenter="activePoint = { x: {{ $pt['x'] }}, y: {{ $pt['y'] }}, label: '{{ $pt['label'] }}', value: {{ $pt['count'] }}, labelSuffix: 'Positif' }"
@@ -2997,7 +2979,7 @@
                                         @endforeach
 
                                         <!-- Neutral line (slate-400) -->
-                                        <path d="{{ $getCurvePath($neuPts) }}" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" filter="url(#neuShadow)"/>
+                                        <path d="{{ $getCurvePath($neuPts) }}" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
                                         @foreach($neuPts as $pt)
                                             <circle cx="{{ $pt['x'] }}" cy="{{ $pt['y'] }}" r="4.5" fill="#fff" stroke="#94a3b8" stroke-width="2" class="transition-all hover:r-6.5 duration-200 cursor-pointer"
                                                 @mouseenter="activePoint = { x: {{ $pt['x'] }}, y: {{ $pt['y'] }}, label: '{{ $pt['label'] }}', value: {{ $pt['count'] }}, labelSuffix: 'Netral' }"
@@ -3006,7 +2988,7 @@
                                         @endforeach
 
                                         <!-- Negative line (rose-500) -->
-                                        <path d="{{ $getCurvePath($negPts) }}" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" filter="url(#negShadow)"/>
+                                        <path d="{{ $getCurvePath($negPts) }}" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
                                         @foreach($negPts as $pt)
                                             <circle cx="{{ $pt['x'] }}" cy="{{ $pt['y'] }}" r="4.5" fill="#fff" stroke="#f43f5e" stroke-width="2" class="transition-all hover:r-6.5 duration-200 cursor-pointer"
                                                 @mouseenter="activePoint = { x: {{ $pt['x'] }}, y: {{ $pt['y'] }}, label: '{{ $pt['label'] }}', value: {{ $pt['count'] }}, labelSuffix: 'Negatif' }"

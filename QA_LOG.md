@@ -165,3 +165,23 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Status: **PASSED (Exit Code 0, Render HTML Output: 129.530 bytes, Zero Error)**.
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+### [QA-20260910-06] Eliminasi AI-Slop pada Tab Kata Kunci (Tabel & Grafik Tren)
+* **Tanggal & Waktu**: 10 September 2026, 19:44 WIB
+* **Konteks Masalah**:
+  Tab Kata Kunci (`tab=katakunci`, Base64: `a2F0YWt1bmNp`) memuat elemen AI-slop: pagination palsu/dummy berlabel tombol hardcoded, tombol submit pencarian terpisah yang mubazir tanpa fungsi, bentrokan warna palette pada segmented toggle (`blue-600` vs `#1fa387`), dan filter drop shadow neon blur berlebihan pada kurva vektor SVG.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/media-dashboard.blade.php` (Tab Kata Kunci, baris 2673–3025)
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Target URL: `http://localhost/?project=61&tab=a2F0YWt1bmNp`
+* **Parameter & Hasil Pengujian**:
+  1. **Embedded Reactive Search Input**: Mengintegrasikan icon loop pencarian ke dalam input box (`wire:model.live.debounce.300ms`) dan menghapus tombol kotak hijau terpisah yang tidak fungsional.
+  2. **Fake Pagination Elimination**: Menghapus tombol navigasi hardcoded (`«`, `‹`, `1`, `›`, `»`) dan menggantikannya dengan summary status informatif yang transparan bagi pengguna.
+  3. **Segmented Button Brand Alignment**: Menyatukan skema warna aktif antara interval toggle (Harian/Mingguan/Bulanan) dan metric toggle (Penyebutan/Jangkauan/Sentimen) menjadi konsisten di warna brand `#1fa387` dengan soft shadow netral.
+  4. **Sharp Vector Graph**: Menghapus `feDropShadow` filter blur pada garis kurva SVG agar render kurva tajam dan crisp di semua display.
+  5. **Physical Runtime Render Test**:
+     - Perintah: `php artisan view:clear` dan render view `welcome` via tinker.
+     - Status: **PASSED (Exit Code 0, Render HTML Output: 129.985 bytes, Zero Error)**.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
