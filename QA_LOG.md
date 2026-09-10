@@ -144,3 +144,24 @@ Setiap entri pengujian wajib mencakup komponen berikut:
      - Status: **PASSED (Exit Code 0, Render HTML Output: 144.833 bytes, Zero Error)**.
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+### [QA-20260910-05] Eliminasi AI-Slop pada Dropdown Notifikasi Peringatan Sentimen Negatif
+* **Tanggal & Waktu**: 10 September 2026, 19:42 WIB
+* **Konteks Masalah**:
+  Komponen notifikasi dropdown (`notification-dropdown.blade.php`) menggunakan pola AI-slop berlebihan: full-screen backdrop-blur gelap untuk dropdown menu kecil, animasi denyut ganda (`animate-ping`) yang menumpuk bersama label & badge angka, inline shadow raksasa (`60px blur`), warna non-standar Tailwind (`text-rose-550`, `text-rose-650`), dan teks `font-black` yang harsh.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/notification-dropdown.blade.php`
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4, Laravel Livewire 3)
+  - Target URL: `http://localhost/?project=61&tab=YW5hbGlzaXM=`
+* **Parameter & Hasil Pengujian**:
+  1. **Dismiss Behavior**: Menghapus backdrop-blur gelap full-screen dan menggantinya dengan handler standar Alpine `@click.outside="open = false"`.
+  2. **Trigger Button Cleanliness**: Menghilangkan `animate-ping` merah yang berkedip terus-menerus dan mempertahankan satu badge angka solid `bg-rose-50 text-rose-600 border border-rose-200` yang proporsional.
+  3. **Elevation & Layout Refinement**: Mengganti inline shadow raksasa dan border radius janggal menjadi container standar `rounded-2xl border border-slate-200 shadow-xl` yang selaras dengan dropdown profil.
+  4. **Typography & Styling Standards**: Mengganti non-standard class `text-rose-550`/`text-rose-650` dan `font-black` menjadi `font-semibold text-slate-800` dan class standar Tailwind.
+  5. **Inklusivitas Judul**: Memperbarui judul header menjadi **"Peringatan Sentimen Negatif"** agar akurat mencakup baik Portal Berita maupun Media Sosial.
+  6. **Physical Runtime Render Test**:
+     - Perintah: `php artisan view:clear` dan render view `welcome` via tinker.
+     - Status: **PASSED (Exit Code 0, Render HTML Output: 129.530 bytes, Zero Error)**.
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)

@@ -297,3 +297,18 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
   3. **Verifikasi Render Fisik Runtime**:
      - Eksekusi simulasi via `php artisan tinker`: Render sukses 100% dengan status exit code 0, panjang HTML 144.833 bytes tanpa error Blade/PHP.
      - **Status**: **PASSED**.
+
+### 7.5 QA Verifikasi Pembersihan AI-Slop Dropdown Notifikasi Sentimen Negatif (10 September 2026)
+* **Environment Pengujian**: Runtime Docker Container Lokal (`media_intelligent_container`), PHP 8.4 CLI, Laravel 11/13.17, Livewire 3.
+* **Target Uji**: Komponen dropdown notifikasi (`resources/views/livewire/notification-dropdown.blade.php`).
+* **Skenario & Hasil Pengujian**:
+  1. **Dismiss Behavior & Trigger Button**:
+     - Menggantikan backdrop-blur full-screen dengan clean Alpine `@click.outside="open = false"`.
+     - Mengeliminasi animasi visual berkedip `animate-ping` pada trigger lonceng, menyederhanakan indikator menjadi satu badge counter bersih.
+  2. **Elevasi & Standardisasi Styling**:
+     - Mengganti inline shadow raksasa `60px` dengan `rounded-2xl border border-slate-200 shadow-xl`.
+     - Normalisasi warna non-standar (`text-rose-550`, `text-rose-650`) dan penghalusan font harsh `font-black` menjadi `font-semibold text-slate-800`.
+     - Penyempurnaan judul header menjadi "Peringatan Sentimen Negatif" yang inklusif untuk berita dan media sosial.
+  3. **Verifikasi Render Fisik Runtime**:
+     - Eksekusi simulasi via `php artisan tinker`: Render sukses 100% dengan status exit code 0, panjang HTML 129.530 bytes tanpa error Blade/PHP.
+     - **Status**: **PASSED**.
