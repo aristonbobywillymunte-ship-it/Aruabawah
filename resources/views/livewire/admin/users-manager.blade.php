@@ -55,7 +55,7 @@
                             <td class="px-4 py-3 font-bold text-slate-900">{{ $user->name }}</td>
                             <td class="px-4 py-3 font-semibold text-slate-600">{{ $user->email }}</td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex rounded-md border px-2.5 py-0.5 text-[9px] font-bold {{ $user->isAdmin() ? 'bg-teal-50 text-teal-700 border-teal-100' : 'bg-slate-100 text-slate-600 border-slate-200' }}">
+                                <span class="inline-flex rounded-md border px-2.5 py-0.5 text-[9px] font-bold {{ $user->isAdmin() ? 'bg-teal-50 text-teal-700 border-teal-100' : ($user->isClient() ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-600 border-slate-200') }}">
                                     {{ strtoupper($user->role ?? 'user') }}
                                 </span>
                             </td>
@@ -122,7 +122,10 @@
 
     <!-- Form Add/Edit Modal -->
     @if($showForm)
-        <div wire:key="form-modal" x-data x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
+        <div wire:key="form-modal" 
+             wire:click.self="closeForm"
+             x-data x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden');" 
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
             <div class="w-full max-w-md overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain">
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
                     <div>
@@ -164,6 +167,7 @@
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Role Akses</label>
                             <select wire:model="role" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
                                 <option value="user">User biasa</option>
+                                <option value="client">Client</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
@@ -178,7 +182,18 @@
 
                     <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                         <button type="button" wire:click="closeForm" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
-                        <button type="submit" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer">Simpan Data</button>
+                        <button type="submit" 
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50">
+                            <span wire:loading.remove wire:target="save">Simpan Data</span>
+                            <span wire:loading wire:target="save" class="inline-flex items-center gap-2">
+                                <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Menyimpan...
+                            </span>
+                        </button>
                     </div>
                 </form>
             </div>

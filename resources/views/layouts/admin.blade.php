@@ -59,8 +59,10 @@
             }
         }
         /* Lock outer screen scroll bounds when modals are active */
-        body.overflow-hidden {
+        body.overflow-hidden, html.overflow-hidden {
             overflow: hidden !important;
+            height: 100% !important;
+            overscroll-behavior: none !important;
         }
     </style>
 </head>

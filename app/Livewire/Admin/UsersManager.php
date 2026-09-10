@@ -41,7 +41,7 @@ class UsersManager extends Component
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->editingId)],
-            'role' => ['required', Rule::in(['admin', 'user'])],
+            'role' => ['required', Rule::in(['admin', 'user', 'client'])],
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ];
 

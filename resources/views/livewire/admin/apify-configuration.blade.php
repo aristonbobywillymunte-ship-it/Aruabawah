@@ -11,7 +11,7 @@
 
 <div class="mx-auto w-full max-w-7xl space-y-6 font-sans">
     {{-- Global Loading State for UI Responsiveness (Hanya terpicu saat tombol aksi ditekan, bukan saat auto-polling 5s) --}}
-    <div wire:loading.flex wire:target="saveActor, requestToggleActorStatus, requestDeleteActor, testConnection, editActor, openActorModal, saveApiToken" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/20 backdrop-blur-[2px]">
+    <div wire:loading.flex wire:target="saveActor, requestToggleActorStatus, toggleActorStatusConfirmed, requestDeleteActor, deleteActorConfirmed, testConnection, editActor, saveToken" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/20 backdrop-blur-[2px]">
         <div class="bg-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100 animate-fade-in">
             <svg class="animate-spin h-5 w-5 text-[#1fa387]" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -207,17 +207,31 @@
                         <button 
                             type="button"
                             wire:click="testConnection" 
-                            class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 text-xs font-bold transition shadow-sm w-full sm:w-auto cursor-pointer"
+                            wire:loading.attr="disabled"
+                            wire:target="testConnection, saveToken"
+                            class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 text-xs font-bold transition shadow-sm w-full sm:w-auto cursor-pointer disabled:opacity-50"
                         >
-                            <span class="material-symbols-outlined text-[18px]">network_check</span>
-                            <span>Uji Koneksi API</span>
+                            <span wire:loading.remove wire:target="testConnection" class="material-symbols-outlined text-[18px]">network_check</span>
+                            <svg wire:loading wire:target="testConnection" class="animate-spin h-4 w-4 text-slate-700" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="testConnection">Uji Koneksi API</span>
+                            <span wire:loading wire:target="testConnection">Menguji...</span>
                         </button>
                         <button 
                             wire:click="saveToken" 
-                            class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm w-full sm:w-auto cursor-pointer"
+                            wire:loading.attr="disabled"
+                            wire:target="saveToken, testConnection"
+                            class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm w-full sm:w-auto cursor-pointer disabled:opacity-50"
                         >
-                            <span class="material-symbols-outlined text-[18px]">lock</span>
-                            <span>Simpan Semua Token</span>
+                            <span wire:loading.remove wire:target="saveToken" class="material-symbols-outlined text-[18px]">lock</span>
+                            <svg wire:loading wire:target="saveToken" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="saveToken">Simpan Semua Token</span>
+                            <span wire:loading wire:target="saveToken">Menyimpan...</span>
                         </button>
                     </div>
                 </div>
@@ -348,6 +362,7 @@
                     </tbody>
                 </table>
             </div>
+        </div>
     </div>
 
 
@@ -356,8 +371,11 @@
 
     <!-- Form Add/Edit Actor Modal -->
     @if($showActorModal)
-        <div wire:key="apify-actor-modal-{{ $editingActor ? 'edit' : 'create' }}-{{ $editingActorId ?? 'new' }}-{{ $platform }}" x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
-            <div class="w-full max-w-2xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain flex flex-col max-h-[90vh]">
+        <div wire:key="apify-actor-modal-{{ $editingActor ? 'edit' : 'create' }}-{{ $editingActorId ?? 'new' }}-{{ $platform }}" 
+             wire:click.self="closeActorModal"
+             x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+            <div class="w-full max-w-4xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain flex flex-col max-h-[92vh]">
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
                     <div class="min-w-0 flex-1 pr-4">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Manajemen Scraper Medsos</p>
@@ -448,47 +466,50 @@
                                 </ul>
                             </div>
                         @endif
-                        <!-- Group 1: Identitas & Target -->
-                        <!-- Group 2: Performa -->
-                        <div>
-                            <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <span class="w-5 h-5 rounded bg-blue-50 flex items-center justify-center text-blue-500"><span class="material-symbols-outlined text-[13px]">speed</span></span>
-                                Konfigurasi Performa
-                            </h3>
-                            <div class="bg-blue-50/30 border border-blue-100/50 p-4 rounded-2xl space-y-4">
-                                <div class="grid gap-4 sm:grid-cols-1">
+
+                        <!-- Group 2: Performa & Run Options berdampingan 2 Kolom -->
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                            <div class="md:col-span-5">
+                                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded bg-blue-50 flex items-center justify-center text-blue-500"><span class="material-symbols-outlined text-[13px]">speed</span></span>
+                                    Konfigurasi Performa
+                                </h3>
+                                <div class="bg-blue-50/30 border border-blue-100/50 p-4 rounded-2xl space-y-4 h-[calc(100%-2rem)] flex flex-col justify-between">
                                     <div>
                                         <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Prioritas Fallback</label>
                                         <input wire:model="priority" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm">
                                         @error('priority') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                        <p class="mt-1.5 text-[10px] text-slate-400">Urutan prioritas scraper jika fallback aktif.</p>
                                     </div>
                                 </div>
-                        <div>
-                            <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <span class="w-5 h-5 rounded bg-slate-900 flex items-center justify-center text-white"><span class="material-symbols-outlined text-[13px]">play_circle</span></span>
-                                Run Options
-                            </h3>
-                            <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-5">
-                                <div class="grid gap-4 sm:grid-cols-2">
-                                    <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Build</label>
-                                        <select wire:model="build" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition">
-                                            <option value="latest">latest</option>
-                                            <option value="beta">beta</option>
-                                            <option value="prod">prod</option>
-                                        </select>
+                            </div>
+                            <div class="md:col-span-7">
+                                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded bg-slate-900 flex items-center justify-center text-white"><span class="material-symbols-outlined text-[13px]">play_circle</span></span>
+                                    Run Options
+                                </h3>
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-4">
+                                    <div class="grid gap-4 sm:grid-cols-2">
+                                        <div>
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Build</label>
+                                            <select wire:model="build" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition">
+                                                <option value="latest">latest</option>
+                                                <option value="beta">beta</option>
+                                                <option value="prod">prod</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Timeout (Detik)</label>
+                                            <input wire:model="timeout_seconds" type="number" step="1" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition">
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label class="mb-1.5 block text-[11px] font-bold text-slate-700">Timeout</label>
-                                        <input wire:model="timeout_seconds" type="number" step="1" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 shadow-sm outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition">
+                                    <div class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
+                                        <label class="flex items-center gap-2.5 cursor-pointer">
+                                            <input wire:model="no_timeout" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
+                                            <span class="text-[11px] font-bold text-slate-700">No timeout</span>
+                                        </label>
+                                        <p class="text-[10px] text-slate-400">Menonaktifkan batas waktu run seperti Apify Console.</p>
                                     </div>
-                                </div>
-                                <div class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                                    <label class="flex items-center gap-2.5 cursor-pointer">
-                                        <input wire:model="no_timeout" type="checkbox" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387] w-4 h-4">
-                                        <span class="text-[11px] font-bold text-slate-700">No timeout</span>
-                                    </label>
-                                    <p class="text-[10px] text-slate-400">Menonaktifkan batas waktu run, mirip opsi Apify Console.</p>
                                 </div>
                             </div>
                         </div>
@@ -676,6 +697,22 @@
                                             >
                                             @error('defaultKeyword') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                         </div>
+                                        <div class="sm:col-span-2">
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-700">
+                                                {{ $isTikTokCommentsActor ? 'Batas Komentar per Video (commentsPerPost) *' : 'Batas Total Hasil Scraping (maxItems) *' }}
+                                            </label>
+                                            <input
+                                                wire:model="defaultLimit"
+                                                type="number"
+                                                min="1"
+                                                required
+                                                class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] focus:ring-2 focus:ring-[#1fa387]/10 transition bg-white shadow-sm"
+                                            >
+                                            <p class="mt-1 text-[10px] text-slate-400">
+                                                {{ $isTikTokCommentsActor ? 'Disimpan sebagai commentsPerPost untuk actor komentar TikTok.' : 'Disimpan sebagai maxItems untuk actor hashtag TikTok.' }}
+                                            </p>
+                                            @error('defaultLimit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                        </div>
                                         <div class="rounded-xl border border-emerald-100 bg-white px-3.5 py-3 text-[11px] text-slate-600 shadow-sm sm:col-span-2">
                                             <p class="font-bold text-emerald-700">Catatan TikTok</p>
                                             @if($isTikTokCommentsActor)
@@ -722,13 +759,23 @@
                             </div>
                             <pre class="max-h-64 overflow-auto rounded-xl bg-slate-900 px-4 py-3 text-[11px] leading-relaxed text-slate-100 font-mono shadow-inner whitespace-pre-wrap break-words">{{ $this->previewActorPayloadJson() }}</pre>
                         </div>
-
                         </div>
                     </div>
 
                     <div class="flex flex-shrink-0 items-center justify-end gap-3 border-t border-slate-100 bg-white px-6 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
                         <button type="button" wire:click="closeActorModal" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
-                        <button type="submit" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer">Simpan Actor</button>
+                        <button type="submit" 
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50">
+                            <span wire:loading.remove wire:target="saveActor">Simpan Actor</span>
+                            <span wire:loading wire:target="saveActor" class="inline-flex items-center gap-2">
+                                <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Menyimpan...
+                            </span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -751,7 +798,19 @@
                 <p class="text-xs text-slate-500 leading-relaxed">Aksi ini bersifat permanen. Seluruh isian data aktor akan terhapus total dari database.</p>
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button wire:click="$set('confirmingDelete', false)" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
-                    <button wire:click="deleteActorConfirmed" class="h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Hapus</button>
+                    <button 
+                        wire:click="deleteActorConfirmed" 
+                        wire:loading.attr="disabled"
+                        wire:target="deleteActorConfirmed"
+                        class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                    >
+                        <svg wire:loading wire:target="deleteActorConfirmed" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span wire:loading.remove wire:target="deleteActorConfirmed">Ya, Hapus</span>
+                        <span wire:loading wire:target="deleteActorConfirmed">Menghapus...</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -804,9 +863,33 @@
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button wire:click="cancelToggle" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
                     @if($toggleCurrentStatus === 'active')
-                        <button wire:click="toggleActorStatusConfirmed" class="h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Nonaktifkan</button>
+                        <button 
+                            wire:click="toggleActorStatusConfirmed" 
+                            wire:loading.attr="disabled"
+                            wire:target="toggleActorStatusConfirmed"
+                            class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                        >
+                            <svg wire:loading wire:target="toggleActorStatusConfirmed" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="toggleActorStatusConfirmed">Ya, Nonaktifkan</span>
+                            <span wire:loading wire:target="toggleActorStatusConfirmed">Memproses...</span>
+                        </button>
                     @else
-                        <button wire:click="toggleActorStatusConfirmed" class="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Aktifkan</button>
+                        <button 
+                            wire:click="toggleActorStatusConfirmed" 
+                            wire:loading.attr="disabled"
+                            wire:target="toggleActorStatusConfirmed"
+                            class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                        >
+                            <svg wire:loading wire:target="toggleActorStatusConfirmed" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="toggleActorStatusConfirmed">Ya, Aktifkan</span>
+                            <span wire:loading wire:target="toggleActorStatusConfirmed">Memproses...</span>
+                        </button>
                     @endif
                 </div>
             </div>
@@ -883,10 +966,23 @@
 
                     <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 font-sans">
                         <button type="button" wire:click="closeTestModal" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
-                        <button type="submit" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer">Jalankan Simulasi</button>
+                        <button 
+                            type="submit" 
+                            wire:loading.attr="disabled"
+                            wire:target="runTest"
+                            class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                        >
+                            <svg wire:loading wire:target="runTest" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="runTest">Jalankan Simulasi</span>
+                            <span wire:loading wire:target="runTest">Menjalankan...</span>
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     @endif
 </div>
+

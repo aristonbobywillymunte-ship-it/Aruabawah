@@ -299,14 +299,14 @@ class ApifyConfiguration extends Component
         $this->lastTestStatus = $setting->last_test_status;
         $this->lastTestMessage = $setting->last_test_message;
 
-        if ($setting->last_test_status === 'success') {
-            $this->resetApifyErrorsAndCooldowns();
-            $this->notify('info', 'Koneksi sukses! Status error dan cooldown aktor Apify telah di-reset otomatis.');
-        }
-
         $this->lastTestAt = $setting->last_test_at->toDateTimeString();
 
-        $this->notify('success', 'Uji koneksi semua token selesai: ' . $setting->last_test_message);
+        if ($setting->last_test_status === 'success') {
+            $this->resetApifyErrorsAndCooldowns();
+            $this->notify('success', 'Uji koneksi berhasil: ' . $setting->last_test_message . '. Cooldown aktor telah di-reset.');
+        } else {
+            $this->notify('error', 'Uji koneksi gagal: ' . $setting->last_test_message);
+        }
     }
 
     private function resetApifyErrorsAndCooldowns(): void

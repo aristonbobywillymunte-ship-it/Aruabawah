@@ -862,3 +862,50 @@ Halaman dashboard admin (`/admin`) sebelumnya memiliki beban loading yang lambat
    - Menghapus seluruh tag `</template>` liar di `system-health.blade.php` yang tidak memiliki tag pembuka.
 3. **Penyatuan Modal Footer**:
    - Memadukan ringkasan paginasi dan tombol "Tutup" pada modal antrean AI menjadi satu footer bar yang bersih dan rapi.
+
+## Bab 7.43 — Aturan Wajib Penguncian Scroll Background Modal (Strict Modal Scroll-Lock)
+
+### Latar Belakang
+Sebelumnya saat modal terbuka (misalnya di panel admin atau dashboard), background halaman di belakang modal masih dapat ikut tergulir (*background scroll leakage*). Hal ini membuat pengalaman pengguna terganggu, navigasi melayang tidak sinkron, dan mengacaukan fokus pengguna saat mengisi formulir modal.
+
+### Perubahan & Standardisasi QA Wajib
+1. **Aturan Global Layout (`layouts/admin.blade.php`)**:
+   - Menambahkan aturan CSS mutlak:
+     ```css
+     body.overflow-hidden, html.overflow-hidden {
+         overflow: hidden !important;
+         height: 100% !important;
+         overscroll-behavior: none !important;
+     }
+     ```
+2. **Alpine.js Lifecycle Hook pada Setiap Modal**:
+   - Setiap modal wajib mengunci scroll `body` dan `html` saat terbuka, dan mengembalikannya ke normal saat ditutup:
+     ```javascript
+     x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"
+     ```
+3. **Scroll Terisolasi Hanya di Body Modal**:
+   - Kontainer isi modal wajib dibatasi (`max-h-[92vh] flex flex-col overflow-y-auto overscroll-contain`) sehingga hanya area dalam modal yang dapat digulir.
+
+## Bab 7.44 — Audit Komprehensif & Penyempurnaan Manajemen Aktor Scraper Apify (/admin/apify)
+
+### Latar Belakang
+Halaman manajemen scraper Apify (`/admin/apify`) memiliki beberapa indikasi slop dan ketidaksesuaian antarmuka:
+- Modal konfigurasi sempit (`max-w-2xl`), membuat peninjauan JSON payload berdesakan.
+- Notifikasi uji koneksi token ganda dan ambigu (menampilkan notifikasi reset error bertumpuk dengan status koneksi).
+- Tombol simpan token, uji koneksi, konfirmasi toggle status, konfirmasi hapus, dan run simulasi belum memiliki indikator proses (`wire:loading`) dan proteksi `disabled` saat request diproses.
+- Form modal TikTok tidak memiliki input numerik `defaultLimit` (Batas Total Scraping `maxItems` atau `commentsPerPost`), memaksa user mengedit JSON mentah.
+- Global loading memiliki target method yang tidak terdefinisi (`openActorModal`).
+
+### Perubahan
+1. **Penyatuan Notifikasi Uji Koneksi**:
+   - Menggabungkan dispatch notifikasi di `ApifyConfiguration.php` menjadi satu pesan toast tunggal yang jelas, lugas, dan informatif.
+2. **Modal Diperbesar & Ditata Ulang (Large Modal Layout)**:
+   - Ukuran modal dinaikkan menjadi `max-w-4xl` dengan tata letak 2-kolom grid pada bagian *Konfigurasi Performa* dan *Run Options*.
+   - Menyediakan fitur *click outside backdrop to close* (`wire:click.self="closeActorModal"`).
+3. **Penyediaan Input Lengkap TikTok di Form Modal**:
+   - Menyediakan input eksplisit `defaultLimit` untuk TikTok (mode hashtag: `maxItems`, mode komentar: `commentsPerPost`) lengkap dengan validasi dan helper text.
+4. **Proteksi Loading State & Penghapusan Slop**:
+   - Seluruh tombol aksi modal dan form dilengkapi dengan spinner SVG animasi dan atribut `wire:loading.attr="disabled"` untuk mencegah double submit.
+   - Membersihkan method fiktif dari `wire:target` global loading state.
+   - Menyeimbangkan seluruh struktur tag kontainer HTML (`div: 129 / 129`).
+
