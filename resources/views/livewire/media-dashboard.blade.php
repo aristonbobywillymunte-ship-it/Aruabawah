@@ -3279,6 +3279,15 @@
                         </button>
                     </div>
 
+                    @if(!empty($project->ai_insight_updated_at) && (!empty($this->startDate) || !empty($this->endDate)))
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between gap-3 text-left">
+                            <div class="flex items-center gap-2 text-xs text-amber-800">
+                                <span class="material-symbols-outlined text-amber-600 text-[18px] shrink-0">info</span>
+                                <span>Filter tanggal aktif ({{ $this->startDate ?: 'Awal' }} s/d {{ $this->endDate ?: 'Sekarang' }}). Klik <strong>Perbarui Wawasan AI</strong> jika ingin menyelaraskan narasi analisis dengan rentang tanggal ini.</span>
+                            </div>
+                        </div>
+                    @endif
+
                     <div style="height: calc(100vh - 250px);" class="overflow-y-auto pr-4 space-y-6">
 
                     @if(!$wawasanLoaded)
@@ -3531,7 +3540,15 @@
                                         </h3>
                                         <p class="text-[10px] text-slate-400">Ikhtisar strategis berbasis analisis agregasi data sentimen terkini.</p>
                                     </div>
-                                    <span class="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 uppercase tracking-wider">Eksekutif</span>
+                                    @if(!empty($w['is_ai_generated']))
+                                        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 uppercase tracking-wider flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[12px]">auto_awesome</span> Model AI
+                                        </span>
+                                    @else
+                                        <span class="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200 uppercase tracking-wider flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[12px]">calculate</span> Estimasi Sistem
+                                        </span>
+                                    @endif
                                 </div>
                                 <div class="text-slate-600 text-xs leading-relaxed space-y-2">
                                     {!! preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', nl2br(e($w['summary']))) !!}

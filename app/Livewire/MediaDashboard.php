@@ -3219,6 +3219,7 @@ class MediaDashboard extends Component
             'crisis_color' => $crisis_color,
             'summary' => $summary,
             'recommendations' => $recs,
+            'is_ai_generated' => (!empty($project->ai_insight_summary) && !empty($project->ai_insight_recommendations)),
             'categories' => $categories,
             'sources' => $sources,
             'negative_issues' => $negativeIssues,

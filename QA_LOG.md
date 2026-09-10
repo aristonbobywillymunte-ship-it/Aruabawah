@@ -817,3 +817,28 @@ Saat tombol "Detail Proyek" di-hover, latar belakang berubah menjadi hijau (`#1f
 ### Verifikasi
 - PHP lint pada `MediaDashboard.php` dan `media-dashboard.blade.php`: No syntax errors.
 - `php artisan view:clear`: Sukses.
+
+## [QA-20260910-30] Sinkronisasi Tanggal Filter & Indikator Transparansi Wawasan AI
+
+**Tanggal**: 2026-09-10
+**File**:
+- `app/Livewire/MediaDashboard.php`
+- `resources/views/livewire/media-dashboard.blade.php`
+**Status**: ✅ FIXED
+
+### Masalah
+1. Hasil wawasan AI tersimpan statis pada proyek; saat pengguna mengubah filter tanggal (`startDate` / `endDate`), teks wawasan AI lama tetap tampil sehingga narasi ringkasan tidak sinkron dengan grafik & tanggal aktif.
+2. Pengguna tidak dapat membedakan apakah ringkasan yang tampil berasal dari Model AI atau sekadar formula fallback (estimasi sistem).
+
+### Perbaikan
+1. **Indikator Filter Tanggal Aktif**:
+   - Menambahkan banner informatif amber di atas tab Wawasan ketika filter tanggal aktif (`startDate` atau `endDate` terisi) yang mengingatkan pengguna untuk mengklik *"Perbarui Wawasan AI"* guna menyelaraskan narasi analisis dengan rentang tanggal baru.
+2. **Pembeda Sumber Ringkasan (Transparansi UX)**:
+   - Menambahkan flag `is_ai_generated` di `getWawasan()`.
+   - Mengganti badge statis "Eksekutif" di kartu Ringkasan Eksekutif menjadi:
+     - `✨ Model AI` (jika sudah di-generate via LLM).
+     - `🧮 Estimasi Sistem` (jika masih formula statistik cepat).
+
+### Verifikasi
+- PHP syntax check lulus.
+- View cache berhasil dibersihkan.

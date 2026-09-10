@@ -710,3 +710,16 @@ Header tab "Wawasan & Ringkasan AI" memiliki tombol "Perbarui Wawasan AI" yang m
    - Menampilkan `Terupdate {{ Carbon::parse(...)->diffForHumans() }}` dan tooltip tanggal lengkap.
 3. **Invalidasi Cache Wawasan**:
    - Menghapus cache key `media_dashboard_wawasan:...` dan mereset array `$this->wawasanMemo = []` pada method `generateAiInsights()` di `MediaDashboard.php` agar perubahan AI segera terlihat di layar tanpa stale data.
+
+## Bab 7.30 — Sinkronisasi Filter Tanggal & Transparansi Sumber Wawasan AI
+
+### Latar Belakang
+Ketika pengguna mengubah rentang tanggal filter, metrik angka terhitung ulang sesuai tanggal baru, namun teks ringkasan AI tetap merujuk pada rentang tanggal saat tombol digenerate sebelumnya. Selain itu, tidak ada label pembeda apakah ringkasan yang sedang dibaca adalah hasil analisis Model AI atau formula estimasi sistem.
+
+### Perubahan
+1. **Banner Sinkronisasi Rentang Tanggal**:
+   - Menampilkan notifikasi visual di bawah header tab Wawasan jika terdapat filter tanggal aktif (`startDate` / `endDate`), mengajak pengguna memperbarui wawasan AI agar selaras.
+2. **Badge Status Sumber Analisis**:
+   - Di kartu Ringkasan Eksekutif, disematkan badge transparan:
+     - `<span class="bg-emerald-50 text-emerald-700">auto_awesome Model AI</span>` untuk hasil LLM.
+     - `<span class="bg-slate-100 text-slate-600">calculate Estimasi Sistem</span>` untuk hasil formula statistik default.
