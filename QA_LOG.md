@@ -1,5 +1,18 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-51] Perbaikan Slop DOM Modal, Penutupan Div Liar, dan Keselarasan Tombol/Tabel Modal
+* **Konteks**: User meminta audit menyeluruh terhadap tombol-tombol dan tampilan tabel di seluruh modal dashboard admin (`/admin`), memeriksa slop, ketidaksesuaian label/kolom, serta tag penutup modal.
+* **Perubahan**:
+  1. **Penutupan Div Backdrop yang Bocor (Unclosed Divs)**:
+     - Memperbaiki tag penutup pembungkus luar fixed backdrop di `Modal Konfirmasi Error Handling` (`$showConfirmModal`), `Modal Antrean Redis` (`$showRedisQueueModal`), dan `Modal Antrean Apify` (`$showApifyQueueModal`). Sebelumnya div backdrop tidak tertutup dengan benar sehingga berisiko menumpuk di body.
+  2. **Kelengkapan Pesan Aksi Tombol Konfirmasi**:
+     - Menambahkan rincian teks konfirmasi untuk tombol `clean_apify_ghosts`, `purge_apify_queue`, dan `force_apify_requeue` pada `$confirmActionType` di blade konfirmasi. Sebelumnya tombol-tombol ini tidak menampilkan rincian teks penjelasan yang spesifik.
+  3. **Penyelarasan Kolom & Tombol Tabel Antrean AI**:
+     - Mengubah header kolom `#7` pada tabel Antrean AI dari *"Retry"* menjadi *"Aksi"* dengan lebar kolom yang proporsional (`w-16`), selaras dengan tombol "Kirim Ulang" (`force_requeue`) dan tabel Apify.
+* **QA fisik**: `php -l` lulus tanpa error sintaks pada `resources/views/livewire/admin/system-health.blade.php`. Tinker render view `admin.dashboard` terbukti `OK`. `php artisan view:clear` sukses.
+* **Status**: PASSED.
+
+
 ### [QA-20260911-50] Pembersihan Kode Slop & Eliminasi Query Mati di Halaman /admin
 * **Konteks**: User meminta audit dan pembersihan kode/UI yang terindikasi "slop" pada dashboard administrator (`http://localhost/admin`). Ditemukan query berat yang tidak pernah ditampilkan di view, serta tag-tag HTML rusak (`</template>` liar) dan penumpukan double footer modal antrean AI.
 * **Perubahan**:

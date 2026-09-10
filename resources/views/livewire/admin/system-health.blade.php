@@ -463,7 +463,7 @@
                                         <th class="px-3 py-2 font-bold text-slate-500">Judul / Konten</th>
                                         <th class="px-3 py-2 font-bold text-slate-500 w-32">Proyek</th>
                                         <th class="px-3 py-2 font-bold text-slate-500 w-24">Status</th>
-                                        <th class="px-3 py-2 font-bold text-slate-500 w-14 text-center">Retry</th>
+                                        <th class="px-3 py-2 font-bold text-slate-500 w-16 text-center">Aksi</th>
                                         <th class="px-3 py-2 font-bold text-slate-500 w-32">Dibuat</th>
                                     </tr>
                                 </thead>
@@ -608,40 +608,49 @@
 
     <!-- Modal Konfirmasi Error Handling -->
     @if($showConfirmModal)
-                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 font-sans" @touchmove.prevent @wheel.prevent>
-                <div class="w-full max-w-sm bg-white shadow-2xl rounded-2xl overflow-hidden text-center p-6 border border-slate-200">
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full {{ $confirmActionType === 'purge_queue' ? 'bg-rose-100 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]' }} mb-4">
-                        <span class="material-symbols-outlined text-[24px]">
-                            {{ $confirmActionType === 'purge_queue' ? 'warning' : ($confirmActionType === 'clean_ghosts' ? 'cleaning_services' : 'refresh') }}
-                        </span>
-                    </div>
-                    <h3 class="text-lg font-black text-slate-900 mb-2">Konfirmasi Tindakan</h3>
-                    <p class="text-xs text-slate-500 mb-6 leading-relaxed">
-                        @if($confirmActionType === 'clean_ghosts')
-                            Apakah Anda yakin ingin membersihkan data antrean hantu (Legacy MD5)? Data ini akan ditandai sebagai batal secara permanen.
-                        @elseif($confirmActionType === 'purge_queue')
-                            Apakah Anda yakin ingin <strong>menghapus secara paksa</strong> seluruh antrean Redis AI? Tindakan ini akan membatalkan semua job yang belum diproses.
-                        @elseif($confirmActionType === 'force_requeue')
-                            Apakah Anda yakin ingin mengirim ulang data antrean ini ke AI secara paksa sekarang juga?
-                        @endif
-                    </p>
-                    <div class="flex flex-col gap-2">
-                        <button type="button" wire:click="executeConfirmAction" class="w-full inline-flex justify-center items-center gap-2 px-4 py-2 text-sm font-bold text-white {{ $confirmActionType === 'purge_queue' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-[#1fa387] hover:bg-[#15876f]' }} rounded-xl transition shadow-sm" wire:loading.attr="disabled">
-                            <span wire:loading.remove wire:target="executeConfirmAction">Ya, Lanjutkan</span>
-                            <span wire:loading wire:target="executeConfirmAction" class="flex items-center gap-2">
-                                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Memproses...
-                            </span>
-                        </button>
-                        <button type="button" wire:click="closeConfirmModal" class="w-full px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition">
-                            Batal
-                        </button>
-                    </div>
+        <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 font-sans" @touchmove.prevent @wheel.prevent>
+            <div class="w-full max-w-sm bg-white shadow-2xl rounded-2xl overflow-hidden text-center p-6 border border-slate-200">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full {{ in_array($confirmActionType, ['purge_queue', 'purge_apify_queue']) ? 'bg-rose-100 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]' }} mb-4">
+                    <span class="material-symbols-outlined text-[24px]">
+                        {{ in_array($confirmActionType, ['purge_queue', 'purge_apify_queue']) ? 'warning' : (in_array($confirmActionType, ['clean_ghosts', 'clean_apify_ghosts']) ? 'cleaning_services' : 'refresh') }}
+                    </span>
                 </div>
-@endif
+                <h3 class="text-lg font-black text-slate-900 mb-2">Konfirmasi Tindakan</h3>
+                <p class="text-xs text-slate-500 mb-6 leading-relaxed">
+                    @if($confirmActionType === 'clean_ghosts')
+                        Apakah Anda yakin ingin membersihkan data antrean hantu (Legacy MD5)? Data ini akan ditandai sebagai batal secara permanen.
+                    @elseif($confirmActionType === 'purge_queue')
+                        Apakah Anda yakin ingin <strong>menghapus secara paksa</strong> seluruh antrean Redis AI? Tindakan ini akan membatalkan semua job yang belum diproses.
+                    @elseif($confirmActionType === 'clean_apify_ghosts')
+                        Apakah Anda yakin ingin <strong>membersihkan seluruh data antrean Apify</strong> yang sedang aktif?
+                    @elseif($confirmActionType === 'purge_apify_queue')
+                        Apakah Anda yakin ingin <strong>mengosongkan dan membatalkan</strong> seluruh antrean scraping Apify?
+                    @elseif($confirmActionType === 'force_apify_requeue')
+                        Apakah Anda yakin ingin <strong>mengirim ulang</strong> pekerjaan scraping Apify ini ke antrean?
+                    @elseif($confirmActionType === 'force_requeue')
+                        Apakah Anda yakin ingin mengirim ulang data antrean ini ke AI secara paksa sekarang juga?
+                    @else
+                        Apakah Anda yakin ingin melanjutkan tindakan ini?
+                    @endif
+                </p>
+                <div class="flex flex-col gap-2">
+                    <button type="button" wire:click="executeConfirmAction" class="w-full inline-flex justify-center items-center gap-2 px-4 py-2 text-sm font-bold text-white {{ in_array($confirmActionType, ['purge_queue', 'purge_apify_queue']) ? 'bg-rose-600 hover:bg-rose-700' : 'bg-[#1fa387] hover:bg-[#15876f]' }} rounded-xl transition shadow-sm" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="executeConfirmAction">Ya, Lanjutkan</span>
+                        <span wire:loading wire:target="executeConfirmAction" class="flex items-center gap-2">
+                            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Memproses...
+                        </span>
+                    </button>
+                    <button type="button" wire:click="closeConfirmModal" class="w-full px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <!-- Modal Antrean Redis (Large Modal, Body Scrollable) -->
     @if($showRedisQueueModal)
@@ -728,7 +737,8 @@
                     </div>
 
                 </div>
-@endif
+            </div>
+    @endif
 
     <!-- Modal Antrean Apify (Large Modal, Body Scrollable, Tinggi Fix) -->
     @if($showApifyQueueModal)
@@ -853,19 +863,20 @@
 @endif
                 </div>
 
-                <!-- Modal Footer -->
-                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
-                    <button
-                        type="button"
-                        wire:click="closeApifyQueueModal"
-                        class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
-                    >
-                        Tutup
-                    </button>
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+                        <button
+                            type="button"
+                            wire:click="closeApifyQueueModal"
+                            class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
+                        >
+                            Tutup
+                        </button>
+                    </div>
                 </div>
-                </div>
-                </template>
-@endif
+            </div>
+        </template>
+    @endif
 
     <style>
         /* ── Mobile Layout Optimization for System Health Audit Modal ── */
