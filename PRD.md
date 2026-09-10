@@ -185,9 +185,12 @@ Sebelum mengeksekusi perintah terminal atau mengedit kode:
 1. **Workspace Terkunci**: Wajib bekerja hanya di `/Users/unity/Documents/proyek baru/` (bukan folder lain atau remote server).
 2. **Dilarang Mengubah Skema Database**: Dilarang menjalankan migrasi yang merusak skema tanpa persetujuan eksplisit user.
 3. **Verifikasi Fisik Sebelum Menjawab**: Dilarang menyimpulkan file/fitur ada atau tidak ada tanpa verifikasi langsung menggunakan `view_file` atau `grep_search`.
-4. **Wajib Memperbarui Catatan Progres**: Setiap selesai melakukan task, AI **wajib** mencatat ringkasan perubahan di Bagian 6 dokumen ini agar AI berikutnya langsung tersinkronisasi.
+4. **WAJIB MELAKUKAN QA SETELAH SETIAP PERBAIKAN**: Dilarang hanya mengklaim selesai. Setiap perbaikan kode/fitur wajib diuji secara nyata (PHP linting `php -l`, simulasi eksekusi terminal, atau test live di dalam container `media_intelligent_container`).
+5. **WAJIB MENDOKUMENTASIKAN HASIL QA KE BAB 7**: Seluruh parameter uji, skenario, dan status kelulusan (PASSED/FAILED) wajib ditulis lengkap di Bab 7 (Laporan Hasil Verifikasi QA).
+6. **Wajib Memperbarui Catatan Progres**: Setiap selesai melakukan task dan QA, AI **wajib** mencatat ringkasan perubahan di Bagian 6 dokumen ini agar AI berikutnya langsung tersinkronisasi.
 
 ---
+
 
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
@@ -201,8 +204,10 @@ Sebelum mengeksekusi perintah terminal atau mengedit kode:
 - [2026-09-10]: Perbaikan error PostgreSQL `column ai_analysis_results.is_noise does not exist` di dashboard dengan menjalankan migrasi tertunda (`2026_08_09_002149_add_quality_gate_fields_to_ai_analysis_results_table`) via `php artisan migrate --force` di container lokal. Kolom `is_noise`, `noise_reason`, `subjects`, dan `quality_confidence` kini aktif dan query dashboard berjalan normal.
 - [2026-09-10]: Analisis dan dokumentasi menyeluruh terhadap arsitektur Menu Penyebutan (Mentions Feed SQL Union, Quality Gate Anti-Noise & Selesai Komentar, Widget Jaringan Topik/Aktor, serta Mesin Filter Panel terpusat) dicatat resmi pada PRD Bagian 3.7.
 - [2026-09-10]: Audit mendalam, verifikasi stabilitas query, dan perbaikan halaman Analisis (Executive View, KPI Metrics, Distribusi Saluran Media, Komparasi Sentimen Sosmed vs Berita, serta Grafik Tren Vektor Spline) dicatat resmi pada PRD Bagian 3.8.
+- [2026-09-10]: Formalisasi aturan mutlak wajib QA dan dokumentasi: Setiap AI yang melakukan perbaikan kode diwajibkan melakukan pengetesan fisik nyata (QA), mencatat skenario dan hasilnya di Bab 7, serta memperbarui log Bab 6 sebelum mengakhiri sesi; dikunci di PRD Bagian 5.3 dan AI_HANDOFF_INSTRUCTIONS.md.
 
 ---
+
 
 
 

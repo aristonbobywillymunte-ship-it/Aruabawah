@@ -41,7 +41,14 @@ Repositori ini telah mengintegrasikan modul skill resmi di `.ai/skills/`:
 
 ---
 
-## 5. Larangan Keras (Non-Negotiable Guardrails)
+## 5. Larangan Keras & Kewajiban Mutlak (Non-Negotiable Guardrails)
 1. **Dilarang Mengubah Database Schema** tanpa instruksi eksplisit user.
 2. **Dilarang Berhalusinasi**: Jangan berasumsi file ada atau tidak ada tanpa menjalankan tool `view_file` atau `grep_search`.
-3. **Wajib Memperbarui Log Progress**: Setelah menyelesaikan pekerjaan, AI **wajib** mencatat ringkasan perubahan di file `PRD.md` Bagian 6 sebelum mengakhiri sesi.
+3. **WAJIB MELAKUKAN QA SETELAH SETIAP PERBAIKAN**:
+   - Setiap AI yang melakukan perbaikan kode/fitur **DILARANG HANYA MENGKLAIM SELESAI**.
+   - Wajib menjalankan verifikasi fisik langsung (PHP linting `php -l`, simulasi eksekusi terminal, atau verifikasi di dalam docker container `media_intelligent_container`).
+4. **WAJIB MENCATAT HASIL QA KE PRD BAB 7**:
+   - Seluruh hasil pengetesan, skenario uji, parameter, dan status kelulusan (PASSED/FAILED) **wajib didokumentasikan di `PRD.md` Bab 7 (Laporan Hasil Verifikasi QA)**.
+5. **WAJIB MEMPERBARUI LOG PROGRESS (BAB 6)**:
+   - Setelah QA selesai dan dicatat, AI wajib memperbarui kronologi di `PRD.md` Bagian 6 sebelum mengakhiri sesi/merespon user.
+
