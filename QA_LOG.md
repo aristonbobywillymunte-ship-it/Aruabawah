@@ -1,5 +1,13 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-47] Penyembunyian & Proteksi Tombol Jalankan Scraping Manual untuk Akun Klien
+* **Konteks**: User meminta agar tombol "Jalankan Scraping Sekarang" (trigger scraping manual) dihilangkan untuk peran klien (`client`), karena scraping klien harus berjalan otomatis murni mengikuti jadwal scheduler paket yang telah ditetapkan.
+* **Perubahan**:
+  1. **Blade UI Guard**: Membungkus tombol aksi scraping manual pada kartu proyek di `resources/views/components/⚡projects-list.blade.php` dengan kondisional `@if(!$authUser->isClient()) ... @endif`, sehingga tombol play/jalankan scraping tidak terlihat oleh akun klien.
+  2. **Backend Guard Protektif**: Menambahkan proteksi pada method `confirmRunScraping($id)` dan `runScraping($id)` untuk memeriksa `if (auth()->user()?->isClient())`. Jika ada permintaan injeksi dari klien, request langsung ditolak dengan pesan error notifikasi.
+* **QA fisik**: `php -l` lulus pada `resources/views/components/⚡projects-list.blade.php`, `docker exec media_intelligent_container php artisan view:clear` sukses (Compiled views cleared).
+* **Status**: PASSED.
+
 ### [QA-20260911-46] Pemulihan Render Kolom Jam Proyek Berdasarkan Alokasi Pasti Paket
 * **Konteks**: User mendapati tampilan form proyek di Step 2 hanya memunculkan teks informasi *"Jumlah kolom jam otomatis mengikuti kuota paket (2x sehari)..."* beserta tombol *"Gunakan Jadwal Default Paket / Kosongkan Semua"*, namun input kotak waktu (`<input type="time">`) tidak muncul karena loop sebelumnya mengiterasi array `$news_run_times_override` yang bernilai kosong (`[]`).
 * **Perubahan**:

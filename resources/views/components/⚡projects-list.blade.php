@@ -114,6 +114,13 @@ new class extends Component
 
     public function runScraping($id): void
     {
+        if (auth()->user()?->isClient()) {
+            $this->showConfirmModal = false;
+            $this->resetConfirmState();
+            $this->notifyProjectAction('Klien tidak memiliki izin untuk menjalankan scraping manual.', 'error');
+            return;
+        }
+
         $project = Project::accessibleBy(auth()->user())->findOrFail($id);
         BootstrapNewProjectScrapingJob::dispatch($project->id);
         $this->showConfirmModal = false;
@@ -628,6 +635,11 @@ new class extends Component
 
     public function confirmRunScraping($id)
     {
+        if (auth()->user()?->isClient()) {
+            $this->notifyProjectAction('Klien tidak memiliki akses untuk menjalankan scraping manual.', 'error');
+            return;
+        }
+
         $project = Project::accessibleBy(auth()->user())->findOrFail($id);
 
         $this->confirmAction = 'run_scraping';
@@ -1144,7 +1156,8 @@ new class extends Component
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        {{-- Scraping Button --}}
+                                        {{-- Scraping Button (Hanya tampil untuk Admin/Non-Client) --}}
+                                        @if(!$authUser->isClient())
                                         <button
                                             wire:click="confirmRunScraping({{ $project['id'] }})"
                                             wire:loading.attr="disabled"
@@ -1155,6 +1168,7 @@ new class extends Component
                                             <span wire:loading.remove wire:target="confirmRunScraping({{ $project['id'] }})" class="material-symbols-outlined text-[18px]">play_circle</span>
                                             <span wire:loading wire:target="confirmRunScraping({{ $project['id'] }})" class="material-symbols-outlined text-[18px] animate-spin text-emerald-500">progress_activity</span>
                                         </button>
+                                        @endif
 
                                         {{-- Edit Button --}}
                                         @php

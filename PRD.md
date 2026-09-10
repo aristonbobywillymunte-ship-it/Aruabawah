@@ -810,5 +810,13 @@ Paket adalah acuan fundamental alokasi operasional scraping yang diturunkan ke p
 3. **Integritas Acuan Sistem**:
    - Jam default dan kuota harian yang disimpan admin menjadi acuan baku yang otomatis diturunkan ke seluruh form pembuatan/pengeditan proyek user dan klien.
 
+## Bab 7.39 — Penyembunyian & Proteksi Tombol Scraping Manual untuk Akun Klien
 
+### Latar Belakang
+Pada kartu proyek di dashboard daftar proyek (`⚡projects-list.blade.php`), terdapat tombol aksi cepat *"Jalankan Scraping Sekarang"* yang memicu scraping on-demand (portal & medsos). Untuk akun dengan peran klien (`client`), scraping harus berjalan secara otomatis dan terkontrol murni mengikuti jadwal scheduler paket yang telah ditentukan oleh administrator. Pemicuan scraping manual secara bebas oleh klien berpotensi menguras kuota API/Apify dan menyalahi alokasi operasional.
 
+### Perubahan
+1. **Blade UI Guard**:
+   - Membungkus tombol *"Jalankan Scraping Sekarang"* pada kartu proyek dengan pengecekan role `@if(!$authUser->isClient()) ... @endif`. Akun klien tidak lagi melihat tombol play trigger scraping manual.
+2. **Backend Protection**:
+   - Menambahkan guard protektif di Livewire method `confirmRunScraping($id)` dan `runScraping($id)`. Jika ada request ilegal dari klien (misalnya via manipulasi payload Livewire), eksekusi dibatalkan seketika dan menampilkan notifikasi kesalahan.
