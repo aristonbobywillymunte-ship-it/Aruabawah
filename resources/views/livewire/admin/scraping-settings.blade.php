@@ -2,11 +2,19 @@
     <!-- Header Section -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-3">
-            <button 
-                wire:click="openEditModal" 
-                class="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm cursor-pointer"
+            <button
+                wire:click="openEditModal"
+                wire:loading.attr="disabled"
+                wire:target="openEditModal"
+                class="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-60"
             >
-                <span class="material-symbols-outlined text-[18px]">settings</span>
+                <span wire:loading.remove wire:target="openEditModal" class="material-symbols-outlined text-[18px]">settings</span>
+                <span wire:loading wire:target="openEditModal" class="flex items-center justify-center">
+                    <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </span>
                 <span>Edit Konfigurasi</span>
             </button>
         </div>
@@ -32,11 +40,19 @@
                         <span class="text-[11px] font-bold text-slate-700">Master Scraping Otomatis</span>
                         <p class="text-[10px] text-slate-400">Kontrol utama seluruh scraping otomatis.</p>
                     </div>
-                    <button 
-                        wire:click="toggleStatus" 
-                        class="inline-flex h-8 items-center gap-1.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 px-3.5 text-[11px] font-bold transition shadow-sm cursor-pointer"
+                    <button
+                        wire:click="toggleStatus"
+                        wire:loading.attr="disabled"
+                        wire:target="toggleStatus"
+                        class="inline-flex h-8 items-center gap-1.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 px-3.5 text-[11px] font-bold transition shadow-sm cursor-pointer disabled:opacity-60"
                     >
-                        <span>{{ $setting->is_active ? 'ON' : 'OFF' }}</span>
+                        <span wire:loading.remove wire:target="toggleStatus">{{ $setting->is_active ? 'ON' : 'OFF' }}</span>
+                        <span wire:loading wire:target="toggleStatus" class="flex items-center justify-center">
+                            <svg class="animate-spin h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
                     </button>
                 </div>
                 <div class="flex items-center justify-between gap-3">
@@ -72,7 +88,7 @@
         <!-- Card 2: Discovery Intervals -->
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between text-left">
             <div>
-                <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">Interval Pencarian & Perayapan</h2>
+                <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">Interval Pencarian &amp; Perayapan</h2>
                 <div class="space-y-4">
                     <div class="flex justify-between items-center border-b border-slate-100 pb-2">
                         <span class="text-xs font-semibold text-slate-500">Google News Discovery</span>
@@ -90,7 +106,7 @@
         <!-- Card 3: Scraping Rules & Limits -->
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between text-left">
             <div>
-                <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">Aturan & Limit Crawler</h2>
+                <h2 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">Aturan &amp; Limit Crawler</h2>
                 <div class="space-y-3">
                     <div class="flex justify-between items-center border-b border-slate-100 pb-2">
                         <span class="text-xs font-semibold text-slate-500">Limit per Run</span>
@@ -113,94 +129,120 @@
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden text-left p-6 space-y-4">
         <h2 class="text-sm font-bold text-slate-800">Catatan Konfigurasi Pipeline</h2>
         <p class="text-xs text-slate-500 leading-relaxed">
-            Semua link berita yang ditemukan dari Google News maupun Portal Lokal (Manual) akan disaring terlebih dahulu ke dalam tabel **Candidate Links**. 
-            Setelah lolos seleksi kata kunci, tautan terpilih dipindahkan ke **Scraping Items** untuk diambil oleh *Scraper Worker* dengan limit maksimal **{{ $setting->limit_per_run }}** artikel per proses jalan.
+            Semua link berita yang ditemukan dari Google News maupun Portal Lokal (Manual) akan disaring terlebih dahulu ke dalam tabel <strong>Candidate Links</strong>.
+            Setelah lolos seleksi kata kunci, tautan terpilih dipindahkan ke <strong>Scraping Items</strong> untuk diambil oleh <em>Scraper Worker</em> dengan limit maksimal <strong>{{ $setting->limit_per_run }}</strong> artikel per proses jalan.
         </p>
     </div>
 
     <!-- Edit Configuration Modal -->
-    @if($showEditModal)
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
-            <div class="w-full max-w-lg overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain">
-                <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div wire:key="scraping-settings-edit-modal"
+         x-data="{ get open() { return $wire.showEditModal } }"
+         x-show="open"
+         x-cloak
+         wire:click.self="$set('showEditModal', false)"
+         x-init="
+             $watch('open', val => {
+                 if (val) {
+                     document.body.style.overflow = 'hidden';
+                     document.documentElement.style.overflow = 'hidden';
+                 } else {
+                     document.body.style.overflow = '';
+                     document.documentElement.style.overflow = '';
+                 }
+             })
+         "
+         class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
+        <div class="w-full max-w-lg overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain">
+            <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Pengaturan Sistem</p>
+                    <h2 class="text-base font-black text-slate-900 mt-0.5">Edit Parameter Scraping</h2>
+                </div>
+                <button type="button" wire:click="$set('showEditModal', false)" wire:loading.attr="disabled" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer">
+                    <span class="material-symbols-outlined text-[20px] block">close</span>
+                </button>
+            </div>
+            
+            <form wire:submit.prevent="save" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+                <div class="grid gap-4 sm:grid-cols-2">
                     <div>
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#1fa387]">Pengaturan Sistem</p>
-                        <h2 class="text-base font-black text-slate-900 mt-0.5">Edit Parameter Scraping</h2>
+                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Interval Google News (Menit)</label>
+                        <input wire:model="google_news_interval" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                        @error('google_news_interval') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                     </div>
-                    <button type="button" wire:click="$set('showEditModal', false)" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer">
-                        <span class="material-symbols-outlined text-[20px] block">close</span>
+                    <div>
+                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Interval Portal Lokal Manual (Menit)</label>
+                        <input wire:model="portal_crawling_interval" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                        @error('portal_crawling_interval') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-1">
+                    <div>
+                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Limit Artikel per Run</label>
+                        <input wire:model="limit_per_run" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                        @error('limit_per_run') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div>
+                        <label class="mb-1.5 block text-xs font-bold text-slate-700">HTTP Timeout (Detik)</label>
+                        <input wire:model="timeout_seconds" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                        @error('timeout_seconds') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Batas Percobaan Ulang</label>
+                        <input wire:model="retry_limit" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                        @error('retry_limit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-xs font-bold text-slate-700">Delay Retry (Menit)</label>
+                        <input wire:model="retry_delay_minutes" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
+                        @error('retry_delay_minutes') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" wire:model="is_active" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-700">Master Scraping Otomatis</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" wire:model="google_news_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-700">Google News</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" wire:model="manual_portal_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-700">Portal Manual</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" wire:model="apify_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-700">Apify / Sosial Media</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" wire:model="enable_realtime" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
+                        <span class="text-xs font-bold text-slate-700">Aktifkan Fitur Real-time (Laravel Reverb)</span>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button type="button" wire:click="$set('showEditModal', false)" wire:loading.attr="disabled" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
+                    <button type="submit"
+                        wire:loading.attr="disabled"
+                        wire:target="save"
+                        class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-60 inline-flex items-center gap-2">
+                        <span wire:loading.remove wire:target="save">Simpan Perubahan</span>
+                        <span wire:loading wire:target="save" class="flex items-center gap-2">
+                            <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+                            Menyimpan...
+                        </span>
                     </button>
                 </div>
-                
-                <form wire:submit.prevent="save" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Interval Google News (Menit)</label>
-                            <input wire:model="google_news_interval" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
-                            @error('google_news_interval') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Interval Portal Lokal Manual (Menit)</label>
-                            <input wire:model="portal_crawling_interval" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
-                            @error('portal_crawling_interval') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-1">
-                        <div>
-                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Limit Artikel per Run</label>
-                            <input wire:model="limit_per_run" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
-                            @error('limit_per_run') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-3">
-                        <div>
-                            <label class="mb-1.5 block text-xs font-bold text-slate-700">HTTP Timeout (Detik)</label>
-                            <input wire:model="timeout_seconds" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
-                            @error('timeout_seconds') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Batas Percobaan Ulang</label>
-                            <input wire:model="retry_limit" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
-                            @error('retry_limit') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Delay Retry (Menit)</label>
-                            <input wire:model="retry_delay_minutes" type="number" class="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#1fa387] transition">
-                            @error('retry_delay_minutes') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-
-                    <div class="space-y-2 pt-2">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" wire:model="is_active" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
-                            <span class="text-xs font-bold text-slate-700">Master Scraping Otomatis</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" wire:model="google_news_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
-                            <span class="text-xs font-bold text-slate-700">Google News</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" wire:model="manual_portal_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
-                            <span class="text-xs font-bold text-slate-700">Portal Manual</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" wire:model="apify_enabled" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
-                            <span class="text-xs font-bold text-slate-700">Apify / Sosial Media</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" wire:model="enable_realtime" class="rounded border-slate-300 text-[#1fa387] focus:ring-[#1fa387]/20 w-4 h-4">
-                            <span class="text-xs font-bold text-slate-700">Aktifkan Fitur Real-time (Laravel Reverb)</span>
-                        </label>
-                    </div>
-
-                    <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                        <button type="button" wire:click="$set('showEditModal', false)" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
-                        <button type="submit" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer">Simpan Perubahan</button>
-                    </div>
-                </form>
-            </div>
+            </form>
         </div>
-    @endif
+    </div>
 </div>

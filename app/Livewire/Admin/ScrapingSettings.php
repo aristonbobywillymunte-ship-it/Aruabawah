@@ -22,8 +22,9 @@ class ScrapingSettings extends Component
 
     // UI state
     public bool $showEditModal = false;
-    public ?string $flashMessage = null;
-    public ?string $flashType = null;
+
+    // Internal cache — hindari N+1 query DB per siklus render
+    protected ?ScrapingSetting $settingCache = null;
 
     protected function adminOnly(): void
     {
@@ -32,23 +33,26 @@ class ScrapingSettings extends Component
 
     protected function setting(): ScrapingSetting
     {
-        return ScrapingSetting::firstOrCreate(['id' => 1]);
+        if ($this->settingCache === null) {
+            $this->settingCache = ScrapingSetting::firstOrCreate(['id' => 1]);
+        }
+        return $this->settingCache;
     }
 
     protected function rules(): array
     {
         return [
-            'google_news_interval' => ['required', 'integer', 'min:5', 'max:1440'],
-            'portal_crawling_interval' => ['required', 'integer', 'min:5', 'max:1440'],
-            'limit_per_run' => ['required', 'integer', 'min:1', 'max:1000'],
-            'timeout_seconds' => ['required', 'integer', 'min:5', 'max:300'],
-            'retry_limit' => ['required', 'integer', 'min:0', 'max:10'],
-            'retry_delay_minutes' => ['required', 'integer', 'min:1', 'max:180'],
-            'is_active' => ['boolean'],
-            'google_news_enabled' => ['boolean'],
-            'manual_portal_enabled' => ['boolean'],
-            'apify_enabled' => ['boolean'],
-            'enable_realtime' => ['boolean'],
+            'google_news_interval'    => ['required', 'integer', 'min:5', 'max:1440'],
+            'portal_crawling_interval'=> ['required', 'integer', 'min:5', 'max:1440'],
+            'limit_per_run'           => ['required', 'integer', 'min:1', 'max:1000'],
+            'timeout_seconds'         => ['required', 'integer', 'min:5', 'max:300'],
+            'retry_limit'             => ['required', 'integer', 'min:0', 'max:10'],
+            'retry_delay_minutes'     => ['required', 'integer', 'min:1', 'max:180'],
+            'is_active'               => ['boolean'],
+            'google_news_enabled'     => ['boolean'],
+            'manual_portal_enabled'   => ['boolean'],
+            'apify_enabled'           => ['boolean'],
+            'enable_realtime'         => ['boolean'],
         ];
     }
 
@@ -60,7 +64,6 @@ class ScrapingSettings extends Component
 
     public function render()
     {
-        $this->adminOnly();
         return view('livewire.admin.scraping-settings', [
             'setting' => $this->setting(),
         ]);
@@ -69,17 +72,17 @@ class ScrapingSettings extends Component
     public function loadSettings(): void
     {
         $setting = $this->setting();
-        $this->google_news_interval = (int) ($setting->google_news_interval ?? 5);
-        $this->portal_crawling_interval = (int) ($setting->portal_crawling_interval ?? 720);
-        $this->limit_per_run = (int) ($setting->limit_per_run ?? 50);
-        $this->timeout_seconds = (int) ($setting->timeout_seconds ?? 30);
-        $this->retry_limit = (int) ($setting->retry_limit ?? 3);
-        $this->retry_delay_minutes = (int) ($setting->retry_delay_minutes ?? 10);
-        $this->is_active = (bool) ($setting->is_active ?? true);
-        $this->google_news_enabled = (bool) ($setting->google_news_enabled ?? true);
-        $this->manual_portal_enabled = (bool) ($setting->manual_portal_enabled ?? true);
-        $this->apify_enabled = (bool) ($setting->apify_enabled ?? true);
-        $this->enable_realtime = $setting->enable_realtime ?? false;
+        $this->google_news_interval    = (int) ($setting->google_news_interval ?? 5);
+        $this->portal_crawling_interval= (int) ($setting->portal_crawling_interval ?? 720);
+        $this->limit_per_run           = (int) ($setting->limit_per_run ?? 50);
+        $this->timeout_seconds         = (int) ($setting->timeout_seconds ?? 30);
+        $this->retry_limit             = (int) ($setting->retry_limit ?? 3);
+        $this->retry_delay_minutes     = (int) ($setting->retry_delay_minutes ?? 10);
+        $this->is_active               = (bool) ($setting->is_active ?? true);
+        $this->google_news_enabled     = (bool) ($setting->google_news_enabled ?? true);
+        $this->manual_portal_enabled   = (bool) ($setting->manual_portal_enabled ?? true);
+        $this->apify_enabled           = (bool) ($setting->apify_enabled ?? true);
+        $this->enable_realtime         = $setting->enable_realtime ?? false;
     }
 
     public function openEditModal(): void
@@ -96,18 +99,21 @@ class ScrapingSettings extends Component
 
         $setting = $this->setting();
         $setting->update([
-            'google_news_interval' => $this->google_news_interval,
-            'portal_crawling_interval' => $this->portal_crawling_interval,
-            'limit_per_run' => $this->limit_per_run,
-            'timeout_seconds' => $this->timeout_seconds,
-            'retry_limit' => $this->retry_limit,
-            'retry_delay_minutes' => $this->retry_delay_minutes,
-            'is_active' => $this->is_active,
-            'google_news_enabled' => $this->google_news_enabled,
-            'manual_portal_enabled' => $this->manual_portal_enabled,
-            'apify_enabled' => $this->apify_enabled,
-            'enable_realtime' => $this->enable_realtime,
+            'google_news_interval'    => $this->google_news_interval,
+            'portal_crawling_interval'=> $this->portal_crawling_interval,
+            'limit_per_run'           => $this->limit_per_run,
+            'timeout_seconds'         => $this->timeout_seconds,
+            'retry_limit'             => $this->retry_limit,
+            'retry_delay_minutes'     => $this->retry_delay_minutes,
+            'is_active'               => $this->is_active,
+            'google_news_enabled'     => $this->google_news_enabled,
+            'manual_portal_enabled'   => $this->manual_portal_enabled,
+            'apify_enabled'           => $this->apify_enabled,
+            'enable_realtime'         => $this->enable_realtime,
         ]);
+
+        // Reset cache setelah update agar render berikutnya ambil data fresh
+        $this->settingCache = null;
 
         $this->showEditModal = false;
         $this->notify('success', 'Konfigurasi scraping berhasil diperbarui.');
@@ -121,16 +127,17 @@ class ScrapingSettings extends Component
         $setting->save();
         $this->is_active = $setting->is_active;
 
+        // Reset cache agar card status di-render ulang dengan data fresh
+        $this->settingCache = null;
+
         $this->notify('success', 'Status aktivitas scraping berhasil diperbarui.');
     }
 
     protected function notify(string $type, string $message): void
     {
-        $this->flashType = $type;
-        $this->flashMessage = $message;
         $payload = [
-            'type' => $type,
-            'title' => $message,
+            'type'    => $type,
+            'title'   => $message,
             'message' => '',
         ];
 

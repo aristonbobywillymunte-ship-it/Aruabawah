@@ -1,6 +1,30 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-62] Fix 5 Bug Halaman Scraping Settings (/admin/scraping-settings)
+* **Konteks**: Analisa halaman `http://localhost/admin/scraping-settings` menemukan 5 bug: (1) 3 tombol tanpa `wire:loading` guard, (2) modal pakai `@if` rentan backdrop tidak muncul, (3) modal tanpa `wire:key`/`wire:click.self`, (4) teks markdown literal `**bold**` tidak render, (5) `setting()` dipanggil 6x per siklus + dead properties `$flashMessage`/`$flashType`.
+* **Perubahan**:
+  1. `app/Livewire/Admin/ScrapingSettings.php`:
+     - Hapus dead properties `$flashMessage`, `$flashType`
+     - Hapus redundant `adminOnly()` di `render()`
+     - Tambah `$settingCache` — query `ScrapingSetting::firstOrCreate` hanya 1x per request, reset setelah `save()` & `toggleStatus()`
+     - Hapus dead `notify()` assignments ke flash props
+  2. `resources/views/livewire/admin/scraping-settings.blade.php`:
+     - Tombol "Edit Konfigurasi": tambah `wire:loading.attr="disabled"` + spinner SVG
+     - Tombol "toggleStatus": tambah `wire:loading.attr="disabled"` + spinner SVG
+     - Tombol "Simpan Perubahan": tambah `wire:loading.attr="disabled"` + spinner + teks "Menyimpan..."
+     - Modal: `@if($showEditModal)` → `x-show="open"` + `x-cloak` + `$wire.showEditModal` getter
+     - Modal: tambah `wire:key="scraping-settings-edit-modal"`, `wire:click.self`, `z-[9999]`
+     - Scroll-lock: `$watch('open', ...)` reliabel
+     - Teks pipeline: `**Candidate Links**` → `<strong>Candidate Links</strong>` (HTML bold nyata)
+* **Hasil Pengujian Fisik**:
+  - `php -l` PHP: No syntax errors detected ✅
+  - `php -l` blade: No syntax errors detected ✅
+  - Div balance: 43 open / 43 close ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
 ### [QA-20260911-61] Fix Backdrop Modal Tidak Terlihat — Apify Financial Report
+
 * **Konteks**: Modal "Hasil Pengambilan Komentar/Postingan" membuka tanpa backdrop gelap. Root cause: `@if($showItemsModal)` membuat elemen baru di setiap render — Livewire 3 morph DOM menghapus & membuat ulang elemen sehingga Alpine `x-init` scroll-lock tidak terpanggil reliabel, dan elemen `fixed inset-0` bisa gagal render backdrop jika DOM lifecycle tidak stabil.
 * **Perubahan**:
   1. `resources/views/livewire/admin/apify-financial-report.blade.php`:
