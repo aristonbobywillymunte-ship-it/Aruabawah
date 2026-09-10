@@ -114,10 +114,14 @@ Dokumen ini adalah **Source of Truth (Pusat Kebenaran)** untuk seluruh arsitektu
   - **Date Range Selector**: Modal kalender dengan preset instan (Harian, Mingguan, Bulanan, Tahunan).
   - **Multi-Source Checklist**: Checklist platform `[Instagram, TikTok, Facebook, News]` dilengkapi counter jumlah data real-time.
   - **Sentiment Toggle**: Checklist status sentimen AI `[positive, neutral, negative]`.
-  - **Sorting Selector**: Dropdown pengurutan linimasa (`newest` vs `popular`).
+  - **Sorting Selector (Terbaru vs Terpopuler)**:
+    - **Yang Terbaru (`newest`)**: Mengurutkan linimasa secara kronologis murni berdasarkan waktu rilis (`published_at DESC`).
+    - **Paling Populer (`popular`)**: Melakukan join ke `ai_analysis_results` dan mengurutkan berdasarkan pembaca efektif terbanyak (`COALESCE(ai_pop.project_estimated_readers, 0) DESC`), lalu tie-breaker `published_at DESC`.
+    - **State Reset**: Mengubah sort otomatis me-reset batas data ke 5 item (`$this->limit = 5`) dan membersihkan cache buffer scroll via `$this->resetPage()`.
   - **Desain Responsif**: Sticky panel di desktop (`lg:block`) dan floating slide-over drawer di layar seluler (`lg:hidden`).
 
 ---
+
 
 
 
