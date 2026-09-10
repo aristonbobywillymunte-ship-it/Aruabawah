@@ -508,3 +508,28 @@ Setiap entri pengujian wajib mencakup komponen berikut:
 
 
 
+---
+
+### [QA-20260910-19] Penambahan Tombol "Kembali ke Proyek" di Halaman Manajemen Klien (khusus role: user)
+* **Tanggal & Waktu**: 10 September 2026, 20:56 WIB
+* **Konteks Masalah**:
+  User dengan role `user` (bukan admin) dapat mengakses halaman `/admin/clients` melalui sidebar yang hanya menampilkan menu "Manajemen Klien" untuk mereka. Tidak ada jalur navigasi kembali ke halaman Proyek (`/`) dari halaman ini, menyebabkan pengalaman navigasi buntu bagi role `user`.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/livewire/admin/client-management/client-list.blade.php`
+* **Environment Pengujian**:
+  - Docker Container: `media_intelligent_container` (PHP 8.4 CLI, Laravel Livewire 3)
+* **Parameter & Hasil Pengujian**:
+  1. **Tombol "Kembali ke Proyek" kondisional**:
+     - Menambahkan blok `@if(auth()->user()->isUser())` di atas toolbar utama.
+     - Tombol menggunakan `wire:navigate` dan link ke `route('home')` (halaman projects list untuk non-admin).
+     - Secara otomatis tersembunyi untuk role `admin` (karena `isUser()` hanya true untuk role `user`).
+     - Role `client` sudah diblokir oleh `abort_if(...isClient(), 403)` di `ClientList.php::mount()` sehingga tidak dapat mengakses halaman ini sama sekali.
+  2. **Verifikasi Role Method**:
+     - `App\Models\User::where('role','user')->first()->isUser()` → `TRUE` ✅
+     - `App\Models\User::where('role','admin')->first()->isAdmin()` → `TRUE` ✅
+  3. **Physical Runtime Verification**:
+     - PHP Lint: No syntax errors detected ✅
+     - View Clear: `php artisan view:clear` → Clear successfully ✅
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+

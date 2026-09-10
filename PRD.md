@@ -507,6 +507,17 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
        - Client Create: **7.017 bytes**, exit code 0.
      - **Status**: **PASSED**.
 
+### 7.19 Tombol Navigasi "Kembali ke Proyek" pada Halaman Manajemen Klien (10 September 2026)
+* **Fitur**: Navigasi kontekstual bagi role `user` di halaman `/admin/clients`.
+* **Latar Belakang**: User dengan role `user` (bukan admin, bukan client) memiliki akses sidebar terbatas yang hanya menampilkan menu "Manajemen Klien". Tidak tersedianya tombol kembali ke halaman utama (daftar proyek) membuat navigasi menjadi buntu.
+* **Solusi yang Diimplementasikan**:
+  - Menambahkan tombol `← Kembali ke Proyek` di bagian atas komponen `client-list.blade.php`, tepat di atas toolbar search & tambah klien.
+  - Tombol bersifat kondisional menggunakan directive Blade `@if(auth()->user()->isUser())` sehingga hanya muncul untuk role `user`. Admin tidak melihat tombol ini (tidak butuh, memiliki akses sidebar penuh). Client tidak dapat akses halaman ini sama sekali (diblokir oleh `abort_if` di `mount()`).
+  - Menggunakan `wire:navigate` untuk transisi SPA tanpa full-page reload.
+  - Tujuan navigasi: `route('home')` → `/` → `view('welcome')` → `<livewire:projects-list />` (halaman daftar proyek untuk non-admin).
+* **File Diubah**: `resources/views/livewire/admin/client-management/client-list.blade.php`
+* **QA**: `[QA-20260910-19]` — PASSED.
+
 
 
 

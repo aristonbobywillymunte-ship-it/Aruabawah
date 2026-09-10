@@ -1,4 +1,15 @@
 <div class="space-y-4">
+    {{-- Back to Projects (hanya untuk role user biasa, bukan admin) --}}
+    @if(auth()->user()->isUser())
+        <div>
+            <a href="{{ route('home') }}" wire:navigate
+               class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-slate-500 hover:text-[#1fa387] hover:bg-[#1fa387]/5 text-xs font-bold transition-all">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                <span>Kembali ke Proyek</span>
+            </a>
+        </div>
+    @endif
+
     {{-- Unified Toolbar --}}
     <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div class="relative w-full sm:w-80">
