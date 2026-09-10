@@ -550,3 +550,15 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
   8. **Jadwal slot guard** — Input override hanya tampil jika `$portalSlots > 0` / `$socialSlots > 0`.
 * **File Diubah**: `resources/views/livewire/project-create.blade.php`
 * **QA**: `[QA-20260910-21]` — PASSED.
+
+### 7.22 Modernisasi Modal Konfirmasi & Pembersihan Slop Tombol Nonaktifkan Proyek (10 September 2026)
+* **Fitur**: Audit dan pembersihan slop antarmuka pada tombol aksi baris proyek dan modal konfirmasi aksi proyek di dashboard (`projects-list`).
+* **Latar Belakang**: Penggunaan ikon trash merah pada tombol nonaktifkan proyek memberikan kesan destruktif/penghapusan permanen, serta terdapat inkonsistensi penggunaan inline SVG dan spinner di komponen modal.
+* **Solusi yang Diimplementasikan**:
+  - Mengganti ikon tombol "Nonaktifkan Proyek" menjadi `do_not_disturb_on` (amber/oranye) untuk merefleksikan status deaktivasi monitoring tanpa menghapus data sumber.
+  - Menyelaraskan seluruh tombol aksi (Run Scraping, Edit, Nonaktifkan) ke sistem font icon `material-symbols-outlined`.
+  - Membedakan visual modal berdasarkan konteks aksi (`delete` menggunakan amber do_not_disturb_on, `force_delete` menggunakan rose delete_forever, `restore` menggunakan emerald restore, dll).
+  - Mengganti seluruh spinner animasi SVG dengan `progress_activity` yang seragam.
+  - Memperjelas label tombol konfirmasi menjadi kontekstual (*"Ya, Nonaktifkan"*, *"Ya, Hapus Permanen"*, *"Ya, Aktifkan"*, dsb).
+* **File Diubah**: `resources/views/components/⚡projects-list.blade.php`
+* **QA**: `[QA-20260910-22]` — PASSED.

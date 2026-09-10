@@ -1092,49 +1092,39 @@ new class extends Component
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <!-- Play/Scraping Button -->
-                                        <button 
+                                        {{-- Scraping Button --}}
+                                        <button
                                             wire:click="confirmRunScraping({{ $project['id'] }})"
                                             wire:loading.attr="disabled"
                                             wire:target="confirmRunScraping({{ $project['id'] }})"
                                             title="Jalankan Scraping Sekarang (Portal & Medsos)"
                                             class="text-slate-300 hover:text-emerald-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            <!-- Normal Icon (Play SVG) -->
-                                            <svg wire:loading.remove wire:target="confirmRunScraping({{ $project['id'] }})" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M8 5v14l11-7z"></path>
-                                            </svg>
-                                            <!-- Loading Spinner -->
-                                            <svg wire:loading wire:target="confirmRunScraping({{ $project['id'] }})" class="animate-spin w-4 h-4 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
+                                            <span wire:loading.remove wire:target="confirmRunScraping({{ $project['id'] }})" class="material-symbols-outlined text-[18px]">play_circle</span>
+                                            <span wire:loading wire:target="confirmRunScraping({{ $project['id'] }})" class="material-symbols-outlined text-[18px] animate-spin text-emerald-500">progress_activity</span>
                                         </button>
 
-                                        <!-- Edit Button -->
-                                        <button 
+                                        {{-- Edit Button --}}
+                                        <button
                                             wire:click="$dispatch('open-project-edit', { projectId: {{ $project['id'] }} })"
                                             title="Edit Proyek"
                                             class="text-slate-300 hover:text-blue-500 transition-colors cursor-pointer"
                                         >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                                            </svg>
+                                            <span class="material-symbols-outlined text-[18px]">edit</span>
                                         </button>
-                                        <!-- Delete Button - hidden for Clients without permission -->
+
+                                        {{-- Nonaktifkan Button — do_not_disturb_on, bukan trash (bukan hapus permanen) --}}
                                         @php
                                             $authUser = auth()->user();
                                             $canDeactivate = !$authUser->isClient() || optional($authUser->clientSettings)->can_delete_projects;
                                         @endphp
                                         @if($canDeactivate)
-                                        <button 
+                                        <button
                                             wire:click="confirmDeleteProject({{ $project['id'] }})"
                                             title="Nonaktifkan Proyek"
-                                            class="text-slate-300 hover:text-red-500 transition-colors cursor-pointer"
+                                            class="text-slate-300 hover:text-amber-500 transition-colors cursor-pointer"
                                         >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                                            </svg>
+                                            <span class="material-symbols-outlined text-[18px]">do_not_disturb_on</span>
                                         </button>
                                         @endif
                                     </div>
@@ -1431,47 +1421,64 @@ new class extends Component
             <!-- Confirm Project Action Modal -->
             @if($showConfirmModal)
                 <div
-                    x-data="{ show: true }"
-                    x-show="show"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
                     @keydown.escape.window="$wire.closeConfirmModal()"
                     class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
                 >
-                    <div 
+                    <div
                         @click.outside.stop="$wire.closeConfirmModal()"
                         class="bg-white rounded-3xl w-full max-w-sm shadow-xl border border-slate-100/50 overflow-hidden transform transition-all duration-300 scale-100 relative"
                     >
-                        <!-- Close Button (X) -->
-                        <button 
-                            type="button" 
-                            wire:click="closeConfirmModal" 
+                        {{-- Close Button --}}
+                        <button
+                            type="button"
+                            wire:click="closeConfirmModal"
                             wire:loading.attr="disabled"
                             class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 hover:bg-slate-50 p-1.5 rounded-full transition duration-150 cursor-pointer disabled:opacity-50"
                         >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path></svg>
+                            <span class="material-symbols-outlined text-[18px]">close</span>
                         </button>
 
-                        <!-- Top Header with soft icon -->
+                        {{-- Header icon — berbeda per aksi --}}
                         <div class="pt-8 pb-2 flex flex-col items-center justify-center">
-                            <div class="w-14 h-14 rounded-full {{ in_array($confirmAction, ['delete', 'force_delete'], true) ? 'bg-rose-50/60 text-rose-500' : 'bg-emerald-50/60 text-emerald-500' }} flex items-center justify-center">
-                                @if(in_array($confirmAction, ['delete', 'force_delete'], true))
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
-                                @else
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>
-                                @endif
-                            </div>
+                            @if($confirmAction === 'delete')
+                                {{-- Nonaktifkan: amber, do_not_disturb_on --}}
+                                <div class="w-14 h-14 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[28px]">do_not_disturb_on</span>
+                                </div>
+                            @elseif($confirmAction === 'force_delete')
+                                {{-- Hapus permanen: rose, delete_forever --}}
+                                <div class="w-14 h-14 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[28px]">delete_forever</span>
+                                </div>
+                            @elseif($confirmAction === 'restore')
+                                {{-- Pulihkan: emerald, restore --}}
+                                <div class="w-14 h-14 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[28px]">restore</span>
+                                </div>
+                            @elseif($confirmAction === 'run_scraping')
+                                {{-- Jalankan scraping: emerald, play_circle --}}
+                                <div class="w-14 h-14 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[28px]">play_circle</span>
+                                </div>
+                            @else
+                                {{-- Sync & lainnya: emerald, sync --}}
+                                <div class="w-14 h-14 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[28px]">sync</span>
+                                </div>
+                            @endif
                         </div>
 
-                        <!-- Modal Body -->
+                        {{-- Modal Body --}}
                         <div class="px-6 pb-6 pt-3 text-center space-y-2.5">
                             <h3 class="text-base font-sans font-black text-slate-800 tracking-tight">{{ $confirmTitle }}</h3>
                             <p class="text-sm font-bold text-slate-600">{{ $confirmProjectName }}</p>
                             <p class="text-[11px] text-slate-400 leading-relaxed px-1">{{ $confirmMessage }}</p>
                         </div>
-                        
-                        <!-- Actions Footer -->
+
+                        {{-- Actions Footer --}}
                         <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-100/60 flex gap-3">
                             <button
                                 type="button"
@@ -1485,17 +1492,21 @@ new class extends Component
                                 type="button"
                                 wire:click="runConfirmedProjectAction"
                                 wire:loading.attr="disabled"
-                                class="flex-1 py-2.5 {{ in_array($confirmAction, ['delete', 'force_delete'], true) ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-100' : 'bg-[#1fa387] hover:bg-[#1a8b73] shadow-emerald-100' }} text-white font-bold rounded-xl text-xs transition duration-150 active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                                wire:target="runConfirmedProjectAction"
+                                class="flex-1 py-2.5 font-bold rounded-xl text-xs transition duration-150 active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5
+                                    {{ $confirmAction === 'force_delete' ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-100' :
+                                       ($confirmAction === 'delete' ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-100' :
+                                       'bg-[#1fa387] hover:bg-[#1a8b73] text-white shadow-emerald-100') }}"
                             >
-                                <svg wire:loading wire:target="runConfirmedProjectAction" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <span wire:loading wire:target="runConfirmedProjectAction" class="material-symbols-outlined text-[15px] animate-spin">progress_activity</span>
                                 <span>
                                     {{ match($confirmAction) {
-                                        'delete' => 'Nonaktifkan',
-                                        'force_delete' => 'Hapus Permanen',
-                                        'restore' => 'Aktifkan',
+                                        'delete'       => 'Ya, Nonaktifkan',
+                                        'force_delete' => 'Ya, Hapus Permanen',
+                                        'restore'      => 'Ya, Aktifkan',
                                         'run_scraping' => 'Jalankan Scraping',
-                                        'sync_project' => 'Sinkronkan',
-                                        default => 'Konfirmasi'
+                                        'sync_project' => 'Ya, Sinkronkan',
+                                        default        => 'Konfirmasi'
                                     } }}
                                 </span>
                             </button>

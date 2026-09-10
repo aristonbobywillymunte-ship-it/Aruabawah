@@ -596,3 +596,35 @@ Setiap entri pengujian wajib mencakup komponen berikut:
   - Blade Render Test Step 2 (no package guard): **12.763 bytes**, exit code 0 ✅
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+---
+
+### [QA-20260910-22] Perbaikan Slop Tombol Nonaktifkan Proyek & Modernisasi Modal Konfirmasi Aksi
+* **Tanggal & Waktu**: 10 September 2026, 21:20 WIB
+* **Konteks Masalah**:
+  Audit pada tombol aksi proyek dan modal konfirmasi di `⚡projects-list.blade.php` menemukan:
+  1. Tombol "Nonaktifkan Proyek" menggunakan ikon tempat sampah (trash SVG) merah yang menyesatkan (menimbulkan asumsi data terhapus permanen), padahal aksinya adalah soft-delete/deaktivasi monitoring.
+  2. Tombol Run Scraping & Edit masih menggunakan raw SVG inline dengan spinner bawaan yang tidak seragam.
+  3. Header modal konfirmasi menggunakan icon trash rose untuk aksi 'delete', padahal harus dibedakan dari 'force_delete'.
+  4. Tombol aksi konfirmasi di modal menggunakan inline SVG spinner alih-alih `progress_activity`.
+  5. Close button modal menggunakan raw SVG X.
+  6. Redundant state `x-data="{ show: true }"` pada backdrop modal.
+* **Target Komponen Diperbaiki**:
+  - `resources/views/components/⚡projects-list.blade.php`
+* **Perbaikan yang Dilakukan**:
+  1. Mengganti ikon tombol Nonaktifkan Proyek dari trash SVG menjadi `<span class="material-symbols-outlined text-[18px]">do_not_disturb_on</span>` dengan warna hover amber yang ramah.
+  2. Mengganti tombol Run Scraping dan Edit dengan `material-symbols-outlined` (`play_circle`, `progress_activity`, `edit`).
+  3. Menstandarisasi header modal dengan visual icon yang relevan per-aksi:
+     - `delete` (Nonaktifkan): `do_not_disturb_on` (warna amber).
+     - `force_delete` (Hapus Permanen): `delete_forever` (warna rose).
+     - `restore` (Aktifkan): `restore` (warna emerald).
+     - `run_scraping` (Jalankan Scraping): `play_circle` (warna emerald).
+     - `sync_project` / default: `sync` (warna emerald).
+  4. Modernisasi tombol CTA konfirmasi dengan teks aksi yang lebih humanis (`Ya, Nonaktifkan`, `Ya, Hapus Permanen`, `Ya, Aktifkan`, `Ya, Sinkronkan`), state loading spinner `progress_activity`, serta color coding proporsional.
+  5. Close button diganti menggunakan `material-symbols-outlined: close`.
+* **Physical Runtime Verification**:
+  - PHP Lint: No syntax errors detected (`php -l`) ✅
+  - View Clear: `php artisan view:clear` → Clear successfully ✅
+  - Livewire Resolution Test: `ProjectsList` resolved successfully via tinker ✅
+* **Status**: **PASSED (100% Sukses)**
+* **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
