@@ -120,7 +120,26 @@ Dokumen ini adalah **Source of Truth (Pusat Kebenaran)** untuk seluruh arsitektu
     - **State Reset**: Mengubah sort otomatis me-reset batas data ke 5 item (`$this->limit = 5`) dan membersihkan cache buffer scroll via `$this->resetPage()`.
   - **Desain Responsif**: Sticky panel di desktop (`lg:block`) dan floating slide-over drawer di layar seluler (`lg:hidden`).
 
+### 3.8 Detail Halaman Analisis (Executive Analytics & Performance View)
+* **Arsitektur Halaman Analisis (`tab=analisis`)**:
+  - **Lazy Hydration**: Menggunakan `wire:init="loadAnalysis"` sehingga visual dashboard pertama kali terbuka langsung tanpa lag antrean hitung metrik berat.
+  - **Grid Indikator Kinerja Utama (KPI Metrics)**:
+    1. *Total Artikel Ditemukan*: Agregasi jumlah gabungan portal dan medsos yang lolos filter aktif.
+    2. *Total Jangkauan*: Akumulasi skor `project_estimated_readers` dari tabel `ai_analysis_results`.
+    3. *Interaksi Sosial*: Total Likes + Comments + Shares + Views lintas kanal media sosial.
+  - **Analisis Distribusi Saluran (Channel Breakdown)**:
+    - 4 Card Terdedikasi: **Instagram**, **TikTok**, **Facebook**, dan **Portal Berita**.
+    - Menampilkan volume penyebutan, jangkauan pembaca kanal, jumlah suka (*likes*), dan komentar publik secara terisolasi.
+  - **Komparasi Sentimen Emosional (Sosial Media vs Portal Berita)**:
+    - Menyajikan perbandingan rasio persentase dan bar visual 3 warna: Hijau (Positif), Abu-abu (Netral), dan Merah (Negatif).
+    - Memisahkan persepsi netizen di media sosial terhadap narasi jurnalis di portal berita resmi.
+  - **Grafik Tren Vektor Interaktif (Vector Spline Wave Chart)**:
+    - Menggunakan generator kurva matematika *Smooth Cubic Bezier Spline SVG* (`$getCurvePath`).
+    - Pilihan rentang waktu interaktif tanpa refresh halaman via Alpine.js: **Harian**, **Mingguan**, dan **Bulanan**.
+    - Interaktif hover tooltip yang membaca node titik koordinat `circle` data riil.
+
 ---
+
 
 
 
@@ -181,8 +200,10 @@ Sebelum mengeksekusi perintah terminal atau mengedit kode:
 - [2026-09-10]: Pengesahan dokumen protokol serah terima AI (`AI_HANDOFF_INSTRUCTIONS.md`) dan penyempurnaan Bagian 5 PRD.md sebagai pedoman wajib anti-halusinasi bagi model AI pengganti.
 - [2026-09-10]: Perbaikan error PostgreSQL `column ai_analysis_results.is_noise does not exist` di dashboard dengan menjalankan migrasi tertunda (`2026_08_09_002149_add_quality_gate_fields_to_ai_analysis_results_table`) via `php artisan migrate --force` di container lokal. Kolom `is_noise`, `noise_reason`, `subjects`, dan `quality_confidence` kini aktif dan query dashboard berjalan normal.
 - [2026-09-10]: Analisis dan dokumentasi menyeluruh terhadap arsitektur Menu Penyebutan (Mentions Feed SQL Union, Quality Gate Anti-Noise & Selesai Komentar, Widget Jaringan Topik/Aktor, serta Mesin Filter Panel terpusat) dicatat resmi pada PRD Bagian 3.7.
+- [2026-09-10]: Audit mendalam, verifikasi stabilitas query, dan perbaikan halaman Analisis (Executive View, KPI Metrics, Distribusi Saluran Media, Komparasi Sentimen Sosmed vs Berita, serta Grafik Tren Vektor Spline) dicatat resmi pada PRD Bagian 3.8.
 
 ---
+
 
 
 
