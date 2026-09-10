@@ -751,3 +751,25 @@ Setiap entri pengujian wajib mencakup komponen berikut:
   - Vite Asset Build: `npm run build` → Selesai dalam 1.82s ✅
 * **Status**: **PASSED (100% Sukses)**
 * **Commit Lokal**: Menunggu perintah user (Protokol No Auto-Push Aktif)
+
+## [QA-20260910-27] Modernisasi Tombol "Detail Proyek" & Judul Proyek Clickable
+
+**Tanggal**: 2026-09-10
+**File**: `resources/views/components/⚡projects-list.blade.php`
+**Status**: ✅ FIXED
+
+### Masalah
+1. Judul proyek (`<h2>`) hanya teks statis — tidak bisa diklik.
+2. Tombol "Detail Proyek" menggunakan warna `border-primary text-primary` (non-brand), tidak ada ikon, raw SVG spinner, dan tidak ada `wire:navigate` (full reload).
+
+### Perbaikan
+1. **Judul proyek** (baris ~1091): Ubah `<h2>` → `<a wire:navigate href="...">` dengan link ke dashboard proyek. Warna brand `text-[#1fa387]`, `hover:underline`.
+2. **Tombol "Detail Proyek"** (baris ~1264):
+   - Tambah `wire:navigate` untuk SPA navigation tanpa full reload.
+   - Warna: `border-[#1fa387] text-[#1fa387] hover:bg-[#1fa387] hover:text-white`.
+   - Tambah ikon `arrow_forward` (material-symbols) pada state normal.
+   - Ganti raw SVG spinner → `<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>`.
+
+### Verifikasi
+- PHP lint: No syntax errors.
+- `php artisan view:clear`: OK.

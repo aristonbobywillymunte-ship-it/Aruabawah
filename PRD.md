@@ -655,3 +655,33 @@ Jika pengembang hanya menambahkan `overflow: hidden` pada elemen `<body>`, brows
   - Memperbaiki class typo Tailwind CSS (`text-rose-650` → `text-rose-600`, `hover:text-slate-650` → `hover:text-slate-600`).
 * **File Diubah**: `resources/views/components/⚡projects-list.blade.php`
 * **QA**: `[QA-20260910-26]` — PASSED.
+
+## Bab 7.27 — Modernisasi Tombol "Detail Proyek" & Judul Proyek Clickable
+
+### Latar Belakang
+Tombol "Detail Proyek" pada kartu proyek masih menggunakan warna non-brand (`border-primary`), tidak memiliki ikon, menggunakan raw SVG spinner, dan navigasinya full page reload (tanpa `wire:navigate`). Judul proyek juga hanya teks statis yang tidak dapat diklik.
+
+### Perubahan
+
+#### Judul Proyek
+- Elemen `<h2>` diubah menjadi `<a wire:navigate href="...">` yang mengarah ke dashboard proyek (`route('home', ['project' => ..., 'tab' => ...])`).
+- Tampilan tetap sama (uppercase, brand color `#1fa387`), ditambah `hover:underline` sebagai visual feedback.
+
+#### Tombol "Detail Proyek"
+| Aspek | Sebelum | Sesudah |
+|---|---|---|
+| Navigasi | Full reload | `wire:navigate` (SPA) |
+| Warna border | `border-primary` | `border-[#1fa387]` |
+| Warna teks | `text-primary` | `text-[#1fa387]` |
+| Hover | `hover:bg-primary/5` | `hover:bg-[#1fa387] hover:text-white` |
+| Ikon normal | _(tidak ada)_ | `arrow_forward` material-symbols |
+| Spinner loading | Raw SVG inline | `progress_activity` material-symbols `animate-spin` |
+
+### Standar Ikon yang Dipakai
+```html
+<!-- State normal -->
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+
+<!-- State loading -->
+<span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+```

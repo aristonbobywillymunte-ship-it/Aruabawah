@@ -1088,7 +1088,11 @@ new class extends Component
                                                 <span class="text-[9px] text-slate-300 whitespace-nowrap">•</span>
                                                 <span class="text-[9px] text-slate-400 font-bold whitespace-nowrap">Dibuat: {{ $projectCreatedAt }}</span>
                                             </div>
-                                            <h2 class="text-xl font-hanken font-extrabold text-[#1fa387] uppercase leading-tight">{{ $project['name'] }}</h2>
+                                            <a
+                                                wire:navigate
+                                                href="{{ route('home', ['project' => base64_encode($project['id']), 'tab' => base64_encode('penyebutan')]) }}"
+                                                class="text-xl font-hanken font-extrabold text-[#1fa387] uppercase leading-tight hover:underline cursor-pointer"
+                                            >{{ $project['name'] }}</a>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -1259,18 +1263,17 @@ new class extends Component
                                 <!-- Action -->
                                 <div class="mt-auto" x-data="{ openingProject: false }">
                                     <a 
+                                        wire:navigate
                                         href="{{ route('home', ['project' => base64_encode($project['id']), 'tab' => base64_encode('penyebutan')]) }}"
                                         @click="openingProject = true"
-                                        class="block w-full py-3 border border-primary text-primary rounded-xl text-center text-sm font-bold hover:bg-primary/5 cursor-pointer transition-colors"
+                                        class="block w-full py-3 border border-[#1fa387] text-[#1fa387] rounded-xl text-center text-sm font-bold hover:bg-[#1fa387] hover:text-white cursor-pointer transition-colors"
                                     >
                                         <span x-show="!openingProject" class="inline-flex items-center justify-center gap-2">
                                             Detail Proyek
+                                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                                         </span>
                                         <span x-cloak x-show="openingProject" class="inline-flex items-center justify-center gap-2">
-                                            <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                            </svg>
+                                            <span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
                                             Membuka...
                                         </span>
                                     </a>
@@ -1279,6 +1282,7 @@ new class extends Component
                                 @endforeach
                             </div>
                         @else
+
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
                                 @if(auth()->check())
                                     <div class="dashed-border bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 flex flex-col self-start min-h-[880px] cursor-default animate-pulse shadow-[0_4px_20px_-2px_rgba(0,0,0,0.03)]">
