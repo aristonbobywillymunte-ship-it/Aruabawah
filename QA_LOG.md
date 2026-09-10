@@ -1,5 +1,12 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260910-34] Pemindahan Pemicu Modal Wawasan AI ke Livewire
+* **Konteks**: `@click` Alpine tidak membuka modal pada runtime pengguna.
+* **Perubahan**: Tombol memakai `wire:click="openAiInsightConfirmModal"`; modal dirender dengan state Livewire; tombol Batal dan CTA memakai action Livewire.
+* **QA fisik**: `view:clear` berhasil, PHP lint berhasil, render terautentikasi tab Wawasan berhasil (`RENDER_SUCCESS=152204`), `git diff --check` bersih.
+* **Status**: PASSED untuk lint/compile/render. Browser click test belum tersedia.
+* **Commit lokal**: pending.
+
 ### [QA-20260910-33] Perbaikan Overlay Loading yang Memblokir Tombol Wawasan AI
 * **Konteks**: Overlay `preparePdfReport` berpotensi tetap menangkap pointer event saat idle.
 * **Perubahan**: Menambahkan class `hidden` sebagai guard awal pada overlay di `resources/views/livewire/media-dashboard.blade.php`; `wire:loading.flex` tetap menampilkan overlay hanya saat request PDF aktif.

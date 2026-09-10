@@ -3269,7 +3269,7 @@
                         
                         <button 
                             type="button"
-                            @click="showAiInsightConfirmModal = true"
+                            wire:click="openAiInsightConfirmModal"
                             wire:loading.attr="disabled"
                             wire:target="generateAiInsights"
                             class="bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-[11px] px-4 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
@@ -5920,8 +5920,8 @@
     </div>
 
     <!-- Confirm Perbarui Wawasan AI Modal Overlay -->
+    @if($showAiInsightConfirmModal)
     <div
-        x-show="showAiInsightConfirmModal"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 scale-95"
         x-transition:enter-end="opacity-100 scale-100"
@@ -5932,10 +5932,9 @@
         @wheel.self.prevent
         @touchmove.self.prevent
         class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
-        style="display:none;"
     >
         <div
-            @click.outside="showAiInsightConfirmModal = false"
+            wire:click.outside="closeAiInsightConfirmModal"
             class="w-full max-w-sm rounded-3xl bg-white shadow-2xl border border-slate-100/80 p-6 text-center"
         >
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1fa387]/10 text-[#1fa387]">
@@ -5950,14 +5949,14 @@
             <div class="mt-6 flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                     type="button"
-                    @click="showAiInsightConfirmModal = false"
+                    wire:click="closeAiInsightConfirmModal"
                     class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs transition cursor-pointer"
                 >
                     Batal
                 </button>
                 <button
                     type="button"
-                    @click="showAiInsightConfirmModal = false; $wire.generateAiInsights()"
+                    wire:click="generateAiInsights"
                     class="px-5 py-2.5 rounded-xl bg-[#1fa387] hover:bg-[#1fa387]/90 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                     <span class="material-symbols-outlined text-[16px]">check_circle</span>
@@ -5966,6 +5965,7 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
 </div>
 </div>

@@ -138,6 +138,18 @@ class MediaDashboard extends Component
     }
 
     public $wawasanLoaded = false;
+    public bool $showAiInsightConfirmModal = false;
+
+    public function openAiInsightConfirmModal(): void
+    {
+        $this->showAiInsightConfirmModal = true;
+    }
+
+    public function closeAiInsightConfirmModal(): void
+    {
+        $this->showAiInsightConfirmModal = false;
+    }
+
     public function loadWawasan() {
         $this->wawasanLoaded = true;
     }
@@ -651,6 +663,7 @@ class MediaDashboard extends Component
 
     public function generateAiInsights()
     {
+        $this->showAiInsightConfirmModal = false;
         $project = $this->resolveProjectOrFail($this->projectId);
         \App\Jobs\GenerateProjectAiInsightJob::dispatchSync($project->id, $this->startDate, $this->endDate);
         $project->refresh();

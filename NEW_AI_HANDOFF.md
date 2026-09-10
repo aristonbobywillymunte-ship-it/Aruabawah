@@ -1,5 +1,12 @@
 # 📖 Panduan Serah Terima (Handoff) Proyek untuk AI Baru
 
+## Handoff 2026-09-10 — Modal Wawasan AI Dipindahkan ke Livewire
+
+- Pemicu modal tidak lagi bergantung pada Alpine `@click`.
+- State `showAiInsightConfirmModal` dan action buka/tutup berada di `app/Livewire/MediaDashboard.php`.
+- Modal hanya dirender saat state Livewire aktif; CTA menjalankan `generateAiInsights` melalui `wire:click`.
+- QA compile dan render berhasil; browser click test masih OPEN.
+
 ## Handoff 2026-09-10 — Overlay Tombol Perbarui Wawasan AI
 
 - **Masalah**: Overlay loading `preparePdfReport` memakai `fixed inset-0 z-[9999]` dan dapat menangkap klik saat idle.
