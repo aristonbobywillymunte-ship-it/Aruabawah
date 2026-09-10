@@ -1,5 +1,15 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260911-38] Eliminasi Slop & Perbaikan Tombol serta Modal Komentar Penyebutan
+* **Konteks**: Tombol komentar pada feed tab Penyebutan sering error/macet karena *race-condition* dua HTTP request (`open...` + `dispatch('load-...')`), tabrakan ID antara `articles` dan `social_media_items`, serta tombol disabled tanpa penjelasan. Ditemukan slop duplikasi 3 modal terpisah (~240 baris redundant), karakter penutup non-standar (`✕`), copy slop menyebut vendor third-party, dan spinner SVG manual.
+* **Perubahan**:
+  1. **Direct Fetch**: Menyatukan alur fetch komentar ke method tunggal `openCommentsModal($articleId)` tanpa asynchronous event dispatch yang memicu race condition.
+  2. **Unified Modal**: Me-refactor 3 modal terpisah (TikTok, IG, FB) menjadi 1 modal terpadu yang dinamis, bersih, dan mematuhi standar PRD.
+  3. **Pembersihan Slop UI & Copy**: Mengganti `✕` dan SVG manual dengan Material Symbols (`close`, `forum`, `progress_activity animate-spin`), merapikan copy empty state tanpa menyebut vendor, dan memastikan pointer-event/scroll lock terjaga.
+  4. **Backward Compatibility**: Mempertahankan alias method lama (`openTikTokCommentsModal`, dll.) agar tidak ada interupsi di bagian komponen lain.
+* **QA fisik**: `php -l` lulus (No syntax errors detected), `php artisan view:clear` sukses (Compiled views cleared), `git diff` rapi (-463 lines removed, +184 lines added).
+* **Status**: PASSED.
+
 ### [QA-20260910-37] Anti-Slop Toast Wawasan AI
 * **Perubahan**: Toast custom netral menggantikan SweetAlert toast generik; ikon memakai Material Symbols, progress bar dihapus, copy dipadatkan.
 * **QA fisik**: `view:clear` berhasil; PHP lint berhasil; render terautentikasi menghasilkan `RENDER_SUCCESS=164539`; marker custom toast terdeteksi; `git diff --check` bersih.

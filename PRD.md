@@ -218,6 +218,8 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-11]: Eliminasi slop & refactor perbaikan tombol serta modal komentar pada feed Penyebutan: mengeliminasi duplikasi 3 modal terpisah menjadi 1 modal terpadu, menghilangkan race condition event dispatch asinkron via direct fetch, menyematkan Material Symbols Outlined, merapikan copy empty state, dan menjaga scroll-lock / pointer event (QA-20260911-38).
+
 - [2026-07-31]: Pemisahan mode discovery portal (`auto`, `manual_only`, `google_news_only`), cooldown 720 menit kandidat portal, pembatasan limit Apify maksimal 50 item per run terdistribusi, dan perbaikan normalisasi matcher alias `walikota` vs `wali kota`.
 - [2026-08-14]: Audit forensik Livewire ApifyFinancialReport pada server remote terkait penanganan button item dan sinkronisasi panjang URL PostgreSQL.
 - [2026-09-10]: Sinkronisasi fokus repositori lokal ke `/Users/unity/Documents/proyek baru/`, analisis keselarasan modul Analisis AI Berita Portal terhadap spesifikasi PRD, instalasi modul skill `Caveman` ke `.ai/skills/caveman/`, serta penyusunan dokumen `PRD.md` komprehensif sebagai standar handoff antar-AI anti-halusinasi.

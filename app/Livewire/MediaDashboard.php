@@ -275,20 +275,10 @@ class MediaDashboard extends Component
     public $showDatePicker = false;
     public $showAddKeywordModal = false;
     public $socialMediaItemsCache = null;
-    public bool $showTikTokCommentsModal = false;
-    public bool $loadingTikTokComments = false;
-    public array $tikTokCommentsModalMeta = [];
-    public array $tikTokCommentsModalItems = [];
-
-    public bool $showInstagramCommentsModal = false;
-    public bool $loadingInstagramComments = false;
-    public array $instagramCommentsModalMeta = [];
-    public array $instagramCommentsModalItems = [];
-
-    public bool $showFacebookCommentsModal = false;
-    public bool $loadingFacebookComments = false;
-    public array $facebookCommentsModalMeta = [];
-    public array $facebookCommentsModalItems = [];
+    public bool $showCommentsModal = false;
+    public bool $loadingComments = false;
+    public array $commentsModalMeta = [];
+    public array $commentsModalItems = [];
 
     protected function currentUser()
     {
@@ -1319,34 +1309,10 @@ class MediaDashboard extends Component
     }
 
 
-    public function openTikTokCommentsModal(int $articleId): void
+    public function openCommentsModal(int $articleId, string $platform = 'TikTok'): void
     {
-        // 1. Tampilkan modal seketika
-        $this->showTikTokCommentsModal = true;
-        $this->loadingTikTokComments = true;
-        $this->tikTokCommentsModalMeta = [
-            'article_id' => $articleId,
-            'title' => 'Memuat data...',
-            'source_name' => 'TikTok',
-            'post_url' => '',
-            'author_name' => '',
-            'published_at' => '',
-            'comment_count' => 0,
-            'like_count' => 0,
-        ];
-        $this->tikTokCommentsModalItems = [];
-
-        // 2. Dispatch event asinkron agar browser memicu load data di background
-        $this->dispatch('load-tiktok-comments', articleId: $articleId);
-    }
-
-    // Listener Livewire untuk loading data asinkron
-    #[on('load-tiktok-comments')]
-    public function loadTikTokCommentsData(int $articleId): void
-    {
-        if (!$this->showTikTokCommentsModal || $this->tikTokCommentsModalMeta['article_id'] !== $articleId) {
-            return;
-        }
+        $this->showCommentsModal = true;
+        $this->loadingComments = false;
 
         $unionQuery = $this->projectArticlesQuery();
         $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
@@ -1356,212 +1322,106 @@ class MediaDashboard extends Component
             ->first();
 
         if (! $article) {
-            $article = Article::query()
-                ->with(['aiAnalysisResult'])
-                ->find($articleId);
+            $socialItemFallback = SocialMediaItem::query()->find($articleId);
+            if ($socialItemFallback) {
+                $article = (object) [
+                    'id' => $socialItemFallback->id,
+                    'url' => $socialItemFallback->post_url,
+                    'canonical_url' => $socialItemFallback->post_url,
+                    'title' => 'Post dari ' . ucfirst($socialItemFallback->platform ?? $platform) . ' oleh ' . ($socialItemFallback->author_name ?? 'Pengguna'),
+                    'source_name' => $socialItemFallback->platform ?? $platform,
+                    'published_at' => $socialItemFallback->posted_at,
+                    'item_type' => 'social',
+                ];
+            } else {
+                $article = Article::query()->find($articleId);
+            }
         }
 
-        if (! $article || ! $this->isTikTokArticle($article)) {
-            $this->loadingTikTokComments = false;
+        if (! $article) {
+            $this->closeCommentsModal();
             return;
         }
 
         $socialItem = $this->resolveSocialMediaItemForArticle($article);
         $comments = $this->resolveCommentsForSocialItem($socialItem);
 
-        $this->tikTokCommentsModalMeta = [
+        $platformName = match(true) {
+            $this->isTikTokArticle($article) => 'TikTok',
+            $this->isInstagramArticle($article) => 'Instagram',
+            $this->isFacebookArticle($article) => 'Facebook',
+            default => ucfirst($platform ?: 'Sosial Media'),
+        };
+
+        $platformTheme = match($platformName) {
+            'Instagram' => [
+                'color' => '#c13584',
+                'bg_badge' => 'bg-pink-50 text-[#c13584] border-pink-150',
+                'label' => 'Komentar Instagram',
+            ],
+            'Facebook' => [
+                'color' => '#1877f2',
+                'bg_badge' => 'bg-blue-50 text-[#1877f2] border-blue-150',
+                'label' => 'Komentar Facebook',
+            ],
+            default => [
+                'color' => '#1fa387',
+                'bg_badge' => 'bg-emerald-50 text-[#1fa387] border-emerald-150',
+                'label' => 'Komentar TikTok',
+            ],
+        };
+
+        $this->commentsModalMeta = [
             'article_id' => $article->id,
             'title' => $this->displayArticleTitle($article),
-            'source_name' => (string) ($article->source_name ?? 'TikTok'),
+            'source_name' => $platformName,
             'post_url' => (string) ($socialItem?->post_url ?: $article->canonical_url ?: $article->url ?: ''),
             'author_name' => (string) ($socialItem?->author_name ?? ''),
             'published_at' => $article->published_at ? \Carbon\Carbon::parse($article->published_at)->translatedFormat('d M Y, H:i') : 'Baru saja',
-            'comment_count' => (int) ($socialItem?->comment_count ?? 0),
+            'comment_count' => count($comments) > 0 ? count($comments) : (int) ($socialItem?->comment_count ?? 0),
             'like_count' => (int) ($socialItem?->like_count ?? 0),
+            'theme' => $platformTheme,
         ];
-        $this->tikTokCommentsModalItems = $comments;
-        $this->loadingTikTokComments = false;
+        $this->commentsModalItems = $comments;
+    }
+
+    public function closeCommentsModal(): void
+    {
+        $this->showCommentsModal = false;
+        $this->loadingComments = false;
+        $this->commentsModalMeta = [];
+        $this->commentsModalItems = [];
+    }
+
+    // Backward compatibility aliases agar tidak memicu error jika dipanggil via event lama
+    public function openTikTokCommentsModal(int $articleId): void
+    {
+        $this->openCommentsModal($articleId, 'TikTok');
     }
 
     public function closeTikTokCommentsModal(): void
     {
-        $this->showTikTokCommentsModal = false;
-        $this->loadingTikTokComments = false;
-        $this->tikTokCommentsModalMeta = [];
-        $this->tikTokCommentsModalItems = [];
-    }
-
-    protected function isInstagramArticle($article): bool
-    {
-        $source = strtolower(trim((string) ($article->source_name ?? '')));
-
-        return $source === 'instagram'
-            || str_contains($source, 'instagram')
-            || str_contains($source, 'ig');
+        $this->closeCommentsModal();
     }
 
     public function openInstagramCommentsModal(int $articleId): void
     {
-        // 1. Tampilkan modal seketika
-        $this->showInstagramCommentsModal = true;
-        $this->loadingInstagramComments = true;
-        $this->instagramCommentsModalMeta = [
-            'article_id' => $articleId,
-            'title' => 'Memuat data...',
-            'source_name' => 'Instagram',
-            'post_url' => '',
-            'author_name' => '',
-            'published_at' => '',
-            'comment_count' => 0,
-            'like_count' => 0,
-        ];
-        $this->instagramCommentsModalItems = [];
-
-        // 2. Dispatch event asinkron agar browser memicu load data di background
-        $this->dispatch('load-instagram-comments', articleId: $articleId);
-    }
-
-    // Listener Livewire untuk loading data asinkron
-    #[on('load-instagram-comments')]
-    public function loadInstagramCommentsData(int $articleId): void
-    {
-        if (!$this->showInstagramCommentsModal || $this->instagramCommentsModalMeta['article_id'] !== $articleId) {
-            return;
-        }
-
-        $unionQuery = $this->projectArticlesQuery();
-        $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
-            ->setBindings($unionQuery->getBindings())
-            ->where('union_res.id', $articleId)
-            ->where('union_res.item_type', 'social') // Cegah tabrakan ID dengan menyaring khusus tipe sosial media
-            ->first();
-
-        if (! $article) {
-            // Fallback aman jika query union terlewati
-            $socialItem = SocialMediaItem::query()->find($articleId);
-            if ($socialItem) {
-                // Konversi social item ke mock object agar kompatibel dengan pemrosesan berikutnya
-                $article = (object) [
-                    'id' => $socialItem->id,
-                    'url' => $socialItem->post_url,
-                    'canonical_url' => $socialItem->post_url,
-                    'title' => 'Post dari Instagram oleh ' . ($socialItem->author_name ?? 'Pengguna'),
-                    'source_name' => $socialItem->platform,
-                    'published_at' => $socialItem->posted_at,
-                    'item_type' => 'social',
-                ];
-            }
-        }
-
-        if (! $article || ! $this->isInstagramArticle($article)) {
-            $this->loadingInstagramComments = false;
-            return;
-        }
-
-        $socialItem = $this->resolveSocialMediaItemForArticle($article);
-        $comments = $this->resolveCommentsForSocialItem($socialItem);
-        $storedCommentCount = count($comments);
-
-        $this->instagramCommentsModalMeta = [
-            'article_id' => $article->id,
-            'title' => $this->displayArticleTitle($article),
-            'source_name' => (string) ($article->source_name ?? 'Instagram'),
-            'post_url' => (string) ($socialItem?->post_url ?: $article->canonical_url ?: $article->url ?: ''),
-            'author_name' => (string) ($socialItem?->author_name ?? ''),
-            'published_at' => $article->published_at ? \Carbon\Carbon::parse($article->published_at)->translatedFormat('d M Y, H:i') : 'Baru saja',
-            'comment_count' => $storedCommentCount,
-            'like_count' => (int) ($socialItem?->like_count ?? 0),
-        ];
-        $this->instagramCommentsModalItems = $comments;
-        $this->loadingInstagramComments = false;
+        $this->openCommentsModal($articleId, 'Instagram');
     }
 
     public function closeInstagramCommentsModal(): void
     {
-        $this->showInstagramCommentsModal = false;
-        $this->loadingInstagramComments = false;
-        $this->instagramCommentsModalMeta = [];
-        $this->instagramCommentsModalItems = [];
-    }
-
-    protected function isFacebookArticle($article): bool
-    {
-        $source = strtolower(trim((string) ($article->source_name ?? '')));
-
-        return $source === 'facebook'
-            || str_contains($source, 'facebook')
-            || str_contains($source, 'fb');
+        $this->closeCommentsModal();
     }
 
     public function openFacebookCommentsModal(int $articleId): void
     {
-        // 1. Tampilkan modal seketika
-        $this->showFacebookCommentsModal = true;
-        $this->loadingFacebookComments = true;
-        $this->facebookCommentsModalMeta = [
-            'article_id' => $articleId,
-            'title' => 'Memuat data...',
-            'source_name' => 'Facebook',
-            'post_url' => '',
-            'author_name' => '',
-            'published_at' => '',
-            'comment_count' => 0,
-            'like_count' => 0,
-        ];
-        $this->facebookCommentsModalItems = [];
-
-        // 2. Dispatch event asinkron agar browser memicu load data di background
-        $this->dispatch('load-facebook-comments', articleId: $articleId);
-    }
-
-    #[on('load-facebook-comments')]
-    public function loadFacebookCommentsData(int $articleId): void
-    {
-        if (!$this->showFacebookCommentsModal || $this->facebookCommentsModalMeta['article_id'] !== $articleId) {
-            return;
-        }
-
-        $unionQuery = $this->projectArticlesQuery();
-        $article = \Illuminate\Support\Facades\DB::table(\Illuminate\Support\Facades\DB::raw("(" . $unionQuery->toSql() . ") as union_res"))
-            ->setBindings($unionQuery->getBindings())
-            ->where('union_res.id', $articleId)
-            ->where('union_res.item_type', 'social')
-            ->first();
-
-        if (! $article) {
-            $article = Article::query()
-                ->with(['aiAnalysisResult'])
-                ->find($articleId);
-        }
-
-        if (! $article || ! $this->isFacebookArticle($article)) {
-            $this->loadingFacebookComments = false;
-            return;
-        }
-
-        $socialItem = $this->resolveSocialMediaItemForArticle($article);
-        $comments = $this->resolveCommentsForSocialItem($socialItem);
-
-        $this->facebookCommentsModalMeta = [
-            'article_id' => $article->id,
-            'title' => $this->displayArticleTitle($article),
-            'source_name' => (string) ($article->source_name ?? 'Facebook'),
-            'post_url' => (string) ($socialItem?->post_url ?: $article->canonical_url ?: $article->url ?: ''),
-            'author_name' => (string) ($socialItem?->author_name ?? ''),
-            'published_at' => $article->published_at ? \Carbon\Carbon::parse($article->published_at)->translatedFormat('d M Y, H:i') : 'Baru saja',
-            'comment_count' => count($comments),
-            'like_count' => (int) ($socialItem?->like_count ?? 0),
-        ];
-        $this->facebookCommentsModalItems = $comments;
-        $this->loadingFacebookComments = false;
+        $this->openCommentsModal($articleId, 'Facebook');
     }
 
     public function closeFacebookCommentsModal(): void
     {
-        $this->showFacebookCommentsModal = false;
-        $this->loadingFacebookComments = false;
-        $this->facebookCommentsModalMeta = [];
-        $this->facebookCommentsModalItems = [];
+        $this->closeCommentsModal();
     }
 
     protected function isTikTokArticle($article): bool
