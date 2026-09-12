@@ -1336,3 +1336,25 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
   - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
   - Livewire test mount & render via Tinker → `AiPromptTemplates mount: SUCCESS` ✅
 - **Status:** PASSED ✅
+
+---
+
+## [QA-20260912-55] Audit Anti-Slop & Standarisasi Modal Apify Configuration (/admin/apify)
+
+- **Tanggal:** 2026-09-12
+- **Konteks:** Audit kepatuhan standar `AGENTS.md` pada modal form, delete, toggle status, dan simulasi scraper di `/admin/apify`.
+- **Root Cause & Issues:**
+  1. Ketiadaan atribut penutup latar belakang (`wire:click.self`) pada Modal Hapus, Modal Toggle Status, dan Modal Simulasi Uji Coba.
+  2. Ketiadaan atribut pengenal unik `wire:key` dinamis pada Modal Hapus, Toggle Status, dan Test Modal yang berisiko memicu DOM collision saat perenderan ulang tabel.
+  3. Tombol Batal pada ketiga modal tersebut belum dilindungi `wire:loading.attr="disabled"` terhadap aksi konfirmasi.
+  4. Inkonsistensi ikon pemuatan SVG lama pada aksi hapus, toggle, simulasi, dan tombol sinkronisasi alih-alih Material Symbols `progress_activity`.
+- **Target Files:**
+  - `resources/views/livewire/admin/apify-configuration.blade.php`
+- **Perubahan:**
+  1. Memasang `wire:key` dinamis dan `wire:click.self` pada Modal Hapus, Toggle Status, dan Test Modal.
+  2. Menambahkan `wire:loading.attr="disabled"` pada seluruh tombol Batal modal interaktif.
+  3. Menstandarisasi seluruh spinner pemuatan tombol ke `material-symbols-outlined progress_activity` dengan kelas animasi `animate-spin`.
+- **Verifikasi:**
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+  - Livewire test mount & render via Tinker → `ApifyConfiguration mount: SUCCESS` ✅
+- **Status:** PASSED ✅

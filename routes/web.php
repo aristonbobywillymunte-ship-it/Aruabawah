@@ -86,6 +86,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/database', function () {
         return view('admin.database');
     })->middleware('admin')->name('admin.database');
+    Route::get('/admin/database/download', [\App\Http\Controllers\Admin\DatabaseBackupController::class, 'download'])
+        ->middleware('admin')
+        ->name('admin.database.download');
 
     // ─── Client Management ───
     Route::get('/admin/clients', function () {

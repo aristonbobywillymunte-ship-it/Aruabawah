@@ -1076,3 +1076,29 @@ Audit kepatuhan menyeluruh terhadap pedoman `AGENTS.md` pada modul administrator
 - PHP syntax check lulus (`No syntax errors detected`) ✅
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 - Pengujian interaktif via Tinker/Livewire component testing lulus ✅
+
+## Bab 7.53 — Audit Anti-Slop & Standarisasi Modal Apify Configuration (/admin/apify)
+
+### Latar Belakang
+Pada halaman `/admin/apify`, komponen antarmuka memiliki beberapa modal aksi (Modal Hapus Aktor, Modal Konfirmasi Toggle Status Aktif/Nonaktif, dan Modal Simulasi Uji Coba Scraper). Ditemukan inkonsistensi terhadap aturan `AGENTS.md`, di mana ketiga modal tersebut belum memiliki handler klik backdrop luar (`wire:click.self`), ketiadaan atribut pengenal unik `wire:key`, tombol Batal yang belum dilindungi `wire:loading.attr="disabled"`, serta penggunaan ikon SVG kustom yang tidak seragam dengan standar `progress_activity`.
+
+### Perubahan
+1. **Modal Hapus (`confirmingDelete`)**:
+   - Menambahkan `wire:key="admin-apify-actor-delete-modal-{{ $deleteId }}"`.
+   - Menambahkan `wire:click.self="$set('confirmingDelete', false)"`.
+   - Menambahkan `wire:loading.attr="disabled"` pada tombol Batal.
+   - Menstandarisasi spinner tombol ke `material-symbols-outlined progress_activity`.
+2. **Modal Konfirmasi Toggle Status (`confirmingToggle`)**:
+   - Menambahkan `wire:key="admin-apify-actor-toggle-modal-{{ $toggleId }}"`.
+   - Menambahkan `wire:click.self="cancelToggle"`.
+   - Menambahkan `wire:loading.attr="disabled"` pada tombol Batal.
+   - Menstandarisasi spinner tombol konfirmasi aktif dan nonaktif ke `progress_activity`.
+3. **Modal Simulasi Uji Coba (`showTestModal`)**:
+   - Menambahkan `wire:key="admin-apify-test-modal-{{ $testingActorId }}"`.
+   - Menambahkan `wire:click.self="closeTestModal"`.
+   - Menambahkan `wire:loading.attr="disabled"` pada tombol Batal.
+   - Menstandarisasi tombol "Sinkronkan Actor Bawaan" dan tombol submit simulasi ke spinner `progress_activity`.
+
+### Verifikasi
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+- Livewire component mount test via Tinker: SUCCESS ✅

@@ -32,16 +32,13 @@
             </div>
             
             <div class="mt-8 pt-6 border-t border-slate-100">
-                <button 
-                    wire:click="download" 
-                    wire:loading.attr="disabled"
-                    class="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#1fa387] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#1fa387]/15 hover:bg-[#1a8e75] active:scale-[0.98] transition-all duration-250 disabled:opacity-50 disabled:cursor-not-allowed"
+                <a 
+                    href="{{ route('admin.database.download') }}" 
+                    class="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#1fa387] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#1fa387]/15 hover:bg-[#1a8e75] active:scale-[0.98] transition-all duration-250 cursor-pointer"
                 >
-                    <span wire:loading.remove wire:target="download" class="material-symbols-outlined text-[20px]">download</span>
-                    <span wire:loading wire:target="download" class="animate-spin material-symbols-outlined text-[20px]">progress_activity</span>
-                    <span wire:loading.remove wire:target="download">Mulai Unduh Database</span>
-                    <span wire:loading wire:target="download">Mengekspor Database...</span>
-                </button>
+                    <span class="material-symbols-outlined text-[20px]">download</span>
+                    <span>Mulai Unduh Database</span>
+                </a>
             </div>
         </div>
 

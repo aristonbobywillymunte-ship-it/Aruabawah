@@ -33,7 +33,7 @@ class DatabaseManagement extends Component
             return;
         }
 
-        return response()->download($tempFile, 'backup_media_intelligent_' . now()->format('Y-m-d_H-i-s') . '.sql')->deleteFileAfterSend();
+        return redirect()->route('admin.database.download');
     }
 
     public function import()

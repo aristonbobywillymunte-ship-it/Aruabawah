@@ -252,13 +252,10 @@
                     wire:click="syncManagedActors" 
                     wire:loading.attr="disabled"
                     wire:target="syncManagedActors"
-                    class="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-4 text-xs font-bold transition shadow-sm cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="inline-flex h-10 w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 cursor-pointer disabled:opacity-50"
                 >
                     <span wire:loading.remove wire:target="syncManagedActors" class="material-symbols-outlined text-[17px]">sync</span>
-                    <svg wire:loading wire:target="syncManagedActors" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <span wire:loading wire:target="syncManagedActors" class="animate-spin material-symbols-outlined text-[17px]">progress_activity</span>
                     <span wire:loading.remove wire:target="syncManagedActors">Sinkronkan Actor Bawaan</span>
                     <span wire:loading wire:target="syncManagedActors">Menyinkronkan...</span>
                 </button>
@@ -784,7 +781,13 @@
 
     <!-- Delete Confirmation Modal -->
     @if($confirmingDelete)
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+        <div 
+            wire:key="admin-apify-actor-delete-modal-{{ $deleteId ?? 'none' }}"
+            wire:click.self="$set('confirmingDelete', false)"
+            x-data 
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans"
+        >
             <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain">
                 <div class="flex items-center gap-3">
                     <span class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
@@ -797,17 +800,14 @@
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">Aksi ini bersifat permanen. Seluruh isian data aktor akan terhapus total dari database.</p>
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button wire:click="$set('confirmingDelete', false)" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
+                    <button wire:click="$set('confirmingDelete', false)" wire:loading.attr="disabled" wire:target="deleteActorConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
                     <button 
                         wire:click="deleteActorConfirmed" 
                         wire:loading.attr="disabled"
                         wire:target="deleteActorConfirmed"
                         class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
                     >
-                        <svg wire:loading wire:target="deleteActorConfirmed" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
+                        <span wire:loading wire:target="deleteActorConfirmed" class="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>
                         <span wire:loading.remove wire:target="deleteActorConfirmed">Ya, Hapus</span>
                         <span wire:loading wire:target="deleteActorConfirmed">Menghapus...</span>
                     </button>
@@ -818,7 +818,13 @@
 
     <!-- Toggle Status Confirmation Modal -->
     @if($confirmingToggle)
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+        <div 
+            wire:key="admin-apify-actor-toggle-modal-{{ $toggleId ?? 'none' }}"
+            wire:click.self="cancelToggle"
+            x-data 
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans"
+        >
             <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain">
                 <div class="flex items-center gap-3">
                     @if($toggleCurrentStatus === 'active')
@@ -861,7 +867,7 @@
                 @endif
 
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button wire:click="cancelToggle" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
+                    <button wire:click="cancelToggle" wire:loading.attr="disabled" wire:target="toggleActorStatusConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
                     @if($toggleCurrentStatus === 'active')
                         <button 
                             wire:click="toggleActorStatusConfirmed" 
@@ -869,10 +875,7 @@
                             wire:target="toggleActorStatusConfirmed"
                             class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
                         >
-                            <svg wire:loading wire:target="toggleActorStatusConfirmed" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <span wire:loading wire:target="toggleActorStatusConfirmed" class="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>
                             <span wire:loading.remove wire:target="toggleActorStatusConfirmed">Ya, Nonaktifkan</span>
                             <span wire:loading wire:target="toggleActorStatusConfirmed">Memproses...</span>
                         </button>
@@ -883,10 +886,7 @@
                             wire:target="toggleActorStatusConfirmed"
                             class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
                         >
-                            <svg wire:loading wire:target="toggleActorStatusConfirmed" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <span wire:loading wire:target="toggleActorStatusConfirmed" class="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>
                             <span wire:loading.remove wire:target="toggleActorStatusConfirmed">Ya, Aktifkan</span>
                             <span wire:loading wire:target="toggleActorStatusConfirmed">Memproses...</span>
                         </button>
@@ -904,7 +904,13 @@
                 && $testingActor->platform === 'TikTok'
                 && str_contains(strtolower((string) $testingActor->actor_slug), 'tiktok-comments-scraper');
         @endphp
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans">
+        <div 
+            wire:key="admin-apify-test-modal-{{ $testingActorId ?? 'none' }}"
+            wire:click.self="closeTestModal"
+            x-data 
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6 font-sans"
+        >
             <div class="w-full max-w-lg overflow-hidden rounded-[24px] bg-white shadow-2xl text-left overscroll-contain">
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
                     <div>
@@ -965,17 +971,14 @@
                     @endif
 
                     <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 font-sans">
-                        <button type="button" wire:click="closeTestModal" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
+                        <button type="button" wire:click="closeTestModal" wire:loading.attr="disabled" wire:target="runTest" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
                         <button 
                             type="submit" 
                             wire:loading.attr="disabled"
                             wire:target="runTest"
                             class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50"
                         >
-                            <svg wire:loading wire:target="runTest" class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <span wire:loading wire:target="runTest" class="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>
                             <span wire:loading.remove wire:target="runTest">Jalankan Simulasi</span>
                             <span wire:loading wire:target="runTest">Menjalankan...</span>
                         </button>
