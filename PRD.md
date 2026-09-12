@@ -1009,3 +1009,25 @@ Kolom "Uji Terakhir" pada tabel AI Providers menampilkan dot berwarna untuk meng
 - Div balance: 69 open / 69 close ✅
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 
+## Bab 7.50 — Audit Anti-Slop & Optimasi Halaman Scraping Settings (/admin/scraping-settings)
+
+### Latar Belakang
+Pada halaman `/admin/scraping-settings`, terdapat potensi *double submit hazard* pada tombol aksi, modal formulir edit yang masih menggunakan direktif `@if` (rentan terhadap kegagalan siklus DOM morphing dan hilangnya backdrop modal), pemanggilan query model berulang (`ScrapingSetting::firstOrCreate`) di dalam satu siklus render, serta teks format markdown mentah yang tidak ter-render dengan benar.
+
+### Perubahan
+1. **Komponen Livewire (`app/Livewire/Admin/ScrapingSettings.php`)**:
+   - Menambahkan internal caching properti `$settingCache` untuk mencegah re-query model berulang (dari 6x query menjadi 1x query per siklus request).
+   - Mengeliminasi *dead properties* `$flashMessage` dan `$flashType`.
+   - Menghapus pengecekan `adminOnly()` redundan di method `render()`.
+   - Mengosongkan cache (`$this->settingCache = null`) pasca `save()` dan `toggleStatus()` agar render berikutnya memuat data terbaru.
+2. **Tampilan Blade (`resources/views/livewire/admin/scraping-settings.blade.php`)**:
+   - Memasang proteksi `wire:loading.attr="disabled"` dan indikator spinner animasi SVG pada tombol *Edit Konfigurasi*, tombol *toggleStatus (ON/OFF)*, serta tombol submit *Simpan Perubahan*.
+   - Mengonversi modal edit dari pola `@if($showEditModal)` ke pola `x-show="open"` + `x-cloak` dengan reactive getter `$wire.showEditModal` dan `z-[9999]`.
+   - Menambahkan atribut `wire:key="scraping-settings-edit-modal"`, penutup luar `wire:click.self`, serta penguncian scroll background layar via Alpine `$watch('open', ...)`.
+   - Memperbaiki penulisan teks format tebal pada catatan konfigurasi pipeline dari teks markdown mentah `**Candidate Links**` menjadi tag semantik HTML `<strong>Candidate Links</strong>`.
+
+### Verifikasi
+- `php -l`: No syntax errors detected ✅
+- Div balance: 43 open / 43 close ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+
