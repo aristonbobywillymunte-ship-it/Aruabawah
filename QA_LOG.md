@@ -1358,3 +1358,26 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
   - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
   - Livewire test mount & render via Tinker → `ApifyConfiguration mount: SUCCESS` ✅
 - **Status:** PASSED ✅
+
+---
+
+## [QA-20260912-56] Proteksi Integritas Data: Penonaktifan Fitur Hapus Permanen Proyek (ProjectsList)
+
+- **Tanggal:** 2026-09-12
+- **Konteks:** Menjaga integritas data artikel berita dan postingan media sosial di database dengan meniadakan opsi `forceDelete` pada proyek terhapus.
+- **Root Cause & Issues:**
+  1. Opsi hapus permanen (`forceDelete`) berpotensi menghilangkan referensi penting atau menyebabkan ketidakkonsistenan data historis.
+  2. Standar arsitektur menetapkan bahwa proyek hanya boleh di-soft delete atau dipulihkan kembali (*restore*).
+- **Target Files:**
+  - `app/Http/Livewire/ProjectsList.php`
+  - `resources/views/components/⚡projects-list.blade.php`
+- **Perubahan:**
+  1. Menonaktifkan eksekusi `forceDeleteProject` dan modal konfirmasi `confirmForceDeleteProject` di `ProjectsList.php`.
+  2. Menghapus tombol pemicu hapus permanen pada baris proyek *trashed* di `⚡projects-list.blade.php`.
+  3. Memperbarui label tombol aktivasi menjadi "Aktifkan Kembali" dengan spinner `progress_activity`.
+- **Verifikasi:**
+  - `docker exec media_intelligent_container php -l app/Http/Livewire/ProjectsList.php` → `No syntax errors detected` ✅
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+  - Livewire test mount & render via Tinker (`ProjectsList::class`) → `SUCCESS` ✅
+- **Status:** PASSED ✅
+

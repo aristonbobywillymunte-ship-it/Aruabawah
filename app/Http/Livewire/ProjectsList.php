@@ -606,23 +606,10 @@ class ProjectsList extends Component
 
     public function confirmForceDeleteProject($id)
     {
-        $user = auth()->user();
-        if ($user && $user->isClient()) {
-            $this->notifyProjectAction('Anda tidak memiliki izin untuk menghapus permanen proyek.', 'error');
-            $this->resetConfirmState();
-            return;
-        }
-
-        $project = Project::accessibleBy($user)
-            ->onlyTrashed()
-            ->findOrFail($id);
-
-        $this->confirmAction = 'force_delete';
-        $this->confirmProjectId = $project->id;
-        $this->confirmProjectName = $project->name;
-        $this->confirmTitle = 'Hapus permanen proyek?';
-        $this->confirmMessage = 'Proyek tidak dapat dipulihkan setelah dihapus. Konten artikel dan media sosial sumber tetap tersimpan, tetapi relasi dan data operasional khusus proyek akan dihapus.';
-        $this->showConfirmModal = true;
+        $this->showConfirmModal = false;
+        $this->resetConfirmState();
+        $this->notifyProjectAction('Penghapusan permanen proyek dinonaktifkan. Proyek hanya boleh di-soft-delete agar integritas data tetap terjaga.', 'error');
+        return;
     }
 
     public function confirmRunScraping($id)
@@ -772,77 +759,10 @@ class ProjectsList extends Component
 
     public function forceDeleteProject($id)
     {
-        $user = auth()->user();
-        if ($user && $user->isClient()) {
-            $this->showConfirmModal = false;
-            $this->resetConfirmState();
-            $this->notifyProjectAction('Anda tidak memiliki izin untuk menghapus permanen proyek.', 'error');
-            return;
-        }
-
-        $project = Project::accessibleBy($user)
-            ->onlyTrashed()
-            ->findOrFail($id);
-
-        \Illuminate\Support\Facades\DB::transaction(function () use ($project) {
-            \Illuminate\Support\Facades\DB::table('project_user')
-                ->where('project_id', $project->id)
-                ->delete();
-
-            if (\Illuminate\Support\Facades\Schema::hasTable('ai_analysis_dispatch_states')) {
-                \Illuminate\Support\Facades\DB::table('ai_analysis_dispatch_states')
-                     ->where('project_id', $project->id)
-                     ->delete();
-            }
-
-            if (\Illuminate\Support\Facades\Schema::hasTable('apify_dispatch_states')) {
-                \Illuminate\Support\Facades\DB::table('apify_dispatch_states')
-                    ->where('project_id', $project->id)
-                    ->delete();
-            }
-
-            if (\Illuminate\Support\Facades\Schema::hasTable('project_telegram_recipients')) {
-                \Illuminate\Support\Facades\DB::table('project_telegram_recipients')
-                    ->where('project_id', $project->id)
-                    ->delete();
-            }
-
-            if (\Illuminate\Support\Facades\Schema::hasTable('reach_assessments')) {
-                \Illuminate\Support\Facades\DB::table('reach_assessments')
-                    ->where('project_id', $project->id)
-                    ->delete();
-            }
-
-            if (\Illuminate\Support\Facades\Schema::hasTable('candidate_links')) {
-                \Illuminate\Support\Facades\DB::table('candidate_links')
-                    ->where('project_id', $project->id)
-                    ->delete();
-            }
-
-            if (\Illuminate\Support\Facades\Schema::hasTable('articles')) {
-                \Illuminate\Support\Facades\DB::table('articles')
-                    ->where('project_id', $project->id)
-                    ->update(['project_id' => null]);
-            }
-
-            if (\Illuminate\Support\Facades\Schema::hasTable('social_media_items')) {
-                \Illuminate\Support\Facades\DB::table('social_media_items')
-                    ->where('project_id', $project->id)
-                    ->update(['project_id' => null]);
-            }
-
-            $project->forceDelete();
-        });
-        $this->forgetProjectsCache();
-
-        if ((int) $this->getDecodedProjectId() === (int) $project->id) {
-            $this->projectId = null;
-        }
-
         $this->showConfirmModal = false;
         $this->resetConfirmState();
-        session()->flash('message', 'Proyek berhasil dihapus permanen. Data artikel tetap tersimpan.');
-        $this->notifyProjectAction('Proyek dihapus permanen. Data artikel tetap aman.');
+        $this->notifyProjectAction('Penghapusan permanen proyek dinonaktifkan. Proyek hanya boleh di-soft-delete agar integritas data tetap terjaga.', 'error');
+        return;
     }
 
     public function render()

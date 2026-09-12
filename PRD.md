@@ -1102,3 +1102,22 @@ Pada halaman `/admin/apify`, komponen antarmuka memiliki beberapa modal aksi (Mo
 ### Verifikasi
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 - Livewire component mount test via Tinker: SUCCESS ✅
+
+## Bab 7.54 — Penonaktifan Fitur Hapus Permanen Proyek demi Integritas Data
+
+### Latar Belakang
+Pada antarmuka daftar proyek (`⚡projects-list.blade.php`) dan komponen Livewire `ProjectsList.php`, sebelumnya terdapat opsi hapus permanen (`forceDeleteProject`) untuk proyek yang berada di daftar terhapus (*trashed*). Aksi ini berisiko merusak integritas riwayat crawling artikel berita, media sosial, metrik analitik, dan status operasional yang berelasi dengan proyek.
+
+### Perubahan
+1. **Komponen Livewire (`app/Http/Livewire/ProjectsList.php`)**:
+   - Menonaktifkan fungsi `confirmForceDeleteProject` dan `forceDeleteProject`.
+   - Mengembalikan notifikasi error/informasi bahwa penghapusan permanen proyek dinonaktifkan demi menjaga integritas data riwayat artikel dan media sosial.
+2. **Blade View (`resources/views/components/⚡projects-list.blade.php`)**:
+   - Menghapus tombol "Hapus" permanen dari baris proyek yang berada di status trashed.
+   - Mengubah label tombol aktivasi menjadi "Aktifkan Kembali" (`restoreProject`) dengan loading guard dan spinner `progress_activity`.
+
+### Verifikasi
+- PHP syntax check lulus (`No syntax errors detected in app/Http/Livewire/ProjectsList.php`) ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+- Livewire component mount & render test via Tinker (authenticated context): SUCCESS ✅
+

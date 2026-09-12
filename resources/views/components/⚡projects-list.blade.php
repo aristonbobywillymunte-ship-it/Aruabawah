@@ -1476,18 +1476,7 @@ new class extends Component
                                                 >
                                                     <span wire:loading.remove wire:target="confirmRestoreProject({{ $tp->id }})" class="material-symbols-outlined text-[16px]">restore</span>
                                                     <span wire:loading wire:target="confirmRestoreProject({{ $tp->id }})" class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
-                                                    <span>Aktifkan</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    wire:click="confirmForceDeleteProject({{ $tp->id }})"
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="confirmForceDeleteProject({{ $tp->id }})"
-                                                    class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-extrabold rounded-xl transition duration-150 cursor-pointer active:scale-[0.98] disabled:opacity-50 inline-flex items-center gap-1.5"
-                                                >
-                                                    <span wire:loading.remove wire:target="confirmForceDeleteProject({{ $tp->id }})" class="material-symbols-outlined text-[16px]">delete_forever</span>
-                                                    <span wire:loading wire:target="confirmForceDeleteProject({{ $tp->id }})" class="material-symbols-outlined text-[16px] animate-spin text-rose-600">progress_activity</span>
-                                                    <span>Hapus</span>
+                                                    <span>Aktifkan Kembali</span>
                                                 </button>
                                             </div>
                                         </div>
