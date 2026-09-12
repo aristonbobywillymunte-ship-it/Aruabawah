@@ -1271,3 +1271,68 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
   - `docker exec media_intelligent_container php -i | grep -E "upload_max_filesize|post_max_size|memory_limit"` → 100M / 100M / 256M ✅
   - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
 - **Status:** PASSED ✅
+
+---
+
+## [QA-20260912-52] Audit Anti-Slop & Standarisasi Modal System Maintenance (/admin/maintenance)
+
+- **Tanggal:** 2026-09-12
+- **Konteks:** Audit kepatuhan standar `AGENTS.md` pada modal pembersihan Redis Queue di `/admin/maintenance`.
+- **Root Cause & Issues:**
+  1. Ketiadaan penguncian scroll latar belakang saat modal konfirmasi aktif (scroll-lock missing).
+  2. Ketiadaan atribut penutup saat klik backdrop (`wire:click.self`).
+  3. Elemen modal belum memiliki atribut pengenal dinamis `wire:key` untuk mencegah DOM collision pada Livewire 3.
+  4. Tombol aksi "Batal" tidak dilindungi `wire:loading.attr="disabled"` terhadap request pembersihan antrean.
+- **Target Files:**
+  - `resources/views/livewire/admin/system-maintenance.blade.php`
+- **Perubahan:**
+  1. Menambahkan Alpine lifecycle hook `x-init` untuk mengunci dan melepas overflow `body` dan `html`.
+  2. Menambahkan `wire:key="admin-maintenance-confirm-modal"`.
+  3. Menambahkan `wire:click.self="cancelClearRedisQueue"`.
+  4. Menambahkan guard `wire:loading.attr="disabled"` dan `wire:target="clearRedisQueue"` pada tombol Batal.
+- **Verifikasi:**
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+  - Verifikasi manual komponen Livewire render & dispatch test → SUCCESS ✅
+- **Status:** PASSED ✅
+
+---
+
+## [QA-20260912-53] Standardisasi Notification Toast pada Database Management (/admin/database)
+
+- **Tanggal:** 2026-09-12
+- **Konteks:** Audit kepatuhan penanganan toast notifikasi pada `App\Livewire\Admin\DatabaseManagement` terhadap layout admin.
+- **Root Cause & Issues:**
+  - Sebelumnya komponen hanya mendispatch event `toast` generik (`$this->dispatch('toast', ...)`), sedangkan layout admin (`layouts/admin.blade.php`) terpasang komponen resmi `<x-admin-toast />` yang mendengarkan event `admin-toast`. Akibatnya, notifikasi keberhasilan ekspor/impor database tidak tampil pada toast container admin.
+- **Target Files:**
+  - `app/Livewire/Admin/DatabaseManagement.php`
+- **Perubahan:**
+  - Menambahkan method helper `notify($type, $message)` yang mendispatch `admin-toast` dengan payload terstruktur (`type`, `title`, `message`).
+  - Mempertahankan backward compatibility dispatch `toast` lama agar unit/feature test yang ada tetap lulus tanpa regresi.
+- **Verifikasi:**
+  - `docker exec media_intelligent_container php -l /var/web/app/Livewire/Admin/DatabaseManagement.php` → `No syntax errors detected` ✅
+  - Livewire test mount & instansiasi via Tinker → `DatabaseManagement mount: SUCCESS` ✅
+- **Status:** PASSED ✅
+
+---
+
+## [QA-20260912-54] Audit Anti-Slop & Standarisasi Modal AI Prompt Templates (/admin/ai-prompt-templates)
+
+- **Tanggal:** 2026-09-12
+- **Konteks:** Audit kepatuhan standar `AGENTS.md` pada modal form, trash, delete, restore, dan force delete di `/admin/ai-prompt-templates`.
+- **Root Cause & Issues:**
+  1. Penggunaan `<template x-teleport="body">` dan tag `<style>` liar pada modal Trash, Restore, dan Force Delete yang melanggar standar Livewire 3 dan berisiko merusak morphing DOM backdrop.
+  2. Ketiadaan backdrop dismiss (`wire:click.self`) pada seluruh modal interaktif (Form, Delete, Trash, Restore, Force Delete).
+  3. Ketiadaan button guard `wire:loading.attr="disabled"` dan indikator proses `progress_activity` pada tombol Simpan, Hapus, Restore, dan Force Delete (potensi double submit).
+  4. Missing dynamic `wire:key` pada modal Form dan Delete.
+- **Target Files:**
+  - `resources/views/livewire/admin/ai-prompt-templates.blade.php`
+- **Perubahan:**
+  1. Menghapus seluruh wrapper `<template x-teleport="body">` dan tag `<style>` mentah; merender modal secara native di root level.
+  2. Memasang hook resmi Alpine `x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"` pada semua modal.
+  3. Menambahkan `wire:click.self` untuk backdrop dismiss di semua modal.
+  4. Menambahkan atribut pengenal unik `wire:key` pada setiap modal.
+  5. Memasang `wire:loading.attr="disabled"` dan spinner `progress_activity` pada tombol aksi primer.
+- **Verifikasi:**
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+  - Livewire test mount & render via Tinker → `AiPromptTemplates mount: SUCCESS` ✅
+- **Status:** PASSED ✅

@@ -131,7 +131,13 @@
 
     <!-- Form Add/Edit Prompt Modal -->
     @if($showFormModal)
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6">
+        <div 
+            wire:key="admin-ai-prompt-form-modal"
+            wire:click.self="closeFormModal"
+            x-data 
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6"
+        >
             <div class="w-full max-w-3xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left flex flex-col max-h-[92vh] font-sans border border-slate-200 overscroll-contain">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 px-8 py-5 flex-none">
@@ -218,8 +224,12 @@
                 <!-- Modal Footer -->
                 <div class="flex items-center justify-end px-8 py-5 border-t border-slate-100 bg-slate-50/70 rounded-b-[24px] flex-none">
                     <div class="flex items-center gap-3">
-                        <button type="button" wire:click="closeFormModal" class="h-10 rounded-xl border border-slate-200 bg-white px-6 text-xs font-bold text-slate-700 hover:bg-slate-55 transition cursor-pointer shadow-sm">Batal</button>
-                        <button type="button" wire:click="save" class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer shadow-sm">Simpan Template</button>
+                        <button type="button" wire:click="closeFormModal" wire:loading.attr="disabled" wire:target="save" class="h-10 rounded-xl border border-slate-200 bg-white px-6 text-xs font-bold text-slate-700 hover:bg-slate-55 transition cursor-pointer shadow-sm disabled:opacity-50">Batal</button>
+                        <button type="button" wire:click="save" wire:loading.attr="disabled" wire:target="save" class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-wait">
+                            <span wire:loading.remove wire:target="save">Simpan Template</span>
+                            <span wire:loading wire:target="save" class="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>
+                            <span wire:loading wire:target="save">Menyimpan...</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -228,7 +238,13 @@
 
     <!-- Delete Confirmation Modal -->
     @if($confirmingDelete)
-        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6">
+        <div 
+            wire:key="admin-ai-prompt-delete-modal"
+            wire:click.self="$set('confirmingDelete', false)"
+            x-data 
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm px-4 py-6"
+        >
             <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain">
                 <div class="flex items-center gap-3">
                     <span class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
@@ -241,21 +257,25 @@
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">Aksi ini bersifat permanen. Seluruh isian prompt kustom akan terhapus total dari database.</p>
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button wire:click="$set('confirmingDelete', false)" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
-                    <button wire:click="deleteConfirmed" class="h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer">Ya, Hapus</button>
+                    <button wire:click="$set('confirmingDelete', false)" wire:loading.attr="disabled" wire:target="deleteConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
+                    <button wire:click="deleteConfirmed" wire:loading.attr="disabled" wire:target="deleteConfirmed" class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">
+                        <span wire:loading.remove wire:target="deleteConfirmed">Ya, Hapus</span>
+                        <span wire:loading wire:target="deleteConfirmed" class="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>
+                        <span wire:loading wire:target="deleteConfirmed">Menghapus...</span>
+                    </button>
                 </div>
             </div>
         </div>
     @endif
 
     @if($showTrashModal)
-        <style>
-            body, html {
-                overflow: hidden !important;
-            }
-        </style>
-        <template x-teleport="body" wire:key="ai-prompt-templates-trash-modal-template">
-        <div class="fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6">
+        <div 
+            wire:key="admin-ai-prompt-templates-trash-modal"
+            wire:click.self="closeTrashModal"
+            x-data 
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6"
+        >
             <div class="w-full max-w-5xl overflow-hidden rounded-[24px] bg-white shadow-2xl text-left flex flex-col max-h-[92vh] font-sans border border-slate-200 overscroll-contain">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-100 px-8 py-5 flex-none">
@@ -407,20 +427,19 @@
                 </div>
             </div>
         </div>
-        </template>
     @endif
 
     @if($confirmingRestoreTemplateId)
         @php
             $restoreTemplateTarget = \App\Models\AiPromptTemplate::onlyTrashed()->find($confirmingRestoreTemplateId);
         @endphp
-        <style>
-            body, html {
-                overflow: hidden !important;
-            }
-        </style>
-        <template x-teleport="body" wire:key="ai-prompt-template-confirm-restore-modal-template">
-        <div wire:key="ai-prompt-template-confirm-restore-modal" class="fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6" style="z-index: 1050;">
+        <div 
+            wire:key="ai-prompt-template-confirm-restore-modal" 
+            wire:click.self="cancelRestore"
+            x-data 
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6"
+        >
             <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain border border-slate-100/80">
                 <div class="flex items-center gap-3">
                     <span class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
@@ -436,24 +455,27 @@
                 </p>
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button wire:click="cancelRestore" wire:loading.attr="disabled" wire:target="restoreTemplateConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
-                    <button wire:click="restoreTemplateConfirmed" wire:loading.attr="disabled" wire:target="restoreTemplateConfirmed" class="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">Ya, Kembalikan</button>
+                    <button wire:click="restoreTemplateConfirmed" wire:loading.attr="disabled" wire:target="restoreTemplateConfirmed" class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">
+                        <span wire:loading.remove wire:target="restoreTemplateConfirmed">Ya, Kembalikan</span>
+                        <span wire:loading wire:target="restoreTemplateConfirmed" class="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>
+                        <span wire:loading wire:target="restoreTemplateConfirmed">Memulihkan...</span>
+                    </button>
                 </div>
             </div>
         </div>
-        </template>
     @endif
 
     @if($confirmingForceDeleteTemplateId)
         @php
             $deleteTemplateTarget = \App\Models\AiPromptTemplate::onlyTrashed()->find($confirmingForceDeleteTemplateId);
         @endphp
-        <style>
-            body, html {
-                overflow: hidden !important;
-            }
-        </style>
-        <template x-teleport="body" wire:key="ai-prompt-template-confirm-force-delete-modal-template">
-        <div wire:key="ai-prompt-template-confirm-force-delete-modal" class="fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6" style="z-index: 1050;">
+        <div 
+            wire:key="ai-prompt-template-confirm-force-delete-modal" 
+            wire:click.self="cancelForceDelete"
+            x-data 
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4 py-6"
+        >
             <div class="w-full max-w-sm rounded-[24px] bg-white p-6 shadow-2xl text-left space-y-4 overscroll-contain border border-slate-100/80">
                 <div class="flex items-center gap-3">
                     <span class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100">
@@ -469,10 +491,13 @@
                 </p>
                 <div class="flex items-center justify-end gap-3 pt-2">
                     <button wire:click="cancelForceDelete" wire:loading.attr="disabled" wire:target="forceDeleteTemplateConfirmed" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
-                    <button wire:click="forceDeleteTemplateConfirmed" wire:loading.attr="disabled" wire:target="forceDeleteTemplateConfirmed" class="h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">Ya, Hapus</button>
+                    <button wire:click="forceDeleteTemplateConfirmed" wire:loading.attr="disabled" wire:target="forceDeleteTemplateConfirmed" class="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-wait">
+                        <span wire:loading.remove wire:target="forceDeleteTemplateConfirmed">Ya, Hapus</span>
+                        <span wire:loading wire:target="forceDeleteTemplateConfirmed" class="animate-spin material-symbols-outlined text-[18px]">progress_activity</span>
+                        <span wire:loading wire:target="forceDeleteTemplateConfirmed">Menghapus...</span>
+                    </button>
                 </div>
             </div>
         </div>
-        </template>
     @endif
 </div>

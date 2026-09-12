@@ -146,10 +146,11 @@
     <!-- Confirmation Modal -->
     @if($showConfirmModal)
         <div 
+            wire:key="admin-maintenance-confirm-modal"
+            wire:click.self="cancelClearRedisQueue"
             class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-            x-data="{ show: @entangle('showConfirmModal') }"
-            x-show="show"
-            x-transition
+            x-data
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"
         >
             <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden p-8 border border-slate-100 space-y-6 text-left">
                 <div class="flex items-center gap-3 text-rose-600">
@@ -177,7 +178,9 @@
                 <div class="flex justify-end gap-3">
                     <button
                         wire:click="cancelClearRedisQueue"
-                        class="px-4 py-2 text-xs font-bold text-slate-500 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                        wire:loading.attr="disabled"
+                        wire:target="clearRedisQueue"
+                        class="px-4 py-2 text-xs font-bold text-slate-500 rounded-xl hover:bg-slate-100 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Batal
                     </button>

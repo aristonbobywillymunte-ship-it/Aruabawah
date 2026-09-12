@@ -28,6 +28,7 @@ class DatabaseManagement extends Component
             $tempFile = app(DatabaseManagementService::class)->exportBackup();
         } catch (RuntimeException $exception) {
             Log::error('[Database] pg_dump failed: ' . $this->redactSecrets($exception->getMessage()));
+            $this->notify('error', 'Gagal membuat cadangan database. Periksa log sistem.');
             $this->dispatch('toast', message: 'Gagal membuat cadangan database. Periksa log sistem.', type: 'danger');
             return;
         }
@@ -79,6 +80,7 @@ class DatabaseManagement extends Component
         $filePath = $this->databaseFile->getRealPath();
 
         if (!file_exists($filePath)) {
+            $this->notify('error', 'File unggahan tidak dapat diakses.');
             $this->dispatch('toast', message: 'File unggahan tidak dapat diakses.', type: 'danger');
             return;
         }
@@ -87,18 +89,35 @@ class DatabaseManagement extends Component
             app(DatabaseManagementService::class)->restoreBackup($filePath);
         } catch (RuntimeException $exception) {
             Log::error('[Database] psql restore failed: ' . $this->redactSecrets($exception->getMessage()));
+            $this->notify('error', 'Pemulihan database gagal. Data lama tetap dipertahankan.');
             $this->dispatch('toast', message: 'Pemulihan database gagal. Data lama tetap dipertahankan.', type: 'danger');
             return;
         }
 
         $this->reset('databaseFile');
         $this->restoreConfirmation = '';
+        $this->notify('success', 'Database berhasil dipulihkan!');
         $this->dispatch('toast', message: 'Database berhasil dipulihkan!', type: 'success');
     }
 
     public function render()
     {
         return view('livewire.admin.database-management');
+    }
+
+    protected function notify(string $type, string $message): void
+    {
+        $payload = [
+            'type' => $type,
+            'title' => $type === 'success' ? 'Berhasil' : 'Peringatan',
+            'message' => $message,
+        ];
+
+        if (method_exists($this, 'dispatchBrowserEvent')) {
+            $this->dispatchBrowserEvent('admin-toast', $payload);
+        }
+
+        $this->dispatch('admin-toast', payload: $payload);
     }
 
     private function ensureAdminAccess(): void

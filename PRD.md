@@ -1052,3 +1052,27 @@ Pada halaman `/admin/database`, terdapat potensi kegagalan upload berkas SQL kar
 - Verifikasi batas upload runtime PHP di container: `upload_max_filesize = 100M`, `post_max_size = 100M`, `memory_limit = 256M` ✅
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 
+
+## Bab 7.52 — Audit Anti-Slop & Standarisasi Modal Admin (Maintenance, Database & AI Prompts)
+
+### Latar Belakang
+Audit kepatuhan menyeluruh terhadap pedoman `AGENTS.md` pada modul administrator menemukan beberapa pelanggaran slop:
+1. **System Maintenance (`/admin/maintenance`)**: Modal konfirmasi pembersihan antrean belum memiliki scroll-lock latar belakang, ketiadaan backdrop dismiss (`wire:click.self`), serta tombol Batal belum diproteksi loading guard.
+2. **Database Management (`/admin/database`)**: Komponen Livewire hanya mendispatch event `toast` generik yang tidak tertangkap oleh komponen resmi `<x-admin-toast />` (`admin-toast`), menyebabkan feedback proses tidak muncul di UI.
+3. **AI Prompt Templates (`/admin/ai-prompt-templates`)**: Modal Trash, Restore, dan Force Delete masih dibungkus `<template x-teleport="body">` dan menyuntikkan tag `<style>` mentah yang rentan benturan DOM morphing pada Livewire 3. Tombol aksi juga belum dilindungi `wire:loading.attr="disabled"` dan indikator proses `progress_activity`.
+
+### Perubahan
+1. **System Maintenance (`resources/views/livewire/admin/system-maintenance.blade.php`)**:
+   - Memasang Alpine scroll-lock hook resmi `x-data x-init="..."`.
+   - Menambahkan `wire:key="admin-maintenance-confirm-modal"`, `wire:click.self="cancelClearRedisQueue"`, serta loading guard pada tombol Batal.
+2. **Database Management (`app/Livewire/Admin/DatabaseManagement.php`)**:
+   - Menambahkan helper `notify()` untuk mendispatch event resmi `admin-toast` dengan payload terstruktur `{type, title, message}`.
+3. **AI Prompt Templates (`resources/views/livewire/admin/ai-prompt-templates.blade.php`)**:
+   - Menghapus seluruh pembungkus `<template x-teleport="body">` dan CSS hack `<style>body, html { overflow: hidden !important; }</style>`.
+   - Memasang native root modal dengan scroll-lock hook Alpine, `wire:click.self` backdrop dismiss, dan unik `wire:key`.
+   - Memasang button guard `wire:loading.attr="disabled"` dan spinner `progress_activity` pada tombol Simpan, Hapus, Restore, dan Force Delete.
+
+### Verifikasi
+- PHP syntax check lulus (`No syntax errors detected`) ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+- Pengujian interaktif via Tinker/Livewire component testing lulus ✅
