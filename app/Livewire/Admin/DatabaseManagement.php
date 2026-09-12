@@ -43,7 +43,7 @@ class DatabaseManagement extends Component
             'databaseFile' => [
                 'required',
                 'file',
-                'max:51200',
+                'max:102400',
                 function ($attribute, $value, $fail) {
                     if (strtolower((string) $value->getClientOriginalExtension()) !== 'sql') {
                         $fail('File harus berformat .sql.');
@@ -71,7 +71,7 @@ class DatabaseManagement extends Component
         ], [
             'databaseFile.required' => 'Pilih file database SQL terlebih dahulu.',
             'databaseFile.file' => 'File tidak valid.',
-            'databaseFile.max' => 'Ukuran file maksimal adalah 50MB.',
+            'databaseFile.max' => 'Ukuran file maksimal adalah 100MB.',
             'restoreConfirmation.required' => 'Ketik PULIHKAN DATABASE untuk melanjutkan.',
             'restoreConfirmation.in' => 'Konfirmasi restore belum sesuai.',
         ]);

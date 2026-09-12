@@ -35,11 +35,12 @@
                 <button 
                     wire:click="download" 
                     wire:loading.attr="disabled"
-                    class="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#1fa387] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#1fa387]/15 hover:bg-[#1a8e75] active:scale-[0.98] transition-all duration-250"
+                    class="w-full flex items-center justify-center gap-2 rounded-2xl bg-[#1fa387] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#1fa387]/15 hover:bg-[#1a8e75] active:scale-[0.98] transition-all duration-250 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <span wire:loading.remove wire:target="download" class="material-symbols-outlined text-[20px]">download</span>
-                    <span wire:loading wire:target="download" class="animate-spin material-symbols-outlined text-[20px]">sync</span>
-                    <span>Mulai Unduh Database</span>
+                    <span wire:loading wire:target="download" class="animate-spin material-symbols-outlined text-[20px]">progress_activity</span>
+                    <span wire:loading.remove wire:target="download">Mulai Unduh Database</span>
+                    <span wire:loading wire:target="download">Mengekspor Database...</span>
                 </button>
             </div>
         </div>
@@ -84,7 +85,7 @@
                             <div class="text-xs text-slate-500">Berkas siap diunggah</div>
                         @else
                             <div class="text-sm font-semibold text-slate-700">Klik atau seret file SQL ke sini</div>
-                            <div class="text-xs text-slate-400 mt-0.5">Berkas SQL (.sql) maksimal 50MB</div>
+                            <div class="text-xs text-slate-400 mt-0.5">Berkas SQL (.sql) maksimal 100MB</div>
                         @endif
                     </div>
                     @error('databaseFile') 
@@ -121,7 +122,7 @@
                 <!-- Upload/Processing Loading Progress -->
                 <div wire:loading wire:target="databaseFile" class="w-full text-center py-1">
                     <div class="flex items-center justify-center gap-2 text-xs font-semibold text-[#1fa387]">
-                        <span class="animate-spin material-symbols-outlined text-[16px]">sync</span>
+                        <span class="animate-spin material-symbols-outlined text-[16px]">progress_activity</span>
                         <span>Mengirim berkas cadangan ke server...</span>
                     </div>
                 </div>
@@ -133,8 +134,9 @@
                     class="w-full flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-semibold text-white transition-all duration-250 shadow-md @if($databaseFile && trim($restoreConfirmation) === 'PULIHKAN DATABASE') bg-amber-600 shadow-amber-600/10 hover:bg-amber-700 active:scale-[0.98] @else bg-slate-200 text-slate-400 cursor-not-allowed shadow-none @endif"
                 >
                     <span wire:loading.remove wire:target="import" class="material-symbols-outlined text-[20px]">upload</span>
-                    <span wire:loading wire:target="import" class="animate-spin material-symbols-outlined text-[20px]">sync</span>
-                    <span>Impor & Pulihkan Database</span>
+                    <span wire:loading wire:target="import" class="animate-spin material-symbols-outlined text-[20px]">progress_activity</span>
+                    <span wire:loading.remove wire:target="import">Impor & Pulihkan Database</span>
+                    <span wire:loading wire:target="import">Memulihkan Database...</span>
                 </button>
             </div>
         </div>

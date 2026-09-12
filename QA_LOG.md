@@ -1246,3 +1246,28 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
   - `php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
   - PHP syntax check implisit via view compile ✅
 - **Status:** PASSED ✅
+
+---
+
+## [QA-20260912-51] Audit Anti-Slop & Optimasi Manajemen Database Admin (/admin/database)
+
+- **Tanggal:** 2026-09-12
+- **Konteks:** Audit stabilitas modul ekspor dan pemulihan database di `/admin/database`.
+- **Root Cause & Issues:**
+  1. Default runtime PHP pada container membatasi `upload_max_filesize` di 2MB dan `post_max_size` di 8MB, menyebabkan unggahan berkas SQL berukuran sedang/besar langsung ditolak oleh PHP server sebelum mencapai validasi Livewire.
+  2. Batas ukuran unggahan di Livewire hanya 50MB (`max:51200`), rentan kurang untuk database historis.
+  3. Indikator pemuatan tombol dan dropzone masih menggunakan ikon `sync` non-standar alih-alih `progress_activity`.
+  4. Kurangnya label visual reaktif saat proses unduh (`Mengekspor Database...`) dan pemulihan (`Memulihkan Database...`) sedang berjalan.
+- **Target Files:**
+  - `Dockerfile`
+  - `app/Livewire/Admin/DatabaseManagement.php`
+  - `resources/views/livewire/admin/database-management.blade.php`
+- **Perubahan:**
+  1. Menambahkan konfirmasi runtime PHP (`upload_max_filesize = 100M`, `post_max_size = 100M`, `memory_limit = 256M`) di `Dockerfile` dan container aktif.
+  2. Menaikkan validasi ukuran file di `DatabaseManagement.php` menjadi 100MB (`max:102400`).
+  3. Menstandarisasi spinner Material Symbols ke `progress_activity` dan menambahkan feedback teks saat eksekusi berlangsung.
+- **Verifikasi:**
+  - `docker exec media_intelligent_container php -l /var/web/app/Livewire/Admin/DatabaseManagement.php` → `No syntax errors detected` ✅
+  - `docker exec media_intelligent_container php -i | grep -E "upload_max_filesize|post_max_size|memory_limit"` → 100M / 100M / 256M ✅
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+- **Status:** PASSED ✅

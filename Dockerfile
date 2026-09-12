@@ -23,6 +23,11 @@ RUN apk add --no-cache \
 
 RUN docker-php-ext-install pdo pdo_sqlite pdo_pgsql pgsql mbstring gd xml pcntl zip
 
+# Configure PHP settings (file upload limits & memory)
+RUN echo "upload_max_filesize = 100M" > /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size = 100M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/uploads.ini
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -38,8 +43,8 @@ RUN chmod +x /var/web/scripts/docker-entrypoint.sh
 RUN python3 -m venv /opt/google-news-venv \
     && /opt/google-news-venv/bin/pip install --no-cache-dir -r /var/web/scripts/google-news/requirements.txt
 
-# Run composer installation without triggering app scripts during image build
-RUN composer install --no-interaction --optimize-autoloader --no-scripts
+# Vendor already installed locally — skip composer download inside Docker
+# RUN COMPOSER_PROCESS_TIMEOUT=600 composer install --no-interaction --optimize-autoloader --no-scripts --prefer-dist --no-dev
 
 # Expose Laravel development port
 EXPOSE 8000

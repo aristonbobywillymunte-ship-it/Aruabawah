@@ -1,7 +1,6 @@
 .git
 .kilo
 node_modules
-vendor
 .env
 .env.*
 backups

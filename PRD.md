@@ -1031,3 +1031,24 @@ Pada halaman `/admin/scraping-settings`, terdapat potensi *double submit hazard*
 - Div balance: 43 open / 43 close ✅
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 
+## Bab 7.51 — Audit Anti-Slop & Optimasi Manajemen Database Admin (/admin/database)
+
+### Latar Belakang
+Pada halaman `/admin/database`, terdapat potensi kegagalan upload berkas SQL karena limit default PHP (`upload_max_filesize = 2M`, `post_max_size = 8M`) yang jauh lebih kecil daripada batas validasi aplikasi (50MB). Selain itu, indikator pemuatan tombol masih menggunakan ikon `sync` non-standar (bukan `progress_activity` sesuai guideline AGENTS.md), belum memiliki feedback teks state saat operasi unduh/pemulihan berlangsung, dan batas unggahan perlu ditingkatkan menjadi 100MB untuk mengakomodasi database berukuran besar.
+
+### Perubahan
+1. **Konfigurasi Environment Docker (`Dockerfile`)**:
+   - Menambahkan konfigurasi runtime PHP `/usr/local/etc/php/conf.d/uploads.ini` dengan pengaturan `upload_max_filesize = 100M`, `post_max_size = 100M`, dan `memory_limit = 256M`.
+2. **Komponen Livewire (`app/Livewire/Admin/DatabaseManagement.php`)**:
+   - Menyesuaikan batas validasi ukuran file unggahan dari 50MB (`max:51200`) menjadi 100MB (`max:102400`).
+   - Memperbarui pesan error validasi agar sinkron dengan limit 100MB.
+3. **Tampilan Blade (`resources/views/livewire/admin/database-management.blade.php`)**:
+   - Menstandarisasi spinner indikator proses menjadi ikon `progress_activity` dengan animasi `animate-spin` pada tombol ekspor database, dropzone unggahan, dan tombol pemulihan impor.
+   - Menambahkan teks feedback dinamis pada tombol ekspor (`Mengekspor Database...`) dan impor (`Memulihkan Database...`) saat proses berlangsung.
+   - Memperbarui informasi bantuan batas ukuran file pada dropzone menjadi 100MB.
+
+### Verifikasi
+- PHP syntax check lulus (`No syntax errors detected`) ✅
+- Verifikasi batas upload runtime PHP di container: `upload_max_filesize = 100M`, `post_max_size = 100M`, `memory_limit = 256M` ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+
