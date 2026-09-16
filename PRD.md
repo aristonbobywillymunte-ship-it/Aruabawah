@@ -218,6 +218,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-17]: Standarisasi spinner loading pada modal Apify Financials (/admin/apify-financials): mengganti tag SVG spinner mentah menjadi ikon resmi material-symbols-outlined progress_activity dengan animasi animate-spin (QA-20260917-67).
 - [2026-09-17]: Eliminasi slop modal teleport pada Pipeline Monitor & System Health, dan perbaikan package_id proyek: menyingkirkan 3 tag x-teleport terakhir pada pipeline-monitor.blade.php dan system-health.blade.php menjadi native root modal dengan Alpine scroll-lock resmi, serta mengaitkan package_id = 1 pada proyek ID 55 (ketua dprd kota samarinda) agar alokasi memori actor Apify valid (QA-20260917-66).
 - [2026-09-17]: Eliminasi slop modal teleport & tag style mentah pada halaman Portal Berita (/admin/news-sources): mengonversi 7 modal teleport menjadi native root modal dengan scroll-lock hook Alpine resmi, memasang wire:click.self, wire:key dinamis, standarisasi spinner progress_activity, dan button loading guards (QA-20260917-65).
 - [2026-09-17]: Eliminasi slop & standarisasi modal pada halaman Telegram Settings (/admin/telegram-settings): memasang wire:loading.attr="disabled" dan spinner progress_activity pada tombol submit (Simpan Konfigurasi, Simpan Penerima, Ya Hapus, Jalankan Uji) dan tombol Batal, menambahkan atribut wire:key unik dan backdrop dismiss wire:click.self pada seluruh modal, serta menghapus dead properties flashMessage/flashType di TelegramSettings.php (QA-20260917-64).
@@ -1106,6 +1107,21 @@ Pada halaman `/admin/apify`, komponen antarmuka memiliki beberapa modal aksi (Mo
 ### Verifikasi
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 - Livewire component mount test via Tinker: SUCCESS ✅
+
+## Bab 7.59 — Standarisasi Spinner Loading pada Apify Financials (/admin/apify-financials)
+
+### Latar Belakang
+Audit antarmuka pada halaman `/admin/apify-financials` menemukan inkonsistensi terhadap pedoman `AGENTS.md` Bab 2 poin 2: indikator pemuatan data pada modal inspeksi item scraping (`openItems`) masih menggunakan tag `<svg>` mentah non-standar, bukan ikon sistem resmi `material-symbols-outlined progress_activity`.
+
+### Perubahan
+1. **Tampilan Blade (`resources/views/livewire/admin/apify-financial-report.blade.php`)**:
+   - Mengganti SVG spinner manual menjadi `material-symbols-outlined text-[32px] text-[#1fa387] animate-spin progress_activity`.
+   - Menjaga struktur modal native tanpa `x-teleport` agar backdrop render stabil di Livewire.
+
+### Verifikasi
+- Validasi sintaks Blade lolos ✅
+- Keseimbangan kontainer HTML terverifikasi: div open 43 / close 43 ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 
 ## Bab 7.58 — Eliminasi Slop Modal Teleport pada Pipeline Monitor & System Health
 

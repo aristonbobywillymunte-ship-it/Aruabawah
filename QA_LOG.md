@@ -1,5 +1,17 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260917-67] Standarisasi Spinner Loading pada Modal Apify Financials (/admin/apify-financials)
+* **Konteks**: Audit tampilan pada halaman `/admin/apify-financials` menemukan inkonsistensi terhadap aturan `AGENTS.md` Bab 2 poin 2, di mana indikator loading modal inspeksi hasil scraping (`openItems`) masih menggunakan SVG manual mentah.
+* **Perubahan**:
+  1. `resources/views/livewire/admin/apify-financial-report.blade.php`:
+     - Mengganti SVG animasi mentah menjadi ikon resmi `material-symbols-outlined text-[32px] text-[#1fa387] animate-spin progress_activity`.
+* **Hasil Pengujian Fisik**:
+  - Validasi sintaks Blade lolos ✅
+  - Keseimbangan tag HTML: div open 43 / close 43 ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
+
 ### [QA-20260917-66] Eliminasi Slop Modal Teleport pada Pipeline Monitor & System Health serta Perbaikan Package ID Proyek 55
 * **Konteks**: Audit menemukan (1) 3 tag `<template x-teleport="body">` tersisa di `pipeline-monitor.blade.php` dan `system-health.blade.php` yang berisiko benturan DOM morphing, (2) Proyek ID 55 (`ketua dprd kota samarinda`) memiliki `package_id = null` sehingga memicu warning skip alokasi memori scheduler Apify.
 * **Perubahan**:
