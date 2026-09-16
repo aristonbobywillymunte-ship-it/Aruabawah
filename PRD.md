@@ -218,6 +218,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-17]: Optimasi penghematan biaya Apify: mencegah pemanggilan actor comment scraper jika postingan memiliki comment_count = 0 di SocialCommentScraperDispatcher.php dan ApifyScrapingJob.php, mengeliminasi biaya mubazir $0.005-$0.008 per postingan kosong (QA-20260917-68).
 - [2026-09-17]: Standarisasi spinner loading pada modal Apify Financials (/admin/apify-financials): mengganti tag SVG spinner mentah menjadi ikon resmi material-symbols-outlined progress_activity dengan animasi animate-spin (QA-20260917-67).
 - [2026-09-17]: Eliminasi slop modal teleport pada Pipeline Monitor & System Health, dan perbaikan package_id proyek: menyingkirkan 3 tag x-teleport terakhir pada pipeline-monitor.blade.php dan system-health.blade.php menjadi native root modal dengan Alpine scroll-lock resmi, serta mengaitkan package_id = 1 pada proyek ID 55 (ketua dprd kota samarinda) agar alokasi memori actor Apify valid (QA-20260917-66).
 - [2026-09-17]: Eliminasi slop modal teleport & tag style mentah pada halaman Portal Berita (/admin/news-sources): mengonversi 7 modal teleport menjadi native root modal dengan scroll-lock hook Alpine resmi, memasang wire:click.self, wire:key dinamis, standarisasi spinner progress_activity, dan button loading guards (QA-20260917-65).
@@ -1107,6 +1108,24 @@ Pada halaman `/admin/apify`, komponen antarmuka memiliki beberapa modal aksi (Mo
 ### Verifikasi
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 - Livewire component mount test via Tinker: SUCCESS ✅
+
+## Bab 7.60 — Optimasi Penghematan Biaya Apify: Pencegahan Scraping Komentar pada Postingan 0 Komentar
+
+### Latar Belakang
+Audit Laporan Keuangan Apify (`/admin/apify-financials`) mendeteksi beberapa kali penarikan komentar (khususnya Instagram Comment Scraper) yang menagih biaya komputasi ($0.0052 - $0.0078) namun menghasilkan `0 Item`. Investigasi membuktikan bahwa postingan yang dirayap memang aslinya memiliki `comment_count = 0`. Namun, sistem sebelumnya tetap menunda analisis AI (`comments_checked = false`) dan memanggil actor Apify hanya untuk mengonfirmasi bahwa komentar memang kosong, sehingga membuang anggaran komputasi dan proxy.
+
+### Perubahan
+1. **Dispatcher Komentar (`app/Services/Scraping/SocialCommentScraperDispatcher.php`)**:
+   - Menambahkan filter ketat `where('comment_count', '>', 0)` pada metode `resolveCandidateUrls()`.
+   - Mencegah postingan dengan 0 komentar dimasukkan ke antrean perayapan komentar Apify.
+2. **Scraper Postingan Medsos (`app/Jobs/ApifyScrapingJob.php`)**:
+   - Memperbarui evaluasi `$platformNeedsCommentCheck`: Postingan hanya ditunda perayapan komentarnya jika actor aktif DAN `comment_count > 0`.
+   - Postingan dengan `comment_count = 0` langsung ditandai `comments_checked = true` dan langsung diteruskan ke inferensi AI tanpa jeda dan tanpa memanggil Apify Comment Scraper.
+
+### Verifikasi
+- PHP syntax check lulus (`No syntax errors detected`) pada `SocialCommentScraperDispatcher.php` dan `ApifyScrapingJob.php` ✅
+- Verifikasi kandidat URL di container: postingan Instagram dengan 0 komentar terbukti tidak lagi masuk ke antrean perayapan komentar (Count: 0) ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 
 ## Bab 7.59 — Standarisasi Spinner Loading pada Apify Financials (/admin/apify-financials)
 

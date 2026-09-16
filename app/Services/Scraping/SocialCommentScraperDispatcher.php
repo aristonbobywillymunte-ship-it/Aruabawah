@@ -94,6 +94,7 @@ class SocialCommentScraperDispatcher
             ->where('platform', $platform)
             ->whereNotNull('post_url')
             ->where('comments_checked', false)
+            ->where('comment_count', '>', 0)
             ->orderBy('posted_at', 'desc')
             ->orderBy('id', 'desc');
 

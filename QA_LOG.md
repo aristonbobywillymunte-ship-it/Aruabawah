@@ -1,5 +1,20 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260917-68] Optimasi Biaya Apify: Pencegahan Scraping Komentar pada Postingan 0 Komentar
+* **Konteks**: Di halaman `/admin/apify-financials`, beberapa run Instagram Comment Scraper mengeluarkan biaya ($0.0052 - $0.0078) namun menghasilkan 0 Item karena postingan aslinya memang tidak memiliki komentar (`comment_count = 0`). Sistem sebelumnya tetap memanggil scraper Apify untuk postingan kosong tersebut.
+* **Perubahan**:
+  1. `app/Services/Scraping/SocialCommentScraperDispatcher.php`:
+     - Menambahkan filter `where('comment_count', '>', 0)` pada metode `resolveCandidateUrls()`.
+  2. `app/Jobs/ApifyScrapingJob.php`:
+     - Memperbarui pengecekan `$platformNeedsCommentCheck` agar hanya menunda AI dispatch jika actor comment scraper aktif DAN `comment_count > 0`. Postingan dengan 0 komentar langsung diteruskan ke AI dengan status `comments_checked = true`.
+* **Hasil Pengujian Fisik**:
+  - `php -l app/Services/Scraping/SocialCommentScraperDispatcher.php`: No syntax errors detected ✅
+  - `php -l app/Jobs/ApifyScrapingJob.php`: No syntax errors detected ✅
+  - Verifikasi query kandidat di container: terbukti 0 kandidat untuk postingan dengan 0 komentar ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
+
 ### [QA-20260917-67] Standarisasi Spinner Loading pada Modal Apify Financials (/admin/apify-financials)
 * **Konteks**: Audit tampilan pada halaman `/admin/apify-financials` menemukan inkonsistensi terhadap aturan `AGENTS.md` Bab 2 poin 2, di mana indikator loading modal inspeksi hasil scraping (`openItems`) masih menggunakan SVG manual mentah.
 * **Perubahan**:
