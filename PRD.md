@@ -218,6 +218,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-17]: Refactor desain modal Scraping Settings (/admin/scraping-settings): menyelaraskan kontainer rounded-[24px] max-w-xl max-h-[90vh], header/footer abu-abu terpadu, dan pengelompokan input 3 grup visual (Interval, Limit & Timeout, Toggle Engine) agar 100% konsisten dengan modal admin lainnya (QA-20260917-70).
 - [2026-09-17]: Standarisasi spinner loading & guard tombol Batal pada Scraping Settings (/admin/scraping-settings): mengganti tag SVG mentah menjadi progress_activity animate-spin dan memproteksi tombol Batal saat submit berlangsung (QA-20260917-69).
 - [2026-09-17]: Optimasi penghematan biaya Apify: mencegah pemanggilan actor comment scraper jika postingan memiliki comment_count = 0 di SocialCommentScraperDispatcher.php dan ApifyScrapingJob.php, mengeliminasi biaya mubazir $0.005-$0.008 per postingan kosong (QA-20260917-68).
 - [2026-09-17]: Standarisasi spinner loading pada modal Apify Financials (/admin/apify-financials): mengganti tag SVG spinner mentah menjadi ikon resmi material-symbols-outlined progress_activity dengan animasi animate-spin (QA-20260917-67).
@@ -1109,6 +1110,25 @@ Pada halaman `/admin/apify`, komponen antarmuka memiliki beberapa modal aksi (Mo
 ### Verifikasi
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 - Livewire component mount test via Tinker: SUCCESS ✅
+
+## Bab 7.62 — Refactor Desain Modal Scraping Settings agar Konsisten dengan Standar Admin (/admin/scraping-settings)
+
+### Latar Belakang
+Modal "Edit Parameter Scraping" pada halaman `/admin/scraping-settings` sebelumnya belum konsisten dengan bahasa desain modal admin lainnya (seperti di `news-sources`, `apify-configuration`, `telegram-settings`). Desain sebelumnya berupa form padat tanpa pengelompokan visual (*form fatigue*), background backdrop kurang kontras (`bg-slate-900/40`), dan struktur footer belum memiliki pemisahan latar belakang abu-abu khas modal sistem (`bg-slate-50/70`).
+
+### Perubahan
+1. **Tampilan Blade (`resources/views/livewire/admin/scraping-settings.blade.php`)**:
+   - Menyelaraskan kontainer modal menjadi `max-w-xl`, `max-h-[90vh]`, `rounded-[24px]`, dan backdrop `bg-slate-900/60 backdrop-blur-sm`.
+   - Menstandarisasi header modal dengan latar `bg-slate-50/50` dan tombol X close terproteksi `disabled:opacity-50`.
+   - Mengelompokkan input form menjadi 3 grup terstruktur yang rapi:
+     1. **Interval Pencarian & Perayapan** (Google News & Portal Manual).
+     2. **Aturan & Limit Crawler** (Limit per Run, HTTP Timeout, Retry Limit, Delay Retry).
+     3. **Aktivasi Engine & Layanan** (Kartu toggle switch dengan deskripsi singkat).
+   - Menyelaraskan footer modal dengan latar `bg-slate-50/70 rounded-b-[24px]` serta tombol Batal dan Simpan yang konsisten.
+
+### Verifikasi
+- Keseimbangan tag HTML terverifikasi: div open 50 / close 50 ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 
 ## Bab 7.61 — Standarisasi Spinner Loading & Guard Batal pada Scraping Settings (/admin/scraping-settings)
 

@@ -1,5 +1,22 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260917-70] Refactor Desain Modal Scraping Settings agar Konsisten dengan Modal Admin Lainnya
+* **Konteks**: Modal "Edit Parameter Scraping" pada halaman `/admin/scraping-settings` memiliki tata letak padat tanpa pemisahan grup, backdrop kurang kontras, dan footer menyatu tanpa latar abu-abu standar sistem.
+* **Perubahan**:
+  1. `resources/views/livewire/admin/scraping-settings.blade.php`:
+     - Kontainer modal diperbarui menjadi `max-w-xl`, `max-h-[90vh]`, `rounded-[24px]`, dan backdrop `bg-slate-900/60 backdrop-blur-sm`.
+     - Header modal diperbarui dengan latar `bg-slate-50/50` dan tombol X close terproteksi.
+     - Body form dipecah menjadi 3 grup terstruktur:
+       1. *Interval Pencarian & Perayapan* (Google News & Portal Manual).
+       2. *Aturan & Limit Crawler* (Limit per Run, HTTP Timeout, Retry Limit, Delay Retry).
+       3. *Aktivasi Engine & Layanan* (Card checkbox interaktif dengan penjelasan ringkas).
+     - Footer modal diselaraskan dengan latar `bg-slate-50/70 rounded-b-[24px]`, tombol Batal, dan tombol Simpan Perubahan.
+* **Hasil Pengujian Fisik**:
+  - Keseimbangan tag HTML: div open 50 / close 50 ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
+
 ### [QA-20260917-69] Standarisasi Spinner Loading & Guard Tombol Batal Scraping Settings (/admin/scraping-settings)
 * **Konteks**: Pada halaman `/admin/scraping-settings`, tombol aksi (Edit Konfigurasi, Master Toggle ON/OFF, dan Simpan Perubahan) masih memakai tag SVG mentah untuk spinner animasi, serta tombol Batal di modal edit belum diproteksi disable saat submit berlangsung.
 * **Perubahan**:
