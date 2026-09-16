@@ -218,6 +218,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-17]: Standarisasi spinner loading & guard tombol Batal pada Scraping Settings (/admin/scraping-settings): mengganti tag SVG mentah menjadi progress_activity animate-spin dan memproteksi tombol Batal saat submit berlangsung (QA-20260917-69).
 - [2026-09-17]: Optimasi penghematan biaya Apify: mencegah pemanggilan actor comment scraper jika postingan memiliki comment_count = 0 di SocialCommentScraperDispatcher.php dan ApifyScrapingJob.php, mengeliminasi biaya mubazir $0.005-$0.008 per postingan kosong (QA-20260917-68).
 - [2026-09-17]: Standarisasi spinner loading pada modal Apify Financials (/admin/apify-financials): mengganti tag SVG spinner mentah menjadi ikon resmi material-symbols-outlined progress_activity dengan animasi animate-spin (QA-20260917-67).
 - [2026-09-17]: Eliminasi slop modal teleport pada Pipeline Monitor & System Health, dan perbaikan package_id proyek: menyingkirkan 3 tag x-teleport terakhir pada pipeline-monitor.blade.php dan system-health.blade.php menjadi native root modal dengan Alpine scroll-lock resmi, serta mengaitkan package_id = 1 pada proyek ID 55 (ketua dprd kota samarinda) agar alokasi memori actor Apify valid (QA-20260917-66).
@@ -1108,6 +1109,22 @@ Pada halaman `/admin/apify`, komponen antarmuka memiliki beberapa modal aksi (Mo
 ### Verifikasi
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 - Livewire component mount test via Tinker: SUCCESS ✅
+
+## Bab 7.61 — Standarisasi Spinner Loading & Guard Batal pada Scraping Settings (/admin/scraping-settings)
+
+### Latar Belakang
+Audit antarmuka pada halaman `/admin/scraping-settings` menemukan bahwa 3 tombol interaktif (tombol Edit Konfigurasi, tombol Master ON/OFF, dan tombol Simpan Perubahan) masih menggunakan tag `<svg>` mentah untuk animasi spinner pemuatan. Selain itu, tombol Batal di dalam modal belum diproteksi disable saat aksi penyimpanan formulir (`wire:target="save"`) sedang berjalan.
+
+### Perubahan
+1. **Tampilan Blade (`resources/views/livewire/admin/scraping-settings.blade.php`)**:
+   - Mengganti seluruh 3 indikator SVG manual menjadi ikon font sistem seragam `material-symbols-outlined progress_activity animate-spin`.
+   - Menambahkan guard proteksi `wire:loading.attr="disabled"` dengan `wire:target="save"` pada tombol Batal di dalam modal edit.
+   - Menambahkan status styling `disabled:cursor-not-allowed` yang seragam.
+
+### Verifikasi
+- 0 tag `<svg class="animate-spin">` mentah tersisa di file ✅
+- Keseimbangan tag HTML terverifikasi: div open 43 / close 43 ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 
 ## Bab 7.60 — Optimasi Penghematan Biaya Apify: Pencegahan Scraping Komentar pada Postingan 0 Komentar
 

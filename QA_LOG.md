@@ -1,5 +1,18 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260917-69] Standarisasi Spinner Loading & Guard Tombol Batal Scraping Settings (/admin/scraping-settings)
+* **Konteks**: Pada halaman `/admin/scraping-settings`, tombol aksi (Edit Konfigurasi, Master Toggle ON/OFF, dan Simpan Perubahan) masih memakai tag SVG mentah untuk spinner animasi, serta tombol Batal di modal edit belum diproteksi disable saat submit berlangsung.
+* **Perubahan**:
+  1. `resources/views/livewire/admin/scraping-settings.blade.php`:
+     - Mengganti seluruh 3 indikator SVG manual menjadi ikon font resmi `material-symbols-outlined progress_activity animate-spin`.
+     - Menambahkan proteksi `wire:loading.attr="disabled"` dengan `wire:target="save"` pada tombol Batal.
+* **Hasil Pengujian Fisik**:
+  - 0 tag `<svg class="animate-spin">` mentah tersisa di file ✅
+  - Keseimbangan tag HTML: div open 43 / close 43 ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
+
 ### [QA-20260917-68] Optimasi Biaya Apify: Pencegahan Scraping Komentar pada Postingan 0 Komentar
 * **Konteks**: Di halaman `/admin/apify-financials`, beberapa run Instagram Comment Scraper mengeluarkan biaya ($0.0052 - $0.0078) namun menghasilkan 0 Item karena postingan aslinya memang tidak memiliki komentar (`comment_count = 0`). Sistem sebelumnya tetap memanggil scraper Apify untuk postingan kosong tersebut.
 * **Perubahan**:

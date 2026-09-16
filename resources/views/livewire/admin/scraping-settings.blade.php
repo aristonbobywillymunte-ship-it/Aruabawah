@@ -6,14 +6,11 @@
                 wire:click="openEditModal"
                 wire:loading.attr="disabled"
                 wire:target="openEditModal"
-                class="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-60"
+                class="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-5 text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
                 <span wire:loading.remove wire:target="openEditModal" class="material-symbols-outlined text-[18px]">settings</span>
                 <span wire:loading wire:target="openEditModal" class="flex items-center justify-center">
-                    <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <span class="material-symbols-outlined text-[18px] animate-spin text-white">progress_activity</span>
                 </span>
                 <span>Edit Konfigurasi</span>
             </button>
@@ -44,14 +41,11 @@
                         wire:click="toggleStatus"
                         wire:loading.attr="disabled"
                         wire:target="toggleStatus"
-                        class="inline-flex h-8 items-center gap-1.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 px-3.5 text-[11px] font-bold transition shadow-sm cursor-pointer disabled:opacity-60"
+                        class="inline-flex h-8 items-center gap-1.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 px-3.5 text-[11px] font-bold transition shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         <span wire:loading.remove wire:target="toggleStatus">{{ $setting->is_active ? 'ON' : 'OFF' }}</span>
                         <span wire:loading wire:target="toggleStatus" class="flex items-center justify-center">
-                            <svg class="animate-spin h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <span class="material-symbols-outlined text-[14px] animate-spin text-slate-500">progress_activity</span>
                         </span>
                     </button>
                 </div>
@@ -227,18 +221,15 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                    <button type="button" wire:click="$set('showEditModal', false)" wire:loading.attr="disabled" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
+                    <button type="button" wire:click="$set('showEditModal', false)" wire:loading.attr="disabled" wire:target="save" class="h-10 rounded-xl border border-slate-200 px-5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer disabled:opacity-50">Batal</button>
                     <button type="submit"
                         wire:loading.attr="disabled"
                         wire:target="save"
-                        class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-60 inline-flex items-center gap-2">
+                        class="h-10 rounded-xl bg-[#1fa387] hover:bg-[#1a8b73] text-white px-6 text-xs font-bold transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2">
                         <span wire:loading.remove wire:target="save">Simpan Perubahan</span>
                         <span wire:loading wire:target="save" class="flex items-center gap-2">
-                            <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-                            Menyimpan...
+                            <span class="material-symbols-outlined text-[16px] animate-spin text-white">progress_activity</span>
+                            <span>Menyimpan...</span>
                         </span>
                     </button>
                 </div>
