@@ -218,6 +218,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-17]: Eliminasi slop & standarisasi modal pada halaman Telegram Settings (/admin/telegram-settings): memasang wire:loading.attr="disabled" dan spinner progress_activity pada tombol submit (Simpan Konfigurasi, Simpan Penerima, Ya Hapus, Jalankan Uji) dan tombol Batal, menambahkan atribut wire:key unik dan backdrop dismiss wire:click.self pada seluruh modal, serta menghapus dead properties flashMessage/flashType di TelegramSettings.php (QA-20260917-64).
 - [2026-09-17]: Eliminasi false-positive pencocokan konten dan notifikasi krisis Telegram: membersihkan sisipan teks rekomendasi (Baca Juga, Simak Juga, Artikel Terkait) pada crawler portal berita (RunNewsPortalScraping & ScrapingJob), menambahkan metode stripRelatedArticlesNoise pada ContentMatchingService agar artikel luar tidak terserap ke proyek yang salah, serta memasang guard evaluasi relevansi kata kunci proyek (judul, ringkasan, alasan risiko, dan subjek AI) di AiAnalysisJob sebelum men-dispatch TelegramNotificationJob (QA-20260917-55).
 - [2026-09-11]: Fleksibilitas jadwal scraping mandiri proyek (Portal & Sosial): mengeliminasi pemblokir slot jam saat paket admin belum memiliki jadwal default, menyediakan fitur tambah/hapus jam kustom mandiri bagi pengguna, serta menjaga fallback otomatis ke default paket jika tidak diatur (QA-20260911-42).
 - [2026-09-11]: Integrasi pemilihan paket monitoring pada formulir pembuatan akun klien baru (`/admin/clients/create`): menambahkan pilihan whitelist paket monitoring saat registrasi klien, auto-sync `allowedPackages`, perbaikan teks edukatif empty state, serta pengaitan paket aktif pada akun klien eksisting (QA-20260911-41).
@@ -1103,6 +1104,31 @@ Pada halaman `/admin/apify`, komponen antarmuka memiliki beberapa modal aksi (Mo
 ### Verifikasi
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 - Livewire component mount test via Tinker: SUCCESS ✅
+
+## Bab 7.56 — Eliminasi Slop & Standarisasi Modal Telegram Settings (/admin/telegram-settings)
+
+### Latar Belakang
+Audit deteksi slop pada halaman `/admin/telegram-settings` menemukan pelanggaran aturan `AGENTS.md`:
+1. Tombol aksi (Simpan Konfigurasi, Simpan Penerima, Ya Hapus, Jalankan Uji) belum dilindungi secara menyeluruh oleh `wire:loading.attr="disabled"` dan indikator proses yang seragam.
+2. Tombol Batal pada seluruh modal belum diproteksi saat submit berlangsung (hazard *double action*).
+3. Modal Tambah/Edit Penerima, Modal Uji Kirim, dan Modal Konfirmasi Hapus belum memiliki backdrop dismiss (`wire:click.self`) dan atribut unik `wire:key`.
+4. Tombol Jalankan Uji masih menggunakan SVG spinner mentah non-standar, bukan `material-symbols-outlined progress_activity`.
+5. Terdapat *dead properties* (`$flashMessage`, `$flashType`) di `TelegramSettings.php` yang tidak pernah dirender di Blade karena sistem sudah beralih ke toast global `<x-admin-toast />`.
+
+### Perubahan
+1. **Komponen Livewire (`app/Livewire/Admin/TelegramSettings.php`)**:
+   - Menghapus properti mati `$flashMessage` dan `$flashType`.
+   - Merapikan method `notify()` agar murni mendispatch event resmi `admin-toast`.
+2. **Tampilan Blade (`resources/views/livewire/admin/telegram-settings.blade.php`)**:
+   - Memasang `wire:loading.attr="disabled"` dan feedback teks/spinner `progress_activity` pada tombol "Simpan Konfigurasi", "Simpan Penerima", "Ya, Hapus", dan "Jalankan Uji".
+   - Menambahkan loading guard pada seluruh tombol "Batal" di dalam modal.
+   - Memasang `wire:key` unik dinamis dan handler `wire:click.self` pada ketiga modal (Penerima, Uji Kirim, Konfirmasi Hapus).
+   - Menstandarisasi spinner tombol uji coba ke `material-symbols-outlined text-[16px] animate-spin progress_activity`.
+
+### Verifikasi
+- PHP syntax check lulus (`No syntax errors detected in app/Livewire/Admin/TelegramSettings.php`) ✅
+- Keseimbangan tag HTML terverifikasi: div open 46 / close 46 ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 
 ## Bab 7.55 — Eliminasi False Positive Matcher dan Notifikasi Krisis Telegram
 

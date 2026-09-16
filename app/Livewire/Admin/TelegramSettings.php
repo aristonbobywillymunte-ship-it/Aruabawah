@@ -38,8 +38,6 @@ class TelegramSettings extends Component
     public string $testResultError = '';
 
     // UI Feedback
-    public ?string $flashMessage = null;
-    public ?string $flashType = null;
     public bool $confirmingDelete = false;
     public ?int $deleteId = null;
 
@@ -339,8 +337,6 @@ class TelegramSettings extends Component
 
     protected function notify(string $type, string $message): void
     {
-        $this->flashType = $type;
-        $this->flashMessage = $message;
         $payload = [
             'type' => $type,
             'title' => $message,

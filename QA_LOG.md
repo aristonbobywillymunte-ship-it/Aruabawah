@@ -1,5 +1,24 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260917-64] Eliminasi Slop & Standarisasi Modal Halaman Telegram Settings (/admin/telegram-settings)
+* **Konteks**: Audit halaman `/admin/telegram-settings` menemukan pelanggaran: (1) tombol submit dan batal tanpa `wire:loading` guard (double-submit hazard), (2) modal tanpa `wire:key` dan backdrop dismiss `wire:click.self`, (3) spinner SVG mentah non-standar, (4) dead properties `$flashMessage` dan `$flashType` di PHP.
+* **Perubahan**:
+  1. `app/Livewire/Admin/TelegramSettings.php`:
+     - Menghapus dead properties `$flashMessage` dan `$flashType`.
+     - Menyederhanakan method `notify()` agar murni mendispatch event resmi `admin-toast`.
+  2. `resources/views/livewire/admin/telegram-settings.blade.php`:
+     - Tombol "Simpan Konfigurasi": menambahkan `wire:loading.attr="disabled"` + spinner `progress_activity` + teks "Menyimpan...".
+     - Tombol "Simpan Penerima" & "Ya, Hapus": menambahkan `wire:loading.attr="disabled"` + spinner `progress_activity`.
+     - Tombol "Batal" pada seluruh modal: menambahkan `wire:loading.attr="disabled"` dengan target submit terkait.
+     - Modal: menambahkan `wire:key` unik dinamis dan `wire:click.self` untuk backdrop dismiss di Modal Penerima, Modal Uji Kirim, dan Modal Konfirmasi Hapus.
+     - Tombol "Jalankan Uji": mengganti SVG mentah menjadi `material-symbols-outlined progress_activity` dengan animasi `animate-spin`.
+* **Hasil Pengujian Fisik**:
+  - `php -l app/Livewire/Admin/TelegramSettings.php`: No syntax errors detected ✅
+  - Tag HTML terverifikasi: div open 46 / close 46 ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
+
 ### [QA-20260917-63] Eliminasi False-Positive Matcher & Guard Notifikasi Telegram Wagub Kaltim
 * **Konteks**: Notifikasi krisis Telegram untuk proyek Wagub Kaltim terkirim dengan judul dan ringkasan kasus pemerasan Tim Ahli Sudarno yang tidak relevan dengan figur Wagub Kaltim. Root cause: Tautan rekomendasi redaksi berita ("Baca Juga: Wagub Kaltim Ditanya...") ikut terambil oleh crawler portal berita dan menyebabkan `ContentMatchingService` menautkan artikel secara keliru ke pivot proyek Wagub Kaltim, lalu di-dispatch sebagai alert risiko tinggi.
 * **Perubahan**:
