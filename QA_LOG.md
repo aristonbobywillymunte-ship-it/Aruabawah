@@ -1,5 +1,38 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260917-66] Eliminasi Slop Modal Teleport pada Pipeline Monitor & System Health serta Perbaikan Package ID Proyek 55
+* **Konteks**: Audit menemukan (1) 3 tag `<template x-teleport="body">` tersisa di `pipeline-monitor.blade.php` dan `system-health.blade.php` yang berisiko benturan DOM morphing, (2) Proyek ID 55 (`ketua dprd kota samarinda`) memiliki `package_id = null` sehingga memicu warning skip alokasi memori scheduler Apify.
+* **Perubahan**:
+  1. `resources/views/livewire/admin/pipeline-monitor.blade.php`:
+     - Menghapus pembungkus teleport pada Modal Konfirmasi Aksi.
+     - Memasang `wire:key="pipeline-monitor-confirm-modal"`, `x-cloak`, dan `@keydown.escape.window`.
+  2. `resources/views/livewire/admin/system-health.blade.php`:
+     - Menghapus 2 pembungkus teleport pada Modal Antrean AI dan Modal Antrean Apify.
+     - Memasang scroll-lock hook resmi Alpine, `wire:click.self`, `wire:key`, dan `wire:loading.attr="disabled"` pada tombol penutup.
+  3. Database Update:
+     - Mengaitkan `package_id = 1` pada Proyek ID 55 (`ketua dprd kota samarinda`).
+* **Hasil Pengujian Fisik**:
+  - `grep` pencarian `x-teleport`: 0 tag ditemukan di seluruh `resources/views/livewire/admin/` ✅
+  - `php artisan view:clear`: Compiled views cleared ✅
+  - Proyek ID 55 terbukti memiliki `package_id = 1` ✅
+* **Status**: ✅ PASSED
+
+
+### [QA-20260917-65] Eliminasi Slop Modal Teleport & Tag Style Mentah pada News Sources (/admin/news-sources)
+* **Konteks**: Audit deteksi slop pada `resources/views/livewire/admin/news-sources.blade.php` menemukan 7 modal masih dibungkus oleh `<template x-teleport="body">` dan menyuntikkan tag `<style>body, html { overflow: hidden !important; }</style>` mentah ke dalam DOM. Hal ini melanggar pedoman `AGENTS.md` Bab 2 poin 3 dan memicu risiko benturan DOM morphing pada Livewire 3/4.
+* **Perubahan**:
+  1. `resources/views/livewire/admin/news-sources.blade.php`:
+     - Menghapus 7 pembungkus `<template x-teleport="body">` dan seluruh tag `<style>` mentah.
+     - Mengubah semua modal menjadi native root modal dengan scroll-lock hook Alpine resmi (`x-data x-init="..."`).
+     - Memasang `wire:key` dinamis dan `wire:click.self` backdrop dismiss pada Modal Form Portal, Modal Hapus, Modal Tempat Sampah, Modal Pulihkan, Modal Hapus Permanen, Modal Saran AI, dan Modal Uji Hasil.
+     - Menstandarisasi spinner dan tombol loading guard (`wire:loading.attr="disabled"`) ke `material-symbols-outlined progress_activity` dengan animasi `animate-spin`.
+* **Hasil Pengujian Fisik**:
+  - Validasi sintaks blade & HTML: 0 tag `x-teleport` dan 0 tag `<style>` tersisa ✅
+  - Keseimbangan tag HTML: div open 213 / close 213 ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
+
 ### [QA-20260917-64] Eliminasi Slop & Standarisasi Modal Halaman Telegram Settings (/admin/telegram-settings)
 * **Konteks**: Audit halaman `/admin/telegram-settings` menemukan pelanggaran: (1) tombol submit dan batal tanpa `wire:loading` guard (double-submit hazard), (2) modal tanpa `wire:key` dan backdrop dismiss `wire:click.self`, (3) spinner SVG mentah non-standar, (4) dead properties `$flashMessage` dan `$flashType` di PHP.
 * **Perubahan**:

@@ -316,8 +316,16 @@
 
     <!-- Modal Detail Antrean AI (Sesuai Konsep Modal Admin Apify) -->
     @if($showQueueModal)
-    <template x-teleport="body">
-        <div wire:key="ai-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-2 py-4 font-sans" @touchmove.prevent @wheel.prevent>
+        <div 
+            wire:key="ai-queue-details-modal" 
+            wire:click.self="closeQueueModal"
+            x-data 
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+            style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" 
+            class="backdrop-blur-sm px-2 py-4 font-sans" 
+            @touchmove.prevent 
+            @wheel.prevent
+        >
                 <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[95vh]" style="max-height: calc(100dvh - 40px);">
                 <!-- Modal Header -->
                 <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
@@ -326,7 +334,7 @@
                         <h2 class="text-sm font-black text-slate-900 leading-tight mt-0.5">Daftar Antrean Berjalan <span class="text-slate-400 font-semibold block sm:inline">(AI Pipeline)</span></h2>
                         <p class="text-[9px] text-slate-400 mt-1 sm:mt-0.5 leading-relaxed">Menampilkan status antrean analisis artikel portal dan media sosial yang sedang mengantre atau diproses AI.</p>
                     </div>
-                    <button type="button" wire:click="closeQueueModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
+                    <button type="button" wire:click="closeQueueModal" wire:loading.attr="disabled" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0 disabled:opacity-50">
                         <span class="material-symbols-outlined text-[18px] block">close</span>
                     </button>
                 </div>
@@ -592,8 +600,9 @@
 
                         <button
                             type="button"
-                            wire:click="closeQueueModal"
-                            class="px-4 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
+                            wire:click="closeApifyQueueModal"
+                            wire:loading.attr="disabled"
+                            class="px-4 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm disabled:opacity-50"
                         >
                             Tutup
                         </button>
@@ -602,8 +611,7 @@
 
             </div>
         </div>
-        </template>
-@endif
+    @endif
 
     <!-- Modal Konfirmasi Error Handling -->
     @if($showConfirmModal)
@@ -741,8 +749,16 @@
 
     <!-- Modal Antrean Apify (Large Modal, Body Scrollable, Tinggi Fix) -->
     @if($showApifyQueueModal)
-    <template x-teleport="body">
-        <div wire:key="apify-queue-details-modal" x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }" style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 py-6 font-sans" @touchmove.prevent @wheel.prevent>
+        <div 
+            wire:key="apify-queue-details-modal" 
+            wire:click.self="closeApifyQueueModal"
+            x-data 
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
+            style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" 
+            class="backdrop-blur-sm px-4 py-6 font-sans" 
+            @touchmove.prevent 
+            @wheel.prevent
+        >
                     <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[95vh]" style="max-height: calc(100dvh - 40px);">
                         <!-- Modal Header -->
                         <div class="flex items-start sm:items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3 sm:py-4 shrink-0 bg-slate-50/50 gap-4">
@@ -751,7 +767,7 @@
                                 <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Daftar Antrean Berjalan <span class="text-slate-400 font-semibold block sm:inline">(Apify Pipeline)</span></h2>
                         <p class="text-[9px] text-slate-400 mt-1 sm:mt-0.5 leading-relaxed">Menampilkan status antrean pengambilan media sosial yang sedang mengantre, diproses, atau ditunda.</p>
                     </div>
-                    <button type="button" wire:click="closeApifyQueueModal" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
+                    <button type="button" wire:click="closeApifyQueueModal" wire:loading.attr="disabled" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0 disabled:opacity-50">
                         <span class="material-symbols-outlined text-[18px] block">close</span>
                     </button>
                 </div>
@@ -867,14 +883,14 @@
                         <button
                             type="button"
                             wire:click="closeApifyQueueModal"
-                            class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm"
+                            wire:loading.attr="disabled"
+                            class="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 active:scale-[0.98] text-slate-600 font-bold rounded-xl text-xs transition duration-150 cursor-pointer shadow-sm disabled:opacity-50"
                         >
                             Tutup
                         </button>
                     </div>
                 </div>
             </div>
-        </template>
     @endif
 
     <style>

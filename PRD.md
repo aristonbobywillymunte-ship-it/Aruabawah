@@ -218,6 +218,8 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-17]: Eliminasi slop modal teleport pada Pipeline Monitor & System Health, dan perbaikan package_id proyek: menyingkirkan 3 tag x-teleport terakhir pada pipeline-monitor.blade.php dan system-health.blade.php menjadi native root modal dengan Alpine scroll-lock resmi, serta mengaitkan package_id = 1 pada proyek ID 55 (ketua dprd kota samarinda) agar alokasi memori actor Apify valid (QA-20260917-66).
+- [2026-09-17]: Eliminasi slop modal teleport & tag style mentah pada halaman Portal Berita (/admin/news-sources): mengonversi 7 modal teleport menjadi native root modal dengan scroll-lock hook Alpine resmi, memasang wire:click.self, wire:key dinamis, standarisasi spinner progress_activity, dan button loading guards (QA-20260917-65).
 - [2026-09-17]: Eliminasi slop & standarisasi modal pada halaman Telegram Settings (/admin/telegram-settings): memasang wire:loading.attr="disabled" dan spinner progress_activity pada tombol submit (Simpan Konfigurasi, Simpan Penerima, Ya Hapus, Jalankan Uji) dan tombol Batal, menambahkan atribut wire:key unik dan backdrop dismiss wire:click.self pada seluruh modal, serta menghapus dead properties flashMessage/flashType di TelegramSettings.php (QA-20260917-64).
 - [2026-09-17]: Eliminasi false-positive pencocokan konten dan notifikasi krisis Telegram: membersihkan sisipan teks rekomendasi (Baca Juga, Simak Juga, Artikel Terkait) pada crawler portal berita (RunNewsPortalScraping & ScrapingJob), menambahkan metode stripRelatedArticlesNoise pada ContentMatchingService agar artikel luar tidak terserap ke proyek yang salah, serta memasang guard evaluasi relevansi kata kunci proyek (judul, ringkasan, alasan risiko, dan subjek AI) di AiAnalysisJob sebelum men-dispatch TelegramNotificationJob (QA-20260917-55).
 - [2026-09-11]: Fleksibilitas jadwal scraping mandiri proyek (Portal & Sosial): mengeliminasi pemblokir slot jam saat paket admin belum memiliki jadwal default, menyediakan fitur tambah/hapus jam kustom mandiri bagi pengguna, serta menjaga fallback otomatis ke default paket jika tidak diatur (QA-20260911-42).
@@ -1104,6 +1106,51 @@ Pada halaman `/admin/apify`, komponen antarmuka memiliki beberapa modal aksi (Mo
 ### Verifikasi
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 - Livewire component mount test via Tinker: SUCCESS ✅
+
+## Bab 7.58 — Eliminasi Slop Modal Teleport pada Pipeline Monitor & System Health
+
+### Latar Belakang
+Pada halaman `/admin/pipeline-monitor` dan `/admin/system-health`, ditemukan 3 modal terakhir yang masih menggunakan `<template x-teleport="body">`:
+1. Modal Konfirmasi Aksi (`pipeline-monitor.blade.php`).
+2. Modal Detail Antrean AI (`system-health.blade.php`).
+3. Modal Detail Antrean Apify (`system-health.blade.php`).
+
+Pola teleport ini melanggar pedoman `AGENTS.md` Bab 2 poin 3 dan dapat menyebabkan benturan rendering backdrop pada Livewire 3/4. Selain itu, pada proyek `ketua dprd kota samarinda` (ID: 55), `package_id` bernilai null sehingga memicu warning skip alokasi memori pada scheduler Apify.
+
+### Perubahan
+1. **Pipeline Monitor (`resources/views/livewire/admin/pipeline-monitor.blade.php`)**:
+   - Menghapus pembungkus `<template x-teleport="body">`.
+   - Menggunakan native root modal dengan `wire:key="pipeline-monitor-confirm-modal"`, `x-cloak`, `@keydown.escape.window`, serta tombol Batal yang seragam.
+2. **System Health (`resources/views/livewire/admin/system-health.blade.php`)**:
+   - Menghapus pembungkus `<template x-teleport="body">` pada Modal Antrean AI dan Modal Antrean Apify.
+   - Mengubah kedua modal menjadi native root modal dengan hook resmi scroll-lock Alpine `document.body.style.overflow = 'hidden'`, `wire:click.self`, dan atribut `wire:key` unik.
+   - Memasang `wire:loading.attr="disabled"` pada tombol penutup (X dan Tutup).
+3. **Penyelarasan Data Proyek (`projects`)**:
+   - Memperbarui proyek ID 55 (`ketua dprd kota samarinda`) agar mengaitkan `package_id = 1`, sehingga validasi alokasi RAM (`getEffectiveMemoryLimitForActor`) terpenuhi dan scraping dapat berjalan normal.
+
+### Verifikasi
+- 0 tag `<template x-teleport="body">` tersisa di seluruh direktori `resources/views/livewire/admin/` ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+- Proyek ID 55 diverifikasi memiliki `package_id = 1` ✅
+
+## Bab 7.57 — Eliminasi Slop Modal Teleport & Tag Style pada News Sources (/admin/news-sources)
+
+### Latar Belakang
+Audit deteksi slop pada halaman `/admin/news-sources` menemukan 7 modal (Modal Form Portal, Modal Hapus, Modal Tempat Sampah, Modal Konfirmasi Pemulihan, Modal Hapus Permanen, Modal Saran AI HTML, dan Modal Hasil Test) masih dibungkus oleh `<template x-teleport="body">` dan menyuntikkan tag `<style>body, html { overflow: hidden !important; }</style>` mentah ke dalam DOM. Pola ini melanggar pedoman `AGENTS.md` Bab 2 poin 3 dan rentan memicu konflik DOM morphing pada Livewire 3/4. Selain itu, tombol aksi belum dilengkapi loading guard seragam.
+
+### Perubahan
+1. **Tampilan Blade (`resources/views/livewire/admin/news-sources.blade.php`)**:
+   - Menghapus seluruh 7 pembungkus `<template x-teleport="body">` dan tag `<style>` mentah.
+   - Mengubah modal menjadi native root-level modal dengan Alpine hook resmi scroll-lock:
+     `x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"`
+   - Memasang handler klik backdrop luar `wire:click.self` dan atribut unik dinamis `wire:key` pada setiap kontainer modal.
+   - Menstandarisasi spinner tombol aksi (Simpan, Hapus, Pulihkan, Hapus Permanen, Analisis AI) menggunakan `material-symbols-outlined progress_activity` dengan animasi `animate-spin` serta atribut `wire:loading.attr="disabled"`.
+   - Melindungi seluruh tombol "Batal" di dalam modal saat submit sedang diproses.
+
+### Verifikasi
+- Eliminasi menyeluruh: 0 tag `x-teleport` dan 0 tag `<style>` mentah tersisa di file ✅
+- Keseimbangan tag HTML terverifikasi: div open 213 / close 213 ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 
 ## Bab 7.56 — Eliminasi Slop & Standarisasi Modal Telegram Settings (/admin/telegram-settings)
 
