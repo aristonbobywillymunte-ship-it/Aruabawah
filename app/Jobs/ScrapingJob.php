@@ -257,6 +257,7 @@ class ScrapingJob implements ShouldQueue
                 foreach ($nodes as $node) {
                     $text .= $node->textContent . "\n";
                 }
+                $text = preg_replace('/(?:Baca\s+Juga|Simak\s+Juga|Lihat\s+Juga|Artikel\s+Terkait|Berita\s+Terkait)\s*:\s*[^\.\n\r]+(?:\.|\n|\r|$)/iu', ' ', $text);
                 $cleaned = trim(preg_replace('/\s+/', ' ', strip_tags($text)));
                 if (!empty($cleaned)) {
                     return $cleaned;
@@ -271,6 +272,7 @@ class ScrapingJob implements ShouldQueue
             $text .= $p->textContent . "\n";
         }
 
+        $text = preg_replace('/(?:Baca\s+Juga|Simak\s+Juga|Lihat\s+Juga|Artikel\s+Terkait|Berita\s+Terkait)\s*:\s*[^\.\n\r]+(?:\.|\n|\r|$)/iu', ' ', $text);
         return trim(preg_replace('/\s+/', ' ', strip_tags($text)));
     }
 }

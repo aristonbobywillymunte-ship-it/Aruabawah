@@ -1,5 +1,25 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260917-63] Eliminasi False-Positive Matcher & Guard Notifikasi Telegram Wagub Kaltim
+* **Konteks**: Notifikasi krisis Telegram untuk proyek Wagub Kaltim terkirim dengan judul dan ringkasan kasus pemerasan Tim Ahli Sudarno yang tidak relevan dengan figur Wagub Kaltim. Root cause: Tautan rekomendasi redaksi berita ("Baca Juga: Wagub Kaltim Ditanya...") ikut terambil oleh crawler portal berita dan menyebabkan `ContentMatchingService` menautkan artikel secara keliru ke pivot proyek Wagub Kaltim, lalu di-dispatch sebagai alert risiko tinggi.
+* **Perubahan**:
+  1. `app/Services/ContentMatchingService.php`:
+     - Menambahkan fungsi sanitasi `stripRelatedArticlesNoise(?string $text)` untuk menghapus teks rekomendasi (`Baca Juga`, `Simak Juga`, `Lihat Juga`, `Artikel Terkait`, `Berita Terkait`) sebelum evaluasi pencocokan kata kunci.
+     - Mengaplikasikan sanitasi ini pada metode `crossLinkToActiveProjects()` dan `matchExistingContentForProject()`.
+  2. `app/Jobs/ScrapingJob.php` & `app/Console/Commands/RunNewsPortalScraping.php`:
+     - Menambahkan filter pembersih tautan rekomendasi pada metode ekstraksi `extractReadableContent()`.
+  3. `app/Jobs/AiAnalysisJob.php`:
+     - Menambahkan guard verifikasi relevansi kata kunci proyek terhadap judul, ringkasan, alasan risiko, dan subjek AI sebelum `TelegramNotificationJob` di-dispatch ke queue notifikasi.
+* **Hasil Pengujian Fisik**:
+  - `php -l app/Services/ContentMatchingService.php`: No syntax errors detected ✅
+  - `php -l app/Jobs/ScrapingJob.php`: No syntax errors detected ✅
+  - `php -l app/Console/Commands/RunNewsPortalScraping.php`: No syntax errors detected ✅
+  - `php -l app/Jobs/AiAnalysisJob.php`: No syntax errors detected ✅
+  - Verifikasi re-evaluasi proyek di container: Artikel ID 3622 terbukti terlepas dari pivot `project_articles` untuk Proyek Wagub Kaltim ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
+
 ### [QA-20260911-62] Fix 5 Bug Halaman Scraping Settings (/admin/scraping-settings)
 * **Konteks**: Analisa halaman `http://localhost/admin/scraping-settings` menemukan 5 bug: (1) 3 tombol tanpa `wire:loading` guard, (2) modal pakai `@if` rentan backdrop tidak muncul, (3) modal tanpa `wire:key`/`wire:click.self`, (4) teks markdown literal `**bold**` tidak render, (5) `setting()` dipanggil 6x per siklus + dead properties `$flashMessage`/`$flashType`.
 * **Perubahan**:

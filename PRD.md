@@ -218,6 +218,7 @@ Setiap AI yang ditugaskan memperbaiki atau mengembangkan kode pada repositori in
 
 ## 6. Log Catatan Progress AI (Terus Diperbarui Setiap Sesi)
 
+- [2026-09-17]: Eliminasi false-positive pencocokan konten dan notifikasi krisis Telegram: membersihkan sisipan teks rekomendasi (Baca Juga, Simak Juga, Artikel Terkait) pada crawler portal berita (RunNewsPortalScraping & ScrapingJob), menambahkan metode stripRelatedArticlesNoise pada ContentMatchingService agar artikel luar tidak terserap ke proyek yang salah, serta memasang guard evaluasi relevansi kata kunci proyek (judul, ringkasan, alasan risiko, dan subjek AI) di AiAnalysisJob sebelum men-dispatch TelegramNotificationJob (QA-20260917-55).
 - [2026-09-11]: Fleksibilitas jadwal scraping mandiri proyek (Portal & Sosial): mengeliminasi pemblokir slot jam saat paket admin belum memiliki jadwal default, menyediakan fitur tambah/hapus jam kustom mandiri bagi pengguna, serta menjaga fallback otomatis ke default paket jika tidak diatur (QA-20260911-42).
 - [2026-09-11]: Integrasi pemilihan paket monitoring pada formulir pembuatan akun klien baru (`/admin/clients/create`): menambahkan pilihan whitelist paket monitoring saat registrasi klien, auto-sync `allowedPackages`, perbaikan teks edukatif empty state, serta pengaitan paket aktif pada akun klien eksisting (QA-20260911-41).
 - [2026-09-11]: Isolasi proyek akun client dan sinkronisasi kuota proyek admin: memastikan kartu dan tombol Buat Proyek Baru hanya tampil jika kuota paket aktif (`max_projects`) belum habis dan client memiliki izin, mount guard di `/projects/create`, pembersihan double empty state menjadi satu kartu kontekstual, pembersihan copy usang "media cetak", dan guard `can_edit_projects` pada tombol edit (QA-20260911-40).
@@ -1102,6 +1103,30 @@ Pada halaman `/admin/apify`, komponen antarmuka memiliki beberapa modal aksi (Mo
 ### Verifikasi
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 - Livewire component mount test via Tinker: SUCCESS ✅
+
+## Bab 7.55 — Eliminasi False Positive Matcher dan Notifikasi Krisis Telegram
+
+### Latar Belakang
+Pada proyek pemantauan spesifik (seperti Wagub Kaltim), notifikasi Telegram risiko krisis terkirim untuk artikel yang sama sekali tidak membahas figur/proyek terkait (misalnya berita anggota tim ahli Sudarno yang melaporkan kasus pemerasan). Investigasi menemukan bahwa:
+1. Crawler portal berita menyerap tautan rekomendasi redaksi di badan artikel (seperti `"Baca Juga: Wagub Kaltim Ditanya Soal TAGUPP..."`).
+2. `ContentMatchingService` mencocokkan kata kunci ke gabungan judul dan seluruh badan artikel, sehingga artikel terserap ke proyek Wagub Kaltim.
+3. `AiAnalysisJob` men-dispatch notifikasi krisis atas nama proyek Wagub Kaltim, meskipun analisis ringkasan dan subjeknya membahas orang lain.
+
+### Perubahan
+1. **Layanan Pemadanan Konten (`app/Services/ContentMatchingService.php`)**:
+   - Menambahkan metode `stripRelatedArticlesNoise(?string $text)` untuk menghapus pola tautan rekomendasi (`Baca Juga`, `Simak Juga`, `Lihat Juga`, `Artikel Terkait`, `Berita Terkait`) sebelum evaluasi kata kunci dilakukan.
+   - Mengaplikasikan sanitasi ini pada `crossLinkToActiveProjects()` dan `matchExistingContentForProject()`.
+2. **Scraper Portal Berita (`app/Jobs/ScrapingJob.php` & `app/Console/Commands/RunNewsPortalScraping.php`)**:
+   - Menambahkan pembersihan pola tautan rekomendasi saat ekstraksi teks artikel dari DOM HTML.
+3. **Guard Notifikasi Krisis (`app/Jobs/AiAnalysisJob.php`)**:
+   - Menambahkan validasi relevansi kata kunci proyek terhadap judul, ringkasan AI, alasan risiko, dan subjek AI sebelum `TelegramNotificationJob` di-dispatch.
+   - Mencegah dispatch alert jika konten tidak membahas kata kunci proyek sama sekali.
+
+### Verifikasi
+- PHP syntax check lulus (`No syntax errors detected`) pada `ContentMatchingService.php`, `ScrapingJob.php`, `RunNewsPortalScraping.php`, dan `AiAnalysisJob.php` ✅
+- Verifikasi pencocokan artikel ID 3622 di container: terbukti terlepas (`null`) dari pivot `project_articles` untuk Proyek Wagub Kaltim ✅
+- `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+
 
 ## Bab 7.54 — Penonaktifan Fitur Hapus Permanen Proyek demi Integritas Data
 

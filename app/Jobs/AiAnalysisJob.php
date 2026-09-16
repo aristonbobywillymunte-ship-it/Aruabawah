@@ -426,10 +426,44 @@ class AiAnalysisJob implements ShouldQueue
         ];
 
         if ($shouldNotify && ! $suppressTelegram && $telegramSetting && $telegramStatus['ready']) {
+            // Guard: Pastikan artikel/konten benar-benar relevan dengan subjek proyek sebelum mengirim alert
+            $project = Project::find($this->payload['project_id']);
+            $projectName = $project?->name ?? 'N/A';
+
+            if ($project) {
+                $primaryKeywords = $project->scrapeKeywordVariants();
+                $contextKeywords = $project->scrapeContextKeywordVariants();
+                $titleText = (string) ($this->payload['title'] ?? '');
+                $summaryText = (string) ($normalized['summary'] ?? '');
+                $reasonText = (string) ($normalized['risk_reason'] ?? '');
+                $subjectsText = is_array($normalized['subjects'] ?? null) ? implode(' ', $normalized['subjects']) : (string) ($normalized['subjects'] ?? '');
+                $evaluationHaystack = $titleText . "\n" . $summaryText . "\n" . $reasonText . "\n" . $subjectsText;
+
+                $matchingService = app(\App\Services\ContentMatchingService::class);
+                $isSubjectRelevant = false;
+                foreach ($primaryKeywords as $kw) {
+                    if (stripos($evaluationHaystack, $kw) !== false) {
+                        $isSubjectRelevant = true;
+                        break;
+                    }
+                }
+
+                // Jika kata kunci utama proyek sama sekali tidak muncul di judul, ringkasan, alasan risiko, atau subjek AI,
+                // jangan kirim alert atas nama proyek ini untuk mencegah false alarm.
+                if (! $isSubjectRelevant) {
+                    Log::warning('[Pipeline] Telegram notification skipped: project keywords not present in title, summary, or AI subjects.', [
+                        'project_id' => $project->id,
+                        'project_name' => $projectName,
+                        'title' => $titleText,
+                        'ai_analysis_result_id' => $analysisId,
+                    ]);
+                    return;
+                }
+            }
+
             $shouldDispatchNotification = $this->upsertRiskNotification($analysisId);
 
             if ($shouldDispatchNotification) {
-                $projectName = Project::find($this->payload['project_id'])?->name ?? 'N/A';
                 TelegramNotificationJob::dispatch([
                     'ai_analysis_result_id' => $analysisId,
                     'project_id' => $this->payload['project_id'],

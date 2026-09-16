@@ -11,6 +11,26 @@ use Illuminate\Support\Str;
 class ContentMatchingService
 {
     /**
+     * Strip in-article recommendation phrases (e.g., "Baca Juga: ...", "Artikel Terkait: ...")
+     * to prevent false-positive keyword matching against un-related linked stories.
+     */
+    public function stripRelatedArticlesNoise(?string $text): string
+    {
+        if (empty($text)) {
+            return '';
+        }
+
+        // Pattern 1: Tautan Baca Juga/Simak Juga/Artikel Terkait sampai titik, newline, tag penutup, atau tanda petik/quote
+        $patterns = [
+            '/(?:Baca\s+Juga|Simak\s+Juga|Lihat\s+Juga|Artikel\s+Terkait|Berita\s+Terkait)\s*:\s*[^;\.\n\r]+(?:;|\.|\n|\r|$)/iu',
+            '/(?:Baca\s+Juga|Simak\s+Juga|Lihat\s+Juga|Artikel\s+Terkait|Berita\s+Terkait)\s*:\s*[^\n\r]+?(?=(?:Dalam|Menurut|Ia|Dia|Namun|Sementara|Setelah|Selain|Sebelum|Pihak|Menurutnya|Saat|Hingga|Kini|[A-Z][a-z]+kan|\n|\r|$))/u',
+            '/\bTAGUPPTim\s+Ahli\s+Gubernur\b/iu',
+        ];
+
+        return trim(preg_replace($patterns, ' ', $text) ?? $text);
+    }
+
+    /**
      * Count global content that matches the current project filters.
      *
      * @return array{articles:int, social:int}
@@ -77,7 +97,8 @@ class ContentMatchingService
         
         // Prepare text content for regex matching
         if ($isArticle) {
-            $contentToMatch = ($item->title ?? '') . "\n" . ($item->content ?? '');
+            $cleanedArticleContent = $this->stripRelatedArticlesNoise($item->content ?? '');
+            $contentToMatch = ($item->title ?? '') . "\n" . $cleanedArticleContent;
         } else {
             $contentToMatch = $this->buildSocialMatchText(
                 $item->author_name ?? null,
@@ -190,7 +211,8 @@ class ContentMatchingService
                         continue;
                     }
 
-                    $content = ($article->title ?? '') . "\n" . ($article->content ?? '');
+                    $cleanedArticleContent = $this->stripRelatedArticlesNoise($article->content ?? '');
+                    $content = ($article->title ?? '') . "\n" . $cleanedArticleContent;
                     if ($this->shouldSkipGovernorArticleMatch($project, $content)) {
                         continue;
                     }
