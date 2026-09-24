@@ -32,6 +32,19 @@ class PipelineMonitor extends Component
     public bool $showArticleModal = false;
     public string $viewingArticleTitle = '';
     public string $viewingArticleContent = '';
+    public string $viewingArticleSource = '';
+    public string $viewingArticleDate = '';
+    public string $viewingArticleUrl = '';
+    public string $viewingArticleSentiment = 'neutral';
+    public ?float $viewingArticleScore = null;
+    public string $viewingArticleRisk = 'low';
+    public string $viewingArticleAiSummary = '';
+    public string $viewingArticleCategory = 'portal';
+    public string $viewingArticleReach = '—';
+    public string $viewingArticleLevel = '—';
+    public int $viewingArticleLikes = 0;
+    public int $viewingArticleComments = 0;
+    public string $viewingArticleAiRecommendation = '';
 
     public string $activeTab    = 'scraping';
     public string $search       = '';
@@ -436,7 +449,7 @@ class PipelineMonitor extends Component
     public function getScrapingItems()
     {
         $query = $this->portalArticleBaseQuery()
-            ->with(['aiAnalysisResult']);
+            ->with(['projects', 'aiAnalysisResult']);
 
         if ($this->search) {
             $query->where(function ($q) {
@@ -590,7 +603,10 @@ class PipelineMonitor extends Component
     {
         $query = AiAnalysisResult::query()
             ->select('ai_analysis_results.*')
-            ->with(['article', 'socialMediaItem']);
+            ->with([
+                'article.projects',
+                'socialMediaItem.projects',
+            ]);
 
         if ($this->search) {
             $query->where(function ($q) {
@@ -724,7 +740,7 @@ class PipelineMonitor extends Component
 
     public function getProjects()
     {
-        return Project::orderBy('name')->get();
+        return Project::withTrashed()->orderBy('name')->get();
     }
 
     public function getSources(): array
@@ -1068,16 +1084,43 @@ class PipelineMonitor extends Component
     public function viewArticle(string $type, int $id): void
     {
         if ($type === 'article') {
-            $model = Article::find($id);
+            $model = Article::with(['aiAnalysisResult', 'latestReachAssessment'])->find($id);
             if ($model) {
                 $this->viewingArticleTitle = $model->title ?? 'Tanpa Judul';
                 $this->viewingArticleContent = $model->content ?? '';
+                $this->viewingArticleSource = $model->source_name ?? 'Portal Berita';
+                $this->viewingArticleDate = $model->published_at ? \Carbon\Carbon::parse($model->published_at)->format('d M Y, H:i') : ($model->created_at ? $model->created_at->format('d M Y, H:i') : '—');
+                $this->viewingArticleUrl = $model->url ?? '';
+                $this->viewingArticleSentiment = $model->aiAnalysisResult->sentiment ?? ($model->sentiment ?? 'neutral');
+                $this->viewingArticleScore = $model->aiAnalysisResult->sentiment_score ?? $model->sentiment_score;
+                $this->viewingArticleRisk = $model->aiAnalysisResult->risk_level ?? 'low';
+                $this->viewingArticleAiSummary = $model->aiAnalysisResult->summary ?? '';
+                $this->viewingArticleCategory = 'portal';
+                $reach = $model->latestReachAssessment;
+                $this->viewingArticleReach = $reach?->estimated_readers ? number_format($reach->estimated_readers, 0, ',', '.') . ' Pembaca' : ($model->aiAnalysisResult?->project_estimated_readers ? number_format($model->aiAnalysisResult->project_estimated_readers, 0, ',', '.') . ' Pembaca' : '—');
+                $this->viewingArticleLevel = $reach?->reach_level ?? ($model->aiAnalysisResult?->project_reach_level ?? '—');
+                $this->viewingArticleLikes = 0;
+                $this->viewingArticleComments = 0;
+                $this->viewingArticleAiRecommendation = $model->aiAnalysisResult->risk_reason ?? '';
             }
         } elseif ($type === 'social') {
-            $model = SocialMediaItem::find($id);
+            $model = SocialMediaItem::with('aiAnalysisResult')->find($id);
             if ($model) {
-                $this->viewingArticleTitle = 'Social Media: ' . ucfirst($model->platform);
+                $this->viewingArticleTitle = $model->author_name ? $model->author_name . ' on ' . ucfirst($model->platform) : 'Social Media: ' . ucfirst($model->platform);
                 $this->viewingArticleContent = $model->content ?? '';
+                $this->viewingArticleSource = ucfirst($model->platform);
+                $this->viewingArticleDate = $model->posted_at ? \Carbon\Carbon::parse($model->posted_at)->format('d M Y, H:i') : ($model->created_at ? $model->created_at->format('d M Y, H:i') : '—');
+                $this->viewingArticleUrl = $model->post_url ?? '';
+                $this->viewingArticleSentiment = $model->aiAnalysisResult->sentiment ?? 'neutral';
+                $this->viewingArticleScore = $model->aiAnalysisResult->sentiment_score ?? null;
+                $this->viewingArticleRisk = $model->aiAnalysisResult->risk_level ?? 'low';
+                $this->viewingArticleAiSummary = $model->aiAnalysisResult->summary ?? '';
+                $this->viewingArticleCategory = 'social';
+                $this->viewingArticleReach = number_format((int) ($model->view_count ?: $model->follower_count ?: 0), 0, ',', '.') . ' Views';
+                $this->viewingArticleLevel = ucfirst($model->platform);
+                $this->viewingArticleLikes = (int) ($model->like_count ?? 0);
+                $this->viewingArticleComments = (int) ($model->comment_count ?? 0);
+                $this->viewingArticleAiRecommendation = $model->aiAnalysisResult->risk_reason ?? '';
             }
         }
         $this->showArticleModal = true;
@@ -1088,6 +1131,19 @@ class PipelineMonitor extends Component
         $this->showArticleModal = false;
         $this->viewingArticleTitle = '';
         $this->viewingArticleContent = '';
+        $this->viewingArticleSource = '';
+        $this->viewingArticleDate = '';
+        $this->viewingArticleUrl = '';
+        $this->viewingArticleSentiment = 'neutral';
+        $this->viewingArticleScore = null;
+        $this->viewingArticleRisk = 'low';
+        $this->viewingArticleAiSummary = '';
+        $this->viewingArticleCategory = 'portal';
+        $this->viewingArticleReach = '—';
+        $this->viewingArticleLevel = '—';
+        $this->viewingArticleLikes = 0;
+        $this->viewingArticleComments = 0;
+        $this->viewingArticleAiRecommendation = '';
     }
 
     public function failureCategoryLabel(?string $category): string
@@ -1125,18 +1181,45 @@ class PipelineMonitor extends Component
         };
     }
 
-    public function failureCodeDescription(?string $code): string
+    public function failureCodeDescription(?string $code): array
     {
         return match ($code) {
-            'orphan_dispatch_state' => 'Dispatch state closed because target article/social is missing.',
-            'empty_content', 'invalid_content' => 'Content is too short or empty for AI analysis.',
-            'rate_limit' => 'AI provider is rate-limited and can be retried later.',
-            'provider_unavailable' => 'Provider is temporarily unavailable and can be retried later.',
-            'timeout' => 'AI request timed out and can be retried later.',
-            'temporary_provider_error' => 'Temporary provider error can be retried later.',
-            'analysis_failed' => 'Retry only when this failure is classified as retryable.',
-            'invalid_ai_reach' => 'AI reach output failed validation and was not marked as official.',
-            default => 'Non-retryable or unclassified state.',
+            'orphan_dispatch_state' => [
+                'en' => 'Dispatch state closed because target article/social is missing.',
+                'id' => 'Antrean ditutup karena artikel/konten sosial target tidak ditemukan di database.'
+            ],
+            'empty_content', 'invalid_content' => [
+                'en' => 'Content is too short or empty for AI analysis.',
+                'id' => 'Isi konten terlalu pendek atau kosong untuk dapat dianalisa AI.'
+            ],
+            'rate_limit' => [
+                'en' => 'AI provider is rate-limited and can be retried later.',
+                'id' => 'Batas kuota/rate limit provider AI tercapai. Dapat dicoba ulang.'
+            ],
+            'provider_unavailable' => [
+                'en' => 'Provider is temporarily unavailable and can be retried later.',
+                'id' => 'Layanan provider AI sedang tidak dapat diakses sementara. Dapat dicoba ulang.'
+            ],
+            'timeout' => [
+                'en' => 'AI request timed out and can be retried later.',
+                'id' => 'Permintaan ke AI melebihi batas waktu (timeout). Dapat dicoba ulang.'
+            ],
+            'temporary_provider_error' => [
+                'en' => 'Temporary provider error can be retried later.',
+                'id' => 'Terjadi gangguan sementara pada server provider AI. Dapat dicoba ulang.'
+            ],
+            'analysis_failed' => [
+                'en' => 'Analysis processing failed.',
+                'id' => 'Pemrosesan analisis AI gagal dieksekusi.'
+            ],
+            'invalid_ai_reach' => [
+                'en' => 'AI reach output failed validation and was not marked as official.',
+                'id' => 'Hasil estimasi jangkauan pembaca AI tidak valid dan gagal lolos verifikasi.'
+            ],
+            default => [
+                'en' => 'Non-retryable or unclassified state.',
+                'id' => 'Kategori kesalahan tidak terklasifikasi.'
+            ],
         };
     }
 

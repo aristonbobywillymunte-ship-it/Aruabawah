@@ -319,13 +319,16 @@
                         $sentNegative = $sentScore <= -0.4;
                     @endphp
                     <tr class="group transition-all duration-150 hover:bg-[#1fa387]/[0.025]">
-                        <td class="px-4 py-3.5 text-xs font-semibold text-slate-300 tabular-nums">{{ $loop->iteration }}</td>
+                        <td class="px-4 py-3.5 text-xs font-semibold text-slate-300 tabular-nums">{{ $items->firstItem() + $loop->index }}</td>
                         <td class="px-4 py-3.5">
                             <div class="flex flex-col gap-1">
                                 @foreach($item->projects as $proj)
-                                <span class="inline-flex items-center gap-1 self-start rounded-lg bg-[#1fa387]/8 border border-[#1fa387]/15 px-2 py-0.5 text-[10px] font-semibold text-[#1fa387]">
+                                <span class="inline-flex items-center gap-1 self-start rounded-lg {{ $proj->trashed() ? 'bg-slate-100 text-slate-500 border border-slate-200' : 'bg-[#1fa387]/8 text-[#1fa387] border border-[#1fa387]/15' }} px-2 py-0.5 text-[10px] font-semibold">
                                     <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
                                     {{ Str::limit($proj->name, 16) }}
+                                    @if($proj->trashed())
+                                    <span class="text-[9px] text-slate-400 font-normal">(deleted)</span>
+                                    @endif
                                 </span>
                                 @endforeach
                                 @if($item->projects->isEmpty())
@@ -337,10 +340,23 @@
                             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ $item->source_name }}</div>
                             <p class="mt-0.5 text-xs font-semibold text-slate-800 leading-snug line-clamp-2">{{ $item->title }}</p>
                             @if ($item->url)
-                            <a href="{{ $item->url }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-[10px] text-[#1fa387] font-bold hover:underline transition">
-                                <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                Buka Artikel
-                            </a>
+                            <div class="mt-1 flex items-center gap-2">
+                                <a href="{{ $item->url }}" target="_blank" class="inline-flex items-center gap-1 text-[10px] text-[#1fa387] font-bold hover:underline transition">
+                                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    Buka Artikel
+                                </a>
+                                <span class="text-slate-200">·</span>
+                                <button type="button" wire:click="viewArticle('article', {{ $item->id }})" wire:loading.attr="disabled" class="inline-flex items-center gap-1 text-[10px] text-slate-500 font-bold hover:text-slate-800 transition cursor-pointer disabled:opacity-50">
+                                    <span wire:loading.remove wire:target="viewArticle('article', {{ $item->id }})" class="inline-flex items-center gap-1">
+                                        <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        Lihat Konten
+                                    </span>
+                                    <span wire:loading wire:target="viewArticle('article', {{ $item->id }})" class="inline-flex items-center gap-1 text-[#1fa387]">
+                                        <svg class="w-2.5 h-2.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        Memuat...
+                                    </span>
+                                </button>
+                            </div>
                             @endif
                         </td>
                         <td class="px-4 py-3.5 text-center">
@@ -417,13 +433,16 @@
                         $pColor = $platformColors[$item->platform] ?? 'bg-indigo-50 text-indigo-700 border-indigo-200/50';
                     @endphp
                     <tr class="group transition-all duration-150 hover:bg-[#1fa387]/[0.025]">
-                        <td class="px-4 py-3.5 text-xs font-semibold text-slate-300 tabular-nums">{{ $loop->iteration }}</td>
+                        <td class="px-4 py-3.5 text-xs font-semibold text-slate-300 tabular-nums">{{ $items->firstItem() + $loop->index }}</td>
                         <td class="px-4 py-3.5">
                             <div class="flex flex-col gap-1">
                                 @foreach($item->projects as $proj)
-                                <span class="inline-flex items-center gap-1 self-start rounded-lg bg-[#1fa387]/8 border border-[#1fa387]/15 px-2 py-0.5 text-[10px] font-semibold text-[#1fa387]">
+                                <span class="inline-flex items-center gap-1 self-start rounded-lg {{ $proj->trashed() ? 'bg-slate-100 text-slate-500 border border-slate-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200/50' }} px-2 py-0.5 text-[10px] font-semibold">
                                     <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
                                     {{ Str::limit($proj->name, 14) }}
+                                    @if($proj->trashed())
+                                    <span class="text-[9px] text-slate-400 font-normal">(deleted)</span>
+                                    @endif
                                 </span>
                                 @endforeach
                                 @if($item->projects->isEmpty())
@@ -521,9 +540,12 @@
                         <td class="px-4 py-3.5">
                             <div class="flex flex-col gap-1">
                                 @foreach($projList as $proj)
-                                <span class="inline-flex items-center gap-1 self-start rounded-lg bg-[#1fa387]/8 border border-[#1fa387]/15 px-2 py-0.5 text-[10px] font-semibold text-[#1fa387]">
+                                <span class="inline-flex items-center gap-1 self-start rounded-lg {{ $proj->trashed() ? 'bg-slate-100 text-slate-500 border border-slate-200' : 'bg-[#1fa387]/8 text-[#1fa387] border border-[#1fa387]/15' }} px-2 py-0.5 text-[10px] font-semibold">
                                     <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
                                     {{ Str::limit($proj->name, 14) }}
+                                    @if($proj->trashed())
+                                    <span class="text-[9px] text-slate-400 font-normal">(deleted)</span>
+                                    @endif
                                 </span>
                                 @endforeach
                                 @if($projList->isEmpty())<span class="text-xs text-slate-300">—</span>@endif
@@ -546,6 +568,28 @@
                             @if ($item->summary)
                             <p class="mt-1.5 text-[11px] text-slate-500 leading-relaxed line-clamp-2 bg-slate-50/80 px-2.5 py-1.5 rounded-lg border border-slate-100/80">{{ $item->summary }}</p>
                             @endif
+                            <div class="mt-1.5 flex items-center gap-2">
+                                @if($sourceUrl)
+                                <a href="{{ $sourceUrl }}" target="_blank" class="inline-flex items-center gap-1 text-[10px] text-[#1fa387] font-bold hover:underline transition">
+                                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    Buka Sumber
+                                </a>
+                                <span class="text-slate-200">·</span>
+                                @endif
+                                <button type="button"
+                                        wire:click="viewArticle('{{ $item->article_id ? 'article' : 'social' }}', {{ $item->article_id ?: $item->social_media_item_id }})"
+                                        wire:loading.attr="disabled"
+                                        class="inline-flex items-center gap-1 text-[10px] text-slate-500 font-bold hover:text-slate-800 transition cursor-pointer disabled:opacity-50">
+                                    <span wire:loading.remove wire:target="viewArticle('{{ $item->article_id ? 'article' : 'social' }}', {{ $item->article_id ?: $item->social_media_item_id }})" class="inline-flex items-center gap-1">
+                                        <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        Lihat Konten
+                                    </span>
+                                    <span wire:loading wire:target="viewArticle('{{ $item->article_id ? 'article' : 'social' }}', {{ $item->article_id ?: $item->social_media_item_id }})" class="inline-flex items-center gap-1 text-[#1fa387]">
+                                        <svg class="w-2.5 h-2.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        Memuat...
+                                    </span>
+                                </button>
+                            </div>
                         </td>
                         <td class="px-4 py-3.5 text-center">
                             <span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold {{ $riskColor }}">
@@ -710,7 +754,7 @@
                 <tbody class="divide-y divide-slate-100/70">
                     @forelse ($items as $item)
                     <tr class="group transition-all duration-150 hover:bg-[#1fa387]/[0.025]">
-                        <td class="px-4 py-3.5 text-xs font-semibold text-slate-300 tabular-nums">{{ $loop->iteration }}</td>
+                        <td class="px-4 py-3.5 text-xs font-semibold text-slate-300 tabular-nums">{{ $items->firstItem() + $loop->index }}</td>
                         <td class="px-4 py-3.5">
                             <span class="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 border border-amber-200/50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
                                 <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -738,9 +782,14 @@
                         <td class="px-4 py-3.5 text-[11px] font-semibold text-slate-500">{{ $item->next_retry_at ? $item->next_retry_at->format('d M H:i') : '—' }}</td>
                         <td class="px-4 py-3.5 text-right">
                             <div class="flex items-center justify-end gap-1.5">
-                                <button type="button" wire:click="viewArticle('{{ $item->analyzable_type }}', {{ $item->analyzable_id }})"
-                                    class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition" title="Lihat Konten">
-                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <button type="button" wire:click="viewArticle('{{ $item->analyzable_type }}', {{ $item->analyzable_id }})" wire:loading.attr="disabled"
+                                    class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer disabled:opacity-50" title="Lihat Konten">
+                                    <span wire:loading.remove wire:target="viewArticle('{{ $item->analyzable_type }}', {{ $item->analyzable_id }})">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </span>
+                                    <span wire:loading wire:target="viewArticle('{{ $item->analyzable_type }}', {{ $item->analyzable_id }})">
+                                        <svg class="w-3.5 h-3.5 animate-spin text-[#1fa387]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    </span>
                                 </button>
                                 <button type="button"
                                     @click="triggerConfirm('Hapus Antrean', 'Yakin ingin membatalkan dan menghapus antrean analisis AI ini?', 'danger', () => $wire.deleteAiState({{ $item->id }}))"
@@ -773,8 +822,8 @@
                 <thead>
                     <tr class="border-b-2 border-slate-100 bg-gradient-to-r from-slate-50 to-slate-50/60">
                         <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 w-10">#</th>
-                        <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 w-44">Tipe & Proyek</th>
-                        <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 w-36">Kategori Error</th>
+                        <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 w-40">Tipe & Proyek</th>
+                        <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 w-80">Kategori Error</th>
                         <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">Pesan Error</th>
                         <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 w-36">Waktu Gagal</th>
                         <th class="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 w-24 text-right">Aksi</th>
@@ -783,7 +832,7 @@
                 <tbody class="divide-y divide-slate-100/70">
                     @forelse ($items as $item)
                     <tr class="group transition-all duration-150 hover:bg-red-50/20">
-                        <td class="px-4 py-3.5 text-xs font-semibold text-slate-300 tabular-nums">{{ $loop->iteration }}</td>
+                        <td class="px-4 py-3.5 text-xs font-semibold text-slate-300 tabular-nums">{{ $items->firstItem() + $loop->index }}</td>
                         <td class="px-4 py-3.5">
                             <span class="inline-flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-200/50 px-2 py-0.5 text-[10px] font-bold text-red-700">
                                 <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -791,14 +840,24 @@
                             </span>
                             @if($item->project)
                             <div class="mt-1 text-[11px] font-semibold text-slate-700">{{ $item->project->name }}</div>
-                                
+                            
 @endif
                         </td>
                         <td class="px-4 py-3.5">
                             <div class="text-[10px] font-bold text-red-600 uppercase tracking-wider">{{ $item->last_error_code ?? '—' }}</div>
                             @if($item->last_error_code)
-                            <div class="mt-1 text-[10px] text-slate-500 leading-normal">{{ $this->failureCodeDescription($item->last_error_code) }}</div>
-                                
+                            @php $desc = $this->failureCodeDescription($item->last_error_code); @endphp
+                            <div class="mt-1.5 space-y-1">
+                                <div class="text-[10px] font-medium text-slate-700 leading-snug flex items-start gap-1.5">
+                                    <span class="px-1 py-0.2 text-[8.5px] font-black bg-slate-200/70 text-slate-700 rounded shrink-0">ID</span>
+                                    <span>{{ $desc['id'] }}</span>
+                                </div>
+                                <div class="text-[9.5px] text-slate-400 leading-snug flex items-start gap-1.5">
+                                    <span class="px-1 py-0.2 text-[8.5px] font-bold bg-slate-100 text-slate-400 rounded shrink-0">EN</span>
+                                    <span>{{ $desc['en'] }}</span>
+                                </div>
+                            </div>
+                            
 @endif
                         </td>
                         <td class="px-4 py-3.5 max-w-xs">
@@ -809,9 +868,14 @@
                         </td>
                         <td class="px-4 py-3.5 text-right">
                             <div class="flex items-center justify-end gap-1.5">
-                                <button type="button" wire:click="viewArticle('{{ $item->analyzable_type }}', {{ $item->analyzable_id }})"
-                                    class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition" title="Lihat Konten">
-                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <button type="button" wire:click="viewArticle('{{ $item->analyzable_type }}', {{ $item->analyzable_id }})" wire:loading.attr="disabled"
+                                    class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer disabled:opacity-50" title="Lihat Konten">
+                                    <span wire:loading.remove wire:target="viewArticle('{{ $item->analyzable_type }}', {{ $item->analyzable_id }})">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </span>
+                                    <span wire:loading wire:target="viewArticle('{{ $item->analyzable_type }}', {{ $item->analyzable_id }})">
+                                        <svg class="w-3.5 h-3.5 animate-spin text-[#1fa387]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    </span>
                                 </button>
                                 @if($this->isRetryableFailure($item->last_error_code, $item->failure_category))
                                 <button type="button"
@@ -859,50 +923,222 @@
 @endif
 
     {{-- ══════════════════════════════════════════════ --}}
-    {{-- MODAL: LIHAT ARTIKEL / KONTEN                  --}}
+    {{-- MODAL: LIHAT ARTIKEL / KONTEN (DESAIN DASHBOARD) --}}
     {{-- ══════════════════════════════════════════════ --}}
     @if($showArticleModal)
-                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm" @touchmove.prevent @wheel.prevent>
-            <div class="flex h-full max-h-[82vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl border border-slate-100/80 overflow-hidden" style="animation: fadeInScale 0.2s ease-out;">
-                {{-- Header --}}
-                <div class="flex items-start justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/60">
-                    <div class="flex items-start gap-3 flex-1 min-w-0">
-                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1fa387]/10">
-                            <svg class="text-[#1fa387]" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <div wire:key="pipeline-article-modal"
+             x-data="{ showAiSummary: false }"
+             x-init="
+                 document.body.style.overflow = 'hidden';
+                 document.documentElement.style.overflow = 'hidden';
+                 document.body.classList.add('overflow-hidden');
+                 document.documentElement.classList.add('overflow-hidden');
+                 return () => {
+                     document.body.style.overflow = '';
+                     document.documentElement.style.overflow = '';
+                     document.body.classList.remove('overflow-hidden');
+                     document.documentElement.classList.remove('overflow-hidden');
+                 };
+             "
+             @wheel.prevent
+             @touchmove.prevent
+             style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; min-height: 100dvh; z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.65);"
+             class="backdrop-blur-sm"
+             wire:click.self="closeArticleModal"
+             @keydown.escape.window="$wire.closeArticleModal()">
+            
+            <div class="bg-white rounded-3xl border border-slate-200 max-w-5xl w-full p-6 md:p-8 shadow-2xl text-left relative flex flex-col h-[90vh] max-h-[90vh] overflow-hidden"
+                 style="animation: fadeInScale 0.2s ease-out;"
+                 @click.stop>
+                
+                <!-- Close Button -->
+                <button 
+                    type="button"
+                    wire:click="closeArticleModal" 
+                    class="absolute right-6 top-6 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer shadow-sm rounded-full w-9 h-9 font-bold text-sm z-50"
+                >
+                    ✕
+                </button>
+
+                <!-- Header Modal (Persis Layout Media Dashboard) -->
+                <div class="border-b border-slate-100 pb-5 mb-3 shrink-0 pr-12">
+                    <div class="flex items-center gap-3.5 mb-3">
+                        <!-- Source Favicon / Platform Icon -->
+                        <div class="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm shrink-0">
+                            @php
+                                $srcLower = strtolower($viewingArticleSource);
+                                $domain = match(true) {
+                                    str_contains($srcLower, 'facebook') || $srcLower === 'fb' => 'facebook.com',
+                                    str_contains($srcLower, 'instagram') || $srcLower === 'ig' => 'instagram.com',
+                                    str_contains($srcLower, 'tiktok') || $srcLower === 'tk' => 'tiktok.com',
+                                    str_contains($srcLower, 'twitter') || $srcLower === 'x.com' => 'x.com',
+                                    str_contains($srcLower, '.') => $viewingArticleSource,
+                                    default => $viewingArticleSource . '.com',
+                                };
+                            @endphp
+                            <img src="https://www.google.com/s2/favicons?sz=64&domain={{ $domain }}"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                 class="w-full h-full object-cover"
+                                 alt="{{ $viewingArticleSource }}">
+                            <div style="display:none;" class="w-full h-full items-center justify-center text-[#1fa387]">
+                                <span class="material-symbols-outlined text-[18px]">feed</span>
+                            </div>
                         </div>
-                        <div class="min-w-0">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Isi Konten</div>
-                            <h2 class="text-sm font-bold text-slate-800 leading-snug line-clamp-2">{{ $viewingArticleTitle }}</h2>
+
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-2">
+                                <h4 class="text-sm font-bold text-slate-800 tracking-tight">{{ $viewingArticleSource }}</h4>
+                                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <p class="text-[11px] font-semibold text-slate-400">{{ $viewingArticleDate }}</p>
+                            </div>
+                            <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                                @php
+                                    $sentColor = match($viewingArticleSentiment) {
+                                        'positive' => 'bg-emerald-50 border-emerald-150 text-emerald-700',
+                                        'negative' => 'bg-rose-50 border-rose-150 text-rose-700',
+                                        default => 'bg-slate-50 border-slate-200 text-slate-600',
+                                    };
+                                    $sentLabel = match($viewingArticleSentiment) {
+                                        'positive' => 'Positif',
+                                        'negative' => 'Negatif',
+                                        default => 'Netral',
+                                    };
+                                    $riskColor = match($viewingArticleRisk) {
+                                        'high', 'critical' => 'bg-red-50 text-red-700 border-red-200',
+                                        'medium' => 'bg-amber-50 text-amber-700 border-amber-200',
+                                        default => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                    };
+                                @endphp
+                                <span class="px-2.5 py-0.5 text-[10px] font-bold rounded-xl border {{ $sentColor }}">
+                                    {{ $sentLabel }} {{ $viewingArticleScore !== null ? '(' . number_format($viewingArticleScore, 2) . ')' : '' }}
+                                </span>
+                                <span class="px-2.5 py-0.5 text-[10px] font-bold rounded-xl border {{ $riskColor }}">
+                                    Risiko: {{ ucfirst($viewingArticleRisk) }}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <button wire:click="closeArticleModal" class="ml-4 shrink-0 flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                </div>
-                {{-- Content --}}
-                <div class="flex-1 overflow-y-auto px-6 py-5" style="overscroll-behavior: contain;">
-                    @if(empty($viewingArticleContent))
-                    <div class="flex flex-col items-center justify-center py-16 text-center">
-                        <svg class="w-10 h-10 text-slate-300 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        <p class="text-sm text-slate-400 font-medium">Konten tidak tersedia</p>
-                        <p class="text-xs text-slate-300 mt-1">Konten kosong atau tidak ditemukan pada database.</p>
+
+                    <h3 class="text-lg md:text-xl font-black text-slate-900 leading-snug mt-1 mb-3">
+                        {{ $viewingArticleTitle }}
+                    </h3>
+
+                    <!-- Metrics Grid (Persis Dashboard: Jangkauan, Skor, Tanggal, Likes/Komen) -->
+                    <div class="grid gap-2 bg-slate-50/60 rounded-2xl p-3.5 border border-slate-200/40 mb-3 w-full text-left shrink-0 {{ $viewingArticleCategory === 'social' ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-3' }}">
+                        <div class="px-1.5 py-0.5">
+                            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Jangkauan</span>
+                            <div class="flex items-start gap-1 text-slate-800 text-[11px] md:text-xs font-black">
+                                <span class="material-symbols-outlined text-[15px] mt-0.5 text-[#1fa387]">insights</span>
+                                <div class="flex flex-col leading-tight">
+                                    <span>{{ $viewingArticleReach }}</span>
+                                    <span class="text-[9px] font-semibold text-slate-400 mt-0.5">{{ $viewingArticleLevel }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-1.5 py-0.5 border-l border-slate-200">
+                            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Skor</span>
+                            <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
+                                <span class="material-symbols-outlined text-[15px] text-[#1fa387]">analytics</span>
+                                <span>{{ $viewingArticleScore !== null ? number_format($viewingArticleScore, 2) : '0.00' }}</span>
+                            </div>
+                        </div>
+                        <div class="px-1.5 py-0.5 border-l border-slate-200">
+                            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Tanggal</span>
+                            <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
+                                <span class="material-symbols-outlined text-[15px] text-[#1fa387]">calendar_month</span>
+                                <span>{{ $viewingArticleDate }}</span>
+                            </div>
+                        </div>
+                        @if($viewingArticleCategory === 'social')
+                        <div class="px-1.5 py-0.5 border-l border-slate-200">
+                            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Likes</span>
+                            <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
+                                <span class="material-symbols-outlined text-[15px] text-[#1fa387]">thumb_up</span>
+                                <span>{{ number_format($viewingArticleLikes, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                        <div class="px-1.5 py-0.5 border-l border-slate-200">
+                            <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Komentar</span>
+                            <div class="flex items-center gap-1 text-slate-800 text-[11px] md:text-xs font-black">
+                                <span class="material-symbols-outlined text-[15px] text-[#1fa387]">chat</span>
+                                <span>{{ number_format($viewingArticleComments, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                        @endif
                     </div>
-                    @else
-                    <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-normal">{!! nl2br(e($viewingArticleContent)) !!}</div>
-                        
-@endif
+
+                    <!-- Action Bar (Baca Asli & Toggle Ringkasan AI) -->
+                    <div class="flex items-center gap-2 pt-1">
+                        @if($viewingArticleUrl)
+                        <a href="{{ $viewingArticleUrl }}" target="_blank"
+                           class="inline-flex items-center gap-1.5 text-xs font-bold text-[#1fa387] bg-[#1fa387]/8 hover:bg-[#1fa387]/15 px-3 py-1.5 rounded-xl transition-colors">
+                            <span>Baca Artikel Asli</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
+                        @endif
+
+                        @if($viewingArticleAiSummary)
+                        <button type="button" @click="showAiSummary = !showAiSummary"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[#1fa387] hover:bg-[#188a72] rounded-xl transition-all shadow-sm cursor-pointer">
+                            <span class="material-symbols-outlined text-[15px]" :class="showAiSummary ? 'rotate-45' : ''">auto_awesome</span>
+                            <span>Ringkasan AI</span>
+                        </button>
+                        @endif
+                    </div>
                 </div>
-                {{-- Footer --}}
-                <div class="border-t border-slate-100 bg-slate-50/60 px-6 py-3.5 flex justify-end">
-                    <button wire:click="closeArticleModal" class="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+
+                <!-- Collapsible AI Summary Panel -->
+                @if($viewingArticleAiSummary)
+                <div x-show="showAiSummary"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-2"
+                     class="mb-3 p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl shrink-0"
+                     style="display: none;">
+                    <h4 class="text-[11px] font-black text-emerald-800 uppercase tracking-widest flex items-center gap-1.5 mb-1.5">
+                        <span class="material-symbols-outlined text-[15px] text-emerald-600">auto_awesome</span>
+                        <span>Ringkasan AI</span>
+                    </h4>
+                    <p class="text-xs md:text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">{{ $viewingArticleAiSummary }}</p>
+                </div>
+                @endif
+
+                <!-- Content Area: Body Artikel (Scrollable, Full Native) -->
+                <div class="flex flex-col overflow-hidden flex-1 min-h-0">
+                    <h4 class="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 pb-2 shrink-0">
+                        <span class="material-symbols-outlined text-[16px] text-slate-400">subject</span>
+                        <span>Isi Konten Berita</span>
+                    </h4>
+                    <div class="text-sm md:text-base text-slate-800 leading-relaxed whitespace-pre-line overflow-y-auto flex-1 pr-3 pb-6 font-sans select-text overscroll-contain"
+                         @wheel.stop
+                         @touchmove.stop
+                         style="-webkit-overflow-scrolling: touch; overscroll-behavior: contain;">
+                        @if(empty($viewingArticleContent))
+                        <div class="flex flex-col items-center justify-center py-16 text-center">
+                            <span class="material-symbols-outlined text-[36px] text-slate-300 mb-2">article_shortcut</span>
+                            <p class="text-sm text-slate-400 font-medium">Konten tidak tersedia</p>
+                            <p class="text-xs text-slate-300 mt-1">Konten kosong atau tidak ditemukan pada database.</p>
+                        </div>
+                        @else
+                            {{ $viewingArticleContent }}
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Footer Modal -->
+                <div class="border-t border-slate-100 pt-3 flex justify-end shrink-0">
+                    <button type="button" wire:click="closeArticleModal"
+                            class="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition cursor-pointer">
                         Tutup
                     </button>
                 </div>
+
             </div>
-                </div>
-                
-@endif
+        </div>
+    @endif
 
     {{-- ══════════════════════════════════════════════ --}}
     {{-- MODAL: KONFIRMASI AKSI (AlpineJS)              --}}
@@ -910,8 +1146,17 @@
     <div x-show="confirmOpen"
          wire:key="pipeline-monitor-confirm-modal"
          x-cloak
+         x-init="$watch('confirmOpen', value => {
+              if (value) {
+                  document.body.classList.add('overflow-hidden');
+                  document.documentElement.classList.add('overflow-hidden');
+              } else {
+                  document.body.classList.remove('overflow-hidden');
+                  document.documentElement.classList.remove('overflow-hidden');
+              }
+          })"
          @keydown.escape.window="confirmOpen = false"
-         style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;"
+         style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; min-height: 100dvh; z-index: 999999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.65); overscroll-behavior: none;"
          class="backdrop-blur-sm px-4 font-sans"
          @touchmove.prevent
          @wheel.prevent

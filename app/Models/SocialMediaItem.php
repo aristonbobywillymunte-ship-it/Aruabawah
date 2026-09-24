@@ -38,6 +38,7 @@ class SocialMediaItem extends Model
     public function projects(): BelongsToMany
     {
         return $this->belongsToMany(Project::class, 'project_social_media_items')
+            ->withTrashed()
             ->withTimestamps();
     }
 

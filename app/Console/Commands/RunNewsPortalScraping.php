@@ -729,6 +729,50 @@ class RunNewsPortalScraping extends Command
         }
     }
 
+    private const BOILERPLATE_TITLES = [
+        'redaksi',
+        'tentang kami',
+        'pedoman media siber',
+        'pedoman pemberitaan media siber',
+        'disclaimer',
+        'kontak kami',
+        'susunan redaksi',
+        'kode etik jurnalistik',
+        'privacy policy',
+        'kebijakan privasi',
+        'syarat dan ketentuan',
+        'terms of service',
+    ];
+
+    private function isBoilerplateOrInvalidArticle(string $title, ?string $url, ?Carbon $publishedAt): ?string
+    {
+        $normalizedTitle = strtolower(trim($title));
+        $normalizedTitle = preg_replace('/[\-_|].*$/', '', $normalizedTitle); // buang suffix portal e.g. "| Selasar.co"
+        $normalizedTitle = trim($normalizedTitle);
+
+        foreach (self::BOILERPLATE_TITLES as $boilerplate) {
+            if ($normalizedTitle === $boilerplate || str_starts_with($normalizedTitle, $boilerplate)) {
+                return "Halaman statis/boilerplate terdeteksi: '{$title}'";
+            }
+        }
+
+        if ($url && preg_match('~/(?:page|pages|statis|halaman)/(?:redaksi|tentang-kami|pedoman|disclaimer|kontak)~i', $url)) {
+            return "URL halaman statis portal: '{$url}'";
+        }
+
+        // Validasi tanggal tidak logis: tanggal di masa depan lebih dari 1 hari
+        if ($publishedAt && $publishedAt->greaterThan(now()->addDay())) {
+            return "Tanggal publikasi tidak logis (masa depan): " . $publishedAt->toIso8601String();
+        }
+
+        // Tanggal terlalu lampau sebelum era modern portal berita (misal sebelum tahun 2000)
+        if ($publishedAt && $publishedAt->year < 2000) {
+            return "Tanggal publikasi terlalu lampau/tidak valid: " . $publishedAt->toIso8601String();
+        }
+
+        return null;
+    }
+
     private function processPortalCandidate(
         Project $project,
         string $candidateUrl,
@@ -756,6 +800,48 @@ class RunNewsPortalScraping extends Command
         $contentLength = mb_strlen(trim($finalContent));
         $candidateLinkId = null;
         $scrapingItemId = null;
+
+        // Validasi Pola Boilerplate / Statis / Tanggal Tidak Logis
+        $invalidReason = $this->isBoilerplateOrInvalidArticle($finalTitle, $finalArticleUrl, $finalPublishedAt);
+        if ($invalidReason !== null) {
+            $this->markPortalCandidateRejected(
+                url: $discoveryUrl ?? $candidateUrl,
+                canonicalUrl: $canonicalUrl,
+                projectId: $project->id,
+                reason: $invalidReason,
+                title: $finalTitle,
+                sourceType: $sourceType,
+            );
+            $this->runStats['rejected_count']++;
+            $this->runStats['skipped_count']++;
+            $candidateLinkId = DB::table('candidate_links')->where('canonical_url', $canonicalUrl ?: $candidateUrl)->value('id');
+            $scrapingItemId = $candidateLinkId ? ScrapingItem::where('candidate_link_id', $candidateLinkId)->value('id') : null;
+            $this->runCandidateLogs[] = [
+                'index' => $candidateIndex,
+                'original_url' => $discoveryUrl ?? $candidateUrl,
+                'resolved_url' => $canonicalUrl,
+                'candidate_link_id' => $candidateLinkId,
+                'scraping_item_id' => $scrapingItemId,
+                'article_id' => null,
+                'final_status' => 'rejected',
+                'reason' => $invalidReason,
+                'title_final' => $finalTitle,
+                'canonical_url_final' => $canonicalUrl,
+                'source_name_final' => $finalSourceName,
+                'content_length' => $contentLength,
+                'resolution_trace' => $resolutionTrace,
+            ];
+
+            unset($fetchResult, $finalContent);
+            return [
+                'status' => 'rejected',
+                'newly_inserted' => 0,
+                'reused_existing' => 0,
+                'rejected' => 1,
+                'partial' => 0,
+                'error' => 0,
+            ];
+        }
 
         if ($canonicalUrl !== '' && isset($this->seenCanonicalUrls[$canonicalUrl])) {
             $this->runStats['duplicate_candidate_count']++;

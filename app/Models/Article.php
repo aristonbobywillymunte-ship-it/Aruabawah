@@ -29,6 +29,7 @@ class Article extends Model
     public function projects(): BelongsToMany
     {
         return $this->belongsToMany(Project::class, 'project_articles')
+            ->withTrashed()
             ->withTimestamps();
     }
 

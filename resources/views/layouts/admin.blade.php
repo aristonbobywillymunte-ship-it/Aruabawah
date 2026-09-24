@@ -59,10 +59,18 @@
             }
         }
         /* Lock outer screen scroll bounds when modals are active */
-        body.overflow-hidden, html.overflow-hidden {
+        html.overflow-hidden,
+        body.overflow-hidden {
             overflow: hidden !important;
-            height: 100% !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            touch-action: none !important;
             overscroll-behavior: none !important;
+        }
+        body.overflow-hidden > div.flex.min-h-screen {
+            height: 100vh !important;
+            max-height: 100vh !important;
+            overflow: hidden !important;
         }
         /* Hide Alpine x-cloak elements until Alpine initializes */
         [x-cloak] { display: none !important; }

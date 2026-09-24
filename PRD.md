@@ -9,6 +9,12 @@
 
 ---
 
+## 3.6 Guard Kualitas Konten & Filter Otomatis Artikel Boilerplate
+- **Penyaringan Halaman Statis / Boilerplate**: Seluruh kandidat URL dari portal crawling otomatis difilter untuk mendeteksi judul non-berita seperti `Redaksi`, `Tentang Kami`, `Pedoman Media Siber`, `Disclaimer`, `Kontak Kami`, dsb.
+- **Validasi Tanggal Logis**: Artikel dengan tanggal masa depan (`> now()->addDay()`) atau sebelum era modern (< 2000) otomatis berstatus `rejected` sehingga tidak masuk ke database artikel maupun membebani antrean analisis AI.
+
+---
+
 ## 1. Executive Summary & Purpose
 
 Dokumen ini adalah **Source of Truth (Pusat Kebenaran)** untuk seluruh arsitektur sistem, alur scraping, pemrosesan AI, batas biaya/kuota, dan status implementasi teknis di repositori lokal **`proyek baru`**. Dokumen ini dirancang agar **setiap model AI / coding assistant baru yang masuk dapat langsung memahami kondisi aplikasi secara utuh dan tidak mengalami disorientasi / halusinasi**.

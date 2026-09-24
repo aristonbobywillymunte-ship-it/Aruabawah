@@ -131,5 +131,21 @@ services:
       - postgres
     restart: unless-stopped
 
+  media-intelligent-reverb:
+    image: media_intelligent_app:latest
+    container_name: media_intelligent_reverb_container
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports:
+      - "8080:8080"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - .:/var/web
+    environment: *app-env
+    depends_on:
+      - redis
+    restart: unless-stopped
+
 volumes:
   postgres_data:

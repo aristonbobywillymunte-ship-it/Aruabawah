@@ -321,7 +321,8 @@
             wire:click.self="closeQueueModal"
             x-data 
             x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
-            style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" 
+            @keydown.escape.window="$wire.closeQueueModal()"
+            style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; min-height: 100dvh; z-index: 999999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.65); overscroll-behavior: none;" 
             class="backdrop-blur-sm px-2 py-4 font-sans" 
             @touchmove.prevent 
             @wheel.prevent
@@ -615,7 +616,7 @@
 
     <!-- Modal Konfirmasi Error Handling -->
     @if($showConfirmModal)
-        <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm px-4 font-sans" @touchmove.prevent @wheel.prevent>
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; min-height: 100dvh; z-index: 9999999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.65); overscroll-behavior: none;" class="backdrop-blur-sm px-4 font-sans" @touchmove.prevent @wheel.prevent>
             <div class="w-full max-w-sm bg-white shadow-2xl rounded-2xl overflow-hidden text-center p-6 border border-slate-200">
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full {{ in_array($confirmActionType, ['purge_queue', 'purge_apify_queue']) ? 'bg-rose-100 text-rose-600' : 'bg-[#1fa387]/10 text-[#1fa387]' }} mb-4">
                     <span class="material-symbols-outlined text-[24px]">
@@ -661,8 +662,14 @@
 
     <!-- Modal Antrean Redis (Large Modal, Body Scrollable) -->
     @if($showRedisQueueModal)
-                <div style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" class="backdrop-blur-sm" @touchmove.prevent @wheel.prevent x-data x-init="document.body.classList.add('overflow-hidden'); document.documentElement.classList.add('overflow-hidden'); return () => { document.body.classList.remove('overflow-hidden'); document.documentElement.classList.remove('overflow-hidden'); }">
-                <div class="bg-white w-full max-w-[840px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200 flex flex-col my-8 max-h-[calc(100vh-32px)]">
+        <div 
+            wire:key="redis-queue-details-modal"
+            wire:click.self="closeRedisQueueModal"
+            x-data
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"
+            @keydown.escape.window="$wire.closeRedisQueueModal()"
+            style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; min-height: 100dvh; z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 1rem; background-color: rgba(15, 23, 42, 0.65); overscroll-behavior: none;" class="backdrop-blur-sm" @touchmove.prevent @wheel.prevent>
+            <div class="bg-white w-full max-w-[840px] rounded-[28px] overflow-hidden shadow-[0_30px_80px_rgba(15,23,42,0.18)] border border-slate-200 flex flex-col my-8 max-h-[calc(100vh-32px)]">
                     
                     <!-- Modal Header -->
                     <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
@@ -750,13 +757,14 @@
     <!-- Modal Antrean Apify (Large Modal, Body Scrollable, Tinggi Fix) -->
     @if($showApifyQueueModal)
         <div 
-            wire:key="apify-queue-details-modal" 
+            wire:key="apify-queue-details-modal"
             wire:click.self="closeApifyQueueModal"
-            x-data 
-            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }" 
-            style="position: fixed; inset: 0px; z-index: 99999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.6); overscroll-behavior: none;" 
-            class="backdrop-blur-sm px-4 py-6 font-sans" 
-            @touchmove.prevent 
+            x-data
+            x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"
+            @keydown.escape.window="$wire.closeApifyQueueModal()"
+            style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; min-height: 100dvh; z-index: 999999; display: flex; align-items: center; justify-content: center; background-color: rgba(15, 23, 42, 0.65); overscroll-behavior: none;"
+            class="backdrop-blur-sm px-2 py-4 font-sans"
+            @touchmove.prevent
             @wheel.prevent
         >
                     <div class="w-11/12 sm:w-auto max-w-7xl w-full mx-4 sm:mx-auto bg-white shadow-2xl text-left flex flex-col rounded-[24px] overflow-hidden max-h-[95vh]" style="max-height: calc(100dvh - 40px);">

@@ -47,6 +47,12 @@ Setiap kali AI Agent menerima tugas analisa, perbaikan, modifikasi, atau audit:
 5. **Pencatatan Wajib Pasca-Pekerjaan**:
    - **Catat ke PRD**: Tambahkan bab perubahan baru di `PRD.md`.
    - **Catat ke QA Log**: Tambahkan entri pengujian di `QA_LOG.md` dengan format `[QA-YYYYMMDD-XX]`, konteks, rincian perubahan, hasil pengujian fisik, dan status.
+   - **Sinkronisasi Dokumen Obsidian**: Setiap penambahan/pembaruan modul atau analisa di Obsidian Vault (`/Users/unity/Documents/Obsidian Vault/Proyek Baru/`), perbarui katalog indeks di `README.md` Obsidian agar struktur catatan selalu sinkron.
+
+---
+
+## 3. Aturan Git & Repositori
+- **Strictly No Auto Git Push**: Dilarang menjalankan `git push` secara otomatis. Semua commit dilakukan lokal dan menunggu instruksi eksplisit pengguna sebelum di-push ke remote.
 
 ---
 

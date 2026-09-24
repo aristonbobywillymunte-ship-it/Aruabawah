@@ -1,5 +1,22 @@
 # 📋 BUKU LOG QA MANDIRI (QUALITY ASSURANCE LOG)
 
+### [QA-20260917-71] Otomatisasi Eliminasi Artikel Boilerplate Statis dan Tanggal Tidak Logis pada Pipeline Scraping Berita
+* **Konteks**: Terdeteksi artikel yang tidak logis masuk ke database dan antrean analisis AI, seperti halaman statis portal (judul "Redaksi", "Tentang Kami", "Pedoman Media Siber" dari selasar.co) dan artikel dengan tanggal publikasi di masa depan (misal Desember 2026 dari korankaltim.com).
+* **Perubahan**:
+  1. `app/Console/Commands/RunNewsPortalScraping.php`:
+     - Menambahkan konstanta `BOILERPLATE_TITLES` dan method guard `isBoilerplateOrInvalidArticle($title, $url, $publishedAt)`.
+     - Otomatis menolak halaman statis portal (`Redaksi`, `Tentang Kami`, `Pedoman Media Siber`, `Disclaimer`, `Kontak Kami`, dll.) dan pola URL statis (`/(page|pages|statis|halaman)/...`).
+     - Otomatis menolak artikel dengan tanggal publikasi di masa depan (`$publishedAt > now()->addDay()`) atau sebelum tahun 2000 dengan status `rejected`.
+     - Kandidat yang ditolak langsung dihentikan sebelum disimpan ke database artikel atau dikirim ke antrean analisis AI.
+  2. Database Cleanup:
+     - Menghapus 6 record artikel sampah dan relasi antrean AI-nya (ID: 1194, 827, 808, 3207, 3206, 3208).
+* **Hasil Pengujian Fisik**:
+  - `php -l app/Console/Commands/RunNewsPortalScraping.php`: No syntax errors detected ✅
+  - Verifikasi query database: 0 artikel sampah boilerplate / tanggal masa depan tersisa ✅
+  - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
+* **Status**: ✅ PASSED
+
+
 ### [QA-20260917-70] Refactor Desain Modal Scraping Settings agar Konsisten dengan Modal Admin Lainnya
 * **Konteks**: Modal "Edit Parameter Scraping" pada halaman `/admin/scraping-settings` memiliki tata letak padat tanpa pemisahan grup, backdrop kurang kontras, dan footer menyatu tanpa latar abu-abu standar sistem.
 * **Perubahan**:
