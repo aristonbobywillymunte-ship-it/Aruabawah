@@ -1379,6 +1379,27 @@ Pencocokan konten awal hanya berbasis ekspresi reguler kata kunci (`ContentMatch
 3. **Feed Dashboard (`app/Livewire/MediaDashboard.php`)**:
    - Menyaring query artikel portal dan postingan media sosial agar hanya menampilkan item yang `is_project_relevant != false`.
 
+---
+
+## Bab 7.61 — Hardening Apify Financials: Fallback Timestamp, Humanized Error Status, dan Refactor Modal
+
+### Latar Belakang
+Halaman `/admin/apify-financials` memuat beberapa kelemahan data dan slop antarmuka:
+1. Pemetaan status `financialRunStatus()` belum mengenali error saldo habis (HTTP 402 / `not-enough-usage`) sehingga pesan JSON mentah dicetak ke tabel.
+2. Filter rentang tanggal murni mengandalkan `completed_at`, mengecualikan 6 run yang memiliki biaya komputasi aktual tetapi `completed_at`-nya NULL.
+3. Pemanggilan method `openItems` di Blade memuat 5 argumen string interpolasi yang rentan benturan tanda kutip.
+
+### Perubahan
+1. **Pembersihan Pesan Status Finansial (`ApifyFinancialReport.php`)**:
+   - Menambahkan status `Kredit/Saldo Habis` dan menggunakan `ApifyActor::friendlyRunMessage()` untuk menghasilkan pesan berbahasa manusia yang ringkas.
+2. **Kueri Tanggal & Pengurutan**:
+   - Membungkus field waktu dengan `COALESCE(completed_at, updated_at)` pada kalkulasi summary dan tabel riwayat.
+3. **Refactor Interaksi Modal (`ApifyFinancialReport.php` & Blade)**:
+   - Menyederhanakan trigger modal menjadi `openItems({{ $run['id'] }})`.
+   - Mendukung pengecekan pivot `project_social_media_items` saat memuat postingan.
+   - Memasang inline SVG tombol close dan listener Escape keyboard.
+
+
 
 
 

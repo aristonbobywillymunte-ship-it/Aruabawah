@@ -1642,6 +1642,33 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
   - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
 - **Status:** PASSED ✅
 
+---
+
+## [QA-20260925-76] Hardening Apify Financials: Fallback Timestamp, Humanized Error Status, dan Refactor Modal
+
+- **Tanggal:** 2026-09-25
+- **Konteks:** Menghilangkan slop raw error message pada tabel riwayat Apify Financials, memastikan run tanpa `completed_at` tetap terhitung, dan menyederhanakan pemanggilan modal inspeksi.
+- **Root Cause & Issues:**
+  1. Baris run gagal memuntahkan raw JSON error dari API Apify (seperti `HTTP 402` atau limit biaya).
+  2. Kueri laporan mengandalkan `completed_at`, sehingga run dengan biaya riil yang `completed_at`-nya NULL terabaikan dari ringkasan.
+  3. Pemanggilan modal `openItems` di Blade mengeksekusi 5 argumen string interpolasi yang rentan crash terhadap karakter kutip.
+  4. Modal belum memiliki listener tombol keyboard Escape dan tombol close masih menggunakan ligature font.
+- **Target Files:**
+  - `app/Livewire/Admin/ApifyFinancialReport.php`
+  - `resources/views/livewire/admin/apify-financial-report.blade.php`
+- **Perubahan:**
+  1. `financialRunStatus()` memetakan status `Kredit/Saldo Habis` (HTTP 402, not-enough-usage) dan membersihkan string error via `ApifyActor::friendlyRunMessage()`.
+  2. Kueri tanggal dan pengurutan dibungkus `COALESCE(completed_at, updated_at)` sehingga seluruh run berbiaya selalu tercatat.
+  3. Refactor `openItems(int $dispatchStateId)` menjadi single argument berbasis ID state dan mendukung relasi pivot `project_social_media_items`.
+  4. Memasang inline SVG tombol close dan listener `@keydown.escape.window="if (open) $wire.closeItemsModal()"`.
+- **Verifikasi:**
+  - `php -l app/Livewire/Admin/ApifyFinancialReport.php` → `No syntax errors detected` ✅
+  - Pengujian mount & render `ApifyFinancialReport` via Livewire Testable → `SUCCESS` ✅
+  - HTTP `GET /admin/apify-financials` → Status `200 OK` ✅
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+- **Status:** PASSED ✅
+
+
 
 
 

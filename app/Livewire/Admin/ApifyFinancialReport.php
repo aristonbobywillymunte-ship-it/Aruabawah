@@ -49,34 +49,40 @@ class ApifyFinancialReport extends Component
         abort_unless(auth()->user()?->isAdmin(), 403);
     }
 
-    public function openItems($projectId, $platform, $keyword, $runId = '-', $projectName = '-')
+    public function openItems(int $dispatchStateId)
     {
         $this->adminOnly();
-        $this->selectedPlatform = $platform;
-        $this->selectedKeyword = $keyword;
-        $this->selectedRunId = $runId ?: '-';
-        $this->selectedProjectName = $projectName ?: '-';
-        $this->showItemsModal = true;
-        // Deteksi apakah keyword ini adalah URL (biasanya indikasi perayapan komentar / Comment Scraper)
-        $isCommentRun = filter_var($keyword, FILTER_VALIDATE_URL) !== false;
 
+        $dispatch = DB::table('apify_dispatch_states')
+            ->leftJoin('projects', 'apify_dispatch_states.project_id', '=', 'projects.id')
+            ->where('apify_dispatch_states.id', $dispatchStateId)
+            ->select('apify_dispatch_states.*', 'projects.name as project_name')
+            ->first();
+
+        if (! $dispatch) {
+            return;
+        }
+
+        $this->selectedPlatform = (string) $dispatch->platform;
+        $this->selectedKeyword = (string) $dispatch->keyword;
+        $this->selectedRunId = (string) ($dispatch->run_id ?: '-');
+        $this->selectedProjectName = (string) ($dispatch->project_name ?: '-');
+        $this->showItemsModal = true;
+        
+        // Deteksi apakah keyword ini adalah URL (indikasi perayapan komentar)
+        $isCommentRun = filter_var($dispatch->keyword, FILTER_VALIDATE_URL) !== false;
         $this->isCommentModal = $isCommentRun;
         $this->modalLoading = true;
         $this->selectedItems = [];
 
         if ($isCommentRun) {
-            // Get all URLs from the dispatch state for this run if possible (to support batch comment scraping)
-            $urls = [$keyword];
-            if ($runId && $runId !== '-') {
-                $dispatch = DB::table('apify_dispatch_states')->where('run_id', $runId)->first();
-                if ($dispatch && !empty($dispatch->normalized_keyword)) {
-                    $urls = array_filter(array_map('trim', explode('|', $dispatch->normalized_keyword)));
-                }
+            $urls = [$dispatch->keyword];
+            if (!empty($dispatch->normalized_keyword)) {
+                $urls = array_filter(array_map('trim', explode('|', $dispatch->normalized_keyword)));
             }
 
-            // Ambil postingan utama terlebih dahulu (Tanpa batasan project_id karena audit log / data mentah)
             $mainPosts = DB::table('social_media_items')
-                ->where('platform', $platform)
+                ->where('platform', $dispatch->platform)
                 ->where(function($q) use ($urls) {
                     foreach ($urls as $url) {
                         $q->orWhere('post_url', $url)
@@ -88,7 +94,6 @@ class ApifyFinancialReport extends Component
             if ($mainPosts->isNotEmpty()) {
                 $postIds = $mainPosts->pluck('id')->toArray();
                 
-                // Ambil daftar komentar untuk semua variasi postingan utama ini
                 $comments = DB::table('social_media_comments')
                     ->whereIn('social_media_item_id', $postIds)
                     ->orderBy('posted_at', 'desc')
@@ -96,7 +101,6 @@ class ApifyFinancialReport extends Component
                     ->get();
 
                 $this->selectedItems = $comments->map(function($c) use ($mainPosts) {
-                    // Cari main post yang bersangkutan untuk mendapatkan post_url aslinya
                     $relatedPost = $mainPosts->firstWhere('id', $c->social_media_item_id);
                     return [
                         'post_url'       => $relatedPost ? $relatedPost->post_url : '',
@@ -110,31 +114,38 @@ class ApifyFinancialReport extends Component
                 })->toArray();
             }
         } else {
-            // Ambil data postingan utama (Search Post)
-            // Memecah kata kunci (misal "bank kaltimtara,bank kaltim") untuk mencari kecocokan global
-            $queryKeyword = trim($keyword);
+            $queryKeyword = trim((string) $dispatch->keyword);
             $keywordsList = array_filter(array_map('trim', explode(',', $queryKeyword)));
             if (empty($keywordsList)) {
                 $keywordsList = [$queryKeyword];
             }
 
+            $projectId = $dispatch->project_id;
+            // ponytail: cek kecocokan project_id langsung atau melalui pivot project_social_media_items
             $rawItems = DB::table('social_media_items')
-                ->where('platform', $platform)
+                ->where('platform', $dispatch->platform)
                 ->when($projectId, function ($q) use ($projectId) {
-                    $q->where('project_id', $projectId);
+                    $q->where(function ($sub) use ($projectId) {
+                        $sub->where('social_media_items.project_id', $projectId)
+                            ->orWhereExists(function ($sq) use ($projectId) {
+                                $sq->select(DB::raw(1))
+                                   ->from('project_social_media_items')
+                                   ->whereColumn('project_social_media_items.social_media_item_id', 'social_media_items.id')
+                                   ->where('project_social_media_items.project_id', $projectId);
+                            });
+                    });
                 }, function ($q) use ($keywordsList) {
                     $q->where(function ($sub) use ($keywordsList) {
                         foreach ($keywordsList as $kw) {
-                            $sub->orWhere('content', 'like', '%' . $kw . '%')
-                                ->orWhere('author_name', 'like', '%' . $kw . '%');
+                            $sub->orWhere('content', 'ilike', '%' . $kw . '%')
+                                ->orWhere('author_name', 'ilike', '%' . $kw . '%');
                         }
                     });
                 })
                 ->orderBy('posted_at', 'desc')
                 ->orderBy('id', 'desc')
-                ->limit(150);
-
-            $rawItems = $rawItems->get();
+                ->limit(150)
+                ->get();
 
             $this->selectedItems = $rawItems->map(function($item) {
                 return [
@@ -177,23 +188,25 @@ class ApifyFinancialReport extends Component
             })
             ->whereNotNull('apify_dispatch_states.actual_cost_usd')
             ->when($this->startDate, function($q) {
-                $q->whereDate('apify_dispatch_states.completed_at', '>=', $this->startDate);
+                $q->whereDate(DB::raw('COALESCE(apify_dispatch_states.completed_at, apify_dispatch_states.updated_at)'), '>=', $this->startDate);
             }, function($q) {
-                $q->where('apify_dispatch_states.completed_at', '>=', now()->subDays(30));
+                $q->where(DB::raw('COALESCE(apify_dispatch_states.completed_at, apify_dispatch_states.updated_at)'), '>=', now()->subDays(30));
             })
             ->when($this->endDate, function($q) {
-                $q->whereDate('apify_dispatch_states.completed_at', '<=', $this->endDate);
+                $q->whereDate(DB::raw('COALESCE(apify_dispatch_states.completed_at, apify_dispatch_states.updated_at)'), '<=', $this->endDate);
             })
             ->when($this->projectId, function($q) {
                 $q->where('apify_dispatch_states.project_id', $this->projectId);
             })
-            ->orderBy('apify_dispatch_states.completed_at', 'desc')
+            ->orderBy(DB::raw('COALESCE(apify_dispatch_states.completed_at, apify_dispatch_states.updated_at)'), 'desc')
             ->select(
+                'apify_dispatch_states.id',
                 'apify_dispatch_states.platform', 
                 'apify_dispatch_states.actual_cost_usd', 
                 'apify_dispatch_states.items_collected', 
                 'apify_dispatch_states.run_duration_secs', 
                 'apify_dispatch_states.completed_at', 
+                'apify_dispatch_states.updated_at',
                 'apify_dispatch_states.project_id', 
                 'apify_dispatch_states.keyword', 
                 'apify_dispatch_states.run_id',
@@ -217,7 +230,10 @@ class ApifyFinancialReport extends Component
                 (int) $r->items_collected
             );
 
+            $completedTime = $r->completed_at ?: $r->updated_at;
+
             return [
+                'id'           => $r->id,
                 'platform'     => $r->platform,
                 'actor_name'   => $r->actor_name ?? '-',
                 'cost_limit'   => $r->package_cost_limit !== null ? number_format((float) $r->package_cost_limit, 4) : '-',
@@ -225,7 +241,7 @@ class ApifyFinancialReport extends Component
                 'items'        => $r->items_collected ?? 0,
                 'run_status'   => $statusObj,
                 'duration'     => $r->run_duration_secs ? $r->run_duration_secs . 's' : '-',
-                'completed_at' => $r->completed_at ? \Carbon\Carbon::parse($r->completed_at)->isoFormat('D MMM, HH:mm') : '-',
+                'completed_at' => $completedTime ? \Carbon\Carbon::parse($completedTime)->isoFormat('D MMM, HH:mm') : '-',
                 'project_name' => $r->project_name ?? 'N/A',
                 'project_id'   => $r->project_id,
                 'keyword'      => $r->keyword,
@@ -245,18 +261,18 @@ class ApifyFinancialReport extends Component
         $rows = DB::table('apify_dispatch_states')
             ->whereNotNull('actual_cost_usd')
             ->when($this->startDate, function($q) {
-                $q->whereDate('completed_at', '>=', $this->startDate);
+                $q->whereDate(DB::raw('COALESCE(completed_at, updated_at)'), '>=', $this->startDate);
             }, function($q) {
-                $q->where('completed_at', '>=', now()->subDays(30));
+                $q->where(DB::raw('COALESCE(completed_at, updated_at)'), '>=', now()->subDays(30));
             })
             ->when($this->endDate, function($q) {
-                $q->whereDate('completed_at', '<=', $this->endDate);
+                $q->whereDate(DB::raw('COALESCE(completed_at, updated_at)'), '<=', $this->endDate);
             })
             ->when($this->projectId, function($q) {
                 $q->where('project_id', $this->projectId);
             })
-            ->orderBy('completed_at', 'desc')
-            ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'actor_id', 'project_id')
+            ->orderBy(DB::raw('COALESCE(completed_at, updated_at)'), 'desc')
+            ->select('platform', 'actual_cost_usd', 'items_collected', 'run_duration_secs', 'completed_at', 'updated_at', 'actor_id', 'project_id')
             ->get();
 
         // Ambil data fungsionalitas aktor untuk pemetaan tipe
@@ -312,25 +328,30 @@ class ApifyFinancialReport extends Component
         $msgLower = strtolower($errorMsg ?? '');
         $code = $errorCode ?? '';
 
-        // A. Semua token habis
-        if (str_contains($msgLower, 'apify_all_tokens_exhausted') || str_contains($code, 'APIFY_ALL_TOKENS_EXHAUSTED')) {
+        // A. Kredit / Kuota Apify Habis (HTTP 402, not-enough-usage, billing limit)
+        if (str_contains($msgLower, 'not-enough-usage') 
+            || str_contains($msgLower, 'exceed your remaining usage') 
+            || str_contains($msgLower, 'http 402') 
+            || str_contains($msgLower, 'maximum usage for your current billing cycle')
+            || str_contains($msgLower, 'monthly usage hard limit exceeded') 
+            || str_contains($msgLower, 'platform-feature-disabled')) {
             return [
-                'label' => 'Token/kuota tidak tersedia',
+                'label' => 'Kredit/Saldo Habis',
                 'tone' => 'danger',
-                'message' => 'Semua token Apify yang siap digunakan tidak tersedia atau mencapai limit.',
+                'message' => 'Saldo atau batas penggunaan akun Apify telah habis ($0.00).',
             ];
         }
 
-        // B. Monthly quota / feature disabled
-        if (str_contains($msgLower, 'monthly usage hard limit exceeded') || str_contains($msgLower, 'platform-feature-disabled')) {
+        // B. Semua token habis
+        if (str_contains($msgLower, 'apify_all_tokens_exhausted') || str_contains($code, 'APIFY_ALL_TOKENS_EXHAUSTED') || str_contains($msgLower, 'semua token apify tidak tersedia')) {
             return [
-                'label' => 'Kuota Apify habis',
+                'label' => 'Token Tidak Tersedia',
                 'tone' => 'danger',
-                'message' => 'Run tidak dapat dijalankan karena batas penggunaan Apify tercapai.',
+                'message' => 'Semua token Apify tidak siap digunakan atau mencapai batas kuota.',
             ];
         }
 
-        // C. Cost limit (Jika items > 0 maka partial, kalau 0 anggap juga cost limit tercapai)
+        // C. Cost limit (Jika items > 0 maka partial, kalau 0 batas tercapai)
         if (str_contains($msgLower, 'maximum cost') || str_contains($msgLower, 'max total charge') || str_contains($msgLower, 'maxtotalchargeusd') || str_contains($msgLower, 'partial: cost limit reached') || str_contains($msgLower, 'batas biaya apify')) {
             if ($items > 0) {
                 return [
@@ -350,37 +371,36 @@ class ApifyFinancialReport extends Component
         if (str_contains($msgLower, 'timeout') || str_contains($msgLower, 'poll timeout')) {
             return [
                 'label' => 'Timeout',
-                'tone' => 'danger', // Bisa danger/warning
-                'message' => 'Apify tidak menyelesaikan run dalam waktu yang ditentukan.',
+                'tone' => 'danger',
+                'message' => 'Apify tidak menyelesaikan run dalam batas waktu yang ditentukan.',
             ];
         }
 
         // E. Dataset gagal
         if (str_contains($msgLower, 'dataset fetch failed') || str_contains($msgLower, 'failed to fetch dataset')) {
             return [
-                'label' => 'Gagal mengambil hasil',
+                'label' => 'Gagal Ambil Hasil',
                 'tone' => 'danger',
-                'message' => 'Run ada, tetapi dataset Apify gagal diambil.',
+                'message' => 'Dataset hasil scraper di cloud Apify gagal diunduh.',
             ];
         }
 
         // F. Failed umum
         if ($status === 'failed') {
+            $friendly = \App\Models\ApifyActor::friendlyRunMessage($errorMsg);
             return [
                 'label' => 'Gagal',
                 'tone' => 'danger',
-                'message' => Str::limit($errorMsg ?: 'Terjadi kesalahan sistem yang tidak spesifik.', 120),
+                'message' => Str::limit($friendly ?: 'Terjadi kesalahan eksekusi scraper.', 120),
             ];
         }
-
-        // I. Partial jika ada limit lain (opsional, sudah masuk C)
 
         // G. Nol tanpa error
         if ($actualCost == 0 && $items == 0) {
             return [
                 'label' => 'Tidak ada hasil',
                 'tone' => 'warning',
-                'message' => 'Actor selesai tetapi tidak menghasilkan item atau biaya yang tercatat.',
+                'message' => 'Scraper selesai namun tidak menghasilkan item baru.',
             ];
         }
 

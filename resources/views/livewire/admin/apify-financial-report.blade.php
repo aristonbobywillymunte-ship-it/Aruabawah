@@ -133,13 +133,13 @@
                                 @if($run['items'] > 0)
                                     <button 
                                         type="button"
-                                        wire:click="openItems({{ $run['project_id'] ? $run['project_id'] : 'null' }}, '{{ $run['platform'] }}', '{{ addslashes($run['keyword']) }}', '{{ $run['run_id'] }}', '{{ addslashes($run['project_name']) }}')"
+                                        wire:click="openItems({{ $run['id'] }})"
                                         wire:loading.attr="disabled"
                                         wire:loading.class="opacity-50 cursor-not-allowed"
                                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1fa387]/10 hover:bg-[#1fa387]/20 text-[#1fa387] font-black tracking-wide transition active:scale-95 cursor-pointer shadow-sm text-[10px]"
                                     >
-                                        <span wire:loading.remove wire:target="openItems" class="material-symbols-outlined text-[13px] font-bold">visibility</span>
-                                        <svg wire:loading wire:target="openItems" class="animate-spin h-3 w-3 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <span wire:loading.remove wire:target="openItems({{ $run['id'] }})" class="material-symbols-outlined text-[13px] font-bold">visibility</span>
+                                        <svg wire:loading wire:target="openItems({{ $run['id'] }})" class="animate-spin h-3 w-3 text-[#1fa387]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
@@ -202,6 +202,7 @@
          x-data="{ get open() { return $wire.showItemsModal } }"
          x-show="open"
          x-cloak
+         @keydown.escape.window="if (open) $wire.closeItemsModal()"
          wire:click.self="closeItemsModal"
          x-init="
              $watch('open', val => {
@@ -224,7 +225,9 @@
                     <h2 class="text-sm font-black text-slate-900 mt-0.5 leading-tight">Hasil Pengambilan {{ $isCommentModal ? 'Komentar' : 'Postingan' }} <span class="text-slate-400 font-semibold block sm:inline">({{ $isCommentModal ? 'Scraped Comments' : 'Scraped Posts' }})</span></h2>
                 </div>
                 <button type="button" wire:click="closeItemsModal" wire:loading.attr="disabled" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0">
-                    <span class="material-symbols-outlined text-[18px] block">close</span>
+                    <svg class="w-4 h-4 block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
                 </button>
             </div>
 
