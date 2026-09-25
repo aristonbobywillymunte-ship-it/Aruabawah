@@ -703,6 +703,9 @@ class SystemHealth extends Component
     public function render()
     {
         $this->adminOnly();
+        if (empty($this->aiStatus) || empty($this->dbStatus)) {
+            $this->checkHealth();
+        }
         return view('livewire.admin.system-health');
     }
 }

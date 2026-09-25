@@ -1320,4 +1320,26 @@ Ditemukan false-positive alert Telegram krisis pada proyek Bankaltimtara untuk b
    - Guard Telegram: verifikasi keberadaan relasi pivot item di DB sebelum alert dikirim.
    - Hapus `risk_reason` dari `evaluationHaystack` validasi Telegram agar terhindar dari bias halusinasi LLM. Validasi murni pada judul, ringkasan, dan subjek faktual artikel.
 
+---
+
+## Bab 7.58 — Audit Slop & Stabilitas Tampilan Dashboard Sistem Kesehatan Platform
+
+### Latar Belakang
+Pada dashboard administrator (`/admin`), teridentifikasi beberapa isu slop dan rendering:
+1. Ikon `<span class="material-symbols-outlined">error</span>` merender teks mentah `"error"` akibat font-family tertimpa style `!important` global.
+2. Banner kegagalan Apify di header dashboard menduplikasi kartu status di bawahnya dan tidak memiliki tombol tutup (*dismiss*).
+3. Terjadi infinite retry loop di scheduler `RequeueOverdueAiAnalysisRetries` pada state dengan `project_id` yang sudah terhapus (ID 59).
+4. Komponen `SystemHealth.php` berisiko melempar pengecualian `count()` jika variabel error belum diinisialisasi saat render.
+
+### Perubahan
+1. **Layout Admin (`resources/views/layouts/admin.blade.php`)**:
+   - Mengunci aturan CSS `.material-symbols-outlined { font-family: 'Material Symbols Outlined' !important; }` agar nama ikon tidak pernah bocor menjadi teks biasa.
+2. **Blade Dashboard & Livewire System Health**:
+   - Menambahkan wrapper Alpine.js dismiss (`x-data="{ show: true }"`) dan tombol tutup pada banner error Apify di `resources/views/admin/dashboard.blade.php`.
+   - Mengamankan pengecekan array di `resources/views/livewire/admin/system-health.blade.php` dengan `!empty($latestErrors) && count($latestErrors) > 0`.
+   - Menambahkan fallback eksekusi `checkHealth()` di `SystemHealth::render()`.
+3. **Scheduler Guard (`RequeueOverdueAiAnalysisRetries.php`)**:
+   - Memvalidasi keberadaan proyek aktif sebelum requeue. Jika proyek sudah terhapus (*soft-deleted*) atau nonaktif, status diubah menjadi `failed` dan antrean dihentikan.
+
+
 

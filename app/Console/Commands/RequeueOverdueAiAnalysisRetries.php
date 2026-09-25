@@ -43,6 +43,17 @@ class RequeueOverdueAiAnalysisRetries extends Command
                 break;
             }
 
+            // ponytail: cek keberadaan dan status aktif proyek sebelum requeue
+            $project = \App\Models\Project::find($state->project_id);
+            if (! $project || ! $project->is_active) {
+                $state->update([
+                    'status' => 'failed',
+                    'next_retry_at' => null,
+                    'error_message' => 'Project does not exist, was deleted, or is inactive.',
+                ]);
+                continue;
+            }
+
             $payload = [
                 'type' => $state->analyzable_type === 'social' ? 'social' : 'article',
                 'id' => $state->analyzable_id,

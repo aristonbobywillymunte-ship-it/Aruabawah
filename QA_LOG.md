@@ -1553,4 +1553,34 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
   - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
 - **Status:** PASSED ✅
 
+---
+
+## [QA-20260925-73] Audit Slop & Stabilitas Tampilan Dashboard Sistem Kesehatan
+
+- **Tanggal:** 2026-09-25
+- **Konteks:** Perbaikan tampilan error dan teks literal "error" pada dashboard admin Sistem Kesehatan Platform di lokal.
+- **Root Cause & Issues:**
+  1. Font Material Symbols tertimpa oleh rule CSS `font-family: 'Plus Jakarta Sans' !important` pada layout admin, menyebabkan tag `<span class="material-symbols-outlined">error</span>` merender teks mentah `"error"`.
+  2. Komponen `SystemHealth.php` berisiko crash dengan `count(): Argument #1 must be of type Countable|array, null given` jika `$latestErrors` belum terisi saat render.
+  3. Perulangan tak terbatas (*infinite loop*) di scheduler `RequeueOverdueAiAnalysisRetries.php` akibat mencoba me-requeue 12 dispatch state milik proyek soft-deleted (ID 59) yang memicu exception setiap menit.
+  4. Banner kendala Apify di `dashboard.blade.php` tidak memiliki tombol tutup (*dismiss*) dan menduplikasi kartu status di bawahnya.
+- **Target Files:**
+  - `resources/views/layouts/admin.blade.php`
+  - `resources/views/admin/dashboard.blade.php`
+  - `resources/views/livewire/admin/system-health.blade.php`
+  - `app/Livewire/Admin/SystemHealth.php`
+  - `app/Console/Commands/RequeueOverdueAiAnalysisRetries.php`
+- **Perubahan:**
+  1. Mengunci `.material-symbols-outlined { font-family: 'Material Symbols Outlined' !important; }` di layout admin agar ikon tidak berubah menjadi teks mentah.
+  2. Menambahkan `!empty($latestErrors)` pada view dan fallback `checkHealth()` di `SystemHealth::render()`.
+  3. Menambahkan pengecekan keberadaan dan status aktif proyek di `RequeueOverdueAiAnalysisRetries.php`, menandai state sebagai `failed` jika proyek sudah terhapus/nonaktif.
+  4. Menambahkan kontrol dismiss Alpine.js (`x-data="{ show: true }"`) dan tombol tutup pada banner peringatan Apify di `dashboard.blade.php`.
+- **Verifikasi:**
+  - `php -l app/Livewire/Admin/SystemHealth.php` → `No syntax errors detected` ✅
+  - `php -l app/Console/Commands/RequeueOverdueAiAnalysisRetries.php` → `No syntax errors detected` ✅
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+  - Pengujian render Livewire via Tinker & HTTP request `/admin` → Status `200 OK` tanpa warning undefined variable ✅
+- **Status:** PASSED ✅
+
+
 

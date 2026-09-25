@@ -16,6 +16,10 @@
         body, html, input, button, select, textarea {
             font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
         }
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined' !important;
+            font-display: swap;
+        }
         /* Mengunci navigasi sidebar di desktop agar tetap di posisinya saat halaman di-scroll */
         @media (min-width: 1024px) {
             aside {
