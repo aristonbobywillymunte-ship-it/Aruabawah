@@ -1611,6 +1611,38 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
   - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
 - **Status:** PASSED ✅
 
+---
+
+## [QA-20260925-75] Gatekeeper Relevansi AI: Auto-Detach Pivot, Filter Dashboard & Telegram Block
+
+- **Tanggal:** 2026-09-25
+- **Konteks:** Menjadikan AI LLM sebagai hakim mutlak (*gatekeeper*) relevansi konten terhadap judul/entitas proyek. Konten yang dinilai tidak relevan otomatis dilepas dari pivot, disembunyikan dari dashboard, dan dilarang mengirim alert Telegram.
+- **Root Cause & Issues:**
+  1. Pencocokan artikel sebelumnya hanya berbasis string regex kata kunci (`ContentMatchingService`), sehingga artikel umum/numpang lewat ikut tersimpan ke pivot proyek.
+  2. Prompt AI sebelumnya hanya menilai spam global (`is_noise`), tanpa kewajiban menilai apakah isu konten relevan secara substantif terhadap entitas proyek.
+  3. Dashboard menampilkan seluruh artikel yang ada di pivot tanpa memvalidasi skor relevansi proyek.
+  4. Telegram rentan mengirim alert palsu jika AI mengarang analisis risiko untuk proyek yang tidak relevan.
+- **Target Files:**
+  - `database/migrations/2026_09_25_230000_add_project_relevance_to_ai_analysis_results_table.php`
+  - `app/Models/AiAnalysisResult.php`
+  - `app/Jobs/AiAnalysisJob.php`
+  - `app/Livewire/MediaDashboard.php`
+- **Perubahan:**
+  1. Menambahkan kolom `is_project_relevant`, `project_relevance_reason`, dan `project_relevance_score` di tabel `ai_analysis_results`.
+  2. Menambahkan klausul wajib `EVALUASI RELEVANSI PROYEK` pada prompt AI & ekstraksi di `AiAnalysisJob`.
+  3. Memasang auto-detach pivot: Jika `is_project_relevant = false`, hapus relasi dari `project_articles` / `project_social_media_items`.
+  4. Memasang filter ketat di `MediaDashboard.php`: hanya tampilkan item yang `is_project_relevant != false`.
+  5. Memasang guard mutlak Telegram: jika `is_project_relevant = false`, alert krisis dihentikan seketika.
+- **Verifikasi:**
+  - Migrasi DB berhasil dijalankan (`DONE`) ✅
+  - `php -l app/Models/AiAnalysisResult.php` → `No syntax errors detected` ✅
+  - `php -l app/Jobs/AiAnalysisJob.php` → `No syntax errors detected` ✅
+  - `php -l app/Livewire/MediaDashboard.php` → `No syntax errors detected` ✅
+  - Pengujian mount & render `MediaDashboard` via Livewire Testable → `SUCCESS` ✅
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+- **Status:** PASSED ✅
+
+
 
 
 

@@ -375,6 +375,11 @@ class MediaDashboard extends Component
             ->where(function ($q) {
                 $q->whereNull('ai_analysis_results.is_noise')
                   ->orWhere('ai_analysis_results.is_noise', false);
+            })
+            ->where(function ($q) {
+                // ponytail: jangan tampilkan artikel yang dinilai tidak relevan oleh AI
+                $q->whereNull('ai_analysis_results.is_project_relevant')
+                  ->orWhere('ai_analysis_results.is_project_relevant', true);
             });
 
         // Kueri 2: Media Sosial asli dari tabel social_media_items
@@ -412,6 +417,11 @@ class MediaDashboard extends Component
             ->where(function ($q) {
                 $q->whereNull('ai_analysis_results.is_noise')
                   ->orWhere('ai_analysis_results.is_noise', false);
+            })
+            ->where(function ($q) {
+                // ponytail: jangan tampilkan postingan yang dinilai tidak relevan oleh AI
+                $q->whereNull('ai_analysis_results.is_project_relevant')
+                  ->orWhere('ai_analysis_results.is_project_relevant', true);
             });
 
         // Gabungkan kedua kueri menggunakan union (dan jalankan query sebagai eloquent-compatible wrapper)

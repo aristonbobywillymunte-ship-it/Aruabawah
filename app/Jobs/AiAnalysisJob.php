@@ -360,8 +360,30 @@ class AiAnalysisJob implements ShouldQueue
             $this->ensureOfficialReachFields($analysisId, $normalized);
             $this->syncSourceRecord($normalized);
 
-            // Trigger touch pada project agar signature cache dashboard langsung ter-update otomatis
+            // ponytail: jika AI menilai konten TIDAK relevan terhadap proyek (is_project_relevant === false),
+            // lepaskan relasi pivot agar konten otomatis tidak tampil di dashboard proyek ini
             $projectId = $this->payload['project_id'] ?? null;
+            if (isset($normalized['is_project_relevant']) && $normalized['is_project_relevant'] === false && $projectId) {
+                $analyzableId = (int) ($this->payload['id'] ?? $this->payload['item_id'] ?? 0);
+                if ($type === 'social') {
+                    DB::table('project_social_media_items')
+                        ->where('project_id', $projectId)
+                        ->where('social_media_item_id', $analyzableId)
+                        ->delete();
+                } else {
+                    DB::table('project_articles')
+                        ->where('project_id', $projectId)
+                        ->where('article_id', $analyzableId)
+                        ->delete();
+                }
+
+                Log::info("[Pipeline] Auto-detach non-relevant item: Item ID {$analyzableId} ({$type}) dilepas dari Proyek ID {$projectId} karena dinilai tidak relevan oleh AI.", [
+                    'reason' => $normalized['project_relevance_reason'] ?? null,
+                    'score' => $normalized['project_relevance_score'] ?? null,
+                ]);
+            }
+
+            // Trigger touch pada project agar signature cache dashboard langsung ter-update otomatis
             if ($projectId) {
                 \App\Models\Project::where('id', $projectId)->touch();
             }
@@ -372,6 +394,7 @@ class AiAnalysisJob implements ShouldQueue
                 'sentiment' => $normalized['sentiment'],
                 'risk_level' => $normalized['risk_level'],
                 'reach_estimate' => $normalized['reach_estimate'],
+                'is_project_relevant' => $normalized['is_project_relevant'] ?? null,
             ]);
         } catch (\Throwable $e) {
             $failure = $dispatchStateService->classifyFailure($e);
@@ -417,6 +440,7 @@ class AiAnalysisJob implements ShouldQueue
         $canonicalReachLevel = strtolower((string) ($normalized['potential_reach_level'] ?? $normalized['reach_level'] ?? ''));
         $shouldNotify = ($normalized['analysis_status'] ?? 'success') === 'success'
             && (($normalized['is_noise'] ?? false) !== true)
+            && (($normalized['is_project_relevant'] ?? true) !== false)
             && (
                 ($normalized['risk_level'] === 'high' || $normalized['risk_level'] === 'critical')
                 || ($normalized['risk_level'] === 'medium' && in_array($canonicalReachLevel, ['tinggi', 'sangat tinggi', 'high'], true))
@@ -446,6 +470,17 @@ class AiAnalysisJob implements ShouldQueue
                         'project_id' => $project->id,
                         'project_name' => $projectName,
                         'item_id' => $analyzableId,
+                    ]);
+                    return;
+                }
+
+                // ponytail: guard mutlak evaluasi AI is_project_relevant
+                if (($normalized['is_project_relevant'] ?? true) === false) {
+                    Log::warning('[Pipeline] Telegram notification skipped: item flagged as not relevant to project by AI.', [
+                        'project_id' => $project->id,
+                        'project_name' => $projectName,
+                        'item_id' => $analyzableId,
+                        'reason' => $normalized['project_relevance_reason'] ?? null,
                     ]);
                     return;
                 }
@@ -576,6 +611,18 @@ class AiAnalysisJob implements ShouldQueue
         $instruction .= "Jika ragu, pilih is_noise=false dan confidence lebih rendah.\n";
         $instruction .= "subjects harus berisi subjek/orang/lembaga/topik utama yang benar-benar dibahas dalam konten.\n";
         $instruction .= "noise_reason wajib singkat dan tidak mengandung secret.\n\n";
+
+        $instruction .= "EVALUASI RELEVANSI PROYEK (WAJIB):\n";
+        $instruction .= "Nilai apakah konten ini benar-benar RELEVAN secara substantif terhadap entitas proyek yang sedang dipantau ({project_context}).\n";
+        $instruction .= "Kembalikan juga field:\n";
+        $instruction .= "- is_project_relevant: boolean\n";
+        $instruction .= "- project_relevance_reason: string\n";
+        $instruction .= "- project_relevance_score: integer 0-100\n\n";
+        $instruction .= "Aturan Relevansi Proyek:\n";
+        $instruction .= "1. Set is_project_relevant=true hanya jika entitas proyek menjadi fokus utama atau terdampak langsung oleh isi konten.\n";
+        $instruction .= "2. Set is_project_relevant=false jika entitas proyek sama sekali tidak dibahas, hanya disebut sekilas/incidental, atau kaitan risikonya dibuat-buat.\n";
+        $instruction .= "3. project_relevance_score bernilai 0 (sama sekali tidak berhubungan) hingga 100 (fokus utama konten).\n";
+        $instruction .= "4. project_relevance_reason wajib padat dan faktual menjelaskan mengapa konten relevan atau tidak relevan.\n\n";
 
         $instruction .= "READER BASIS (WAJIB):\n";
         $instruction .= "Tentukan basis perhitungan estimasi pembaca (effective_readers).\n";
@@ -721,6 +768,11 @@ class AiAnalysisJob implements ShouldQueue
         $isNoise = isset($result['is_noise']) ? (bool) $result['is_noise'] : null;
         $noiseReason = isset($result['noise_reason']) ? substr(trim((string) $result['noise_reason']), 0, 500) : null;
         
+        // ponytail: normalisasi evaluasi relevansi proyek
+        $isProjectRelevant = isset($result['is_project_relevant']) ? (bool) $result['is_project_relevant'] : null;
+        $projectRelevanceReason = isset($result['project_relevance_reason']) ? substr(trim((string) $result['project_relevance_reason']), 0, 500) : null;
+        $projectRelevanceScore = isset($result['project_relevance_score']) ? max(0, min(100, (int) $result['project_relevance_score'])) : null;
+
         $subjects = $result['subjects'] ?? [];
         if (!is_array($subjects)) {
             $subjects = [];
@@ -774,6 +826,9 @@ class AiAnalysisJob implements ShouldQueue
             'reach_reason' => 'Legacy field – not used in business logic',
             'is_noise' => $isNoise,
             'noise_reason' => $noiseReason,
+            'is_project_relevant' => $isProjectRelevant,
+            'project_relevance_reason' => $projectRelevanceReason,
+            'project_relevance_score' => $projectRelevanceScore,
             'subjects' => json_encode($subjects),
             'quality_confidence' => $qualityConfidence,
             'reader_basis' => $readerBasis,

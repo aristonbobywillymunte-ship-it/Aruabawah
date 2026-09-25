@@ -1362,6 +1362,24 @@ Pada antarmuka Sistem Kesehatan Dashboard, ditemukan beberapa slop teknis:
    - Mengganti teks ligatur `error` dan tombol `close` dengan inline SVG presisi pada `admin/dashboard.blade.php` dan `livewire/admin/system-health.blade.php`.
    - Menggunakan URL canonical Google Fonts Material Symbols Outlined.
 
+---
+
+## Bab 7.60 — Gatekeeper Relevansi AI: Auto-Detach Pivot, Filter Dashboard & Telegram Block
+
+### Latar Belakang
+Pencocokan konten awal hanya berbasis ekspresi reguler kata kunci (`ContentMatchingService`). Konten umum yang kebetulan memuat nama daerah atau sebutan sampingan otomatis tertaut ke pivot proyek, muncul di feed dashboard, dan berpotensi mengirim alert Telegram palsu.
+
+### Perubahan
+1. **Skema Database (`ai_analysis_results`)**:
+   - Menambahkan kolom `is_project_relevant` (boolean), `project_relevance_reason` (text), dan `project_relevance_score` (integer 0-100).
+2. **AI Job Instruction & Normalization (`app/Jobs/AiAnalysisJob.php`)**:
+   - Mewajibkan AI menilai parameter `is_project_relevant`, `project_relevance_reason`, dan `project_relevance_score`.
+   - **Auto-detach Pivot**: Jika `is_project_relevant === false`, relasi item di `project_articles` atau `project_social_media_items` dilepas secara otomatis.
+   - **Telegram Guard**: Notifikasi krisis Telegram wajib memenuhi `is_project_relevant !== false`.
+3. **Feed Dashboard (`app/Livewire/MediaDashboard.php`)**:
+   - Menyaring query artikel portal dan postingan media sosial agar hanya menampilkan item yang `is_project_relevant != false`.
+
+
 
 
 
