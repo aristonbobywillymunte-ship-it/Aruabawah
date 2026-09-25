@@ -1896,8 +1896,14 @@ class RunNewsPortalScraping extends Command
                       ->orWhere('domain', 'like', '%' . $domain . '%');
                 })
                 ->first();
-                
-            $rawResponse = $this->safePortalGet($canonicalUrl, $transportTrace);
+
+            $singlePageUrl = $this->resolveSinglePageUrl($canonicalUrl, $source);
+            $targetFetchUrl = $singlePageUrl !== $canonicalUrl ? $singlePageUrl : $canonicalUrl;
+
+            $rawResponse = $this->safePortalGet($targetFetchUrl, $transportTrace);
+            if (! $rawResponse->successful() && $targetFetchUrl !== $canonicalUrl) {
+                $rawResponse = $this->safePortalGet($canonicalUrl, $transportTrace);
+            }
 
             $rawHtml = $rawResponse->successful() ? $rawResponse->body() : '';
 
@@ -1995,6 +2001,14 @@ class RunNewsPortalScraping extends Command
                 }
             }
 
+            // ponytail: jika artikel bersambung/paginate (Halaman 1, 2, 3), tarik seluruh halaman lanjutan dan gabungkan
+            if (!empty($content)) {
+                $subsequentContent = $this->fetchSubsequentPagesContent($canonicalUrl, $html, $source, $transportTrace);
+                if (!empty($subsequentContent)) {
+                    $content = trim($content . "\n\n" . $subsequentContent);
+                }
+            }
+
             if (mb_strlen(trim($content)) < 200) {
                 // Jika hasil masih terlalu pendek, tetap gunakan hasil terbaik yang ditemukan.
                 $content = trim($content);
@@ -2028,6 +2042,144 @@ class RunNewsPortalScraping extends Command
         ];
         unset($rawHtml, $renderedHtml, $html, $canonicalHtml, $canonicalRawHtml, $canonicalRenderedHtml, $content, $title, $sourceName, $publishedAt, $resolvedUrl, $canonicalUrl, $resolutionTrace, $transportTrace);
         return $result;
+    }
+
+    private function resolveSinglePageUrl(string $url, ?NewsSource $source): string
+    {
+        $parsed = parse_url($url);
+        $host = strtolower($parsed['host'] ?? '');
+        $query = $parsed['query'] ?? '';
+        parse_str($query, $queryParams);
+
+        if (!empty($source?->single_page_param)) {
+            parse_str($source->single_page_param, $paramParsed);
+            foreach ($paramParsed as $k => $v) {
+                $queryParams[$k] = $v;
+            }
+        } elseif (str_contains($host, 'tribunnews.com') || str_contains($host, 'kompas.com') || str_contains($host, 'jpnn.com') || str_contains($host, 'suara.com') || str_contains($host, 'tempo.co') || str_contains($host, 'merdeka.com')) {
+            $queryParams['page'] = 'all';
+        } elseif (str_contains($host, 'detik.com')) {
+            $queryParams['single'] = '1';
+        } else {
+            return $url;
+        }
+
+        $newQuery = http_build_query($queryParams);
+        $scheme = $parsed['scheme'] ?? 'https';
+        $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+        $path = $parsed['path'] ?? '/';
+
+        return "{$scheme}://{$host}{$port}{$path}" . ($newQuery !== '' ? "?{$newQuery}" : '');
+    }
+
+    private function fetchSubsequentPagesContent(string $baseUrl, string $initialHtml, ?NewsSource $source, array &$transportTrace): string
+    {
+        $additionalContent = [];
+        $visitedUrls = [$baseUrl => true];
+        $currentHtml = $initialHtml;
+        $currentPage = 1;
+        $maxPages = 5;
+
+        while ($currentPage < $maxPages) {
+            $nextUrl = $this->extractNextArticlePageUrl($baseUrl, $currentHtml, $source);
+            if (!$nextUrl || isset($visitedUrls[$nextUrl])) {
+                break;
+            }
+
+            $visitedUrls[$nextUrl] = true;
+            $currentPage++;
+
+            $response = $this->safePortalGet($nextUrl, $transportTrace);
+            if (!$response->successful()) {
+                break;
+            }
+
+            $currentHtml = $response->body();
+            $pageContent = $this->extractReadableContent($currentHtml, $source);
+            if (!empty($pageContent)) {
+                $additionalContent[] = $pageContent;
+            }
+        }
+
+        return implode("\n\n", $additionalContent);
+    }
+
+    private function extractNextArticlePageUrl(string $baseUrl, string $html, ?NewsSource $source): ?string
+    {
+        if (trim($html) === '') {
+            return null;
+        }
+
+        $dom = new \DOMDocument();
+        @$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
+        $xpath = new \DOMXPath($dom);
+
+        if (!empty($source?->article_pagination_selector)) {
+            $selectors = array_filter(array_map('trim', explode(',', $source->article_pagination_selector)));
+            $queries = [];
+            foreach ($selectors as $sel) {
+                $queries[] = $this->convertSelectorToXPath($sel);
+            }
+            $xpathQuery = implode(' | ', $queries);
+            $nodes = $xpath->query($xpathQuery);
+            if ($nodes && $nodes->length > 0) {
+                foreach ($nodes as $node) {
+                    $href = $node instanceof \DOMElement ? $node->getAttribute('href') : null;
+                    if (!empty($href)) {
+                        return $this->resolveAbsoluteUrl($baseUrl, $href);
+                    }
+                }
+            }
+        }
+
+        $relNext = $xpath->query('//a[@rel="next"] | //link[@rel="next"]');
+        if ($relNext && $relNext->length > 0) {
+            $node = $relNext->item(0);
+            $href = $node instanceof \DOMElement ? $node->getAttribute('href') : null;
+            if (!empty($href)) {
+                return $this->resolveAbsoluteUrl($baseUrl, $href);
+            }
+        }
+
+        $pagedLinks = $xpath->query('//a[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"), "selanjutnya") or contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"), "next") or contains(text(), "»") or contains(text(), "›")]');
+        if ($pagedLinks && $pagedLinks->length > 0) {
+            foreach ($pagedLinks as $link) {
+                $href = $link instanceof \DOMElement ? $link->getAttribute('href') : null;
+                if (!empty($href) && $href !== '#' && !str_starts_with($href, 'javascript:')) {
+                    return $this->resolveAbsoluteUrl($baseUrl, $href);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveAbsoluteUrl(string $baseUrl, string $relativeUrl): string
+    {
+        if (filter_var($relativeUrl, FILTER_VALIDATE_URL)) {
+            return $relativeUrl;
+        }
+
+        $parts = parse_url($baseUrl);
+        $scheme = $parts['scheme'] ?? 'https';
+        $host = $parts['host'] ?? '';
+        $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+
+        if (str_starts_with($relativeUrl, '//')) {
+            return "{$scheme}:{$relativeUrl}";
+        }
+
+        if (str_starts_with($relativeUrl, '/')) {
+            return "{$scheme}://{$host}{$port}{$relativeUrl}";
+        }
+
+        $path = $parts['path'] ?? '/';
+        $dir = dirname($path);
+        if ($dir === '\\') {
+            $dir = '/';
+        }
+
+        return "{$scheme}://{$host}{$port}" . rtrim($dir, '/') . '/' . ltrim($relativeUrl, '/');
     }
 
     private function extractArticlePublishedAt(string $html): ?Carbon

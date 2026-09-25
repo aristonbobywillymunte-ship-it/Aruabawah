@@ -367,6 +367,20 @@
                                     @error('selector_blocklist') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                             </div>
+                            <div class="grid gap-4 sm:grid-cols-2 pt-2 border-t border-slate-100">
+                                <div>
+                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-600">Parameter Single Page</label>
+                                    <input wire:model="single_page_param" placeholder="Contoh: page=all atau single=1" type="text" class="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs font-mono text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                    <p class="mt-1 text-[10px] text-slate-500">Otomatis ditambahkan ke URL artikel agar portal menampilkan seluruh halaman sekaligus.</p>
+                                    @error('single_page_param') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-600">Selector Link Paginate</label>
+                                    <input wire:model="article_pagination_selector" placeholder="Contoh: .paging a, a[rel=next]" type="text" class="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs font-mono text-slate-800 outline-none focus:border-[#1fa387] transition">
+                                    <p class="mt-1 text-[10px] text-slate-500">Selector tautan halaman berikutnya untuk artikel bersambung tanpa parameter single-page.</p>
+                                    @error('article_pagination_selector') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Row 4: Capabilities -->

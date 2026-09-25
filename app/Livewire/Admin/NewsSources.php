@@ -38,6 +38,8 @@ class NewsSources extends Component
     public string $crawling_type = 'html'; // html, rss, api
     public ?string $selector = '';
     public ?string $article_noise_selector = '';
+    public ?string $single_page_param = '';
+    public ?string $article_pagination_selector = '';
     public ?string $path_blocklist = '';
     public ?string $selector_blocklist = '';
     public ?int $timeout_seconds = null;
@@ -99,6 +101,8 @@ class NewsSources extends Component
             'article_author_selector' => ['nullable', 'string', 'max:255'],
             'article_date_selector' => ['nullable', 'string', 'max:255'],
             'article_noise_selector' => ['nullable', 'string', 'max:255'],
+            'single_page_param' => ['nullable', 'string', 'max:50'],
+            'article_pagination_selector' => ['nullable', 'string', 'max:255'],
             'is_search_enabled' => ['boolean'],
             'is_feed_enabled' => ['boolean'],
             'is_sitemap_enabled' => ['boolean'],
@@ -221,6 +225,8 @@ class NewsSources extends Component
         $this->article_author_selector = '';
         $this->article_date_selector = '';
         $this->article_noise_selector = '';
+        $this->single_page_param = '';
+        $this->article_pagination_selector = '';
         $this->path_blocklist = '';
         $this->selector_blocklist = '';
         $this->is_search_enabled = false;
@@ -266,6 +272,8 @@ class NewsSources extends Component
         $this->article_author_selector = $source->article_author_selector;
         $this->article_date_selector = $source->article_date_selector;
         $this->article_noise_selector = $source->article_noise_selector;
+        $this->single_page_param = $source->single_page_param ?? '';
+        $this->article_pagination_selector = $source->article_pagination_selector ?? '';
         $this->path_blocklist = $source->path_blocklist;
         $this->selector_blocklist = $source->selector_blocklist;
         $this->is_search_enabled = (bool) $source->is_search_enabled;
@@ -314,6 +322,8 @@ class NewsSources extends Component
                 'article_author_selector' => $validated['article_author_selector'],
                 'article_date_selector' => $validated['article_date_selector'],
                 'article_noise_selector' => $validated['article_noise_selector'],
+                'single_page_param' => $this->single_page_param ? trim($this->single_page_param) : null,
+                'article_pagination_selector' => $this->article_pagination_selector ? trim($this->article_pagination_selector) : null,
                 'is_search_enabled' => $this->is_search_enabled,
                 'is_feed_enabled' => $this->is_feed_enabled,
                 'is_sitemap_enabled' => $this->is_sitemap_enabled,
