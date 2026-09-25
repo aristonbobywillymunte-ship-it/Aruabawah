@@ -1261,8 +1261,9 @@ class ApifyScrapingJob implements ShouldQueue
             $socialSourceName = $platform === 'TikTok' ? 'TikTok' : $platform;
             // Cross-link to ALL active projects that match the keywords (Bank Berita Concept)
             $matchingService = app(\App\Services\ContentMatchingService::class);
+            $matchedProjectIds = [];
             if (isset($record) && $record) {
-                $matchingService->crossLinkToActiveProjects($record, $projectId);
+                $matchedProjectIds = $matchingService->crossLinkToActiveProjects($record, $projectId);
             }
 
             $saved++;
@@ -1285,6 +1286,18 @@ class ApifyScrapingJob implements ShouldQueue
                 continue;
             }
 
+            // ponytail: jika postingan tidak cocok dengan proyek aktif mana pun, lewati AI dispatch
+            if (empty($matchedProjectIds)) {
+                Log::info('[Apify] Skipped AI dispatch: post is not attached to any active project.', [
+                    'social_media_item_id' => $record->id,
+                ]);
+                continue;
+            }
+
+            $targetProjectId = in_array($projectId, $matchedProjectIds, true)
+                ? $projectId
+                : $matchedProjectIds[0];
+
             $dispatchStateService = app(AiAnalysisDispatchStateService::class);
             $promptTemplateId = $dispatchStateService->resolvePromptTemplateId('social');
             $providerContextHash = $dispatchStateService->resolveProviderContextHash();
@@ -1292,7 +1305,7 @@ class ApifyScrapingJob implements ShouldQueue
                 'type' => 'social',
                 'id' => null, // No article ID mirror
                 'item_id' => $record->id,
-                'project_id' => $projectId,
+                'project_id' => $targetProjectId,
                 'title' => "Post dari {$platform} oleh {$author}",
                 'content' => $content,
                 'url' => $postUrl ?? '',
@@ -1314,7 +1327,7 @@ class ApifyScrapingJob implements ShouldQueue
 
             if (! ($decision['should_dispatch'] ?? false)) {
                 Log::info('[Apify] AI dispatch skipped due to persistent dispatch state.', [
-                    'article_id' => $article->id,
+                    'social_media_item_id' => $record->id,
                     'status' => $decision['status'] ?? 'unknown',
                     'reason' => $decision['reason'] ?? 'unknown',
                 ]);

@@ -1297,3 +1297,27 @@ Pada antarmuka daftar proyek (`⚡projects-list.blade.php`) dan komponen Livewir
 - `docker exec media_intelligent_container php artisan view:clear`: Compiled views cleared ✅
 - Livewire component mount & render test via Tinker (authenticated context): SUCCESS ✅
 
+---
+
+## Bab 7.57 — Isolasi Pivot AI Dispatch & Eliminasi False Positive Alert Telegram
+
+### Latar Belakang
+Ditemukan false-positive alert Telegram krisis pada proyek Bankaltimtara untuk berita Karhutla Kaltim (ID 10816) dan Penipuan Kripto (ID 10817) dari Niaga.Asia. Investigasi menemukan 3 titik kegagalan:
+1. `RunNewsPortalScraping` tetap men-dispatch `AiAnalysisJob` dengan membawa `project_id` proyek scanner/crawler (Bankaltimtara) meskipun artikel tidak cocok dan pivot `project_articles` kosong.
+2. AI LLM (Gemini) mengarang kaitan risiko secara paksa terhadap proyek yang diberikan pada prompt (`Bagi Bankaltimtara, risiko muncul...`).
+3. Guard Telegram memasukkan `risk_reason` ke evaluasi teks (`evaluationHaystack`), sehingga lolos karena AI mencatut nama proyek dalam penjelasannya sendiri.
+
+### Perubahan
+1. **Pipeline Scraping Portal (`RunNewsPortalScraping.php`)**:
+   - `stagePipelineArticle` mengembalikan `matched_project_ids`.
+   - Jika `matched_project_ids` kosong, lewati dispatch AI (`skipped_no_matching_project`).
+   - Jika ada proyek yang cocok, utamakan proyek aktif yang benar-benar cocok.
+   - Guard di `dispatchAiAnalysisIfEligible` memastikan relasi pivot `project_articles` ada sebelum antrean AI diisi.
+2. **Social Media Scraper (`ApifyScrapingJob.php`)**:
+   - Evaluasi kesesuaian proyek aktif via `ContentMatchingService`. Lewati dispatch AI jika tidak ada proyek yang cocok.
+3. **Guard Eksekusi AI & Notifikasi Telegram (`AiAnalysisJob.php`)**:
+   - Awal `handle()`: verifikasi relasi pivot item terhadap `project_id`. Jika tidak terhubung atau proyek nonaktif, alihkan ke proyek aktif yang benar atau batalkan (`no_active_project`).
+   - Guard Telegram: verifikasi keberadaan relasi pivot item di DB sebelum alert dikirim.
+   - Hapus `risk_reason` dari `evaluationHaystack` validasi Telegram agar terhindar dari bias halusinasi LLM. Validasi murni pada judul, ringkasan, dan subjek faktual artikel.
+
+

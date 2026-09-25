@@ -107,37 +107,41 @@ class AiAnalysisJob implements ShouldQueue
                 return;
             }
 
-            if (!$project->is_active) {
-                // Cek apakah artikel/sosmed ini terhubung ke proyek lain yang aktif
-                $hasActiveProject = false;
-                $analyzableId = (int) ($this->payload['id'] ?? $this->payload['item_id'] ?? 0);
-                if ($type === 'social') {
-                    $hasActiveProject = \DB::table('project_social_media_items')
+            $analyzableId = (int) ($this->payload['id'] ?? $this->payload['item_id'] ?? 0);
+            $isAttachedToThisProject = ($type === 'social')
+                ? \DB::table('project_social_media_items')->where('project_id', $projectId)->where('social_media_item_id', $analyzableId)->exists()
+                : \DB::table('project_articles')->where('project_id', $projectId)->where('article_id', $analyzableId)->exists();
+
+            // ponytail: jika item tidak terhubung ke pivot proyek payload atau proyek nonaktif, alihkan ke proyek aktif yang benar atau batalkan jika tidak ada
+            if (! $isAttachedToThisProject || ! $project->is_active) {
+                $activeProjectQuery = ($type === 'social')
+                    ? \DB::table('project_social_media_items')
                         ->join('projects', 'project_social_media_items.project_id', '=', 'projects.id')
                         ->where('project_social_media_items.social_media_item_id', $analyzableId)
                         ->where('projects.is_active', true)
-                        ->exists();
-                } else {
-                    $hasActiveProject = \DB::table('project_articles')
+                    : \DB::table('project_articles')
                         ->join('projects', 'project_articles.project_id', '=', 'projects.id')
                         ->where('project_articles.article_id', $analyzableId)
-                        ->where('projects.is_active', true)
-                        ->exists();
-                }
+                        ->where('projects.is_active', true);
 
-                if (!$hasActiveProject) {
-                    Log::warning("[Pipeline] Lewati analisis: Proyek ID {$projectId} ({$project->name}) berstatus NONAKTIF dan artikel/sosmed ini tidak terhubung ke proyek aktif mana pun.");
+                $activeProject = $activeProjectQuery->select('projects.id', 'projects.name')->first();
+
+                if (! $activeProject) {
+                    Log::warning("[Pipeline] Lewati analisis: Item ID {$analyzableId} ({$type}) tidak terhubung ke proyek aktif mana pun di database.");
                     $dispatchStateService->markFailed(
                         $this->payload,
-                        'project_inactive',
-                        "Project ID {$projectId} is inactive and no active cross-linked projects found.",
+                        'no_active_project',
+                        "Item ID {$analyzableId} ({$type}) is not attached to any active project.",
                         $promptTemplateId,
                         $providerContextHash
                     );
                     return;
                 }
-                
-                Log::info("[Pipeline] Tetap proses analisis: Proyek saat ini ({$project->name}) nonaktif, tetapi artikel/sosmed terhubung ke proyek aktif lain.");
+
+                Log::info("[Pipeline] Penyesuaian proyek AI: Item ID {$analyzableId} dialihkan dari Proyek ID {$projectId} ke Proyek ID {$activeProject->id} ({$activeProject->name}).");
+                $projectId = (int) $activeProject->id;
+                $this->payload['project_id'] = $projectId;
+                $project = \App\Models\Project::find($projectId);
             }
         }
 
@@ -431,13 +435,28 @@ class AiAnalysisJob implements ShouldQueue
             $projectName = $project?->name ?? 'N/A';
 
             if ($project) {
+                // ponytail: guard verifikasi item benar-benar terhubung ke pivot proyek ini
+                $analyzableId = (int) ($this->payload['id'] ?? $this->payload['item_id'] ?? 0);
+                $isAttached = ($type === 'social')
+                    ? DB::table('project_social_media_items')->where('project_id', $project->id)->where('social_media_item_id', $analyzableId)->exists()
+                    : DB::table('project_articles')->where('project_id', $project->id)->where('article_id', $analyzableId)->exists();
+
+                if (! $isAttached) {
+                    Log::warning('[Pipeline] Telegram notification skipped: item is not attached to project.', [
+                        'project_id' => $project->id,
+                        'project_name' => $projectName,
+                        'item_id' => $analyzableId,
+                    ]);
+                    return;
+                }
+
                 $primaryKeywords = $project->scrapeKeywordVariants();
                 $contextKeywords = $project->scrapeContextKeywordVariants();
                 $titleText = (string) ($this->payload['title'] ?? '');
                 $summaryText = (string) ($normalized['summary'] ?? '');
-                $reasonText = (string) ($normalized['risk_reason'] ?? '');
                 $subjectsText = is_array($normalized['subjects'] ?? null) ? implode(' ', $normalized['subjects']) : (string) ($normalized['subjects'] ?? '');
-                $evaluationHaystack = $titleText . "\n" . $summaryText . "\n" . $reasonText . "\n" . $subjectsText;
+                // ponytail: jangan sertakan risk_reason di haystack karena AI kerap halusinasi mencatut nama proyek dalam penjelasannya
+                $evaluationHaystack = $titleText . "\n" . $summaryText . "\n" . $subjectsText;
 
                 $matchingService = app(\App\Services\ContentMatchingService::class);
                 $isSubjectRelevant = false;
@@ -448,7 +467,7 @@ class AiAnalysisJob implements ShouldQueue
                     }
                 }
 
-                // Jika kata kunci utama proyek sama sekali tidak muncul di judul, ringkasan, alasan risiko, atau subjek AI,
+                // Jika kata kunci utama proyek sama sekali tidak muncul di judul, ringkasan, atau subjek AI,
                 // jangan kirim alert atas nama proyek ini untuk mencegah false alarm.
                 if (! $isSubjectRelevant) {
                     Log::warning('[Pipeline] Telegram notification skipped: project keywords not present in title, summary, or AI subjects.', [

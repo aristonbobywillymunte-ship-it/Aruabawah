@@ -1115,10 +1115,30 @@ class RunNewsPortalScraping extends Command
             'confidence_score' => $reachResult['confidence_score'],
         ];
 
+        $matchedProjectIds = $articleResult['matched_project_ids'] ?? [];
+        if (empty($matchedProjectIds)) {
+            $this->runCandidateLogs[array_key_last($this->runCandidateLogs)]['ai_status'] = 'skipped_no_matching_project';
+            unset($fetchResult, $finalContent);
+            return [
+                'status' => $existingArticleId ? 'reused' : 'scraped',
+                'article_id' => $articleId,
+                'newly_inserted' => $existingArticleId ? 0 : 1,
+                'reused_existing' => $existingArticleId ? 1 : 0,
+                'rejected' => 0,
+                'partial' => 0,
+                'error' => 0,
+            ];
+        }
+
+        // ponytail: utamakan $project jika match, fallback ke proyek pertama yang match
+        $targetProject = in_array($project->id, $matchedProjectIds, true)
+            ? $project
+            : (Project::find($matchedProjectIds[0]) ?? $project);
+
         $articleModel = $articleResult['article'] ?? Article::find($articleId);
         $articleChanged = (bool) ($articleResult['article_changed'] ?? false);
         $aiStatus = $this->dispatchAiAnalysisIfEligible(
-            project: $project,
+            project: $targetProject,
             articleId: $articleId,
             title: $finalTitle,
             url: $finalArticleUrl ?: $canonicalUrl,
@@ -1216,21 +1236,30 @@ class RunNewsPortalScraping extends Command
                 ];
             }
 
-            $reachResult = $this->persistReachAssessment($project, $articleId, $suppressReach);
-            $articleChanged = (bool) ($articleResult['article_changed'] ?? false);
-            $aiStatus = $this->dispatchAiAnalysisIfEligible(
-                project: $project,
-                articleId: $articleId,
-                title: $title,
-                url: $canonicalUrl,
-                content: $content,
-                sourceName: $sourceName,
-                publishedAt: $publishedAt,
-                suppressAi: $suppressAi,
-                suppressTelegram: $suppressTelegram,
-                articleChanged: $articleChanged,
-                reusedArticle: (bool) $existingArticleId,
-            );
+            $matchedProjectIds = $articleResult['matched_project_ids'] ?? [];
+            if (empty($matchedProjectIds)) {
+                $aiStatus = 'skipped_no_matching_project';
+            } else {
+                $targetProject = in_array($project->id, $matchedProjectIds, true)
+                    ? $project
+                    : (Project::find($matchedProjectIds[0]) ?? $project);
+
+                $reachResult = $this->persistReachAssessment($targetProject, $articleId, $suppressReach);
+                $articleChanged = (bool) ($articleResult['article_changed'] ?? false);
+                $aiStatus = $this->dispatchAiAnalysisIfEligible(
+                    project: $targetProject,
+                    articleId: $articleId,
+                    title: $title,
+                    url: $canonicalUrl,
+                    content: $content,
+                    sourceName: $sourceName,
+                    publishedAt: $publishedAt,
+                    suppressAi: $suppressAi,
+                    suppressTelegram: $suppressTelegram,
+                    articleChanged: $articleChanged,
+                    reusedArticle: (bool) $existingArticleId,
+                );
+            }
             $this->runCandidateLogs[] = [
                 'index' => 0,
                 'original_url' => $url,
@@ -1419,6 +1448,7 @@ class RunNewsPortalScraping extends Command
             'article_id' => $article->id,
             'article' => $article,
             'article_changed' => $articleChanged,
+            'matched_project_ids' => $matchedProjectIds,
         ];
     }
 
@@ -1449,6 +1479,20 @@ class RunNewsPortalScraping extends Command
                 'project_id' => $project->id ?? null,
             ]);
             return 'skipped_existing';
+        }
+
+        // ponytail: guard verifikasi keterhubungan artikel ke pivot proyek sebelum dispatch AI
+        $isAttached = DB::table('project_articles')
+            ->where('project_id', $project->id)
+            ->where('article_id', $articleId)
+            ->exists();
+
+        if (! $isAttached) {
+            \Illuminate\Support\Facades\Log::info('[Portal Scraping] Skipped AI dispatch: article is not attached to project.', [
+                'article_id' => $articleId,
+                'project_id' => $project->id,
+            ]);
+            return 'skipped_not_attached';
         }
 
         $payload = [

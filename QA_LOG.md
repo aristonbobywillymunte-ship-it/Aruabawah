@@ -1527,3 +1527,30 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
   - Livewire test mount & render via Tinker (`ProjectsList::class`) → `SUCCESS` ✅
 - **Status:** PASSED ✅
 
+---
+
+## [QA-20260925-72] Isolasi Pivot AI Dispatch & Eliminasi False Positive Alert Telegram
+
+- **Tanggal:** 2026-09-25
+- **Konteks:** Menghilangkan false positive notifikasi Telegram risiko krisis pada proyek pemantau (Bankaltimtara) akibat perembesan artikel non-relevan dari hasil pencarian portal.
+- **Root Cause & Issues:**
+  1. `RunNewsPortalScraping` tetap men-dispatch `AiAnalysisJob` membawa `project_id` milik proyek pemindai portal meski artikel tidak memiliki keterkaitan kata kunci dan pivot `project_articles` kosong.
+  2. Model AI LLM memaksakan kaitan risiko ke proyek yang ada di konteks prompt, menghasilkan analisis halusinasi.
+  3. Guard validasi notifikasi Telegram memeriksa string pada `risk_reason`, sehingga lolos verifikasi karena AI menyebutkan nama proyek dalam alasannya sendiri.
+- **Target Files:**
+  - `app/Console/Commands/RunNewsPortalScraping.php`
+  - `app/Jobs/AiAnalysisJob.php`
+  - `app/Jobs/ApifyScrapingJob.php`
+- **Perubahan:**
+  1. Menambahkan guard pada `RunNewsPortalScraping.php` agar hanya men-dispatch `AiAnalysisJob` jika artikel memiliki proyek aktif yang cocok. Menambahkan verifikasi pivot DB di `dispatchAiAnalysisIfEligible`.
+  2. Menambahkan guard serupa pada `ApifyScrapingJob.php`.
+  3. Memperketat `AiAnalysisJob.php` untuk memvalidasi keberadaan relasi pivot item di DB sebelum eksekusi AI dan sebelum pengiriman alert Telegram.
+  4. Menghapus `risk_reason` dari `evaluationHaystack` pada filter relevansi subjek Telegram, membatasi evaluasi murni pada judul, ringkasan, dan subjek artikel.
+- **Verifikasi:**
+  - `php -l app/Console/Commands/RunNewsPortalScraping.php` → `No syntax errors detected` ✅
+  - `php -l app/Jobs/AiAnalysisJob.php` → `No syntax errors detected` ✅
+  - `php -l app/Jobs/ApifyScrapingJob.php` → `No syntax errors detected` ✅
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+- **Status:** PASSED ✅
+
+
