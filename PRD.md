@@ -1399,6 +1399,27 @@ Halaman `/admin/apify-financials` memuat beberapa kelemahan data dan slop antarm
    - Mendukung pengecekan pivot `project_social_media_items` saat memuat postingan.
    - Memasang inline SVG tombol close dan listener Escape keyboard.
 
+---
+
+## Bab 7.62 — Audit Slop & Standarisasi Modal Manajemen Paket Layanan
+
+### Latar Belakang
+Pada panel manajemen paket (`/admin/packages`), ditemukan celah implementasi modal interaktif:
+1. Modal konfirmasi hapus paket, modal form parameter, dan modal konfigurasi aktor Apify tidak memiliki strict scroll-lock background.
+2. Tombol eksekusi hapus paket tidak memiliki atribut pencegah double submit (`wire:loading.attr="disabled"`) dan tidak menampilkan spinner pemuatan.
+3. Tombol Batal modal tidak dilindungi loading state.
+4. Ikon tombol tutup modal masih memakai font ligatur teks `close`.
+5. Pengecekan dependensi proyek pada `deletePackage()` belum mengikutsertakan proyek arsip (*soft-deleted*), berisiko merusak integritas referensi historis.
+
+### Perubahan
+1. **Komponen Livewire (`app/Livewire/Admin/PackageManager.php`)**:
+   - Memperketat `deletePackage()` agar memverifikasi `Project::withTrashed()->where('package_id', $pkg->id)->count()`.
+2. **Blade Modal (`resources/views/livewire/admin/package-manager.blade.php`)**:
+   - Memasang hook resmi strict scroll-lock Alpine.js dan listener `@keydown.escape.window` pada seluruh modal.
+   - Menambahkan `wire:loading.attr="disabled"` dan spinner SVG pada tombol hapus paket dan tombol batal.
+   - Mengganti teks ligatur `close` menjadi inline SVG presisi.
+
+
 
 
 

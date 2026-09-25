@@ -369,9 +369,10 @@ class PackageManager extends Component
             return;
         }
 
-        $usedCount = Project::where('package_id', $pkg->id)->count();
+        // ponytail: periksa juga project trashed agar integritas data historis tetap aman
+        $usedCount = Project::withTrashed()->where('package_id', $pkg->id)->count();
         if ($usedCount > 0) {
-            $this->setFlash("Paket tidak bisa dihapus karena masih digunakan oleh {$usedCount} project.", 'error');
+            $this->setFlash("Paket tidak bisa dihapus karena masih digunakan oleh {$usedCount} project (aktif/arsip).", 'error');
             $this->confirmDeleteId = null;
             return;
         }

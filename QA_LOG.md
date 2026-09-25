@@ -1668,6 +1668,35 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
   - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
 - **Status:** PASSED ✅
 
+---
+
+## [QA-20260925-77] Audit Slop & Standarisasi Modal Manajemen Paket (PackageManager)
+
+- **Tanggal:** 2026-09-25
+- **Konteks:** Menstandarisasi seluruh modal pada antarmuka Manajemen Paket (`/admin/packages`) agar mematuhi aturan strict scroll-lock, tombol escape, proteksi loading guard, dan integritas data proyek arsip.
+- **Root Cause & Issues:**
+  1. Tiga modal di `package-manager.blade.php` (Konfirmasi Hapus, Form Paket, dan Atur Aktor) tidak memiliki strict scroll-lock background dan listener tombol keyboard Escape.
+  2. Tombol konfirmasi hapus paket tidak memiliki `wire:loading.attr="disabled"` dan spinner pemuatan (double submit hazard).
+  3. Tombol Batal pada ketiga modal tidak dilindungi loading state.
+  4. Tombol close modal masih menggunakan ligature font yang rentan merender teks mentah `"close"`.
+  5. Pengecekan relasi proyek pada `deletePackage()` belum memeriksa proyek terhapus (*soft-deleted* / `withTrashed()`), berpotensi memicu inkonsistensi referensi data historis.
+- **Target Files:**
+  - `app/Livewire/Admin/PackageManager.php`
+  - `resources/views/livewire/admin/package-manager.blade.php`
+- **Perubahan:**
+  1. Menambahkan strict scroll-lock Alpine hook (`overflow = 'hidden'`) dan listener `@keydown.escape.window` pada Modal Hapus, Form Paket, dan Atur Aktor.
+  2. Menambahkan `wire:loading.attr="disabled"`, spinner SVG, dan teks dinamis pada tombol eksekusi hapus paket.
+  3. Memasang `wire:loading.attr="disabled"` pada seluruh tombol Batal modal interaktif.
+  4. Mengganti icon font ligature close menjadi inline SVG presisi.
+  5. Memperbarui `deletePackage()` agar memvalidasi keterhubungan paket terhadap `Project::withTrashed()`.
+- **Verifikasi:**
+  - `php -l app/Livewire/Admin/PackageManager.php` → `No syntax errors detected` ✅
+  - Pengujian mount & render `PackageManager` via Livewire Testable → `SUCCESS` ✅
+  - HTTP `GET /admin/packages` → Status `200 OK` ✅
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+- **Status:** PASSED ✅
+
+
 
 
 

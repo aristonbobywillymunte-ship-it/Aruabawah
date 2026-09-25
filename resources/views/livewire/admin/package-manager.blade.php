@@ -14,10 +14,15 @@
 
     {{-- ─── DELETE CONFIRM MODAL ───────────────────────────────────────── --}}
     @if($confirmDeleteId)
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-md transition-all duration-300" wire:click.self="cancelDelete">
-        <div class="bg-white/95 rounded-3xl shadow-2xl p-8 w-full max-w-md mx-4 border border-slate-100/80 transform scale-100 transition-all">
+    <div wire:key="confirm-delete-package-modal-{{ $confirmDeleteId }}"
+         x-data
+         x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"
+         @keydown.escape.window="$wire.cancelDelete()"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-md transition-all duration-300"
+         wire:click.self="cancelDelete">
+        <div class="bg-white/95 rounded-3xl shadow-2xl p-8 w-full max-w-md mx-4 border border-slate-100/80 transform scale-100 transition-all text-left">
             <div class="flex items-center gap-4 mb-4">
-                <div class="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500 shadow-sm border border-rose-100/50">
+                <div class="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500 shadow-sm border border-rose-100/50 shrink-0">
                     <span class="material-symbols-outlined text-[26px]">delete_forever</span>
                 </div>
                 <div>
@@ -27,9 +32,15 @@
             </div>
             <p class="text-slate-600 text-sm mb-6 leading-relaxed">Paket ini akan dihapus secara permanen beserta semua konfigurasi actor dan biaya override di dalamnya.</p>
             <div class="flex gap-3 justify-end">
-                <button wire:click="cancelDelete" class="px-5 py-3 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all duration-200 active:scale-95">Batal</button>
-                <button wire:click="deletePackage" class="px-5 py-3 rounded-xl text-xs font-black text-white bg-rose-500 hover:bg-rose-600 transition-all duration-200 shadow-lg shadow-rose-500/20 active:scale-95 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[16px]">delete</span> Hapus Paket
+                <button type="button" wire:click="cancelDelete" wire:loading.attr="disabled" class="px-5 py-3 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all duration-200 active:scale-95 disabled:opacity-50 cursor-pointer">Batal</button>
+                <button type="button" wire:click="deletePackage" wire:loading.attr="disabled" class="px-5 py-3 rounded-xl text-xs font-black text-white bg-rose-500 hover:bg-rose-600 transition-all duration-200 shadow-lg shadow-rose-500/20 active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-wait cursor-pointer">
+                    <span wire:loading.remove wire:target="deletePackage" class="material-symbols-outlined text-[16px]">delete</span>
+                    <svg wire:loading wire:target="deletePackage" class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span wire:loading.remove wire:target="deletePackage">Hapus Paket</span>
+                    <span wire:loading wire:target="deletePackage">Menghapus...</span>
                 </button>
             </div>
         </div>
@@ -426,13 +437,18 @@
     <div class="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm cursor-default" wire:click="cancelForm"></div>
 
     <!-- Modal Container -->
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4" wire:click.self="cancelForm">
+    <div wire:key="package-form-modal-{{ $editingPackageId ?? 'new' }}"
+         x-data
+         x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"
+         @keydown.escape.window="$wire.cancelForm()"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         wire:click.self="cancelForm">
         <div class="w-full max-w-5xl bg-white rounded-3xl border border-[#1fa387]/15 shadow-[0_24px_70px_rgba(31,163,135,0.12)] flex flex-col overflow-hidden animate-fade-in text-left" style="height: 85vh; max-height: 720px;">
             
             <!-- Modal Header -->
             <div class="flex items-center justify-between gap-4 px-8 py-5 border-b border-[#1fa387]/10 shrink-0 bg-white" style="flex-shrink: 0;">
                 <div class="flex items-center gap-4">
-                    <button wire:click="cancelForm" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-[#1fa387] hover:border-[#1fa387]/50 transition-all duration-200 cursor-pointer">
+                    <button type="button" wire:click="cancelForm" wire:loading.attr="disabled" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-[#1fa387] hover:border-[#1fa387]/50 transition-all duration-200 cursor-pointer disabled:opacity-50">
                         <span class="material-symbols-outlined text-[18px] block">arrow_back</span>
                     </button>
                     <div>
@@ -442,8 +458,10 @@
                         <p class="text-[11px] text-slate-500 mt-0.5">Konfigurasikan informasi dasar paket dan biaya override di bawah ini.</p>
                     </div>
                 </div>
-                <button wire:click="cancelForm" class="p-2 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-all duration-150 cursor-pointer">
-                    <span class="material-symbols-outlined text-[18px] block">close</span>
+                <button type="button" wire:click="cancelForm" wire:loading.attr="disabled" class="p-2 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-all duration-150 cursor-pointer disabled:opacity-50" title="Tutup">
+                    <svg class="w-4 h-4 block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
                 </button>
             </div>
 
@@ -988,8 +1006,8 @@
 
             {{-- Actions --}}
             <div class="flex gap-3 px-8 py-5 border-t border-[#1fa387]/10 justify-end shrink-0 bg-white" style="flex-shrink: 0;">
-                <button type="button" wire:click="cancelForm"
-                    class="px-5 py-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer active:scale-95">
+                <button type="button" wire:click="cancelForm" wire:loading.attr="disabled"
+                    class="px-5 py-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer active:scale-95 disabled:opacity-50">
                     Batal
                 </button>
                 <button
@@ -1021,13 +1039,18 @@
     <div class="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm cursor-default" wire:click="cancelActors"></div>
 
     <!-- Modal Container -->
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4" wire:click.self="cancelActors">
+    <div wire:key="package-actors-modal-{{ $managingActorsPackageId }}"
+         x-data
+         x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }"
+         @keydown.escape.window="$wire.cancelActors()"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         wire:click.self="cancelActors">
         <div class="w-full max-w-5xl bg-white rounded-3xl border border-[#1fa387]/15 shadow-[0_24px_70px_rgba(31,163,135,0.12)] flex flex-col overflow-hidden animate-fade-in text-left" style="height: 85vh; max-height: 720px;">
             
             <!-- Modal Header -->
             <div class="flex items-center justify-between gap-4 px-8 py-5 border-b border-[#1fa387]/10 shrink-0 bg-white" style="flex-shrink: 0;">
                 <div class="flex items-center gap-4">
-                    <button wire:click="cancelActors" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-[#1fa387] hover:border-[#1fa387]/50 transition-all duration-200 cursor-pointer">
+                    <button type="button" wire:click="cancelActors" wire:loading.attr="disabled" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-[#1fa387] hover:border-[#1fa387]/50 transition-all duration-200 cursor-pointer disabled:opacity-50">
                         <span class="material-symbols-outlined text-[18px] block">arrow_back</span>
                     </button>
                     <div>
@@ -1037,8 +1060,10 @@
                         </p>
                     </div>
                 </div>
-                <button wire:click="cancelActors" class="p-2 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-all duration-150 cursor-pointer">
-                    <span class="material-symbols-outlined text-[18px] block">close</span>
+                <button type="button" wire:click="cancelActors" wire:loading.attr="disabled" class="p-2 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-all duration-150 cursor-pointer disabled:opacity-50" title="Tutup">
+                    <svg class="w-4 h-4 block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
                 </button>
             </div>
 
@@ -1220,8 +1245,8 @@
 
         {{-- Save Button Footer --}}
         <div class="flex gap-3 justify-end px-8 py-5 border-t border-[#1fa387]/10 shrink-0 bg-white">
-            <button type="button" wire:click="cancelActors" 
-                class="px-5 py-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer active:scale-95">
+            <button type="button" wire:click="cancelActors" wire:loading.attr="disabled"
+                class="px-5 py-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer active:scale-95 disabled:opacity-50">
                 Batal
             </button>
             <button type="button" wire:click="saveActors"
