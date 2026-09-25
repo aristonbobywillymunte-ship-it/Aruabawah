@@ -4,7 +4,9 @@
     <div class="rounded-2xl border border-rose-100 bg-rose-50/40 px-4 py-2.5 shadow-sm">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[15px] text-rose-500">error</span>
+                <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
                 <span class="text-[11px] font-bold text-rose-700">Log Error / Kegagalan Terkini</span>
                 <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-bold ml-1">{{ count($latestErrors) }}</span>
             </div>
@@ -336,7 +338,9 @@
                         <p class="text-[9px] text-slate-400 mt-1 sm:mt-0.5 leading-relaxed">Menampilkan status antrean analisis artikel portal dan media sosial yang sedang mengantre atau diproses AI.</p>
                     </div>
                     <button type="button" wire:click="closeQueueModal" wire:loading.attr="disabled" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0 disabled:opacity-50">
-                        <span class="material-symbols-outlined text-[18px] block">close</span>
+                        <svg class="w-4 h-4 block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
                     </button>
                 </div>
 
@@ -678,7 +682,9 @@
                             <h3 class="text-base font-black text-slate-900 leading-none">Rincian Antrean Redis (Queued & Active Jobs)</h3>
                         </div>
                         <button type="button" wire:click="closeRedisQueueModal" class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0">
-                            <span class="material-symbols-outlined text-[20px] block">close</span>
+                            <svg class="w-4 h-4 block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
                         </button>
                     </div>
 
@@ -776,7 +782,9 @@
                         <p class="text-[9px] text-slate-400 mt-1 sm:mt-0.5 leading-relaxed">Menampilkan status antrean pengambilan media sosial yang sedang mengantre, diproses, atau ditunda.</p>
                     </div>
                     <button type="button" wire:click="closeApifyQueueModal" wire:loading.attr="disabled" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer shrink-0 mt-[-4px] sm:mt-0 disabled:opacity-50">
-                        <span class="material-symbols-outlined text-[18px] block">close</span>
+                        <svg class="w-4 h-4 block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
                     </button>
                 </div>
 

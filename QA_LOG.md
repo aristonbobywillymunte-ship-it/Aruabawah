@@ -1582,5 +1582,35 @@ Tombol "Perbarui Wawasan AI" sebelumnya langsung mengeksekusi request AI ke LLM 
   - Pengujian render Livewire via Tinker & HTTP request `/admin` → Status `200 OK` tanpa warning undefined variable ✅
 - **Status:** PASSED ✅
 
+---
+
+## [QA-20260925-74] Eliminasi Slop Raw JSON Apify, Filtering Boilerplate di SystemHealth, dan Hardening SVG Ikon
+
+- **Tanggal:** 2026-09-25
+- **Konteks:** Menghilangkan output mentah error JSON Apify HTTP 402, menyaring penolakan halaman statis dari log error scraper, dan mencegah teks literal "error"/"close" dengan inline SVG.
+- **Root Cause & Issues:**
+  1. Method `ApifyActor::friendlyRunMessage` tidak menangkap error HTTP 402 / `not-enough-usage`, sehingga pesan mentah JSON API tercetak ke UI dashboard.
+  2. Kueri `$scrapeErrors` di `SystemHealth.php` mengambil seluruh item berstatus `rejected` (seperti `Pedoman Media Siber`, `Kontak`, `Redaksi`), padahal itu adalah aksi filter normal guard portal, bukan kegagalan scraper.
+  3. Tag font ikon Material Symbols rentan merender teks fallback (`"close"`, `"error"`) jika koneksi font Google tertunda atau diblokir provider lokal.
+- **Target Files:**
+  - `app/Models/ApifyActor.php`
+  - `app/Livewire/Admin/SystemHealth.php`
+  - `resources/views/admin/dashboard.blade.php`
+  - `resources/views/livewire/admin/system-health.blade.php`
+  - `resources/views/layouts/admin.blade.php`
+- **Perubahan:**
+  1. Menambahkan penanganan `not-enough-usage`, `HTTP 402`, limit kuota/kredit ($0.00), dan pembersihan regex JSON pada `ApifyActor::friendlyRunMessage()` dan `friendlyRunStatus()`.
+  2. Membatasi kueri `$scrapeErrors` hanya pada `status = 'failed'` dan secara eksplisit mengecualikan pattern boilerplate/statis/tanggal.
+  3. Mengganti ikon ligature raw `close` dan `error` pada banner dan modal dengan inline SVG presisi.
+  4. Menggunakan URL canonical Google Fonts Material Symbols Outlined pada `layouts/admin.blade.php`.
+- **Verifikasi:**
+  - `php -l app/Models/ApifyActor.php` → `No syntax errors detected` ✅
+  - `php -l app/Livewire/Admin/SystemHealth.php` → `No syntax errors detected` ✅
+  - Evaluasi tinker `friendlyRunMessage` pada payload HTTP 402 Apify menghasilkan pesan bahasa manusia yang ramah ✅
+  - `SystemHealth::checkHealth()` diverifikasi bersih dari error boilerplate halaman statis ✅
+  - `docker exec media_intelligent_container php artisan view:clear` → `INFO Compiled views cleared successfully.` ✅
+- **Status:** PASSED ✅
+
+
 
 

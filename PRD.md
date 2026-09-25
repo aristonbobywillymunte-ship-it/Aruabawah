@@ -1341,5 +1341,27 @@ Pada dashboard administrator (`/admin`), teridentifikasi beberapa isu slop dan r
 3. **Scheduler Guard (`RequeueOverdueAiAnalysisRetries.php`)**:
    - Memvalidasi keberadaan proyek aktif sebelum requeue. Jika proyek sudah terhapus (*soft-deleted*) atau nonaktif, status diubah menjadi `failed` dan antrean dihentikan.
 
+---
+
+## Bab 7.59 — Normalisasi Pesan Error Apify, Filtering Boilerplate di System Health, dan Hardening SVG
+
+### Latar Belakang
+Pada antarmuka Sistem Kesehatan Dashboard, ditemukan beberapa slop teknis:
+1. Pesan kegagalan Apify menampilkan raw JSON `Apify run failed: HTTP 402: { "error": { "type": "not-enough-usage-to-run-paid-actor", ... } }` ke layar pengguna.
+2. Log error scraper di gadget System Health memuat halaman statis/boilerplate (`Pedoman Media Siber`, `Kontak`, `Redaksi`) yang seharusnya merupakan filtering normal guard portal, bukan kegagalan sistem.
+3. Fallback teks font ligatur Material Symbols menampilkan kata mentah `"close"` dan `"error"`.
+
+### Perubahan
+1. **Model Apify (`app/Models/ApifyActor.php`)**:
+   - `friendlyRunMessage` dan `friendlyRunStatus` memetakan error HTTP 402, `not-enough-usage`, dan `maximum usage for billing cycle` menjadi pesan ramah: *"Batas kuota/kredit akun Apify telah habis ($0.00). Pemantauan media sosial ditangguhkan sementara hingga kuota diperbarui."*
+   - Pembersihan otomatis string JSON mentah jika terdapat pesan API yang tidak terpetakan.
+2. **Komponen Livewire (`app/Livewire/Admin/SystemHealth.php`)**:
+   - Kueri `$scrapeErrors` dikunci hanya untuk item berstatus `failed` murni dan mengecualikan seluruh pola boilerplate/halaman statis.
+   - `$apifyErrors` dan `$apifyQueueErrors` diformat menggunakan `ApifyActor::friendlyRunMessage()`.
+3. **Blade Views & Layout**:
+   - Mengganti teks ligatur `error` dan tombol `close` dengan inline SVG presisi pada `admin/dashboard.blade.php` dan `livewire/admin/system-health.blade.php`.
+   - Menggunakan URL canonical Google Fonts Material Symbols Outlined.
+
+
 
 

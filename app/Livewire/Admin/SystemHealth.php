@@ -229,10 +229,15 @@ class SystemHealth extends Component
         ];
 
         // 8. Latest Errors
-        $scrapeErrors = ScrapingItem::whereNotNull('error_message')
+        // ponytail: hanya tampilkan item berstatus failed murni, abaikan rejected/boilerplate/halaman statis
+        $scrapeErrors = ScrapingItem::where('status', 'failed')
+            ->whereNotNull('error_message')
             ->where('error_message', 'not like', '%Content too short%')
             ->where('error_message', 'not like', '%Resolved URL is not a valid portal article%')
             ->where('error_message', 'not like', '%Keyword filter did not match%')
+            ->where('error_message', 'not like', '%boilerplate%')
+            ->where('error_message', 'not like', '%halaman statis%')
+            ->where('error_message', 'not like', '%Tanggal publikasi%')
             ->latest('updated_at')
             ->limit(3)
             ->get()
@@ -256,7 +261,8 @@ class SystemHealth extends Component
             ->limit(3)
             ->get()
             ->map(function ($item) {
-                return '[Apify Scraper] ' . $item->platform . ' (' . $item->function_type . ') - ' . Str::limit($item->last_run_message, 120);
+                $friendly = ApifyActor::friendlyRunMessage($item->last_run_message);
+                return '[Apify Scraper] ' . $item->platform . ' (' . ($item->function_type ?? $item->platform) . ') - ' . Str::limit($friendly ?? $item->last_run_message, 140);
             })
             ->toArray();
 
@@ -267,7 +273,8 @@ class SystemHealth extends Component
             ->limit(3)
             ->get()
             ->map(function ($item) {
-                return '[Apify Queue] ' . $item->platform . ' - ' . Str::limit($item->last_error_message, 120);
+                $friendly = ApifyActor::friendlyRunMessage($item->last_error_message);
+                return '[Apify Queue] ' . $item->platform . ' - ' . Str::limit($friendly ?? $item->last_error_message, 140);
             })
             ->toArray();
 

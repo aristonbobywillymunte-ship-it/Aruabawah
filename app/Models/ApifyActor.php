@@ -78,6 +78,20 @@ class ApifyActor extends Model
             return null;
         }
 
+        // ponytail: normalisasi pesan limit/kuota/billing Apify agar tidak memuntahkan raw JSON error ke UI
+        if (str_contains($message, 'not-enough-usage') 
+            || str_contains($message, 'exceed your remaining usage') 
+            || str_contains($message, 'HTTP 402') 
+            || str_contains($message, 'maximum usage for your current billing cycle')
+            || str_contains($message, 'APIFY_ALL_TOKENS_EXHAUSTED')
+            || str_contains($message, 'Semua token Apify tidak tersedia')) {
+            return 'Batas kuota/kredit akun Apify telah habis ($0.00). Pemantauan media sosial ditangguhkan sementara hingga kuota diperbarui.';
+        }
+
+        if (str_contains($message, 'max-total-charge-usd-must-be-greater-than-zero') || str_contains($message, 'Maximum cost per run must be greater than zero')) {
+            return 'Batas biaya per eksekusi scraper (maximum_cost_per_run_usd) harus lebih besar dari 0.';
+        }
+
         if (str_contains($message, 'Monthly usage hard limit exceeded') || str_contains($message, 'platform-feature-disabled')) {
             $checkDateTime = \Carbon\Carbon::now()->locale('id')->addMinutes(5)->translatedFormat('d F Y \p\u\k\u\l H:i');
             return "Batas pengambilan data bulanan telah terlampaui. Seluruh pemantauan media sosial ditangguhkan sampai kuota diperbarui atau paket layanan ditingkatkan. Pemeriksaan ulang akan dilakukan pada tanggal {$checkDateTime}.";
@@ -99,6 +113,13 @@ class ApifyActor extends Model
             return 'Apify sedang diblok sementara karena limit. Menunggu pemulihan otomatis.';
         }
 
+        // Jika terdapat JSON mentah di dalam pesan error, ekstrak pesannya saja agar tidak merusak tampilan
+        if (str_contains($message, '{') && str_contains($message, '}')) {
+            if (preg_match('/"message":\s*"([^"]+)"/', $message, $m)) {
+                return 'Kendala server Apify: ' . $m[1];
+            }
+        }
+
         return $message;
     }
 
@@ -106,6 +127,14 @@ class ApifyActor extends Model
     {
         if (!$message) {
             return null;
+        }
+
+        if (str_contains($message, 'not-enough-usage') 
+            || str_contains($message, 'exceed your remaining usage') 
+            || str_contains($message, 'HTTP 402') 
+            || str_contains($message, 'maximum usage for your current billing cycle')
+            || str_contains($message, 'APIFY_ALL_TOKENS_EXHAUSTED')) {
+            return 'Kredit Habis';
         }
 
         if (str_contains($message, 'Monthly usage hard limit exceeded') || str_contains($message, 'platform-feature-disabled')) {
